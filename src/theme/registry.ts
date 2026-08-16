@@ -29,6 +29,12 @@ const vueModules = import.meta.glob<{ default: Component }>('./*/*/index.vue')
 const cssModules = import.meta.glob('./*/*/style.css')
 const globalCssModules = import.meta.glob('./*/main.css')
 
+// Raw source of the global stylesheets — shown in the dashboard CSS editor
+const globalCssSources = import.meta.glob<string>('./*/main.css', {
+  query: '?raw',
+  import: 'default',
+})
+
 /** All theme names found under src/theme/ */
 export function availableThemes(): string[] {
   const names = new Set<string>()
@@ -60,6 +66,16 @@ export async function loadGlobalStyles(): Promise<void> {
   await globalCssModules[`./${DEFAULT_THEME}/main.css`]?.()
   const theme = getActiveTheme()
   if (theme !== DEFAULT_THEME) await globalCssModules[`./${theme}/main.css`]?.()
+}
+
+/**
+ * Raw main.css of the active theme — the starting point for the
+ * dashboard's global CSS editor. Falls back to the default theme.
+ */
+export async function themeMainCss(): Promise<string> {
+  const theme = getActiveTheme()
+  const load = globalCssSources[`./${theme}/main.css`] ?? globalCssSources[`./${DEFAULT_THEME}/main.css`]
+  return load ? await load() : ''
 }
 
 async function loadStyles(theme: string, name: string): Promise<void> {

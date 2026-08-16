@@ -8,6 +8,7 @@ import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 
 const props = defineProps<{
@@ -114,14 +115,14 @@ function remove() {
       </div>
 
       <h3>{{ t('editor.view.bars') }}</h3>
-      <label class="row">
+      <div class="row">
         <span>{{ t('editor.view.showSidebar') }}</span>
-        <input v-model="showSidebar" type="checkbox" />
-      </label>
-      <label class="row">
+        <BaseCheckbox v-model="showSidebar" />
+      </div>
+      <div class="row">
         <span>{{ t('editor.view.showHeader') }}</span>
-        <input v-model="showHeader" type="checkbox" />
-      </label>
+        <BaseCheckbox v-model="showHeader" />
+      </div>
     </div>
     <template #footer>
       <BaseButton v-if="view" variant="danger" @click="remove">{{ t('common.delete') }}</BaseButton>
@@ -150,10 +151,16 @@ label span,
   font-size: 13px;
   color: var(--text-secondary);
 }
-label.row {
+.row {
+  display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+.row > span {
+  font-size: 13px;
+  color: var(--text-secondary);
 }
 h3 {
   margin: 8px 0 0;

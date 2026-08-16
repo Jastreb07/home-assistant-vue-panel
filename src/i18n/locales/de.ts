@@ -133,14 +133,21 @@ export default {
     screensaverMinutes: 'Bildschirmschoner nach (Minuten)',
     autoReturnSeconds: 'Zur Start-View zurück nach (Sekunden)',
     zeroDisables: '0 = deaktiviert',
+    cssHint:
+      'Das globale Stylesheet des Themes (main.css). Änderungen gelten für das gesamte Dashboard und werden mit ihm gespeichert — die Theme-Dateien bleiben unverändert.',
   },
   cards: {
+    groups: {
+      native: 'Nativ',
+      other: 'Sonstige',
+    },
     common: {
       noEntity: '⚠ Keine Entity konfiguriert',
       notFound: 'Entity nicht gefunden',
     },
     clock: {
       name: 'Uhr',
+      showTime: 'Uhrzeit anzeigen',
       showDate: 'Datum anzeigen',
     },
     menu: {
@@ -206,6 +213,7 @@ export default {
       entity: 'Wetter-Entity',
       displayName: 'Anzeigename',
       showDetails: 'Luftfeuchte & Wind anzeigen',
+      roundTemperature: 'Temperatur runden',
       conditions: {
         'clear-night': 'Klare Nacht',
         cloudy: 'Bewölkt',

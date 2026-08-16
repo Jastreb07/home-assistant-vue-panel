@@ -11,6 +11,8 @@ import {
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
+import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
+import BaseTabs from '@/core/ui/BaseTabs.vue'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -45,7 +47,11 @@ function applyDefaults(config: Record<string, unknown>): Record<string, unknown>
 const draft = ref<Record<string, unknown>>(applyDefaults(props.initialConfig))
 
 // ── CSS tab ──────────────────────────────────────────────────
-const tab = ref<'settings' | 'css'>('settings')
+const tab = ref('settings')
+const tabItems = computed(() => [
+  { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
+  { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
+])
 const defaultCss = ref('')
 // Pre-filled with the card's full default CSS so users can tweak it
 const cssDraft = ref(props.initialCss ?? '')
@@ -76,14 +82,7 @@ const isBarArea = computed(() => props.area !== 'default')
     size="xl"
     @close="emit('close')"
   >
-    <div class="tabs">
-      <button class="tab" :class="{ active: tab === 'settings' }" @click="tab = 'settings'">
-        {{ t('editor.tabSettings') }}
-      </button>
-      <button class="tab" :class="{ active: tab === 'css' }" @click="tab = 'css'">
-        {{ t('editor.tabCss') }}
-      </button>
-    </div>
+    <BaseTabs v-model="tab" :items="tabItems" class="dialog-tabs" />
 
     <div class="config-layout">
       <div v-show="tab === 'settings'" class="form-col">
@@ -95,12 +94,7 @@ const isBarArea = computed(() => props.area !== 'default')
       </div>
       <div v-show="tab === 'css'" class="form-col css-col">
         <p class="css-hint">{{ t('editor.cssHint') }}</p>
-        <textarea
-          v-model="cssDraft"
-          class="css-editor"
-          spellcheck="false"
-          :placeholder="t('editor.cssPlaceholder')"
-        />
+        <BaseCodeEditor v-model="cssDraft" language="css" min-height="300px" />
         <div class="css-actions">
           <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
         </div>
@@ -128,26 +122,8 @@ const isBarArea = computed(() => props.area !== 'default')
 </template>
 
 <style scoped>
-.tabs {
-  display: flex;
-  gap: 4px;
+.dialog-tabs {
   margin-bottom: 18px;
-  border-bottom: 1px solid var(--divider);
-}
-.tab {
-  border: none;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 14px;
-  padding: 8px 14px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
-  margin-bottom: -1px;
-}
-.tab.active {
-  color: var(--text-primary);
-  border-bottom-color: var(--accent);
 }
 .config-layout {
   display: grid;
@@ -172,24 +148,6 @@ const isBarArea = computed(() => props.area !== 'default')
   margin: 0;
   font-size: 12px;
   color: var(--text-secondary);
-}
-.css-editor {
-  width: 100%;
-  min-height: 260px;
-  resize: vertical;
-  background: var(--card-bg);
-  border: 1px solid var(--divider);
-  border-radius: 10px;
-  color: var(--text-primary);
-  padding: 10px 12px;
-  font-family: 'Cascadia Code', Consolas, 'Fira Code', monospace;
-  font-size: 12.5px;
-  line-height: 1.5;
-  outline: none;
-  tab-size: 2;
-}
-.css-editor:focus {
-  border-color: var(--accent);
 }
 .css-actions {
   display: flex;

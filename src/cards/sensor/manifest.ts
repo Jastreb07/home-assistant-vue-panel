@@ -1,9 +1,11 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 export default defineCard({
   type: 'sensor',
   name: 'cards.sensor.name',
   icon: 'mdi:gauge',
+  group: NATIVE_GROUP,
   component: () => import('./SensorCard.vue'),
   schema: {
     entity: { type: 'entity', label: 'cards.sensor.entity' },

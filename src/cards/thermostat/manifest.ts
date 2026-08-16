@@ -1,9 +1,11 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 export default defineCard({
   type: 'thermostat',
   name: 'cards.thermostat.name',
   icon: 'mdi:thermostat',
+  group: NATIVE_GROUP,
   component: () => import('./ThermostatCard.vue'),
   schema: {
     entity: { type: 'entity', domain: 'climate', label: 'cards.thermostat.entity' },

@@ -5,7 +5,7 @@ import { useEntity } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
-  config: { entity: string; name?: string; showDetails?: boolean }
+  config: { entity: string; name?: string; showDetails?: boolean; roundTemperature?: boolean }
 }>()
 
 const { t } = useI18n()
@@ -38,7 +38,11 @@ const displayName = computed(
 )
 const condition = computed(() => weather.value?.state ?? '')
 const icon = computed(() => conditionIcons[condition.value] ?? 'mdi:weather-partly-cloudy')
-const temperature = computed(() => weather.value?.attributes.temperature as number | undefined)
+const temperature = computed(() => {
+  const value = weather.value?.attributes.temperature as number | undefined
+  if (value == null) return undefined
+  return props.config.roundTemperature !== false ? Math.round(value) : value
+})
 const tempUnit = computed(
   () => (weather.value?.attributes.temperature_unit as string | undefined) ?? '°C',
 )

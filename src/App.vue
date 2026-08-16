@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import { useHaStatus } from '@/core/ha'
 import DialogHost from '@/core/ui/DialogHost.vue'
+import GlobalCss from '@/core/ui/GlobalCss.vue'
 
 const { t } = useI18n()
 const { status, errorMessage } = useHaStatus()
@@ -20,6 +21,7 @@ const { status, errorMessage } = useHaStatus()
   </div>
   <RouterView v-else />
   <DialogHost />
+  <GlobalCss />
 </template>
 
 <style scoped>

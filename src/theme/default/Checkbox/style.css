@@ -1,0 +1,49 @@
+.vp-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.vp-checkbox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Visually hidden, but still focusable and readable by assistive tech */
+input.vp-checkbox-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.vp-checkbox-box {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--divider);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-on-active);
+  transition: background 0.15s, border-color 0.15s;
+}
+.vp-checkbox:hover .vp-checkbox-box {
+  border-color: var(--accent);
+}
+.vp-checkbox-box.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.vp-checkbox-input:focus-visible + .vp-checkbox-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.vp-checkbox-label {
+  font-size: 13px;
+  color: var(--text-primary);
+}

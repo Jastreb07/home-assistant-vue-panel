@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import { useClock } from '@/core/composables/useClock'
 
 const props = defineProps<{
-  config: { showDate?: boolean }
+  config: { showTime?: boolean; showDate?: boolean }
 }>()
 
 const { locale } = useI18n()
@@ -19,12 +19,13 @@ const date = computed(() =>
     month: 'long',
   }),
 )
+const showTime = computed(() => props.config.showTime !== false)
 const showDate = computed(() => props.config.showDate !== false)
 </script>
 
 <template>
   <div class="clock-card">
-    <div class="time">{{ time }}</div>
+    <div v-if="showTime" class="time">{{ time }}</div>
     <div v-if="showDate" class="date">{{ date }}</div>
   </div>
 </template>

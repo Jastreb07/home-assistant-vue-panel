@@ -1,9 +1,11 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 export default defineCard({
   type: 'room-tile',
   name: 'cards.roomTile.name',
   icon: 'mdi:door-open',
+  group: NATIVE_GROUP,
   component: () => import('./RoomTileCard.vue'),
   schema: {
     name: { type: 'string', label: 'cards.roomTile.roomName' },

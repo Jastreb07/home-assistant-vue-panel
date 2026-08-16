@@ -1,4 +1,8 @@
 import { defineAsyncComponent, type Component } from 'vue'
+import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
+
+// Re-exported so consumers have a single import site for the registry API
+export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
 
 /**
  * Where a card may be placed: the dashboard views or one of the
@@ -47,6 +51,8 @@ export interface CardManifest {
   name: string
   /** mdi icon, e.g. 'mdi:lightbulb' */
   icon: string
+  /** Picker group — defaults to OTHER_GROUP when omitted */
+  group?: CardGroup
   /** Lazy import of the card component */
   component: () => Promise<{ default: Component }>
   /** Config schema → auto-generated editor form */
@@ -134,6 +140,46 @@ export async function cardDefaultCss(type: string, area: CardCssArea = 'default'
 /** Cards offered for an area — 'dashboard' is the default when unset. */
 export function cardsForArea(area: CardArea): CardManifest[] {
   return Object.values(cardRegistry).filter((m) => (m.areas ?? ['dashboard']).includes(area))
+}
+
+export interface CardGroupEntry extends CardGroup {
+  cards: CardManifest[]
+}
+
+/**
+ * Cards of an area bundled into their groups for the picker. The native
+ * group comes first, all others follow alphabetically — as do the cards
+ * inside each group. Sorting uses the caller's translate function so the
+ * order matches what is actually on screen.
+ */
+export function groupedCardsForArea(
+  area: CardArea,
+  translate: (key: string) => string,
+  locale?: string,
+): CardGroupEntry[] {
+  const groups = new Map<string, CardGroupEntry>()
+
+  for (const manifest of cardsForArea(area)) {
+    const group = manifest.group ?? OTHER_GROUP
+    let entry = groups.get(group.id)
+    if (!entry) {
+      entry = { ...group, cards: [] }
+      groups.set(group.id, entry)
+    }
+    entry.cards.push(manifest)
+  }
+
+  const byName = (a: string, b: string) => translate(a).localeCompare(translate(b), locale)
+
+  for (const entry of groups.values()) {
+    entry.cards.sort((a, b) => byName(a.name, b.name))
+  }
+
+  return [...groups.values()].sort((a, b) => {
+    if (a.id === NATIVE_GROUP.id) return b.id === NATIVE_GROUP.id ? 0 : -1
+    if (b.id === NATIVE_GROUP.id) return 1
+    return byName(a.label, b.label)
+  })
 }
 
 const editorCache = new Map<string, Component>()

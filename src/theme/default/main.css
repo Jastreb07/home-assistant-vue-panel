@@ -23,6 +23,15 @@
   --scrollbar-track: transparent;
   --scrollbar-thumb: #3a4150;
   --scrollbar-thumb-hover: #4a5365;
+  /* Code editor syntax colors */
+  --code-comment: #6b7280;
+  --code-selector: #7fd1c1;
+  --code-property: #9ecbff;
+  --code-string: #e5c07b;
+  --code-number: #d19a66;
+  --code-keyword: #c792ea;
+  --code-function: #82aaff;
+  --code-invalid: #e0706f;
 }
 
 [data-theme='light'] {
@@ -40,6 +49,14 @@
   --accent: #e0a416;
   --scrollbar-thumb: #c3cad6;
   --scrollbar-thumb-hover: #a9b2c2;
+  --code-comment: #8a94a6;
+  --code-selector: #1a7f6b;
+  --code-property: #1e5eb8;
+  --code-string: #a15c00;
+  --code-number: #b5480d;
+  --code-keyword: #8250df;
+  --code-function: #0550ae;
+  --code-invalid: #b3403f;
 }
 
 /* ── Shared control size scale (Nuxt UI-like) ──────────────────
@@ -151,9 +168,4 @@ select {
 input:focus,
 select:focus {
   border-color: var(--accent);
-}
-input[type='checkbox'] {
-  width: 20px;
-  height: 20px;
-  accent-color: var(--accent);
 }

@@ -72,6 +72,8 @@ export interface DashboardSettings {
   screensaverMinutes: number
   /** Return to the first view after N seconds idle — 0 disables it */
   autoReturnSeconds: number
+  /** Global CSS override, replaces the theme's main.css when set */
+  customCss?: string
 }
 
 export interface DashboardConfig {

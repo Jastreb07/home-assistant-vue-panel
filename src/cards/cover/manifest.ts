@@ -1,9 +1,11 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 export default defineCard({
   type: 'cover',
   name: 'cards.cover.name',
   icon: 'mdi:window-shutter',
+  group: NATIVE_GROUP,
   component: () => import('./CoverCard.vue'),
   schema: {
     entity: { type: 'entity', domain: 'cover', label: 'cards.cover.entity' },

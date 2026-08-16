@@ -1,8 +1,9 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 /**
  * In the bars the clock sits directly on the bar background — no tile,
- * no shadow. The same CSS is shared by every sidebar and header slot.
+ * no shadow. Shared by every sidebar slot.
  */
 const BARE = `.clock-card {
   background: none;
@@ -19,8 +20,10 @@ export default defineCard({
   type: 'clock',
   name: 'cards.clock.name',
   icon: 'mdi:clock-outline',
+  group: NATIVE_GROUP,
   component: () => import('./ClockCard.vue'),
   schema: {
+    showTime: { type: 'boolean', label: 'cards.clock.showTime', default: true },
     showDate: { type: 'boolean', label: 'cards.clock.showDate', default: true },
   },
   defaultSize: { cols: 1, rows: 1 },

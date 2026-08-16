@@ -133,14 +133,21 @@ export default {
     screensaverMinutes: 'Screensaver after (minutes)',
     autoReturnSeconds: 'Return to start view after (seconds)',
     zeroDisables: '0 = disabled',
+    cssHint:
+      "The theme's global stylesheet (main.css). Changes apply to the whole dashboard and are saved with it — they do not modify the theme files.",
   },
   cards: {
+    groups: {
+      native: 'Built-in',
+      other: 'Other',
+    },
     common: {
       noEntity: '⚠ No entity configured',
       notFound: 'Entity not found',
     },
     clock: {
       name: 'Clock',
+      showTime: 'Show time',
       showDate: 'Show date',
     },
     menu: {
@@ -206,6 +213,7 @@ export default {
       entity: 'Weather entity',
       displayName: 'Display name',
       showDetails: 'Show humidity & wind',
+      roundTemperature: 'Round temperature',
       conditions: {
         'clear-night': 'Clear night',
         cloudy: 'Cloudy',

@@ -5,6 +5,7 @@ import type { CardSchemaField } from '@/core/registry/cardRegistry'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import EntityPicker from './EntityPicker.vue'
@@ -45,16 +46,19 @@ function selectOptions(field: CardSchemaField): SelectOption[] {
   return (field.options ?? []).map((opt) => ({ value: opt, label: opt }))
 }
 
-/** SelectMenu renders buttons — a <label> would forward clicks to them. */
-function isMenuField(field: CardSchemaField): boolean {
-  return field.type === 'icon' || field.type === 'select' || field.type === 'view'
+/**
+ * SelectMenu renders buttons and Checkbox renders its own <label> —
+ * wrapping either in a <label> would forward (and double) clicks.
+ */
+function needsPlainWrapper(field: CardSchemaField): boolean {
+  return ['icon', 'select', 'view', 'boolean'].includes(field.type)
 }
 </script>
 
 <template>
   <div class="schema-form">
     <component
-      :is="isMenuField(field) ? 'div' : 'label'"
+      :is="needsPlainWrapper(field) ? 'div' : 'label'"
       v-for="(field, key) in schema"
       :key="key"
       class="field"
@@ -95,11 +99,10 @@ function isMenuField(field: CardSchemaField): boolean {
         @update:model-value="set(key, Number($event))"
       />
 
-      <input
+      <BaseCheckbox
         v-else-if="field.type === 'boolean'"
-        :checked="bool(key, field)"
-        type="checkbox"
-        @change="set(key, ($event.target as HTMLInputElement).checked)"
+        :model-value="bool(key, field)"
+        @update:model-value="set(key, $event)"
       />
 
       <BaseSelectMenu

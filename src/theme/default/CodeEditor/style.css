@@ -1,0 +1,25 @@
+.vp-code-editor {
+  width: 100%;
+}
+/* Lint markers — CodeMirror draws these underlines itself */
+.vp-code-editor .cm-lintRange-error {
+  background: none;
+  text-decoration: underline wavy #e0706f;
+  text-underline-offset: 3px;
+}
+.vp-code-editor .cm-lintRange-warning {
+  background: none;
+  text-decoration: underline wavy var(--accent);
+  text-underline-offset: 3px;
+}
+.vp-code-editor .cm-diagnostic {
+  border-left-width: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.vp-code-editor .cm-diagnostic-error {
+  border-left-color: #e0706f;
+}
+.vp-code-editor .cm-diagnostic-warning {
+  border-left-color: var(--accent);
+}

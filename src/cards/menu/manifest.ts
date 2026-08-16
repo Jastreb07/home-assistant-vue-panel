@@ -1,9 +1,11 @@
 import { defineCard } from '@/core/registry/cardRegistry'
+import { NATIVE_GROUP } from '@/core/registry/cardGroups'
 
 export default defineCard({
   type: 'menu',
   name: 'cards.menu.name',
   icon: 'mdi:format-list-bulleted',
+  group: NATIVE_GROUP,
   component: () => import('./MenuCard.vue'),
   // The item tree needs more than a schema field can express
   editor: () => import('./MenuEditor.vue'),
