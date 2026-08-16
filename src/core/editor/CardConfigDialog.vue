@@ -127,7 +127,7 @@ const isBarArea = computed(() => props.area !== 'default')
 }
 .config-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 45%);
   gap: 24px;
   align-items: start;
 }

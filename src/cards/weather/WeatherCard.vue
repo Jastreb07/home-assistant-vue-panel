@@ -5,7 +5,13 @@ import { useEntity } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
-  config: { entity: string; name?: string; showDetails?: boolean; roundTemperature?: boolean }
+  config: {
+    entity: string
+    name?: string
+    showDetails?: boolean
+    roundTemperature?: boolean
+    animation?: boolean
+  }
 }>()
 
 const { t } = useI18n()
@@ -55,10 +61,20 @@ const windUnit = computed(
 const conditionText = computed(() =>
   condition.value ? t('cards.weather.conditions.' + condition.value, condition.value) : '',
 )
+
+/**
+ * `animated` switches the background animation on, `cond-<state>` selects
+ * which one. The rules live in the manifest's default CSS, so they show
+ * up in the card's CSS editor and can be reworked there.
+ */
+const stateClasses = computed(() => [
+  { animated: props.config.animation === true },
+  `cond-${condition.value || 'unknown'}`,
+])
 </script>
 
 <template>
-  <div class="weather-card">
+  <div class="weather-card" :class="stateClasses">
     <MdiIcon :icon="icon" :size="42" />
     <div class="info">
       <div class="name">{{ displayName }}</div>

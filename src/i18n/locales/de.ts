@@ -214,6 +214,7 @@ export default {
       displayName: 'Anzeigename',
       showDetails: 'Luftfeuchte & Wind anzeigen',
       roundTemperature: 'Temperatur runden',
+      animation: 'Animierter Hintergrund',
       conditions: {
         'clear-night': 'Klare Nacht',
         cloudy: 'Bewölkt',

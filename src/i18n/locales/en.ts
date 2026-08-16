@@ -214,6 +214,7 @@ export default {
       displayName: 'Display name',
       showDetails: 'Show humidity & wind',
       roundTemperature: 'Round temperature',
+      animation: 'Animated background',
       conditions: {
         'clear-night': 'Clear night',
         cloudy: 'Cloudy',
