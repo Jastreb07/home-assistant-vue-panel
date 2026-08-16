@@ -21,7 +21,12 @@ class VuePanelElement extends HTMLElement {
 
   connectedCallback() {
     if (this._iframe) return;
-    this.style.cssText = 'display:block;height:100%;';
+    // The HA panel container (ha-panel-custom) is a plain block element
+    // without a definite height, so percentage heights collapse. A custom
+    // panel always fills the full viewport height, so pin the element to
+    // 100vh (100dvh where supported, for correct mobile browser chrome).
+    this.style.cssText =
+      'display:block;width:100%;height:100vh;height:100dvh;overflow:hidden;';
     this._iframe = document.createElement('iframe');
     this._iframe.src = `${BASE}/index.html?ver=${encodeURIComponent(ver)}`;
     this._iframe.style.cssText = 'width:100%;height:100%;border:0;display:block;';
