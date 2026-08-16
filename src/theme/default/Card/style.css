@@ -1,0 +1,20 @@
+.vp-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s, transform 0.1s;
+}
+.vp-card.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+.vp-card.clickable:active {
+  transform: scale(0.98);
+}
+.vp-card.active {
+  background: var(--card-bg-active);
+  color: var(--text-on-active);
+}

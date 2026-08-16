@@ -1,0 +1,28 @@
+.vp-btn {
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-primary);
+  padding: 9px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.vp-btn:hover {
+  border-color: var(--accent);
+}
+.vp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.vp-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-active);
+  font-weight: 600;
+}
+.vp-btn.danger {
+  border-color: #b3403f;
+  color: #e0706f;
+  margin-right: auto;
+}

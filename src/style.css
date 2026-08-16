@@ -1,0 +1,83 @@
+/* Theme variables — dark is the default theme */
+:root {
+  --bg: #14161a;
+  --nav-bg: #1b1e24;
+  --card-bg: #23272f;
+  --card-bg-active: #f5b82e;
+  --card-radius: 18px;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --text-primary: #eceff4;
+  --text-secondary: #9aa3b2;
+  --text-on-active: #1b1e24;
+  --divider: #323844;
+  --nav-item-hover: rgba(255, 255, 255, 0.06);
+  --nav-item-active: rgba(255, 255, 255, 0.12);
+  --accent: #f5b82e;
+}
+
+[data-theme='light'] {
+  --bg: #f2f4f8;
+  --nav-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card-bg-active: #f5b82e;
+  --card-shadow: 0 2px 8px rgba(30, 40, 60, 0.1);
+  --text-primary: #1c2330;
+  --text-secondary: #5c6675;
+  --text-on-active: #1b1e24;
+  --divider: #d8dde6;
+  --nav-item-hover: rgba(0, 0, 0, 0.05);
+  --nav-item-active: rgba(0, 0, 0, 0.09);
+  --accent: #e0a416;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Base form styles (editor dialogs) ── */
+input[type='text'],
+input[type='number'],
+input:not([type]),
+select {
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+}

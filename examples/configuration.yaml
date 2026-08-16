@@ -1,0 +1,13 @@
+# Add this to your Home Assistant configuration.yaml.
+#
+# module_url points at loader.js, which never changes: updating the panel
+# never means touching this file or restarting HA again. See the README
+# section "Updating the panel".
+
+panel_custom:
+  - name: vue-panel
+    sidebar_title: Vue Panel
+    sidebar_icon: mdi:view-dashboard
+    url_path: vue-panel
+    module_url: /local/vue-panel/loader.js
+    embed_iframe: false
