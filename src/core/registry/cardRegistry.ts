@@ -13,6 +13,20 @@ export type CardArea =
   | 'header_center'
   | 'header_right'
 
+/**
+ * Areas a card can ship default CSS for. 'default' covers the dashboard
+ * and acts as the fallback for every area without its own entry.
+ */
+export type CardCssArea = 'default' | Exclude<CardArea, 'dashboard'>
+
+/** Per-area default CSS of a card — assign one string to several keys to share it. */
+export type CardCssMap = Partial<Record<CardCssArea, string>>
+
+/** Card areas map 1:1 to CSS areas, except the dashboard which uses 'default'. */
+export function cssAreaOf(area: CardArea): CardCssArea {
+  return area === 'dashboard' ? 'default' : area
+}
+
 /** Field types from which the editor auto-generates config forms. */
 export interface CardSchemaField {
   type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon'
@@ -50,6 +64,12 @@ export interface CardManifest {
    * Defaults to `['dashboard']`.
    */
   areas?: CardArea[]
+  /**
+   * Default CSS per area, applied unless the card instance overrides it.
+   * `default` is the fallback for areas without their own entry:
+   * `css: { default: BARE, sidebar_top: BARE, header_left: BARE }`.
+   */
+  css?: CardCssMap
 }
 
 /** Only for type safety + autocomplete in the manifest.ts files. */
@@ -80,11 +100,22 @@ const rawCardSources = import.meta.glob<string>('../../cards/*/*.vue', {
 })
 
 /**
- * The default CSS of a card, extracted from the <style> blocks of all
- * .vue files in the card's folder. Shown in the editor's CSS tab as a
- * reference / starting point for per-card overrides.
+ * The CSS a card ships for an area — the area's own entry, else the
+ * manifest's 'default'. Empty when the card declares none.
  */
-export async function cardDefaultCss(type: string): Promise<string> {
+export function cardAreaCss(type: string, area: CardCssArea = 'default'): string {
+  const css = cardRegistry[type]?.css
+  return css?.[area] ?? css?.default ?? ''
+}
+
+/**
+ * The default CSS shown in the editor's CSS tab: what the manifest
+ * declares for the area, or — for cards without a css map — the
+ * <style> blocks of the card's .vue files as a starting point.
+ */
+export async function cardDefaultCss(type: string, area: CardCssArea = 'default'): Promise<string> {
+  const declared = cardAreaCss(type, area)
+  if (declared) return declared
   const dir = cardDirs[type]
   if (!dir) return ''
   const prefix = `../../cards/${dir}/`

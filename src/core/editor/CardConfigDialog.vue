@@ -1,24 +1,30 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   cardRegistry,
   cardDefaultCss,
   resolveCardComponent,
   resolveCardEditor,
+  type CardCssArea,
 } from '@/core/registry/cardRegistry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import SchemaForm from './SchemaForm.vue'
 
-const props = defineProps<{
-  /** CardManifest.type */
-  cardType: string
-  initialConfig: Record<string, unknown>
-  /** Saved per-card CSS override, if any */
-  initialCss?: string
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** CardManifest.type */
+    cardType: string
+    initialConfig: Record<string, unknown>
+    /** Saved per-card CSS override, if any */
+    initialCss?: string
+    /** Where the card sits — decides which default CSS is loaded */
+    area?: CardCssArea
+  }>(),
+  { area: 'default' },
+)
 const emit = defineEmits<{ close: []; save: [config: Record<string, unknown>, css?: string] }>()
 
 const { t } = useI18n()
@@ -45,7 +51,7 @@ const defaultCss = ref('')
 const cssDraft = ref(props.initialCss ?? '')
 
 onMounted(async () => {
-  defaultCss.value = await cardDefaultCss(props.cardType)
+  defaultCss.value = await cardDefaultCss(props.cardType, props.area)
   if (!props.initialCss) cssDraft.value = defaultCss.value
 })
 
@@ -59,12 +65,15 @@ function onSave() {
 function resetCss() {
   cssDraft.value = defaultCss.value
 }
+
+/** Bar areas sit on the nav background, not the dashboard background. */
+const isBarArea = computed(() => props.area !== 'default')
 </script>
 
 <template>
   <BaseDialog
     :title="t('editor.configureTitle', { name: manifest ? t(manifest.name) : cardType })"
-    wide
+    size="xl"
     @close="emit('close')"
   >
     <div class="tabs">
@@ -96,14 +105,20 @@ function resetCss() {
           <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
         </div>
       </div>
-      <div class="preview-col">
-        <span class="preview-label">{{ t('common.preview') }}</span>
-        <CardCss card-id="__preview__" :css="cssDraft.trim() !== defaultCss.trim() ? cssDraft : ''">
-          <div data-vp-card="__preview__">
-            <component :is="previewComponent" v-if="previewComponent" :config="draft" />
-          </div>
-        </CardCss>
-      </div>
+      <aside class="preview-col">
+        <div class="preview-head">
+          <span class="preview-label">{{ t('common.preview') }}</span>
+          <span class="preview-area">{{ t('editor.cssAreas.' + area) }}</span>
+        </div>
+        <!-- Always applied: this is exactly what the area renders with -->
+        <div class="preview-stage" :class="{ 'on-bar': isBarArea }">
+          <CardCss card-id="__preview__" :css="cssDraft">
+            <div data-vp-card="__preview__" class="preview-card">
+              <component :is="previewComponent" v-if="previewComponent" :config="draft" />
+            </div>
+          </CardCss>
+        </div>
+      </aside>
     </div>
     <template #footer>
       <BaseButton @click="emit('close')">{{ t('common.cancel') }}</BaseButton>
@@ -136,10 +151,11 @@ function resetCss() {
 }
 .config-layout {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
   gap: 24px;
+  align-items: start;
 }
-@media (max-width: 560px) {
+@media (max-width: 720px) {
   .config-layout {
     grid-template-columns: 1fr;
   }
@@ -179,16 +195,49 @@ function resetCss() {
   display: flex;
   justify-content: flex-end;
 }
+/* Set apart from the form: own panel with the background of the target area */
 .preview-col {
+  position: sticky;
+  top: 0;
   display: flex;
   flex-direction: column;
+  border: 1px solid var(--divider);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.preview-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 8px;
+  padding: 10px 14px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--divider);
 }
 .preview-label {
   font-size: 12px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-secondary);
+}
+.preview-area {
+  font-size: 11px;
+  color: var(--accent);
+}
+.preview-stage {
+  padding: 20px;
+  background: var(--bg);
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+}
+/* Cards in a bar sit on the nav background — mirror that here */
+.preview-stage.on-bar {
+  background: var(--nav-bg);
+}
+.preview-card {
+  width: 100%;
+  max-width: 260px;
 }
 .no-options {
   color: var(--text-secondary);

@@ -26,7 +26,7 @@ export const defaultSettings: DashboardSettings = {
 export const defaultNav: NavConfig = {
   // The view navigation itself is a card — replaceable like any other
   slots: {
-    top: [],
+    top: [{ id: 'navcard-clock', type: 'clock', config: {} }],
     center: [{ id: 'navcard-menu', type: 'menu', config: {} }],
     bottom: [],
   },
@@ -53,7 +53,7 @@ function resolveSlots(raw: Partial<NavConfig> & LegacyNav): Record<NavSlot, Card
 }
 
 export const defaultHeader: HeaderConfig = {
-  slots: { left: [], center: [], right: [] },
+  slots: { left: [{ id: 'hdrcard-clock', type: 'clock', config: {} }], center: [], right: [] },
   height: 64,
   centerAlign: { vertical: 'center', horizontal: 'center' },
 }

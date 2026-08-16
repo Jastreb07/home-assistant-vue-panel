@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
-import { resolveCardComponent } from '@/core/registry/cardRegistry'
+import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
@@ -30,13 +30,18 @@ const { t } = useI18n()
 
 const firstSection = computed(() => props.view.sections[0])
 const panelCard = computed(() => firstSection.value?.cards[0])
+
+/** Instance override wins, otherwise the card's default CSS for the dashboard. */
+const panelCss = computed(() =>
+  panelCard.value ? (panelCard.value.css ?? cardAreaCss(panelCard.value.type)) : '',
+)
 </script>
 
 <template>
   <div class="panel-layout">
     <template v-if="panelCard">
-      <div class="panel-slot" :data-vp-card="panelCard.css ? panelCard.id : undefined">
-        <CardCss v-if="panelCard.css" :card-id="panelCard.id" :css="panelCard.css" />
+      <div class="panel-slot" :data-vp-card="panelCss ? panelCard.id : undefined">
+        <CardCss v-if="panelCss" :card-id="panelCard.id" :css="panelCss" />
         <component
           :is="resolveCardComponent(panelCard.type)"
           v-if="resolveCardComponent(panelCard.type)"

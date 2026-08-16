@@ -3,7 +3,13 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, HeaderSlot, NavSlot } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
-import { cardRegistry, resolveCardComponent, type CardArea } from '@/core/registry/cardRegistry'
+import {
+  cardAreaCss,
+  cardRegistry,
+  cssAreaOf,
+  resolveCardComponent,
+  type CardArea,
+} from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
@@ -41,6 +47,11 @@ const slotCards = computed<CardConfig[]>(() =>
 
 const cards = computed(() => slotCards.value.filter((c) => !props.hideTypes?.includes(c.type)))
 const area = computed<CardArea>(() => `${props.bar}_${props.navSlot}` as CardArea)
+
+/** Instance override wins, otherwise the card's default CSS for this area. */
+function cssFor(card: CardConfig): string {
+  return card.css ?? cardAreaCss(card.type, cssAreaOf(area.value))
+}
 
 const pickerOpen = ref(false)
 const configTarget = ref<
@@ -144,13 +155,13 @@ function onDragEnd() {
       :key="card.id"
       class="nav-card-slot"
       :class="{ dragging: draggingId === card.id, 'drop-before': dropIndex === index }"
-      :data-vp-card="card.css ? card.id : undefined"
+      :data-vp-card="cssFor(card) ? card.id : undefined"
       :draggable="store.editMode"
       @dragstart="onDragStart($event, card.id)"
       @dragover="store.editMode && onDragOver($event, index)"
       @dragend="onDragEnd"
     >
-      <CardCss v-if="card.css" :card-id="card.id" :css="card.css" />
+      <CardCss v-if="cssFor(card)" :card-id="card.id" :css="cssFor(card)" />
       <component
         :is="resolveCardComponent(card.type)"
         v-if="resolveCardComponent(card.type)"
@@ -187,6 +198,7 @@ function onDragEnd() {
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : {}"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
+      :area="cssAreaOf(area)"
       @close="configTarget = null"
       @save="onConfigSave"
     />

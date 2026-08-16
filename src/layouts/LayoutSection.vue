@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
-import { resolveCardComponent } from '@/core/registry/cardRegistry'
+import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import CardCss from '@/core/ui/CardCss.vue'
@@ -40,6 +40,11 @@ const { t } = useI18n()
 function slotStyle(card: CardConfig): Record<string, string> | undefined {
   return card.size ? { gridColumn: `span ${card.size.cols}` } : undefined
 }
+
+/** Instance override wins, otherwise the card's default CSS for the dashboard. */
+function cssFor(card: CardConfig): string {
+  return card.css ?? cardAreaCss(card.type)
+}
 </script>
 
 <template>
@@ -71,13 +76,13 @@ function slotStyle(card: CardConfig): Record<string, string> | undefined {
             'drop-before': dropTarget?.sectionId === section.id && dropTarget?.index === index,
           }"
           :style="slotStyle(card)"
-          :data-vp-card="card.css ? card.id : undefined"
+          :data-vp-card="cssFor(card) ? card.id : undefined"
           :draggable="editMode"
           @dragstart="emit('dragstart', $event, card.id)"
           @dragover="editMode && emit('dragover-card', $event, section.id, index)"
           @dragend="emit('dragend')"
         >
-          <CardCss v-if="card.css" :card-id="card.id" :css="card.css" />
+          <CardCss v-if="cssFor(card)" :card-id="card.id" :css="cssFor(card)" />
           <component
             :is="resolveCardComponent(card.type)"
             v-if="resolveCardComponent(card.type)"

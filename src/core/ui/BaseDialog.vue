@@ -6,13 +6,14 @@ const Dialog = themed('Dialog')
 
 defineProps<{
   title: string
-  wide?: boolean
+  /** Dialog width: md (default), lg, xl */
+  size?: 'md' | 'lg' | 'xl'
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
 
 <template>
-  <component :is="Dialog" :title="title" :wide="wide" @close="emit('close')">
+  <component :is="Dialog" :title="title" :size="size" @close="emit('close')">
     <slot />
     <template v-if="$slots.footer" #footer>
       <slot name="footer" />
