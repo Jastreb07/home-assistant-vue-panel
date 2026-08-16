@@ -3,7 +3,6 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEntity, useService } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 /**
@@ -45,35 +44,46 @@ function toggleLight(e: Event) {
 </script>
 
 <template>
-  <BaseCard clickable @click="open">
-    <div class="room-tile">
-      <div class="head">
-        <MdiIcon :icon="config.icon || 'mdi:door-open'" :size="30" />
-        <button
-          v-if="config.lightGroup"
-          class="light-toggle"
-          :class="{ on: lightOn }"
-          :title="t('cards.roomTile.toggleLights')"
-          @click="toggleLight"
-        >
-          <MdiIcon :icon="lightOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="18" />
-        </button>
-      </div>
-      <div class="name">{{ config.name || t('cards.roomTile.defaultName') }}</div>
-      <div class="meta">
-        <span v-if="tempText">{{ tempText }}</span>
-        <MdiIcon v-if="config.targetView" icon="mdi:chevron-right" :size="16" class="chev" />
-      </div>
+  <div class="room-tile" @click="open">
+    <div class="head">
+      <MdiIcon :icon="config.icon || 'mdi:door-open'" :size="30" />
+      <button
+        v-if="config.lightGroup"
+        class="light-toggle"
+        :class="{ on: lightOn }"
+        :title="t('cards.roomTile.toggleLights')"
+        @click="toggleLight"
+      >
+        <MdiIcon :icon="lightOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="18" />
+      </button>
     </div>
-  </BaseCard>
+    <div class="name">{{ config.name || t('cards.roomTile.defaultName') }}</div>
+    <div class="meta">
+      <span v-if="tempText">{{ tempText }}</span>
+      <MdiIcon v-if="config.targetView" icon="mdi:chevron-right" :size="16" class="chev" />
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .room-tile {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s, transform 0.1s;
+  cursor: pointer;
+  user-select: none;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  height: 100%;
+}
+.room-tile:active {
+  transform: scale(0.98);
 }
 .head {
   display: flex;

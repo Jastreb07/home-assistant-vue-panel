@@ -1,0 +1,46 @@
+.vp-add-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--divider);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.vp-add-tile:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Orientation ── */
+.vp-add-tile--vertical {
+  flex-direction: column;
+  gap: 4px;
+}
+.vp-add-tile--horizontal {
+  flex-direction: row;
+  gap: 8px;
+}
+
+/* ── Variants ── */
+.vp-add-tile--tile {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border-radius: var(--card-radius);
+}
+.vp-add-tile--pill {
+  align-self: center;
+  padding: 0 calc(var(--vp-control-pad-x) * 2);
+  height: calc(var(--vp-control-height) + 8px);
+  border-radius: 999px;
+}
+
+/* Fill the free space instead of sticking to min-height */
+.vp-add-tile--fill {
+  flex: 1;
+  min-height: 50vh;
+}

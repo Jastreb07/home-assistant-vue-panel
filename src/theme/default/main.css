@@ -42,6 +42,47 @@
   --scrollbar-thumb-hover: #a9b2c2;
 }
 
+/* ── Shared control size scale (Nuxt UI-like) ──────────────────
+   One source of truth for Button, Input and SelectMenu so all
+   controls line up. Components set `vp-size-<size>` on their root
+   and read the tokens below — a CSS-only theme can rescale
+   everything by overriding just these classes. */
+.vp-size-xs {
+  --vp-control-height: 26px;
+  --vp-control-font: 12px;
+  --vp-control-pad-x: 8px;
+  --vp-control-radius: 8px;
+  --vp-control-icon: 14px;
+}
+.vp-size-sm {
+  --vp-control-height: 32px;
+  --vp-control-font: 13px;
+  --vp-control-pad-x: 10px;
+  --vp-control-radius: 8px;
+  --vp-control-icon: 16px;
+}
+.vp-size-md {
+  --vp-control-height: 40px;
+  --vp-control-font: 14px;
+  --vp-control-pad-x: 12px;
+  --vp-control-radius: 10px;
+  --vp-control-icon: 22px;
+}
+.vp-size-lg {
+  --vp-control-height: 48px;
+  --vp-control-font: 15px;
+  --vp-control-pad-x: 14px;
+  --vp-control-radius: 10px;
+  --vp-control-icon: 24px;
+}
+.vp-size-xl {
+  --vp-control-height: 56px;
+  --vp-control-font: 16px;
+  --vp-control-pad-x: 16px;
+  --vp-control-radius: 12px;
+  --vp-control-icon: 26px;
+}
+
 * {
   box-sizing: border-box;
 }

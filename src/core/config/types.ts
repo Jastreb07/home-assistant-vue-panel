@@ -8,6 +8,8 @@ export interface CardConfig {
   type: string
   /** Card-specific settings according to the manifest schema */
   config: Record<string, unknown>
+  /** Per-card custom CSS override, scoped to this card instance via [data-vp-card] */
+  css?: string
   size?: { cols: number; rows: number }
 }
 
@@ -24,23 +26,42 @@ export interface ViewConfig {
   icon: string
   layout: ViewLayout
   layoutOptions?: Record<string, unknown>
-  /** Subviews do not appear in the navigation and have a back button */
-  subview?: boolean
   /** CSS background of the view area, e.g. '#1a2b3c' or 'url(...) center/cover' */
   background?: string
+  /** Show the sidebar on this view (default: true) */
+  showSidebar?: boolean
+  /** Show the header bar on this view (default: false) */
+  showHeader?: boolean
   sections: SectionConfig[]
 }
 
+/** The three card slots of the sidebar, top to bottom. */
+export type NavSlot = 'top' | 'center' | 'bottom'
+
+/** Alignment of the center slot content — 'stretch' fills the width. */
+export type NavAlign = 'start' | 'center' | 'end' | 'stretch'
+
 /** Configuration of the navigation (SideNav on wide screens, BottomNav on narrow). */
 export interface NavConfig {
-  /** Cards rendered inside the navigation — manifest must allow the 'nav' area */
-  cards: CardConfig[]
-  /** Built-in clock above the view list (SideNav only) */
-  showClock: boolean
-  /** Cards above or below the view list */
-  cardsPosition: 'top' | 'bottom'
+  /** Cards per slot — the manifest must allow the matching `sidebar_*` area */
+  slots: Record<NavSlot, CardConfig[]>
   /** SideNav width in px */
   width: number
+  /** Where the center slot content sits inside the free space */
+  centerAlign: { vertical: NavAlign; horizontal: NavAlign }
+}
+
+/** The three card slots of the header bar, left to right. */
+export type HeaderSlot = 'left' | 'center' | 'right'
+
+/** The header bar — the horizontal counterpart of the sidebar. */
+export interface HeaderConfig {
+  /** Cards per slot — the manifest must allow the matching `header_*` area */
+  slots: Record<HeaderSlot, CardConfig[]>
+  /** Bar height in px */
+  height: number
+  /** Where the center slot content sits inside the free space */
+  centerAlign: { vertical: NavAlign; horizontal: NavAlign }
 }
 
 export interface DashboardSettings {
@@ -57,5 +78,6 @@ export interface DashboardConfig {
   version: 1
   settings?: Partial<DashboardSettings>
   nav?: Partial<NavConfig>
+  header?: Partial<HeaderConfig>
   views: ViewConfig[]
 }

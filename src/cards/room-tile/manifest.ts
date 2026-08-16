@@ -23,5 +23,13 @@ export default defineCard({
     },
   },
   defaultSize: { cols: 1, rows: 1 },
-  areas: ['dashboard', 'nav'],
+  areas: [
+    'dashboard',
+    'sidebar_top',
+    'sidebar_center',
+    'sidebar_bottom',
+    'header_left',
+    'header_center',
+    'header_right',
+  ],
 })

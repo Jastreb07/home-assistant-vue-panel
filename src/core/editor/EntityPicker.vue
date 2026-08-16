@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, useId } from 'vue'
+import { computed } from 'vue'
 import { useEntities } from '@/core/ha'
+import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import type { SelectOption } from '@/core/ui/selectMenu'
 
 const props = defineProps<{
   modelValue: string
@@ -9,36 +11,27 @@ const props = defineProps<{
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
-const listId = useId()
 const entities = useEntities()
 
-const options = computed(() =>
+const options = computed<SelectOption[]>(() =>
   Object.values(entities.value)
     .filter((e) => !props.domain || e.entity_id.startsWith(props.domain + '.'))
     .map((e) => ({
-      id: e.entity_id,
-      name: (e.attributes.friendly_name as string | undefined) ?? e.entity_id,
+      value: e.entity_id,
+      label: (e.attributes.friendly_name as string | undefined) ?? e.entity_id,
     }))
-    .sort((a, b) => a.name.localeCompare(b.name)),
+    .sort((a, b) => a.label.localeCompare(b.label)),
 )
 </script>
 
 <template>
-  <input
-    class="entity-input"
-    :value="modelValue"
-    :list="listId"
+  <BaseSelectMenu
+    :model-value="modelValue"
+    :options="options"
+    searchable
+    clearable
+    allow-custom
     :placeholder="domain ? `${domain}.…` : 'domain.entity_id'"
-    spellcheck="false"
-    @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+    @update:model-value="emit('update:modelValue', $event)"
   />
-  <datalist :id="listId">
-    <option v-for="opt in options" :key="opt.id" :value="opt.id">{{ opt.name }}</option>
-  </datalist>
 </template>
-
-<style scoped>
-.entity-input {
-  width: 100%;
-}
-</style>

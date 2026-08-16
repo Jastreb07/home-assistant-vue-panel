@@ -1,0 +1,24 @@
+/* input.* beats the global `input[type='text']` base styles */
+input.vp-input {
+  width: 100%;
+  height: var(--vp-control-height);
+  padding: 0 var(--vp-control-pad-x);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  outline: none;
+}
+input.vp-input:focus {
+  border-color: var(--accent);
+}
+input.vp-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+input.vp-input::placeholder {
+  color: var(--text-secondary);
+}

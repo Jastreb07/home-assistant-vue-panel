@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
@@ -55,38 +54,43 @@ const conditionText = computed(() =>
 </script>
 
 <template>
-  <BaseCard>
-    <div class="weather-card">
-      <MdiIcon :icon="icon" :size="42" />
-      <div class="info">
-        <div class="name">{{ displayName }}</div>
-        <div class="state">
-          <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
-          <template v-else-if="!weather">{{ t('cards.common.notFound') }}</template>
-          <template v-else>{{ conditionText }}</template>
-        </div>
-      </div>
-      <div v-if="weather" class="numbers">
-        <div class="temp">{{ temperature != null ? temperature + ' ' + tempUnit : '–' }}</div>
-        <div v-if="config.showDetails !== false" class="details">
-          <span v-if="humidity != null">
-            <MdiIcon icon="mdi:water-percent" :size="14" /> {{ humidity }} %
-          </span>
-          <span v-if="windSpeed != null">
-            <MdiIcon icon="mdi:weather-windy" :size="14" /> {{ Math.round(windSpeed) }} {{ windUnit }}
-          </span>
-        </div>
+  <div class="weather-card">
+    <MdiIcon :icon="icon" :size="42" />
+    <div class="info">
+      <div class="name">{{ displayName }}</div>
+      <div class="state">
+        <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
+        <template v-else-if="!weather">{{ t('cards.common.notFound') }}</template>
+        <template v-else>{{ conditionText }}</template>
       </div>
     </div>
-  </BaseCard>
+    <div v-if="weather" class="numbers">
+      <div class="temp">{{ temperature != null ? temperature + ' ' + tempUnit : '–' }}</div>
+      <div v-if="config.showDetails !== false" class="details">
+        <span v-if="humidity != null">
+          <MdiIcon icon="mdi:water-percent" :size="14" /> {{ humidity }} %
+        </span>
+        <span v-if="windSpeed != null">
+          <MdiIcon icon="mdi:weather-windy" :size="14" /> {{ Math.round(windSpeed) }} {{ windUnit }}
+        </span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .weather-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 100%;
 }
 .info {
   flex: 1;

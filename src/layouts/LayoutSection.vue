@@ -3,6 +3,8 @@ import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
 import { resolveCardComponent } from '@/core/registry/cardRegistry'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import CardCss from '@/core/ui/CardCss.vue'
 
 /**
  * Renders one section (header + cards grid + edit overlays).
@@ -69,11 +71,13 @@ function slotStyle(card: CardConfig): Record<string, string> | undefined {
             'drop-before': dropTarget?.sectionId === section.id && dropTarget?.index === index,
           }"
           :style="slotStyle(card)"
+          :data-vp-card="card.css ? card.id : undefined"
           :draggable="editMode"
           @dragstart="emit('dragstart', $event, card.id)"
           @dragover="editMode && emit('dragover-card', $event, section.id, index)"
           @dragend="emit('dragend')"
         >
+          <CardCss v-if="card.css" :card-id="card.id" :css="card.css" />
           <component
             :is="resolveCardComponent(card.type)"
             v-if="resolveCardComponent(card.type)"
@@ -92,10 +96,11 @@ function slotStyle(card: CardConfig): Record<string, string> | undefined {
         </div>
       </template>
 
-      <button v-if="editMode" class="add-card-tile" @click="emit('pick', section.id)">
-        <MdiIcon icon="mdi:plus" :size="28" />
-        <span>{{ t('editor.addCard') }}</span>
-      </button>
+      <BaseAddTile
+        v-if="editMode"
+        :label="t('editor.addCard')"
+        @click="emit('pick', section.id)"
+      />
     </div>
   </section>
 </template>
@@ -166,23 +171,5 @@ function slotStyle(card: CardConfig): Record<string, string> | undefined {
   border-radius: var(--card-radius);
   padding: 16px;
   color: var(--text-secondary);
-}
-.add-card-tile {
-  min-height: 80px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border: 2px dashed var(--divider);
-  border-radius: var(--card-radius);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: border-color 0.15s, color 0.15s;
-}
-.add-card-tile:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 </style>

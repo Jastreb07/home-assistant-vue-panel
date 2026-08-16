@@ -7,6 +7,7 @@ import { availableThemes } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -58,16 +59,28 @@ function save() {
       </div>
 
       <h3>{{ t('settings.kiosk') }}</h3>
-      <label>
+      <div class="field">
         <span>{{ t('settings.screensaverMinutes') }}</span>
-        <input v-model.number="screensaverMinutes" type="number" min="0" max="720" />
+        <BaseInput
+          :model-value="screensaverMinutes"
+          type="number"
+          :min="0"
+          :max="720"
+          @update:model-value="screensaverMinutes = Number($event)"
+        />
         <small>{{ t('settings.zeroDisables') }}</small>
-      </label>
-      <label>
+      </div>
+      <div class="field">
         <span>{{ t('settings.autoReturnSeconds') }}</span>
-        <input v-model.number="autoReturnSeconds" type="number" min="0" max="3600" />
+        <BaseInput
+          :model-value="autoReturnSeconds"
+          type="number"
+          :min="0"
+          :max="3600"
+          @update:model-value="autoReturnSeconds = Number($event)"
+        />
         <small>{{ t('settings.zeroDisables') }}</small>
-      </label>
+      </div>
     </div>
     <template #footer>
       <BaseButton @click="emit('close')">{{ t('common.cancel') }}</BaseButton>

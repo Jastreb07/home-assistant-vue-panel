@@ -4,7 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
-import MdiIcon from '@/core/ui/MdiIcon.vue'
+import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import LayoutSection from './LayoutSection.vue'
 import { useSectionEditing } from './useSectionEditing'
 
@@ -69,10 +69,13 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @dragend="onDragEnd"
       />
 
-      <button v-if="store.editMode" class="add-section-btn" @click="addSection">
-        <MdiIcon icon="mdi:plus" :size="20" />
-        {{ t('editor.addSection') }}
-      </button>
+      <BaseAddTile
+      v-if="store.editMode"
+      variant="pill"
+      orientation="horizontal"
+      :label="t('editor.addSection')"
+      @click="addSection"
+    />
       <p v-if="store.editMode" class="hint">{{ t('editor.sidebarHint') }}</p>
     </div>
 
@@ -101,6 +104,7 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
       v-if="configTarget"
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : {}"
+      :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />
@@ -129,23 +133,6 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
 }
 .side-col {
   min-width: 0;
-}
-.add-section-btn {
-  align-self: center;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 24px;
-  border: 2px dashed var(--divider);
-  border-radius: 24px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 14px;
-  cursor: pointer;
-}
-.add-section-btn:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 .hint {
   text-align: center;

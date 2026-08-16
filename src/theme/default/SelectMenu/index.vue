@@ -8,10 +8,16 @@ import type { SelectOption } from '@/core/ui/selectMenu'
  * Options may carry an icon; long lists (icons, entities) opt into a
  * search field via `searchable`.
  */
+import type { ControlSize } from '@/core/ui/controlSize'
+
+const ICON_SIZE: Record<ControlSize, number> = { xs: 14, sm: 16, md: 22, lg: 24, xl: 26 }
+
 const props = withDefaults(
   defineProps<{
     modelValue: string
     options: SelectOption[]
+    /** Field size — shares the scale with Button and Input */
+    size?: ControlSize
     /** Show a search field — for long lists */
     searchable?: boolean
     /** Offer an ✕ button that resets the value to '' */
@@ -25,9 +31,11 @@ const props = withDefaults(
     /** Cap for rendered search results */
     maxResults?: number
   }>(),
-  { maxResults: 120 },
+  { maxResults: 120, size: 'md' },
 )
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
+
+const iconSize = computed(() => ICON_SIZE[props.size])
 
 const root = ref<HTMLElement | null>(null)
 const listEl = ref<HTMLElement | null>(null)
@@ -51,9 +59,11 @@ const results = computed(() => {
   const prefix: SelectOption[] = []
   const rest: SelectOption[] = []
   for (const option of props.options) {
+    // Match against the label and the stored value (e.g. entity_id)
     const at = option.label.toLowerCase().indexOf(stripped)
-    if (at === 0) prefix.push(option)
-    else if (at > 0) rest.push(option)
+    const atValue = option.value.toLowerCase().indexOf(stripped)
+    if (at === 0 || atValue === 0) prefix.push(option)
+    else if (at > 0 || atValue > 0) rest.push(option)
     if (prefix.length >= props.maxResults) break
   }
   return prefix.concat(rest).slice(0, props.maxResults)
@@ -136,13 +146,13 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
 </script>
 
 <template>
-  <div ref="root" class="vp-select">
+  <div ref="root" class="vp-select" :class="`vp-size-${size}`">
     <div class="vp-select-field">
       <MdiIcon
         v-if="selected?.icon || (allowCustom && modelValue)"
         class="vp-select-icon"
         :icon="selected?.icon || modelValue"
-        :size="22"
+        :size="iconSize"
       />
       <input
         v-if="open && searchable"
@@ -164,7 +174,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
         @keydown="onKeydown"
       >
         <span>{{ displayLabel || $t('common.selectMenu.empty') }}</span>
-        <MdiIcon icon="mdi:menu-down" :size="20" />
+        <MdiIcon icon="mdi:menu-down" :size="iconSize" />
       </button>
       <button
         v-if="clearable && modelValue && !open"
@@ -173,7 +183,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
         :title="$t('common.selectMenu.clear')"
         @click="clear"
       >
-        <MdiIcon icon="mdi:close" :size="16" />
+        <MdiIcon icon="mdi:close" :size="iconSize - 4" />
       </button>
     </div>
 
@@ -186,7 +196,7 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
         :class="{ active: index === activeIndex, selected: option.value === modelValue }"
         @click="select(option)"
       >
-        <MdiIcon v-if="option.icon" :icon="option.icon" :size="20" />
+        <MdiIcon v-if="option.icon" :icon="option.icon" :size="iconSize - 2" />
         <span class="vp-select-label">{{ option.label }}</span>
       </button>
       <p v-if="results.length === 0" class="vp-select-empty">

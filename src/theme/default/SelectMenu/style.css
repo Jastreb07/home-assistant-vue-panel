@@ -1,3 +1,4 @@
+/* Sizes come from the shared .vp-size-* tokens in the theme's main.css */
 .vp-select {
   position: relative;
 }
@@ -7,8 +8,11 @@
   gap: 8px;
   background: var(--card-bg);
   border: 1px solid var(--divider);
-  border-radius: 10px;
-  padding: 0 12px;
+  border-radius: var(--vp-control-radius);
+  padding: 0 var(--vp-control-pad-x);
+  /* Fixed height so swapping the button for the search input never shifts layout */
+  height: var(--vp-control-height);
+  box-sizing: border-box;
 }
 .vp-select-field:focus-within {
   border-color: var(--accent);
@@ -17,20 +21,24 @@
   flex-shrink: 0;
   color: var(--text-secondary);
 }
-/* input.* beats the global `input[type='text']` base styles,
-   which would otherwise draw a second border inside the field */
+/* input.* beats the global `input[type='text']` base styles, which would
+   otherwise draw a second border and add padding inside the field.
+   Both controls fill the field height so they are pixel-identical. */
 input.vp-select-search,
 .vp-select-value {
   flex: 1;
   min-width: 0;
+  height: 100%;
   border: none;
   border-radius: 0;
   background: transparent;
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 14px;
-  padding: 10px 0;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  padding: 0;
   outline: none;
+  box-sizing: border-box;
 }
 input.vp-select-search:focus {
   border: none;
@@ -69,7 +77,7 @@ input.vp-select-search:focus {
   overflow-y: auto;
   background: var(--nav-bg);
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--vp-control-radius);
   box-shadow: var(--card-shadow);
   padding: 4px;
 }
@@ -78,13 +86,13 @@ input.vp-select-search:focus {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 10px;
+  padding: 8px var(--vp-control-pad-x);
   border: none;
   border-radius: 8px;
   background: transparent;
   color: var(--text-primary);
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--vp-control-font);
   text-align: left;
   cursor: pointer;
 }

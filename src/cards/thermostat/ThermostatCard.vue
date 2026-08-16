@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
@@ -38,40 +37,50 @@ function adjust(direction: 1 | -1) {
 </script>
 
 <template>
-  <BaseCard :active="isHeating">
-    <div class="thermostat-card">
-      <MdiIcon :icon="isHeating ? 'mdi:fire' : 'mdi:thermostat'" :size="30" />
-      <div class="info">
-        <div class="name">{{ displayName }}</div>
-        <div class="state">
-          <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
-          <template v-else-if="!climate">{{ t('cards.common.notFound') }}</template>
-          <template v-else>
-            {{ currentTemp != null ? currentTemp + ' °' : '–' }}
-            <span v-if="isOff" class="mode">· {{ t('cards.thermostat.off') }}</span>
-            <span v-else-if="isHeating" class="mode">· {{ t('cards.thermostat.heating') }}</span>
-          </template>
-        </div>
-      </div>
-      <div v-if="climate && targetTemp != null" class="target" @click.stop>
-        <button class="temp-btn" @click="adjust(-1)">
-          <MdiIcon icon="mdi:minus" :size="18" />
-        </button>
-        <span class="target-value">{{ targetTemp }} °</span>
-        <button class="temp-btn" @click="adjust(1)">
-          <MdiIcon icon="mdi:plus" :size="18" />
-        </button>
+  <div class="thermostat-card" :class="{ active: isHeating }">
+    <MdiIcon :icon="isHeating ? 'mdi:fire' : 'mdi:thermostat'" :size="30" />
+    <div class="info">
+      <div class="name">{{ displayName }}</div>
+      <div class="state">
+        <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
+        <template v-else-if="!climate">{{ t('cards.common.notFound') }}</template>
+        <template v-else>
+          {{ currentTemp != null ? currentTemp + ' °' : '–' }}
+          <span v-if="isOff" class="mode">· {{ t('cards.thermostat.off') }}</span>
+          <span v-else-if="isHeating" class="mode">· {{ t('cards.thermostat.heating') }}</span>
+        </template>
       </div>
     </div>
-  </BaseCard>
+    <div v-if="climate && targetTemp != null" class="target" @click.stop>
+      <button class="temp-btn" @click="adjust(-1)">
+        <MdiIcon icon="mdi:minus" :size="18" />
+      </button>
+      <span class="target-value">{{ targetTemp }} °</span>
+      <button class="temp-btn" @click="adjust(1)">
+        <MdiIcon icon="mdi:plus" :size="18" />
+      </button>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .thermostat-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s;
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 100%;
+}
+.thermostat-card.active {
+  background: var(--card-bg-active);
+  color: var(--text-on-active);
 }
 .info {
   flex: 1;

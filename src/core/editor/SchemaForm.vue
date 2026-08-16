@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import EntityPicker from './EntityPicker.vue'
@@ -81,18 +82,17 @@ function isMenuField(field: CardSchemaField): boolean {
         @update:model-value="set(key, $event)"
       />
 
-      <input
+      <BaseInput
         v-else-if="field.type === 'string'"
-        :value="str(key)"
-        type="text"
-        @input="set(key, ($event.target as HTMLInputElement).value)"
+        :model-value="str(key)"
+        @update:model-value="set(key, $event)"
       />
 
-      <input
+      <BaseInput
         v-else-if="field.type === 'number'"
-        :value="(modelValue[key] as number | undefined) ?? (field.default as number | undefined) ?? 0"
+        :model-value="(modelValue[key] as number | undefined) ?? (field.default as number | undefined) ?? 0"
         type="number"
-        @input="set(key, Number(($event.target as HTMLInputElement).value))"
+        @update:model-value="set(key, Number($event))"
       />
 
       <input

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { themed } from '@/theme/registry'
 import type { SelectOption } from './selectMenu'
+import type { ControlSize } from './controlSize'
 
 /** Thin wrapper: renders the 'SelectMenu' component of the active theme. */
 const SelectMenu = themed('SelectMenu')
@@ -8,6 +9,8 @@ const SelectMenu = themed('SelectMenu')
 defineProps<{
   modelValue: string
   options: SelectOption[]
+  /** Field size — shares the scale with Button and Input */
+  size?: ControlSize
   /** Show a search field — for long lists */
   searchable?: boolean
   /** Offer an ✕ button that resets the value to '' */
@@ -27,6 +30,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
     :is="SelectMenu"
     :model-value="modelValue"
     :options="options"
+    :size="size"
     :searchable="searchable"
     :clearable="clearable"
     :allow-custom="allowCustom"

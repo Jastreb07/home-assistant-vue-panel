@@ -1,10 +1,18 @@
 .vp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--vp-control-height);
+  /* Buttons read wider than fields at the same height */
+  padding: 0 calc(var(--vp-control-pad-x) * 1.5);
   border: 1px solid var(--divider);
-  border-radius: 10px;
+  border-radius: var(--vp-control-radius);
   background: transparent;
   color: var(--text-primary);
-  padding: 9px 18px;
-  font-size: 14px;
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }

@@ -90,10 +90,12 @@ export default defineCard({
 })
 ```
 - Schema-Feldtypen: `entity` (mit `domain`), `string`, `number`, `boolean`, `select` (options), `view` (View-Auswahl, z.B. room-tile) → Editor-Formular wird auto-generiert (SchemaForm + Live-Preview).
-- Card-Komponente bekommt Prop `config`; nutzt `useEntity(() => props.config.entity)`, `useService('domain')`, `BaseCard` aus `@/core/ui`.
+- Card-Komponente bekommt Prop `config`; nutzt `useEntity(() => props.config.entity)`, `useService('domain')` aus `@/core/ha`.
+- **Cards nutzen KEIN `BaseCard`** — jede Card trägt die komplette Kachel-Optik (background, border-radius, padding, box-shadow, active-Zustand, …) selbst in ihrem eigenen `<style scoped>`-Block. Grund: der CSS-Tab zeigt/kontrolliert so die GESAMTE Card inkl. Kachel. Standard-Kachel-Block (in jede Card kopieren und anpassen): `background: var(--card-bg); border-radius: var(--card-radius); padding: 16px; min-height: 80px; height: 100%; box-shadow: var(--card-shadow); color: var(--text-primary);` — aktiv: `background: var(--card-bg-active); color: var(--text-on-active);`.
 - **Regel: Cards importieren nur aus dem eigenen Ordner + `@/core/*`** — nie aus anderen Cards.
 - i18n-Keys der Card in `en.ts` UND `de.ts` ergänzen. Gemeinsame Keys: `cards.common.noEntity/notFound`.
 - Vorhandene Cards: clock, light, sensor, thermostat, cover, weather, media, room-tile (Referenz: `light`).
+- **Per-Card-CSS**: Jede Card hat im Konfigurationsdialog einen Tab „CSS“ (`CardConfigDialog.vue`), vorbefüllt mit dem Default-CSS der Card (`cardDefaultCss()` in `cardRegistry.ts` extrahiert die `<style>`-Blöcke der SFCs per `?raw`-Glob). Abweichungen werden als `CardConfig.css` gespeichert und zur Laufzeit über `core/ui/CardCss.vue` angewendet: injizierter `<style>` mit nativem CSS-Nesting `[data-vp-card="<id>"] { … }`; der Render-Wrapper (`.card-slot`/`.nav-card-slot`/`.panel-slot`) trägt das passende `data-vp-card`-Attribut. Entspricht das CSS dem Default oder ist leer, wird KEIN Override gespeichert.
 
 ## 6. Theme-System (`src/theme/`)
 
@@ -101,7 +103,7 @@ export default defineCard({
 - **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
-- Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`.
+- Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
 

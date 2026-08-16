@@ -3,6 +3,7 @@ import { nextTick, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BaseDialog from './BaseDialog.vue'
 import BaseButton from './BaseButton.vue'
+import BaseInput from './BaseInput.vue'
 import { activeDialog, advanceQueue } from './dialogService'
 
 /**
@@ -12,14 +13,16 @@ import { activeDialog, advanceQueue } from './dialogService'
 const { t } = useI18n()
 
 const promptValue = ref('')
-const promptInput = ref<HTMLInputElement | null>(null)
+const promptWrapper = ref<HTMLElement | null>(null)
 
 watch(activeDialog, async (dialog) => {
   if (dialog?.kind === 'prompt') {
     promptValue.value = dialog.defaultValue
+    // The themed Input is async — wait for it, then focus the real element
     await nextTick()
-    promptInput.value?.focus()
-    promptInput.value?.select()
+    const input = promptWrapper.value?.querySelector('input')
+    input?.focus()
+    input?.select()
   }
 })
 
@@ -47,15 +50,18 @@ function finish(result?: boolean) {
 <template>
   <BaseDialog v-if="activeDialog" :title="title()" @close="finish(false)">
     <p class="dialog-message">{{ activeDialog.message }}</p>
-    <input
+    <div
       v-if="activeDialog.kind === 'prompt'"
-      ref="promptInput"
-      v-model="promptValue"
-      type="text"
+      ref="promptWrapper"
       class="prompt-input"
       @keydown.enter="finish(true)"
       @keydown.esc="finish(false)"
-    />
+    >
+      <BaseInput
+        :model-value="promptValue"
+        @update:model-value="promptValue = String($event)"
+      />
+    </div>
     <template #footer>
       <template v-if="activeDialog.kind === 'alert'">
         <BaseButton variant="primary" @click="finish()">{{ t('common.ok') }}</BaseButton>

@@ -4,7 +4,14 @@ import { defineAsyncComponent, type Component } from 'vue'
  * Where a card may be placed: the dashboard views or one of the
  * three sidebar slots (top = next to the clock, center, bottom).
  */
-export type CardArea = 'dashboard' | 'sidebar_top' | 'sidebar_center' | 'sidebar_bottom'
+export type CardArea =
+  | 'dashboard'
+  | 'sidebar_top'
+  | 'sidebar_center'
+  | 'sidebar_bottom'
+  | 'header_left'
+  | 'header_center'
+  | 'header_right'
 
 /** Field types from which the editor auto-generates config forms. */
 export interface CardSchemaField {
@@ -30,10 +37,17 @@ export interface CardManifest {
   component: () => Promise<{ default: Component }>
   /** Config schema → auto-generated editor form */
   schema?: Record<string, CardSchemaField>
+  /**
+   * Optional custom editor, rendered above the generated form for
+   * settings a schema cannot express (e.g. the menu item tree).
+   * Receives `modelValue` (the draft config) and emits `update:modelValue`.
+   */
+  editor?: () => Promise<{ default: Component }>
   defaultSize?: { cols: number; rows: number }
   /**
-   * Areas the card can be placed in. List both to offer it everywhere:
-   * `areas: ['dashboard', 'nav']`. Defaults to `['dashboard']`.
+   * Areas the card can be placed in — list every area it suits, e.g.
+   * `areas: ['dashboard', 'sidebar_top', 'sidebar_bottom']`.
+   * Defaults to `['dashboard']`.
    */
   areas?: CardArea[]
 }
@@ -54,9 +68,51 @@ export const cardRegistry: Record<string, CardManifest> = Object.fromEntries(
   Object.values(modules).map((m) => [m.default.type, m.default]),
 )
 
+// type → folder name under src/cards/ (folder may differ from the type)
+const cardDirs: Record<string, string> = Object.fromEntries(
+  Object.entries(modules).map(([path, m]) => [m.default.type, path.split('/').at(-2)!]),
+)
+
+// Raw sources of all card SFCs (lazy) — used to show a card's default CSS
+const rawCardSources = import.meta.glob<string>('../../cards/*/*.vue', {
+  query: '?raw',
+  import: 'default',
+})
+
+/**
+ * The default CSS of a card, extracted from the <style> blocks of all
+ * .vue files in the card's folder. Shown in the editor's CSS tab as a
+ * reference / starting point for per-card overrides.
+ */
+export async function cardDefaultCss(type: string): Promise<string> {
+  const dir = cardDirs[type]
+  if (!dir) return ''
+  const prefix = `../../cards/${dir}/`
+  const parts: string[] = []
+  for (const [path, load] of Object.entries(rawCardSources)) {
+    if (!path.startsWith(prefix)) continue
+    const source = await load()
+    for (const match of source.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)) {
+      const css = match[1].trim()
+      if (css) parts.push(css)
+    }
+  }
+  return parts.join('\n\n')
+}
+
 /** Cards offered for an area — 'dashboard' is the default when unset. */
 export function cardsForArea(area: CardArea): CardManifest[] {
   return Object.values(cardRegistry).filter((m) => (m.areas ?? ['dashboard']).includes(area))
+}
+
+const editorCache = new Map<string, Component>()
+
+/** Resolve a card's custom editor component, if it has one. */
+export function resolveCardEditor(type: string): Component | null {
+  const loader = cardRegistry[type]?.editor
+  if (!loader) return null
+  if (!editorCache.has(type)) editorCache.set(type, defineAsyncComponent(loader))
+  return editorCache.get(type)!
 }
 
 const componentCache = new Map<string, Component>()

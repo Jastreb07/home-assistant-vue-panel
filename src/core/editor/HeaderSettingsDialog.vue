@@ -13,27 +13,27 @@ const emit = defineEmits<{ close: [] }>()
 const { t } = useI18n()
 const store = useDashboardStore()
 
-const width = ref(store.nav.width)
-const vertical = ref<NavAlign>(store.nav.centerAlign.vertical)
-const horizontal = ref<NavAlign>(store.nav.centerAlign.horizontal)
+const height = ref(store.header.height)
+const vertical = ref<NavAlign>(store.header.centerAlign.vertical)
+const horizontal = ref<NavAlign>(store.header.centerAlign.horizontal)
 
 const verticalOptions = computed(() => [
   { value: 'start', label: t('editor.nav.alignTop') },
   { value: 'center', label: t('editor.nav.alignMiddle') },
   { value: 'end', label: t('editor.nav.alignBottom') },
-  { value: 'stretch', label: t('editor.nav.alignSpread') },
+  { value: 'stretch', label: t('editor.nav.alignFull') },
 ])
 
 const horizontalOptions = computed(() => [
   { value: 'start', label: t('editor.nav.alignLeft') },
   { value: 'center', label: t('editor.nav.alignCenter') },
   { value: 'end', label: t('editor.nav.alignRight') },
-  { value: 'stretch', label: t('editor.nav.alignFull') },
+  { value: 'stretch', label: t('editor.nav.alignSpread') },
 ])
 
 function save() {
-  store.updateNav({
-    width: Math.min(Math.max(Number(width.value) || 280, 160), 560),
+  store.updateHeader({
+    height: Math.min(Math.max(Number(height.value) || 64, 40), 240),
     centerAlign: { vertical: vertical.value, horizontal: horizontal.value },
   })
   emit('close')
@@ -41,18 +41,23 @@ function save() {
 </script>
 
 <template>
-  <BaseDialog :title="t('editor.nav.title')" @close="emit('close')">
-    <div class="nav-form">
-      <p class="hint">{{ t('editor.nav.hint') }}</p>
-      <h3>{{ t('editor.nav.centerAlign') }}</h3>
+  <BaseDialog :title="t('editor.header.title')" @close="emit('close')">
+    <div class="header-form">
+      <p class="hint">{{ t('editor.header.hint') }}</p>
       <div class="field">
-        <span>{{ t('editor.nav.vertical') }}</span>
-        <BaseSelectMenu
-          :model-value="vertical"
-          :options="verticalOptions"
-          @update:model-value="vertical = $event as NavAlign"
+        <span>{{ t('editor.header.height') }}</span>
+        <BaseInput
+          :model-value="height"
+          type="number"
+          :min="40"
+          :max="240"
+          :step="4"
+          @update:model-value="height = Number($event)"
         />
+        <small>{{ t('editor.header.heightHint') }}</small>
       </div>
+
+      <h3>{{ t('editor.nav.centerAlign') }}</h3>
       <div class="field">
         <span>{{ t('editor.nav.horizontal') }}</span>
         <BaseSelectMenu
@@ -62,16 +67,12 @@ function save() {
         />
       </div>
       <div class="field">
-        <span>{{ t('editor.nav.width') }}</span>
-        <BaseInput
-          :model-value="width"
-          type="number"
-          :min="160"
-          :max="560"
-          :step="10"
-          @update:model-value="width = Number($event)"
+        <span>{{ t('editor.nav.vertical') }}</span>
+        <BaseSelectMenu
+          :model-value="vertical"
+          :options="verticalOptions"
+          @update:model-value="vertical = $event as NavAlign"
         />
-        <small>{{ t('editor.nav.widthHint') }}</small>
       </div>
     </div>
     <template #footer>
@@ -82,28 +83,20 @@ function save() {
 </template>
 
 <style scoped>
-.nav-form {
+.header-form {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
-label,
 .field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-label span,
 .field > span {
   font-size: 13px;
   color: var(--text-secondary);
 }
-label.row {
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-}
-label small,
 .field small {
   font-size: 11px;
   color: var(--text-secondary);

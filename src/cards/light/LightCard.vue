@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
@@ -31,32 +30,47 @@ function onTap() {
 </script>
 
 <template>
-  <BaseCard :active="isOn" clickable @click="onTap">
-    <div class="light-card">
-      <MdiIcon :icon="isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="32" />
-      <div class="info">
-        <div class="name">{{ displayName || t('cards.light.defaultName') }}</div>
-        <div class="state">
-          <template v-if="!config.entity">{{ t('cards.light.noEntity') }}</template>
-          <template v-else-if="!light">{{ t('cards.light.notFound') }}</template>
-          <template v-else>
-            {{ isOn ? t('cards.light.on') : t('cards.light.off') }}
-            <template v-if="isOn && config.showBrightness !== false && brightnessPct !== null">
-              · {{ brightnessPct }} %
-            </template>
+  <div class="light-card" :class="{ active: isOn }" @click="onTap">
+    <MdiIcon :icon="isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="32" />
+    <div class="info">
+      <div class="name">{{ displayName || t('cards.light.defaultName') }}</div>
+      <div class="state">
+        <template v-if="!config.entity">{{ t('cards.light.noEntity') }}</template>
+        <template v-else-if="!light">{{ t('cards.light.notFound') }}</template>
+        <template v-else>
+          {{ isOn ? t('cards.light.on') : t('cards.light.off') }}
+          <template v-if="isOn && config.showBrightness !== false && brightnessPct !== null">
+            · {{ brightnessPct }} %
           </template>
-        </div>
+        </template>
       </div>
     </div>
-  </BaseCard>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .light-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s, transform 0.1s;
+  cursor: pointer;
+  user-select: none;
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 100%;
+}
+.light-card:active {
+  transform: scale(0.98);
+}
+.light-card.active {
+  background: var(--card-bg-active);
+  color: var(--text-on-active);
 }
 .name {
   font-weight: 600;

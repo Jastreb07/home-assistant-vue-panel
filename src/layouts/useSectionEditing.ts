@@ -7,7 +7,7 @@ import { t } from '@/i18n'
 
 export type ConfigTarget =
   | { mode: 'new'; sectionId: string; cardType: string }
-  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown> }
+  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown>; css?: string }
   | null
 
 /**
@@ -28,23 +28,30 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     configTarget.value = { mode: 'new', sectionId, cardType }
   }
 
-  function onConfigSave(config: Record<string, unknown>) {
+  function onConfigSave(config: Record<string, unknown>, css?: string) {
     const target = configTarget.value
     if (!target) return
     if (target.mode === 'new') {
       store.addCard(getView().id, target.sectionId, {
         type: target.cardType,
         config,
+        css,
         size: cardRegistry[target.cardType]?.defaultSize,
       })
     } else {
-      store.updateCardConfig(getView().id, target.cardId, config)
+      store.updateCardConfig(getView().id, target.cardId, config, css)
     }
     configTarget.value = null
   }
 
-  function editCard(card: { id: string; type: string; config: Record<string, unknown> }) {
-    configTarget.value = { mode: 'edit', cardId: card.id, cardType: card.type, config: card.config }
+  function editCard(card: { id: string; type: string; config: Record<string, unknown>; css?: string }) {
+    configTarget.value = {
+      mode: 'edit',
+      cardId: card.id,
+      cardType: card.type,
+      config: card.config,
+      css: card.css,
+    }
   }
 
   function removeCard(cardId: string) {

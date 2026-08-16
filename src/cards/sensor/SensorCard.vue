@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
@@ -27,27 +26,32 @@ const unit = computed(
 </script>
 
 <template>
-  <BaseCard>
-    <div class="sensor-card">
-      <MdiIcon :icon="icon" :size="30" />
-      <div class="info">
-        <div class="name">{{ displayName }}</div>
-        <div class="value">
-          <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
-          <template v-else-if="!entity">{{ t('cards.common.notFound') }}</template>
-          <template v-else>{{ entity.state }} {{ unit }}</template>
-        </div>
+  <div class="sensor-card">
+    <MdiIcon :icon="icon" :size="30" />
+    <div class="info">
+      <div class="name">{{ displayName }}</div>
+      <div class="value">
+        <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
+        <template v-else-if="!entity">{{ t('cards.common.notFound') }}</template>
+        <template v-else>{{ entity.state }} {{ unit }}</template>
       </div>
     </div>
-  </BaseCard>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .sensor-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 14px;
-  height: 100%;
 }
 .name {
   font-size: 13px;

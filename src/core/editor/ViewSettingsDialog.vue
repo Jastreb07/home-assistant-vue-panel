@@ -7,6 +7,7 @@ import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 
 const props = defineProps<{
@@ -21,8 +22,9 @@ const store = useDashboardStore()
 const title = ref(props.view?.title ?? '')
 const icon = ref(props.view?.icon ?? 'mdi:view-dashboard')
 const layout = ref<ViewLayout>(props.view?.layout ?? 'sections')
-const subview = ref(props.view?.subview ?? false)
 const background = ref(props.view?.background ?? '')
+const showSidebar = ref(props.view?.showSidebar !== false)
+const showHeader = ref(props.view?.showHeader === true)
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
 
 const layouts: ViewLayout[] = ['sections', 'tiles', 'panel', 'sidebar', 'grid']
@@ -38,8 +40,9 @@ function save() {
     title: title.value.trim(),
     icon: icon.value.trim() || 'mdi:view-dashboard',
     layout: layout.value,
-    subview: subview.value,
     background: background.value.trim() || undefined,
+    showSidebar: showSidebar.value,
+    showHeader: showHeader.value,
     layoutOptions:
       layout.value === 'grid' ? { columns: Math.min(Math.max(gridColumns.value, 1), 12) } : undefined,
   }
@@ -69,10 +72,10 @@ function remove() {
 <template>
   <BaseDialog :title="view ? t('editor.view.editTitle') : t('editor.view.newTitle')" @close="emit('close')">
     <div class="view-form">
-      <label>
+      <div class="field">
         <span>{{ t('editor.view.title') }}</span>
-        <input v-model="title" type="text" :placeholder="t('editor.view.titlePlaceholder')" />
-      </label>
+        <BaseInput v-model="title" :placeholder="t('editor.view.titlePlaceholder')" />
+      </div>
       <div class="field">
         <span>{{ t('editor.view.icon') }}</span>
         <BaseSelectMenu
@@ -91,17 +94,33 @@ function remove() {
           @update:model-value="layout = $event as ViewLayout"
         />
       </div>
-      <label v-if="layout === 'grid'">
+      <div v-if="layout === 'grid'" class="field">
         <span>{{ t('editor.view.gridColumns') }}</span>
-        <input v-model.number="gridColumns" type="number" min="1" max="12" />
-      </label>
-      <label>
+        <BaseInput
+          :model-value="gridColumns"
+          type="number"
+          :min="1"
+          :max="12"
+          @update:model-value="gridColumns = Number($event)"
+        />
+      </div>
+      <div class="field">
         <span>{{ t('editor.view.background') }}</span>
-        <input v-model="background" type="text" :placeholder="t('editor.view.backgroundPlaceholder')" spellcheck="false" />
+        <BaseInput
+          v-model="background"
+          :placeholder="t('editor.view.backgroundPlaceholder')"
+          :spellcheck="false"
+        />
+      </div>
+
+      <h3>{{ t('editor.view.bars') }}</h3>
+      <label class="row">
+        <span>{{ t('editor.view.showSidebar') }}</span>
+        <input v-model="showSidebar" type="checkbox" />
       </label>
       <label class="row">
-        <span>{{ t('editor.view.subview') }}</span>
-        <input v-model="subview" type="checkbox" />
+        <span>{{ t('editor.view.showHeader') }}</span>
+        <input v-model="showHeader" type="checkbox" />
       </label>
     </div>
     <template #footer>
@@ -135,5 +154,12 @@ label.row {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+}
+h3 {
+  margin: 8px 0 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
 }
 </style>

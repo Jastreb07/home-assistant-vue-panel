@@ -6,6 +6,8 @@ import { resolveCardComponent } from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import CardCss from '@/core/ui/CardCss.vue'
 import { useSectionEditing } from './useSectionEditing'
 
 /**
@@ -33,7 +35,8 @@ const panelCard = computed(() => firstSection.value?.cards[0])
 <template>
   <div class="panel-layout">
     <template v-if="panelCard">
-      <div class="panel-slot">
+      <div class="panel-slot" :data-vp-card="panelCard.css ? panelCard.id : undefined">
+        <CardCss v-if="panelCard.css" :card-id="panelCard.id" :css="panelCard.css" />
         <component
           :is="resolveCardComponent(panelCard.type)"
           v-if="resolveCardComponent(panelCard.type)"
@@ -52,14 +55,13 @@ const panelCard = computed(() => firstSection.value?.cards[0])
       </div>
     </template>
 
-    <button
+    <BaseAddTile
       v-else-if="store.editMode && firstSection"
-      class="add-card-tile"
+      size="lg"
+      fill
+      :label="t('editor.addCard')"
       @click="pickerSectionId = firstSection.id"
-    >
-      <MdiIcon icon="mdi:plus" :size="32" />
-      <span>{{ t('editor.addCard') }}</span>
-    </button>
+    />
 
     <div v-else class="empty">{{ t('editor.panelEmpty') }}</div>
 
@@ -68,6 +70,7 @@ const panelCard = computed(() => firstSection.value?.cards[0])
       v-if="configTarget"
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : {}"
+      :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />
@@ -119,24 +122,6 @@ const panelCard = computed(() => firstSection.value?.cards[0])
   border-radius: var(--card-radius);
   padding: 16px;
   color: var(--text-secondary);
-}
-.add-card-tile {
-  flex: 1;
-  min-height: 50vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border: 2px dashed var(--divider);
-  border-radius: var(--card-radius);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.add-card-tile:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 .empty {
   flex: 1;

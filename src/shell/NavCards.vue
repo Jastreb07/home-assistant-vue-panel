@@ -1,30 +1,51 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CardConfig } from '@/core/config/types'
+import type { CardConfig, HeaderSlot, NavSlot } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
-import { cardRegistry, resolveCardComponent } from '@/core/registry/cardRegistry'
+import { cardRegistry, resolveCardComponent, type CardArea } from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import CardCss from '@/core/ui/CardCss.vue'
 
 /**
- * Cards inside the navigation — shared by SideNav (column) and
- * BottomNav (row). Editing mirrors the layout sections: picker,
- * config dialog and drag & drop, but against `store.nav.cards`.
+ * Cards of one bar slot — shared by SideNav (column), HeaderBar (row)
+ * and BottomNav (row). Editing mirrors the layout sections: picker,
+ * config dialog and drag & drop, against the slot of the given bar.
  */
-defineProps<{
-  /** Stack vertically (SideNav) or scroll horizontally (BottomNav) */
-  direction: 'column' | 'row'
-}>()
+const props = withDefaults(
+  defineProps<{
+    /** Which slot these cards belong to ('slot' is reserved in Vue) */
+    navSlot: NavSlot | HeaderSlot
+    /** Which bar the slot belongs to */
+    bar?: 'sidebar' | 'header'
+    /** Stack vertically (SideNav) or scroll horizontally (header/bottom) */
+    direction: 'column' | 'row'
+    /** Card types to leave out, e.g. the menu card in the BottomNav */
+    hideTypes?: string[]
+  }>(),
+  { bar: 'sidebar' },
+)
 
 const { t } = useI18n()
 const store = useDashboardStore()
 
+/** The stored (unfiltered) cards of this slot. */
+const slotCards = computed<CardConfig[]>(() =>
+  props.bar === 'header'
+    ? store.header.slots[props.navSlot as HeaderSlot]
+    : store.nav.slots[props.navSlot as NavSlot],
+)
+
+const cards = computed(() => slotCards.value.filter((c) => !props.hideTypes?.includes(c.type)))
+const area = computed<CardArea>(() => `${props.bar}_${props.navSlot}` as CardArea)
+
 const pickerOpen = ref(false)
 const configTarget = ref<
   | { mode: 'new'; cardType: string }
-  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown> }
+  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown>; css?: string }
   | null
 >(null)
 
@@ -33,17 +54,23 @@ function onPick(cardType: string) {
   configTarget.value = { mode: 'new', cardType }
 }
 
-function onConfigSave(config: Record<string, unknown>) {
+function onConfigSave(config: Record<string, unknown>, css?: string) {
   const target = configTarget.value
   if (!target) return
-  if (target.mode === 'new') {
-    store.addNavCard({
-      type: target.cardType,
-      config,
-      size: cardRegistry[target.cardType]?.defaultSize,
-    })
+  const card = {
+    type: target.cardType,
+    config,
+    css,
+    size: cardRegistry[target.cardType]?.defaultSize,
+  }
+  if (props.bar === 'header') {
+    const slot = props.navSlot as HeaderSlot
+    if (target.mode === 'new') store.addHeaderCard(slot, card)
+    else store.updateHeaderCardConfig(slot, target.cardId, config, css)
   } else {
-    store.updateNavCardConfig(target.cardId, config)
+    const slot = props.navSlot as NavSlot
+    if (target.mode === 'new') store.addNavCard(slot, card)
+    else store.updateNavCardConfig(slot, target.cardId, config, css)
   }
   configTarget.value = null
 }
@@ -54,7 +81,13 @@ function editCard(card: CardConfig) {
     cardId: card.id,
     cardType: card.type,
     config: card.config,
+    css: card.css,
   }
+}
+
+function removeCard(cardId: string) {
+  if (props.bar === 'header') store.removeHeaderCard(props.navSlot as HeaderSlot, cardId)
+  else store.removeNavCard(props.navSlot as NavSlot, cardId)
 }
 
 // ── Drag & Drop ──────────────────────────────────────────────
@@ -72,10 +105,22 @@ function onDragOver(e: DragEvent, index: number) {
   dropIndex.value = index
 }
 
+/** Drop targets are indices into the filtered list — map back to the stored one. */
+function rawIndex(index: number): number {
+  const raw = slotCards.value
+  if (!props.hideTypes?.length) return index
+  const card = cards.value[index]
+  return card ? raw.findIndex((c) => c.id === card.id) : raw.length
+}
+
 function onDrop(e: DragEvent) {
   e.preventDefault()
   const cardId = e.dataTransfer!.getData('text/plain')
-  if (cardId && dropIndex.value !== null) store.moveNavCard(cardId, dropIndex.value)
+  if (cardId && dropIndex.value !== null) {
+    const index = rawIndex(dropIndex.value)
+    if (props.bar === 'header') store.moveHeaderCard(cardId, props.navSlot as HeaderSlot, index)
+    else store.moveNavCard(cardId, props.navSlot as NavSlot, index)
+  }
   draggingId.value = null
   dropIndex.value = null
 }
@@ -88,22 +133,24 @@ function onDragEnd() {
 
 <template>
   <div
-    v-if="store.nav.cards.length > 0 || store.editMode"
+    v-if="cards.length > 0 || store.editMode"
     class="nav-cards"
     :class="direction"
-    @dragover.prevent="onDragOver($event, store.nav.cards.length)"
+    @dragover.prevent="onDragOver($event, cards.length)"
     @drop="onDrop"
   >
     <div
-      v-for="(card, index) in store.nav.cards"
+      v-for="(card, index) in cards"
       :key="card.id"
       class="nav-card-slot"
       :class="{ dragging: draggingId === card.id, 'drop-before': dropIndex === index }"
+      :data-vp-card="card.css ? card.id : undefined"
       :draggable="store.editMode"
       @dragstart="onDragStart($event, card.id)"
       @dragover="store.editMode && onDragOver($event, index)"
       @dragend="onDragEnd"
     >
+      <CardCss v-if="card.css" :card-id="card.id" :css="card.css" />
       <component
         :is="resolveCardComponent(card.type)"
         v-if="resolveCardComponent(card.type)"
@@ -118,23 +165,28 @@ function onDragEnd() {
         <button
           class="icon-btn"
           :title="t('common.delete')"
-          @click.stop="store.removeNavCard(card.id)"
+          @click.stop="removeCard(card.id)"
         >
           <MdiIcon icon="mdi:delete-outline" :size="16" />
         </button>
       </div>
     </div>
 
-    <button v-if="store.editMode" class="add-nav-card" @click="pickerOpen = true">
-      <MdiIcon icon="mdi:plus" :size="20" />
-      <span>{{ t('editor.addCard') }}</span>
-    </button>
+    <BaseAddTile
+      v-if="store.editMode"
+      variant="pill"
+      orientation="horizontal"
+      size="sm"
+      :label="t('editor.addCard')"
+      @click="pickerOpen = true"
+    />
 
-    <CardPicker v-if="pickerOpen" area="nav" @close="pickerOpen = false" @pick="onPick" />
+    <CardPicker v-if="pickerOpen" :area="area" @close="pickerOpen = false" @pick="onPick" />
     <CardConfigDialog
       v-if="configTarget"
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : {}"
+      :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />
@@ -200,25 +252,7 @@ function onDragEnd() {
   font-size: 12px;
   color: var(--text-secondary);
 }
-.add-nav-card {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 10px;
-  border: 2px dashed var(--divider);
-  border-radius: 14px;
-  background: transparent;
-  color: var(--text-secondary);
-  font-family: inherit;
-  font-size: 12px;
-  cursor: pointer;
-}
-.nav-cards.row .add-nav-card {
+.nav-cards.row :deep(.vp-add-tile) {
   flex: 0 0 auto;
-}
-.add-nav-card:hover {
-  border-color: var(--accent);
-  color: var(--accent);
 }
 </style>

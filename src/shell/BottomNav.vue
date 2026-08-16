@@ -16,7 +16,16 @@ const { t } = useI18n()
 
 <template>
   <div class="bottom-nav-wrap">
-    <NavCards direction="row" class="nav-card-row" />
+    <!-- All sidebar slots as one strip; the menu card is skipped — the tabs already navigate -->
+    <div class="nav-card-row">
+      <NavCards
+        v-for="slot in (['top', 'center', 'bottom'] as const)"
+        :key="slot"
+        :nav-slot="slot"
+        direction="row"
+        :hide-types="['menu']"
+      />
+    </div>
     <nav class="bottom-nav">
       <button
         v-for="view in views"
@@ -45,6 +54,10 @@ const { t } = useI18n()
   border-top: 1px solid var(--divider);
 }
 .nav-card-row {
+  display: flex;
+  overflow-x: auto;
+}
+.nav-card-row:not(:empty) {
   border-bottom: 1px solid var(--divider);
 }
 .bottom-nav {

@@ -3,7 +3,10 @@ import type {
   CardConfig,
   DashboardConfig,
   DashboardSettings,
+  HeaderConfig,
+  HeaderSlot,
   NavConfig,
+  NavSlot,
   SectionConfig,
   ViewConfig,
 } from './types'
@@ -21,10 +24,44 @@ export const defaultSettings: DashboardSettings = {
 }
 
 export const defaultNav: NavConfig = {
-  cards: [],
-  showClock: true,
-  cardsPosition: 'bottom',
+  // The view navigation itself is a card — replaceable like any other
+  slots: {
+    top: [],
+    center: [{ id: 'navcard-menu', type: 'menu', config: {} }],
+    bottom: [],
+  },
   width: 280,
+  centerAlign: { vertical: 'start', horizontal: 'stretch' },
+}
+
+/** Config written before the sidebar had slots kept a flat `cards` array. */
+interface LegacyNav {
+  cards?: CardConfig[]
+  cardsPosition?: 'top' | 'bottom'
+}
+
+function resolveSlots(raw: Partial<NavConfig> & LegacyNav): Record<NavSlot, CardConfig[]> {
+  if (raw.slots) {
+    const slots = raw.slots
+    return { top: slots.top ?? [], center: slots.center ?? [], bottom: slots.bottom ?? [] }
+  }
+  if (raw.cards?.length) {
+    const target: NavSlot = raw.cardsPosition === 'top' ? 'top' : 'bottom'
+    return { ...defaultNav.slots, [target]: raw.cards }
+  }
+  return defaultNav.slots
+}
+
+export const defaultHeader: HeaderConfig = {
+  slots: { left: [], center: [], right: [] },
+  height: 64,
+  centerAlign: { vertical: 'center', horizontal: 'center' },
+}
+
+function resolveHeaderSlots(raw: Partial<HeaderConfig>): Record<HeaderSlot, CardConfig[]> {
+  const slots = raw.slots
+  if (!slots) return defaultHeader.slots
+  return { left: slots.left ?? [], center: slots.center ?? [], right: slots.right ?? [] }
 }
 
 let idCounter = 0
@@ -81,10 +118,6 @@ export const useDashboardStore = defineStore('dashboard', {
     }
   },
   getters: {
-    /** Views for the navigation (excluding subviews) */
-    navViews(state): ViewConfig[] {
-      return state.config.views.filter((v) => !v.subview)
-    },
     viewById(state) {
       return (id: string): ViewConfig | undefined =>
         state.config.views.find((v) => v.id === id)
@@ -93,7 +126,22 @@ export const useDashboardStore = defineStore('dashboard', {
       return { ...defaultSettings, ...state.config.settings }
     },
     nav(state): NavConfig {
-      return { ...defaultNav, ...state.config.nav }
+      const raw = state.config.nav ?? {}
+      return {
+        ...defaultNav,
+        ...raw,
+        slots: resolveSlots(raw),
+        centerAlign: { ...defaultNav.centerAlign, ...raw.centerAlign },
+      }
+    },
+    header(state): HeaderConfig {
+      const raw = state.config.header ?? {}
+      return {
+        ...defaultHeader,
+        ...raw,
+        slots: resolveHeaderSlots(raw),
+        centerAlign: { ...defaultHeader.centerAlign, ...raw.centerAlign },
+      }
     },
     canUndo(state): boolean {
       return state.undoStack.length > 0
@@ -170,36 +218,98 @@ export const useDashboardStore = defineStore('dashboard', {
     },
 
     // ── Navigation ───────────────────────────────────────────
-    updateNav(patch: Partial<Omit<NavConfig, 'cards'>>) {
-      this.config.nav = { ...this.config.nav, ...patch }
+    /** Write a full nav object — the getter merges defaults and migrates. */
+    setNav(patch: Partial<NavConfig>) {
+      this.config.nav = { ...this.nav, ...patch }
       this.save()
     },
-    addNavCard(card: Omit<CardConfig, 'id'>) {
-      const cards = [...this.nav.cards, { ...card, id: newId('navcard') }]
-      this.config.nav = { ...this.config.nav, cards }
+    updateNav(patch: Partial<Omit<NavConfig, 'slots'>>) {
+      this.setNav(patch)
+    },
+    addNavCard(slot: NavSlot, card: Omit<CardConfig, 'id'>) {
+      const slots = { ...this.nav.slots }
+      slots[slot] = [...slots[slot], { ...card, id: newId('navcard') }]
+      this.setNav({ slots })
+    },
+    removeNavCard(slot: NavSlot, cardId: string) {
+      const slots = { ...this.nav.slots }
+      slots[slot] = slots[slot].filter((c) => c.id !== cardId)
+      this.setNav({ slots })
+    },
+    updateNavCardConfig(slot: NavSlot, cardId: string, config: Record<string, unknown>, css?: string) {
+      const slots = { ...this.nav.slots }
+      slots[slot] = slots[slot].map((c) => (c.id === cardId ? { ...c, config, css } : c))
+      this.setNav({ slots })
+    },
+    /** Move a nav card within or between slots (drag & drop). */
+    moveNavCard(cardId: string, toSlot: NavSlot, toIndex: number) {
+      const slots: Record<NavSlot, CardConfig[]> = {
+        top: [...this.nav.slots.top],
+        center: [...this.nav.slots.center],
+        bottom: [...this.nav.slots.bottom],
+      }
+      let card: CardConfig | undefined
+      for (const key of Object.keys(slots) as NavSlot[]) {
+        const idx = slots[key].findIndex((c) => c.id === cardId)
+        if (idx < 0) continue
+        // Adjust the target when moving backwards within the same slot
+        if (key === toSlot && idx < toIndex) toIndex--
+        card = slots[key].splice(idx, 1)[0]
+        break
+      }
+      if (!card) return
+      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
+      this.setNav({ slots })
+    },
+
+    // ── Header bar ───────────────────────────────────────────
+    /** Write a full header object — the getter merges defaults. */
+    setHeader(patch: Partial<HeaderConfig>) {
+      this.config.header = { ...this.header, ...patch }
       this.save()
     },
-    removeNavCard(cardId: string) {
-      const cards = this.nav.cards.filter((c) => c.id !== cardId)
-      this.config.nav = { ...this.config.nav, cards }
-      this.save()
+    updateHeader(patch: Partial<Omit<HeaderConfig, 'slots'>>) {
+      this.setHeader(patch)
     },
-    updateNavCardConfig(cardId: string, config: Record<string, unknown>) {
-      const cards = this.nav.cards.map((c) => (c.id === cardId ? { ...c, config } : c))
-      this.config.nav = { ...this.config.nav, cards }
-      this.save()
+    addHeaderCard(slot: HeaderSlot, card: Omit<CardConfig, 'id'>) {
+      const slots = { ...this.header.slots }
+      slots[slot] = [...slots[slot], { ...card, id: newId('hdrcard') }]
+      this.setHeader({ slots })
     },
-    /** Move a nav card to a new index (drag & drop). */
-    moveNavCard(cardId: string, toIndex: number) {
-      const cards = [...this.nav.cards]
-      const idx = cards.findIndex((c) => c.id === cardId)
-      if (idx < 0) return
-      // Adjust the target when moving backwards past the removed slot
-      if (idx < toIndex) toIndex--
-      const [card] = cards.splice(idx, 1)
-      cards.splice(Math.max(0, Math.min(toIndex, cards.length)), 0, card!)
-      this.config.nav = { ...this.config.nav, cards }
-      this.save()
+    removeHeaderCard(slot: HeaderSlot, cardId: string) {
+      const slots = { ...this.header.slots }
+      slots[slot] = slots[slot].filter((c) => c.id !== cardId)
+      this.setHeader({ slots })
+    },
+    updateHeaderCardConfig(
+      slot: HeaderSlot,
+      cardId: string,
+      config: Record<string, unknown>,
+      css?: string,
+    ) {
+      const slots = { ...this.header.slots }
+      slots[slot] = slots[slot].map((c) => (c.id === cardId ? { ...c, config, css } : c))
+      this.setHeader({ slots })
+    },
+    /** Move a header card within or between slots (drag & drop). */
+    moveHeaderCard(cardId: string, toSlot: HeaderSlot, toIndex: number) {
+      const slots: Record<HeaderSlot, CardConfig[]> = {
+        left: [...this.header.slots.left],
+        center: [...this.header.slots.center],
+        right: [...this.header.slots.right],
+      }
+      let card: CardConfig | undefined
+      for (const key of Object.keys(slots) as HeaderSlot[]) {
+        const idx = slots[key].findIndex((c) => c.id === cardId)
+        if (idx < 0) continue
+        // Adjust the target when moving backwards within the same slot
+        if (key === toSlot && idx < toIndex) toIndex--
+        card = slots[key].splice(idx, 1)[0]
+        break
+      }
+      if (!card) return
+      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
+      this.setHeader({ slots })
     },
 
     // ── Views ────────────────────────────────────────────────
@@ -266,12 +376,15 @@ export const useDashboardStore = defineStore('dashboard', {
       }
       this.save()
     },
-    updateCardConfig(viewId: string, cardId: string, config: Record<string, unknown>) {
+    updateCardConfig(viewId: string, cardId: string, config: Record<string, unknown>, css?: string) {
       const view = this.viewById(viewId)
       if (!view) return
       for (const section of view.sections) {
         const card = section.cards.find((c) => c.id === cardId)
-        if (card) card.config = config
+        if (card) {
+          card.config = config
+          card.css = css
+        }
       }
       this.save()
     },

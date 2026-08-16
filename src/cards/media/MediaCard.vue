@@ -2,7 +2,6 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
-import BaseCard from '@/core/ui/BaseCard.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
@@ -38,48 +37,58 @@ function setVolume(e: Event) {
 </script>
 
 <template>
-  <BaseCard :active="isPlaying">
-    <div class="media-card">
-      <div class="top">
-        <MdiIcon :icon="isPlaying ? 'mdi:speaker-play' : 'mdi:speaker'" :size="28" />
-        <div class="info">
-          <div class="name">{{ displayName }}</div>
-          <div class="track">
-            <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
-            <template v-else-if="!player">{{ t('cards.common.notFound') }}</template>
-            <template v-else-if="isIdle">{{ t('cards.media.idle') }}</template>
-            <template v-else>
-              {{ title ?? t('cards.media.unknownTrack') }}<template v-if="artist"> · {{ artist }}</template>
-            </template>
-          </div>
-        </div>
-        <div v-if="player && !isIdle" class="controls" @click.stop>
-          <button class="ctl-btn" @click="service('media_previous_track')">
-            <MdiIcon icon="mdi:skip-previous" :size="20" />
-          </button>
-          <button class="ctl-btn" @click="service('media_play_pause')">
-            <MdiIcon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" :size="22" />
-          </button>
-          <button class="ctl-btn" @click="service('media_next_track')">
-            <MdiIcon icon="mdi:skip-next" :size="20" />
-          </button>
+  <div class="media-card" :class="{ active: isPlaying }">
+    <div class="top">
+      <MdiIcon :icon="isPlaying ? 'mdi:speaker-play' : 'mdi:speaker'" :size="28" />
+      <div class="info">
+        <div class="name">{{ displayName }}</div>
+        <div class="track">
+          <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
+          <template v-else-if="!player">{{ t('cards.common.notFound') }}</template>
+          <template v-else-if="isIdle">{{ t('cards.media.idle') }}</template>
+          <template v-else>
+            {{ title ?? t('cards.media.unknownTrack') }}<template v-if="artist"> · {{ artist }}</template>
+          </template>
         </div>
       </div>
-      <div v-if="player && config.showVolume !== false && volume !== null" class="volume" @click.stop>
-        <MdiIcon icon="mdi:volume-high" :size="16" />
-        <input type="range" min="0" max="100" :value="volume" @change="setVolume" />
-        <span class="vol-value">{{ volume }} %</span>
+      <div v-if="player && !isIdle" class="controls" @click.stop>
+        <button class="ctl-btn" @click="service('media_previous_track')">
+          <MdiIcon icon="mdi:skip-previous" :size="20" />
+        </button>
+        <button class="ctl-btn" @click="service('media_play_pause')">
+          <MdiIcon :icon="isPlaying ? 'mdi:pause' : 'mdi:play'" :size="22" />
+        </button>
+        <button class="ctl-btn" @click="service('media_next_track')">
+          <MdiIcon icon="mdi:skip-next" :size="20" />
+        </button>
       </div>
     </div>
-  </BaseCard>
+    <div v-if="player && config.showVolume !== false && volume !== null" class="volume" @click.stop>
+      <MdiIcon icon="mdi:volume-high" :size="16" />
+      <input type="range" min="0" max="100" :value="volume" @change="setVolume" />
+      <span class="vol-value">{{ volume }} %</span>
+    </div>
+  </div>
 </template>
 
 <style scoped>
+/* Tile */
 .media-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  height: 100%;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  height: 100%;
+}
+.media-card.active {
+  background: var(--card-bg-active);
+  color: var(--text-on-active);
 }
 .top {
   display: flex;
