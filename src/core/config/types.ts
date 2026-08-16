@@ -31,6 +31,18 @@ export interface ViewConfig {
   sections: SectionConfig[]
 }
 
+/** Configuration of the navigation (SideNav on wide screens, BottomNav on narrow). */
+export interface NavConfig {
+  /** Cards rendered inside the navigation — manifest must allow the 'nav' area */
+  cards: CardConfig[]
+  /** Built-in clock above the view list (SideNav only) */
+  showClock: boolean
+  /** Cards above or below the view list */
+  cardsPosition: 'top' | 'bottom'
+  /** SideNav width in px */
+  width: number
+}
+
 export interface DashboardSettings {
   theme: 'dark' | 'light' | 'auto'
   /** Component theme under src/theme/<name>/ — 'default' is built in */
@@ -44,5 +56,6 @@ export interface DashboardSettings {
 export interface DashboardConfig {
   version: 1
   settings?: Partial<DashboardSettings>
+  nav?: Partial<NavConfig>
   views: ViewConfig[]
 }

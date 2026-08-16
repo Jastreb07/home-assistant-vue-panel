@@ -6,6 +6,12 @@ export default {
     close: 'Close',
     preview: 'Preview',
     ok: 'OK',
+    selectMenu: {
+      search: 'Search…',
+      empty: 'Not set',
+      noResults: 'No match',
+      clear: 'Clear',
+    },
   },
   dialog: {
     alertTitle: 'Notice',
@@ -47,6 +53,17 @@ export default {
     sidebarHint: 'The last section is shown in the right sidebar column.',
     panelEmpty: 'No card configured for this panel view.',
     noViewTarget: '— no target —',
+    noCardsForArea: 'No card supports this area yet.',
+    nav: {
+      title: 'Navigation',
+      hint: 'Cards can be added directly in the navigation while editing.',
+      showClock: 'Show clock',
+      cardsPosition: 'Card position',
+      positionTop: 'Above the views',
+      positionBottom: 'Below the views',
+      width: 'Sidebar width (px)',
+      widthHint: 'Wide screens only — 160 to 560.',
+    },
     view: {
       editTitle: 'Edit view',
       newTitle: 'New view',

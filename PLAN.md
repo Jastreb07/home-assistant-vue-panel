@@ -154,6 +154,7 @@ interface CardConfig {
 ## 6b. Theme-System (UI-Komponenten)
 
 - Alle Basis-UI-Komponenten (Card, Dialog, Button, …) liegen unter `src/theme/<themeName>/<Komponente>/` mit je **`index.vue`** und **`style.css`** — kein globales Button/Card-CSS.
+- Jedes Theme kann zusätzlich eine **globale `main.css`** haben (`src/theme/<themeName>/main.css`: Variablen, Scrollbars, Form-Basics); `default/main.css` wird immer zuerst als Rückfall geladen, das `main.css` des aktiven Themes obendrauf.
 - Styles nutzen namespaced Klassen (`vp-card`, `vp-dialog`, `vp-btn`) statt Vue scoped CSS, damit CSS-only-Themes sie überschreiben können.
 - **Auflösung** (`src/theme/registry.ts`, Auto-Discovery via `import.meta.glob`):
   1. `style.css` des Default-Themes wird immer zuerst geladen.

@@ -10,6 +10,7 @@ import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
 import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
 import DashboardSettingsDialog from '@/core/editor/DashboardSettingsDialog.vue'
+import NavSettingsDialog from '@/core/editor/NavSettingsDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import DevSidebar from '@/core/dev/DevSidebar.vue'
 import SideNav from './SideNav.vue'
@@ -66,6 +67,7 @@ watch(idleSeconds, (idle) => {
 // ── View management (edit mode) ──────────────────────────────
 const viewDialog = ref<'closed' | 'edit' | 'new'>('closed')
 const settingsOpen = ref(false)
+const navSettingsOpen = ref(false)
 
 function onViewCreated(viewId: string) {
   navigate(viewId)
@@ -129,6 +131,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
             <MdiIcon icon="mdi:cog" :size="16" />
             {{ t('shell.viewSettings') }}
           </button>
+          <button class="toolbar-btn" @click="navSettingsOpen = true">
+            <MdiIcon icon="mdi:dock-left" :size="16" />
+            {{ t('editor.nav.title') }}
+          </button>
           <button class="toolbar-btn" @click="settingsOpen = true">
             <MdiIcon icon="mdi:tune" :size="16" />
             {{ t('settings.title') }}
@@ -158,6 +164,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       @created="onViewCreated"
     />
     <DashboardSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+    <NavSettingsDialog v-if="navSettingsOpen" @close="navSettingsOpen = false" />
   </div>
 </template>
 

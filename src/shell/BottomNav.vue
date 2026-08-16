@@ -2,6 +2,7 @@
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import NavCards from './NavCards.vue'
 
 defineProps<{
   views: ViewConfig[]
@@ -14,30 +15,40 @@ const { t } = useI18n()
 </script>
 
 <template>
-  <nav class="bottom-nav">
-    <button
-      v-for="view in views"
-      :key="view.id"
-      class="tab"
-      :class="{ active: view.id === activeId }"
-      @click="emit('navigate', view.id)"
-    >
-      <MdiIcon :icon="view.icon" :size="24" />
-      <span class="label">{{ view.title }}</span>
-    </button>
-    <button v-if="editMode" class="tab" @click="emit('addView')">
-      <MdiIcon icon="mdi:plus" :size="24" />
-      <span class="label">{{ t('shell.new') }}</span>
-    </button>
-  </nav>
+  <div class="bottom-nav-wrap">
+    <NavCards direction="row" class="nav-card-row" />
+    <nav class="bottom-nav">
+      <button
+        v-for="view in views"
+        :key="view.id"
+        class="tab"
+        :class="{ active: view.id === activeId }"
+        @click="emit('navigate', view.id)"
+      >
+        <MdiIcon :icon="view.icon" :size="24" />
+        <span class="label">{{ view.title }}</span>
+      </button>
+      <button v-if="editMode" class="tab" @click="emit('addView')">
+        <MdiIcon icon="mdi:plus" :size="24" />
+        <span class="label">{{ t('shell.new') }}</span>
+      </button>
+    </nav>
+  </div>
 </template>
 
 <style scoped>
-.bottom-nav {
+.bottom-nav-wrap {
   flex-shrink: 0;
   display: flex;
+  flex-direction: column;
   background: var(--nav-bg);
   border-top: 1px solid var(--divider);
+}
+.nav-card-row {
+  border-bottom: 1px solid var(--divider);
+}
+.bottom-nav {
+  display: flex;
   padding-bottom: env(safe-area-inset-bottom);
 }
 .tab {

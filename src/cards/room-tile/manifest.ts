@@ -7,7 +7,7 @@ export default defineCard({
   component: () => import('./RoomTileCard.vue'),
   schema: {
     name: { type: 'string', label: 'cards.roomTile.roomName' },
-    icon: { type: 'string', label: 'cards.roomTile.icon', optional: true },
+    icon: { type: 'icon', label: 'cards.roomTile.icon', optional: true },
     targetView: { type: 'view', label: 'cards.roomTile.targetView', optional: true },
     temperatureEntity: {
       type: 'entity',
@@ -23,4 +23,5 @@ export default defineCard({
     },
   },
   defaultSize: { cols: 1, rows: 1 },
+  areas: ['dashboard', 'nav'],
 })

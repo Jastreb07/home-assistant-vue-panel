@@ -9,4 +9,5 @@ export default defineCard({
     showDate: { type: 'boolean', label: 'cards.clock.showDate', default: true },
   },
   defaultSize: { cols: 1, rows: 1 },
+  areas: ['dashboard', 'nav'],
 })

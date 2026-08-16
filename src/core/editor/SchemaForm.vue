@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
 import { useDashboardStore } from '@/core/config/dashboardStore'
+import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import { mdiIconOptions } from '@/core/ui/mdiIconNames'
+import type { SelectOption } from '@/core/ui/selectMenu'
 import EntityPicker from './EntityPicker.vue'
 
 const props = defineProps<{
@@ -25,11 +29,36 @@ function bool(key: string, field: CardSchemaField): boolean {
   const v = props.modelValue[key]
   return v === undefined ? field.default === true : v === true
 }
+
+/** Icons are read from the loaded mdi stylesheet — resolved once. */
+const iconOptions = computed<SelectOption[]>(() =>
+  Object.values(props.schema).some((f) => f.type === 'icon') ? mdiIconOptions() : [],
+)
+
+const viewOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('editor.noViewTarget') },
+  ...store.config.views.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
+])
+
+function selectOptions(field: CardSchemaField): SelectOption[] {
+  return (field.options ?? []).map((opt) => ({ value: opt, label: opt }))
+}
+
+/** SelectMenu renders buttons — a <label> would forward clicks to them. */
+function isMenuField(field: CardSchemaField): boolean {
+  return field.type === 'icon' || field.type === 'select' || field.type === 'view'
+}
 </script>
 
 <template>
   <div class="schema-form">
-    <label v-for="(field, key) in schema" :key="key" class="field" :class="'type-' + field.type">
+    <component
+      :is="isMenuField(field) ? 'div' : 'label'"
+      v-for="(field, key) in schema"
+      :key="key"
+      class="field"
+      :class="'type-' + field.type"
+    >
       <span class="label">
         {{ t(field.label) }}<span v-if="!field.optional && field.type === 'entity'"> *</span>
       </span>
@@ -38,6 +67,17 @@ function bool(key: string, field: CardSchemaField): boolean {
         v-if="field.type === 'entity'"
         :model-value="str(key)"
         :domain="field.domain"
+        @update:model-value="set(key, $event)"
+      />
+
+      <BaseSelectMenu
+        v-else-if="field.type === 'icon'"
+        :model-value="str(key)"
+        :options="iconOptions"
+        searchable
+        allow-custom
+        custom-prefix="mdi:"
+        :clearable="field.optional"
         @update:model-value="set(key, $event)"
       />
 
@@ -62,23 +102,21 @@ function bool(key: string, field: CardSchemaField): boolean {
         @change="set(key, ($event.target as HTMLInputElement).checked)"
       />
 
-      <select
+      <BaseSelectMenu
         v-else-if="field.type === 'select'"
-        :value="str(key) || (field.default as string | undefined) || ''"
-        @change="set(key, ($event.target as HTMLSelectElement).value)"
-      >
-        <option v-for="opt in field.options" :key="opt" :value="opt">{{ opt }}</option>
-      </select>
+        :model-value="str(key) || (field.default as string | undefined) || ''"
+        :options="selectOptions(field)"
+        @update:model-value="set(key, $event)"
+      />
 
-      <select
+      <BaseSelectMenu
         v-else-if="field.type === 'view'"
-        :value="str(key)"
-        @change="set(key, ($event.target as HTMLSelectElement).value)"
-      >
-        <option value="">{{ t('editor.noViewTarget') }}</option>
-        <option v-for="v in store.config.views" :key="v.id" :value="v.id">{{ v.title }}</option>
-      </select>
-    </label>
+        :model-value="str(key)"
+        :options="viewOptions"
+        :placeholder="t('editor.noViewTarget')"
+        @update:model-value="set(key, $event)"
+      />
+    </component>
   </div>
 </template>
 

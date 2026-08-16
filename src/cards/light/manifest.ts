@@ -11,4 +11,5 @@ export default defineCard({
     showBrightness: { type: 'boolean', label: 'cards.light.showBrightness', default: true },
   },
   defaultSize: { cols: 1, rows: 1 },
+  areas: ['dashboard', 'nav'],
 })

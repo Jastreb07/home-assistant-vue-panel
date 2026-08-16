@@ -3,7 +3,9 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
 import { useClock } from '@/core/composables/useClock'
+import { useDashboardStore } from '@/core/config/dashboardStore'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import NavCards from './NavCards.vue'
 
 defineProps<{
   views: ViewConfig[]
@@ -13,6 +15,7 @@ defineProps<{
 const emit = defineEmits<{ navigate: [viewId: string]; addView: [] }>()
 
 const { t, locale } = useI18n()
+const store = useDashboardStore()
 const now = useClock()
 const time = computed(() =>
   now.value.toLocaleTimeString(locale.value, { hour: '2-digit', minute: '2-digit' }),
@@ -28,11 +31,14 @@ const date = computed(() =>
 </script>
 
 <template>
-  <nav class="side-nav">
-    <div class="clock">
+  <nav class="side-nav" :style="{ width: store.nav.width + 'px' }">
+    <div v-if="store.nav.showClock" class="clock">
       <div class="time">{{ time }}</div>
       <div class="date">{{ date }}</div>
     </div>
+
+    <NavCards v-if="store.nav.cardsPosition === 'top'" direction="column" />
+
     <ul class="views">
       <li v-for="view in views" :key="view.id">
         <button
@@ -51,18 +57,25 @@ const date = computed(() =>
         </button>
       </li>
     </ul>
+
+    <NavCards v-if="store.nav.cardsPosition === 'bottom'" direction="column" class="bottom-cards" />
   </nav>
 </template>
 
 <style scoped>
 .side-nav {
-  width: 280px;
+  /* width comes from nav.width */
   flex-shrink: 0;
   background: var(--nav-bg);
   display: flex;
   flex-direction: column;
   padding: 24px 16px;
   gap: 32px;
+  overflow-y: auto;
+}
+/* Keep trailing cards pinned to the bottom of the nav */
+.bottom-cards {
+  margin-top: auto;
 }
 .clock .time {
   font-size: 64px;

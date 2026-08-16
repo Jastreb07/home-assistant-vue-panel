@@ -1,13 +1,15 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { cardRegistry } from '@/core/registry/cardRegistry'
+import { cardsForArea, type CardArea } from '@/core/registry/cardRegistry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
+const props = withDefaults(defineProps<{ area?: CardArea }>(), { area: 'dashboard' })
 const emit = defineEmits<{ close: []; pick: [type: string] }>()
 
 const { t } = useI18n()
-const cards = Object.values(cardRegistry)
+const cards = computed(() => cardsForArea(props.area))
 </script>
 
 <template>
@@ -17,6 +19,7 @@ const cards = Object.values(cardRegistry)
         <MdiIcon :icon="card.icon" :size="32" />
         <span>{{ t(card.name) }}</span>
       </button>
+      <p v-if="cards.length === 0" class="no-cards">{{ t('editor.noCardsForArea') }}</p>
     </div>
   </BaseDialog>
 </template>
@@ -42,5 +45,11 @@ const cards = Object.values(cardRegistry)
 }
 .pick:hover {
   border-color: var(--accent);
+}
+.no-cards {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 </style>

@@ -1,3 +1,10 @@
+/* ─────────────────────────────────────────────────────────────
+   Global stylesheet of the "default" theme.
+   Every theme may ship its own main.css; the default theme's
+   main.css is ALWAYS loaded first as a fallback, the active
+   theme's main.css (if any) is loaded on top.
+   ───────────────────────────────────────────────────────────── */
+
 /* Theme variables — dark is the default theme */
 :root {
   --bg: #14161a;
@@ -13,6 +20,9 @@
   --nav-item-hover: rgba(255, 255, 255, 0.06);
   --nav-item-active: rgba(255, 255, 255, 0.12);
   --accent: #f5b82e;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #3a4150;
+  --scrollbar-thumb-hover: #4a5365;
 }
 
 [data-theme='light'] {
@@ -28,6 +38,8 @@
   --nav-item-hover: rgba(0, 0, 0, 0.05);
   --nav-item-active: rgba(0, 0, 0, 0.09);
   --accent: #e0a416;
+  --scrollbar-thumb: #c3cad6;
+  --scrollbar-thumb-hover: #a9b2c2;
 }
 
 * {
@@ -56,6 +68,29 @@ body {
 
 button {
   font-family: inherit;
+}
+
+/* ── Scrollbars (match the theme design) ── */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 /* ── Base form styles (editor dialogs) ── */

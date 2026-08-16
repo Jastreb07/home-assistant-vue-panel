@@ -6,6 +6,12 @@ export default {
     close: 'Schließen',
     preview: 'Vorschau',
     ok: 'OK',
+    selectMenu: {
+      search: 'Suchen…',
+      empty: 'Nicht gesetzt',
+      noResults: 'Kein Treffer',
+      clear: 'Zurücksetzen',
+    },
   },
   dialog: {
     alertTitle: 'Hinweis',
@@ -47,6 +53,17 @@ export default {
     sidebarHint: 'Der letzte Abschnitt wird in der rechten Seitenleiste angezeigt.',
     panelEmpty: 'Keine Card für diese Panel-View konfiguriert.',
     noViewTarget: '— kein Ziel —',
+    noCardsForArea: 'Noch keine Card unterstützt diesen Bereich.',
+    nav: {
+      title: 'Navigation',
+      hint: 'Cards lassen sich im Bearbeitungsmodus direkt in der Navigation einfügen.',
+      showClock: 'Uhr anzeigen',
+      cardsPosition: 'Position der Cards',
+      positionTop: 'Über den Views',
+      positionBottom: 'Unter den Views',
+      width: 'Breite der Seitenleiste (px)',
+      widthHint: 'Nur auf breiten Bildschirmen — 160 bis 560.',
+    },
     view: {
       editTitle: 'View bearbeiten',
       newTitle: 'Neue View',

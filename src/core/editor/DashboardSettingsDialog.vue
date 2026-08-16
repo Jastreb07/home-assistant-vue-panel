@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { DashboardSettings } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import { availableThemes } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
+import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -19,6 +20,11 @@ const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
 const uiThemes = availableThemes()
+
+const themeOptions = computed(() =>
+  themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
+)
+const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
 
 function save() {
   const uiThemeChanged = uiTheme.value !== store.settings.uiTheme
@@ -37,19 +43,19 @@ function save() {
 <template>
   <BaseDialog :title="t('settings.title')" @close="emit('close')">
     <div class="settings-form">
-      <label>
+      <div class="field">
         <span>{{ t('settings.theme') }}</span>
-        <select v-model="theme">
-          <option v-for="th in themes" :key="th" :value="th">{{ t('settings.themes.' + th) }}</option>
-        </select>
-      </label>
-      <label>
+        <BaseSelectMenu
+          :model-value="theme"
+          :options="themeOptions"
+          @update:model-value="theme = $event as DashboardSettings['theme']"
+        />
+      </div>
+      <div class="field">
         <span>{{ t('settings.uiTheme') }}</span>
-        <select v-model="uiTheme">
-          <option v-for="th in uiThemes" :key="th" :value="th">{{ th }}</option>
-        </select>
+        <BaseSelectMenu v-model="uiTheme" :options="uiThemeOptions" />
         <small>{{ t('settings.uiThemeHint') }}</small>
-      </label>
+      </div>
 
       <h3>{{ t('settings.kiosk') }}</h3>
       <label>
@@ -76,16 +82,19 @@ function save() {
   flex-direction: column;
   gap: 16px;
 }
-label {
+label,
+.field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-label span {
+label span,
+.field > span {
   font-size: 13px;
   color: var(--text-secondary);
 }
-label small {
+label small,
+.field small {
   font-size: 11px;
   color: var(--text-secondary);
   opacity: 0.8;

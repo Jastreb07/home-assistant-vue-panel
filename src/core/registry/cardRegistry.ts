@@ -1,8 +1,14 @@
 import { defineAsyncComponent, type Component } from 'vue'
 
+/**
+ * Where a card may be placed: the dashboard views or one of the
+ * three sidebar slots (top = next to the clock, center, bottom).
+ */
+export type CardArea = 'dashboard' | 'sidebar_top' | 'sidebar_center' | 'sidebar_bottom'
+
 /** Field types from which the editor auto-generates config forms. */
 export interface CardSchemaField {
-  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view'
+  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon'
   /** i18n key for the field label, e.g. 'cards.light.entity' */
   label: string
   /** For type 'entity': restrict to a domain, e.g. 'light' */
@@ -25,6 +31,11 @@ export interface CardManifest {
   /** Config schema → auto-generated editor form */
   schema?: Record<string, CardSchemaField>
   defaultSize?: { cols: number; rows: number }
+  /**
+   * Areas the card can be placed in. List both to offer it everywhere:
+   * `areas: ['dashboard', 'nav']`. Defaults to `['dashboard']`.
+   */
+  areas?: CardArea[]
 }
 
 /** Only for type safety + autocomplete in the manifest.ts files. */
@@ -42,6 +53,11 @@ const modules = import.meta.glob<{ default: CardManifest }>(
 export const cardRegistry: Record<string, CardManifest> = Object.fromEntries(
   Object.values(modules).map((m) => [m.default.type, m.default]),
 )
+
+/** Cards offered for an area — 'dashboard' is the default when unset. */
+export function cardsForArea(area: CardArea): CardManifest[] {
+  return Object.values(cardRegistry).filter((m) => (m.areas ?? ['dashboard']).includes(area))
+}
 
 const componentCache = new Map<string, Component>()
 

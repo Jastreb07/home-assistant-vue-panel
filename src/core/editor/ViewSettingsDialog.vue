@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig, ViewLayout } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
+import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 
 const props = defineProps<{
   /** Edit an existing view — or undefined to create a new one */
@@ -24,6 +26,11 @@ const background = ref(props.view?.background ?? '')
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
 
 const layouts: ViewLayout[] = ['sections', 'tiles', 'panel', 'sidebar', 'grid']
+
+const iconOptions = computed(() => mdiIconOptions())
+const layoutOptionList = computed(() =>
+  layouts.map((l) => ({ value: l, label: t('editor.layouts.' + l) })),
+)
 
 function save() {
   if (!title.value.trim()) return
@@ -66,18 +73,24 @@ function remove() {
         <span>{{ t('editor.view.title') }}</span>
         <input v-model="title" type="text" :placeholder="t('editor.view.titlePlaceholder')" />
       </label>
-      <label>
+      <div class="field">
         <span>{{ t('editor.view.icon') }}</span>
-        <input v-model="icon" type="text" placeholder="mdi:sofa" spellcheck="false" />
-      </label>
-      <label>
+        <BaseSelectMenu
+          v-model="icon"
+          :options="iconOptions"
+          searchable
+          allow-custom
+          custom-prefix="mdi:"
+        />
+      </div>
+      <div class="field">
         <span>{{ t('editor.view.layout') }}</span>
-        <select v-model="layout">
-          <option v-for="l in layouts" :key="l" :value="l">
-            {{ t('editor.layouts.' + l) }}
-          </option>
-        </select>
-      </label>
+        <BaseSelectMenu
+          :model-value="layout"
+          :options="layoutOptionList"
+          @update:model-value="layout = $event as ViewLayout"
+        />
+      </div>
       <label v-if="layout === 'grid'">
         <span>{{ t('editor.view.gridColumns') }}</span>
         <input v-model.number="gridColumns" type="number" min="1" max="12" />
@@ -107,12 +120,14 @@ function remove() {
   flex-direction: column;
   gap: 16px;
 }
-label {
+label,
+.field {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
-label span {
+label span,
+.field > span {
   font-size: 13px;
   color: var(--text-secondary);
 }

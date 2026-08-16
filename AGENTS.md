@@ -37,7 +37,7 @@
 src/
 ├─ main.ts                    # Pinia, Hash-Router (/:viewId? → AppShell), i18n, connect()
 ├─ App.vue                    # Verbindungsstatus-Overlay + RouterView + DialogHost
-├─ style.css                  # Farb-Variablen (dark default, [data-theme='light']), Form-Basics
+├─ theme/default/main.css    # Globale Styles des Default-Themes: Farb-Variablen (dark default, [data-theme='light']), Scrollbars, Form-Basics
 ├─ i18n/                      # vue-i18n v11 (legacy:false), locales/en.ts + de.ts
 ├─ core/
 │  ├─ ha/                     # connection.ts (WebSocket, Dual-Auth), useEntity, useService
@@ -98,6 +98,7 @@ export default defineCard({
 ## 6. Theme-System (`src/theme/`)
 
 - `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{Card,Dialog,Button}`.
+- **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
 - Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`.

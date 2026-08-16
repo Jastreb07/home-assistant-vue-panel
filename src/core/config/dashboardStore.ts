@@ -3,6 +3,7 @@ import type {
   CardConfig,
   DashboardConfig,
   DashboardSettings,
+  NavConfig,
   SectionConfig,
   ViewConfig,
 } from './types'
@@ -17,6 +18,13 @@ export const defaultSettings: DashboardSettings = {
   uiTheme: 'default',
   screensaverMinutes: 0,
   autoReturnSeconds: 0,
+}
+
+export const defaultNav: NavConfig = {
+  cards: [],
+  showClock: true,
+  cardsPosition: 'bottom',
+  width: 280,
 }
 
 let idCounter = 0
@@ -83,6 +91,9 @@ export const useDashboardStore = defineStore('dashboard', {
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
+    },
+    nav(state): NavConfig {
+      return { ...defaultNav, ...state.config.nav }
     },
     canUndo(state): boolean {
       return state.undoStack.length > 0
@@ -155,6 +166,39 @@ export const useDashboardStore = defineStore('dashboard', {
     // ── Settings ─────────────────────────────────────────────
     updateSettings(patch: Partial<DashboardSettings>) {
       this.config.settings = { ...this.config.settings, ...patch }
+      this.save()
+    },
+
+    // ── Navigation ───────────────────────────────────────────
+    updateNav(patch: Partial<Omit<NavConfig, 'cards'>>) {
+      this.config.nav = { ...this.config.nav, ...patch }
+      this.save()
+    },
+    addNavCard(card: Omit<CardConfig, 'id'>) {
+      const cards = [...this.nav.cards, { ...card, id: newId('navcard') }]
+      this.config.nav = { ...this.config.nav, cards }
+      this.save()
+    },
+    removeNavCard(cardId: string) {
+      const cards = this.nav.cards.filter((c) => c.id !== cardId)
+      this.config.nav = { ...this.config.nav, cards }
+      this.save()
+    },
+    updateNavCardConfig(cardId: string, config: Record<string, unknown>) {
+      const cards = this.nav.cards.map((c) => (c.id === cardId ? { ...c, config } : c))
+      this.config.nav = { ...this.config.nav, cards }
+      this.save()
+    },
+    /** Move a nav card to a new index (drag & drop). */
+    moveNavCard(cardId: string, toIndex: number) {
+      const cards = [...this.nav.cards]
+      const idx = cards.findIndex((c) => c.id === cardId)
+      if (idx < 0) return
+      // Adjust the target when moving backwards past the removed slot
+      if (idx < toIndex) toIndex--
+      const [card] = cards.splice(idx, 1)
+      cards.splice(Math.max(0, Math.min(toIndex, cards.length)), 0, card!)
+      this.config.nav = { ...this.config.nav, cards }
       this.save()
     },
 

@@ -8,7 +8,8 @@ export default defineCard({
   schema: {
     entity: { type: 'entity', label: 'cards.sensor.entity' },
     name: { type: 'string', label: 'cards.sensor.displayName', optional: true },
-    icon: { type: 'string', label: 'cards.sensor.icon', optional: true },
+    icon: { type: 'icon', label: 'cards.sensor.icon', optional: true },
   },
   defaultSize: { cols: 1, rows: 1 },
+  areas: ['dashboard', 'nav'],
 })

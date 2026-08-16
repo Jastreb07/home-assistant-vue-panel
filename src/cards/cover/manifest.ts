@@ -10,4 +10,5 @@ export default defineCard({
     name: { type: 'string', label: 'cards.cover.displayName', optional: true },
   },
   defaultSize: { cols: 1, rows: 1 },
+  areas: ['dashboard', 'nav'],
 })
