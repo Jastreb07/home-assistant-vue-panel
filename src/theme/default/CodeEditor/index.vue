@@ -7,6 +7,8 @@ import { bracketMatching, syntaxHighlighting, HighlightStyle } from '@codemirror
 import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 import { css as cssLanguage } from '@codemirror/lang-css'
+import { html as htmlLanguage } from '@codemirror/lang-html'
+import { javascript as javascriptLanguage } from '@codemirror/lang-javascript'
 import { linter, lintGutter, lintKeymap, type Diagnostic } from '@codemirror/lint'
 import { tags } from '@lezer/highlight'
 import { lintCss } from '@/core/ui/cssLint'
@@ -18,8 +20,7 @@ import { lintCss } from '@/core/ui/cssLint'
 const props = withDefaults(
   defineProps<{
     modelValue: string
-    /** Only 'css' is wired up so far */
-    language?: 'css'
+    language?: 'css' | 'html' | 'javascript' | 'json'
     minHeight?: string
   }>(),
   { language: 'css', minHeight: '260px' },
@@ -91,6 +92,12 @@ const cssLinter = linter((v): Diagnostic[] =>
   })),
 )
 
+function languageExtension(): Extension {
+  if (props.language === 'html') return htmlLanguage()
+  if (props.language === 'javascript' || props.language === 'json') return javascriptLanguage()
+  return cssLanguage()
+}
+
 function extensions(): Extension[] {
   return [
     lineNumbers(),
@@ -100,8 +107,8 @@ function extensions(): Extension[] {
     closeBrackets(),
     autocompletion(),
     lintGutter(),
-    cssLanguage(),
-    cssLinter,
+    languageExtension(),
+    ...(props.language === 'css' ? [cssLinter] : []),
     syntaxHighlighting(highlight),
     editorTheme,
     EditorView.lineWrapping,

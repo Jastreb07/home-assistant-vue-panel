@@ -5,6 +5,7 @@ import type {
   BottomConfig,
   BottomSlot,
   CardConfig,
+  CustomCardDefinition,
   DashboardConfig,
   DashboardSettings,
   HeaderConfig,
@@ -170,6 +171,12 @@ function defaultConfig(): DashboardConfig {
 /** Apply one-time compatibility updates to persisted dashboard data. */
 function migrateDashboardConfig(config: DashboardConfig): { config: DashboardConfig; changed: boolean } {
   let changed = false
+  for (const definition of config.customCards ?? []) {
+    if (!Array.isArray(definition.variables)) {
+      definition.variables = []
+      changed = true
+    }
+  }
   for (const view of config.views) {
     for (const section of view.sections) {
       for (const card of section.cards) {
@@ -189,13 +196,22 @@ function loadLocal(): DashboardConfig {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (raw) {
       const migrated = migrateDashboardConfig(JSON.parse(raw) as DashboardConfig)
-      if (migrated.changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated.config))
+      if (migrated.changed) saveLocal(migrated.config)
       return migrated.config
     }
   } catch (err) {
     console.warn('[vue-panel] Could not load stored config:', err)
   }
   return defaultConfig()
+}
+
+function saveLocal(config: DashboardConfig): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
+  } catch (err) {
+    // Remote HA user data remains the source of truth when the browser cache is full.
+    console.warn('[vue-panel] Could not update the local config cache:', err)
+  }
 }
 
 let remoteSaveTimer: ReturnType<typeof setTimeout> | null = null
@@ -223,6 +239,13 @@ export const useDashboardStore = defineStore('dashboard', {
         const normalized = normalizeRoutePath(path)
         return state.config.views.find((v) => viewPath(v) === normalized)
       }
+    },
+    customCards(state): CustomCardDefinition[] {
+      return state.config.customCards ?? []
+    },
+    customCardById(state) {
+      return (id: string): CustomCardDefinition | undefined =>
+        state.config.customCards?.find((card) => card.id === id)
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
@@ -305,7 +328,7 @@ export const useDashboardStore = defineStore('dashboard', {
   actions: {
     /** Persist without touching the undo history (used by undo/redo/sync). */
     persist() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.config))
+      saveLocal(this.config)
       if (remoteSaveTimer) clearTimeout(remoteSaveTimer)
       remoteSaveTimer = setTimeout(() => {
         saveRemote(this.config).catch((err) =>
@@ -350,7 +373,7 @@ export const useDashboardStore = defineStore('dashboard', {
           this.undoStack = []
           this.redoStack = []
           this.lastSnapshot = JSON.stringify(migrated.config)
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated.config))
+          saveLocal(migrated.config)
           if (migrated.changed) await saveRemote(migrated.config)
         } else {
           // First device: upload the local/default config as the starting point
@@ -377,6 +400,30 @@ export const useDashboardStore = defineStore('dashboard', {
     },
     setBar(position: BarPosition, card: CardConfig) {
       this.config.bars = { ...this.bars, [position]: card }
+      this.save()
+    },
+
+    // â”€â”€ Reusable custom cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    upsertCustomCard(definition: CustomCardDefinition) {
+      const cards = [...(this.config.customCards ?? [])]
+      const index = cards.findIndex((card) => card.id === definition.id)
+      const saved = JSON.parse(JSON.stringify(definition)) as CustomCardDefinition
+      if (index >= 0) cards[index] = saved
+      else cards.push(saved)
+      this.config.customCards = cards
+      this.save()
+    },
+    removeCustomCard(definitionId: string) {
+      this.config.customCards = (this.config.customCards ?? []).filter(
+        (card) => card.id !== definitionId,
+      )
+      for (const view of this.config.views) {
+        for (const section of view.sections) {
+          section.cards = section.cards.filter(
+            (card) => card.type !== 'custom-html' || card.config.definitionId !== definitionId,
+          )
+        }
+      }
       this.save()
     },
 

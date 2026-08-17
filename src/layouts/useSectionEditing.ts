@@ -7,7 +7,12 @@ import { copyCardToClipboard } from '@/core/ui/cardClipboard'
 import { t } from '@/i18n'
 
 export type ConfigTarget =
-  | { mode: 'new'; sectionId: string; cardType: string }
+  | {
+      mode: 'new'
+      sectionId: string
+      cardType: string
+      initialConfig?: Record<string, unknown>
+    }
   | {
       mode: 'edit'
       cardId: string
@@ -30,25 +35,32 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
   const pickerSectionId = ref<string | null>(null)
   const configTarget = ref<ConfigTarget>(null)
 
-  function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
+  function onPick(
+    cardType: string,
+    copiedCard?: Omit<CardConfig, 'id'>,
+    initialConfig?: Record<string, unknown>,
+  ) {
     const sectionId = pickerSectionId.value!
     pickerSectionId.value = null
     if (copiedCard) {
       store.addCard(getView().id, sectionId, copiedCard)
       return
     }
-    configTarget.value = { mode: 'new', sectionId, cardType }
+    configTarget.value = { mode: 'new', sectionId, cardType, initialConfig }
   }
 
   function onConfigSave(config: Record<string, unknown>, css?: string, size?: CardConfig['size']) {
     const target = configTarget.value
     if (!target) return
     if (target.mode === 'new') {
+      const definitionSize = target.cardType === 'custom-html'
+        ? store.customCardById(String(config.definitionId ?? ''))?.defaultSize
+        : undefined
       store.addCard(getView().id, target.sectionId, {
         type: target.cardType,
         config,
         css,
-        size: size ?? cardRegistry[target.cardType]?.defaultSize,
+        size: size ?? definitionSize ?? cardRegistry[target.cardType]?.defaultSize,
       })
     } else {
       store.updateCardConfig(getView().id, target.cardId, config, css)

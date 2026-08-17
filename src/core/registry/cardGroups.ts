@@ -20,3 +20,6 @@ export const NATIVE_GROUP: CardGroup = { id: 'native', label: 'cards.groups.nati
 
 /** Used for every card whose manifest declares no group. */
 export const OTHER_GROUP: CardGroup = { id: 'other', label: 'cards.groups.other' }
+
+/** Browser-authored HTML/CSS/JS definitions. */
+export const CUSTOM_GROUP: CardGroup = { id: 'custom', label: 'cards.groups.custom' }

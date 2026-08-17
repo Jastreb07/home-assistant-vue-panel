@@ -6,8 +6,7 @@ const CodeEditor = themed('CodeEditor')
 
 defineProps<{
   modelValue: string
-  /** Only 'css' is wired up so far */
-  language?: 'css'
+  language?: 'css' | 'html' | 'javascript' | 'json'
   minHeight?: string
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()

@@ -50,6 +50,8 @@ export interface CardSchemaField {
   type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon'
   /** i18n key for the field label, e.g. 'cards.light.entity' */
   label: string
+  /** Render the label verbatim instead of treating it as an i18n key. */
+  literalLabel?: boolean
   /** For type 'entity': restrict to a domain, e.g. 'light' */
   domain?: string
   /** For type 'select' */
@@ -61,6 +63,8 @@ export interface CardSchemaField {
   max?: number
   step?: number
   optional?: boolean
+  /** Explicit required marker used by dynamically generated schemas. */
+  required?: boolean
   default?: unknown
 }
 

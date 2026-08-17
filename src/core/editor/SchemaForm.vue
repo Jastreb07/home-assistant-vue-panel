@@ -68,7 +68,7 @@ function needsPlainWrapper(field: CardSchemaField): boolean {
       :class="'type-' + field.type"
     >
       <span class="label">
-        {{ t(field.label) }}<span v-if="!field.optional && field.type === 'entity'"> *</span>
+        {{ field.literalLabel ? field.label : t(field.label) }}<span v-if="field.required || (!field.optional && field.type === 'entity')"> *</span>
       </span>
 
       <EntityPicker

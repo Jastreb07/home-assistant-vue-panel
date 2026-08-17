@@ -5,4 +5,6 @@ export interface TabItem {
   label: string
   /** Optional mdi icon, e.g. 'mdi:palette' */
   icon?: string
+  /** Push this tab and every following tab to the right edge. */
+  align?: 'start' | 'end'
 }

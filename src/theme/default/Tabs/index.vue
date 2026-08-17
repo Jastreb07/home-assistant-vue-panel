@@ -32,7 +32,7 @@ function onKeydown(e: KeyboardEvent) {
       type="button"
       role="tab"
       class="vp-tab"
-      :class="{ active: item.value === modelValue }"
+      :class="{ active: item.value === modelValue, 'vp-tab--end': item.align === 'end' }"
       :aria-selected="item.value === modelValue"
       :tabindex="item.value === modelValue ? 0 : -1"
       @click="emit('update:modelValue', item.value)"

@@ -122,6 +122,7 @@ Die gesamte Dashboard-Definition ist **ein JSON-Objekt**:
 ```ts
 interface DashboardConfig {
   views: ViewConfig[]
+  customCards?: CustomCardDefinition[]              // reusable HTML/CSS/JS definitions
   bars?: Record<'sidebar' | 'header' | 'bottom', CardConfig> // globale Shell-Cards
   theme?: ThemeConfig
 }
@@ -156,7 +157,11 @@ interface CardConfig {
 2. **Cache/Fallback**: `localStorage` (offline-fähig, sofortiges Laden).
 3. **Export/Import**: JSON-Download/-Upload im Editor (Backup, Geräte-Transfer).
 
+Browser-erstellte Custom Cards liegen ohne zusätzliche HA-Integration ebenfalls im Dashboard-JSON. Eine Definition enthält Name, Beschreibung, Icon, Standardgröße, ein Variablen-Schema sowie HTML/CSS/JavaScript; platzierte Cards speichern `type: 'custom-html'`, `config.definitionId` und ihre eigenen Variablenwerte. Variablen unterstützen Entity, Text, Zahl, Boolean und Icon; der normale Card-Dialog wird beim Einfügen dynamisch aus diesem Schema erzeugt. Im JavaScript sind die Werte über `vuePanel.config.<key>` verfügbar. Der Editor begrenzt eine Definition auf 256 KB und die Sammlung auf 4 MB, damit der lokale Browser-Cache praktikabel bleibt. Der iframe-Sandbox-Renderer besitzt kein Same-Origin-Recht, verwendet eine restriktive CSP und stellt nur `vuePanel.getEntity`, `getIcon`, `subscribeEntity`, `callService` und `config` bereit. Host-Nachrichten werden vor `postMessage` als reine Daten-Snapshots serialisiert, damit reaktive HA-Entity-Proxies die Sandbox-Grenze sicher passieren. `getIcon` rendert frei gewählte `mdi:`-Variablen außerhalb der Sandbox als sichere PNG-Data-URL. In der Live-Vorschau sind Service-Aufrufe deaktiviert.
+
 ## 6. Visueller Editor
+
+- Ein Code-Button in der Edit-Leiste öffnet den Custom-Card-Editor mit Einstellungen-, Variablen-, HTML-, CSS-, JS- und einem rechts ausgerichteten „Full Code“-Tab (CodeMirror) sowie permanenter Sandbox-Vorschau. Ein vertikaler, per Pointer/Touch/Tastatur bedienbarer Splitter passt die Breite von Editor und Vorschau an; auf Smartphones bleibt die gestapelte Ansicht. Das Variablen-Schema lässt sich synchron visuell oder direkt als validiertes JSON-Array bearbeiten. „Full Code“ fasst die portable Gesamtdefinition als HTML-Dokument zusammen: Konfiguration und Variablen stehen im JavaScript-Objekt `vuePanelCard` eines ersten `script`-Tags, das Markup in `template`, die Styles in `style` und die Laufzeitlogik in einem zweiten `script`. Die `.vue-panel-card.html`-Datei kann importiert/exportiert werden; ältere JSON-Formate bleiben importierbar. Der Vollbildschalter vergrößert denselben Custom-Card-Dialog randlos auf die gesamte Viewport-Größe, ohne einen zweiten Dialog zu öffnen. Gespeicherte Definitionen erscheinen als eigene Gruppe im normalen CardPicker und lassen sich dort über einen Stift global bearbeiten.
 
 - Der ✏️-FAB im View-Bereich aktiviert den Edit-Modus (wie Lovelace); er bleibt mit je 24px Abstand rechts unten im `.view-area`, während `.view-scroll` den Inhalt scrollt.
 - Im Edit-Modus: Cards per Drag & Drop verschieben, ＋ Card hinzufügen (CardPicker mit Vorschau), ⚙ Card konfigurieren (Formular auto-generiert aus Manifest-Schema mit Live-Preview), 🗑 löschen.
@@ -175,6 +180,7 @@ interface CardConfig {
   3. Hat das aktive Theme eine `index.vue`, ersetzt sie die Default-Komponente — sonst Fallback auf `default/`.
 - Aufrufer nutzen die Wrapper in `src/core/ui/` (`BaseCard`, `BaseDialog`, `BaseButton`, `BaseBoxInput`, …) — Import-Pfade bleiben stabil, der Wrapper rendert die Komponente des aktiven Themes.
 - `BoxInput` ist das wiederverwendbare Padding-/Margin-Feld (vier Seiten + Einheit + Ketten-Button), genutzt vom View- und vom Abschnitts-Dialog.
+- `VariableCard` ist die wiederverwendbare Theme-Hülle für Variablen-Schemaeinträge. Sie kann unabhängig ein- und ausgeklappt werden und trennt die Löschaktion vom Toggle; Verbraucher nutzen `BaseVariableCard`.
 - Theme-Auswahl: Dashboard-Einstellungen → „Komponenten-Theme" (`settings.uiTheme`, synced via HA `.storage`). Neues Theme = neuen Ordner `src/theme/mein-theme/` anlegen, nur die Komponenten/CSS ablegen, die abweichen sollen.
 
 ## 7. Responsive Verhalten

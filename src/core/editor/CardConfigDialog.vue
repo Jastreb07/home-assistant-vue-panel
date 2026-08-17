@@ -6,8 +6,10 @@ import {
   cardDefaultCss,
   resolveCardComponent,
   resolveCardEditor,
+  type CardSchemaField,
   type CardCssArea,
 } from '@/core/registry/cardRegistry'
+import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
@@ -45,13 +47,39 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const store = useDashboardStore()
 const manifest = cardRegistry[props.cardType]
 const previewComponent = resolveCardComponent(props.cardType)
 const editorComponent = resolveCardEditor(props.cardType)
 
+const customDefinition = computed(() => props.cardType === 'custom-html'
+  ? store.customCardById(String(props.initialConfig.definitionId ?? ''))
+  : undefined)
+const effectiveDefaultSize = computed(() => customDefinition.value?.defaultSize ?? manifest?.defaultSize)
+
+const effectiveSchema = computed<Record<string, CardSchemaField>>(() => {
+  if (!customDefinition.value) return manifest?.schema ?? {}
+  return Object.fromEntries(customDefinition.value.variables.map((variable) => [
+    variable.key,
+    {
+      type: variable.type,
+      label: variable.label || variable.key,
+      literalLabel: true,
+      domain: variable.type === 'entity' ? variable.domain : undefined,
+      optional: !variable.required,
+      required: variable.required,
+      default: variable.default,
+    } satisfies CardSchemaField,
+  ]))
+})
+
+const hasSchema = computed(() => Object.keys(effectiveSchema.value).length > 0)
+const dialogName = computed(() => customDefinition.value?.name
+  ?? (manifest ? t(manifest.name) : props.cardType))
+
 function applyDefaults(config: Record<string, unknown>): Record<string, unknown> {
   const result = { ...config }
-  for (const [key, field] of Object.entries(manifest?.schema ?? {})) {
+  for (const [key, field] of Object.entries(effectiveSchema.value)) {
     if (result[key] === undefined && field.default !== undefined) {
       result[key] = field.default
     }
@@ -60,6 +88,11 @@ function applyDefaults(config: Record<string, unknown>): Record<string, unknown>
 }
 
 const draft = ref<Record<string, unknown>>(applyDefaults(props.initialConfig))
+const saveAttempted = ref(false)
+const missingRequiredVariables = computed(() => Object.entries(effectiveSchema.value).some(
+  ([key, field]) => field.required
+    && (draft.value[key] === undefined || draft.value[key] === null || draft.value[key] === ''),
+))
 
 // ── CSS tab ──────────────────────────────────────────────────
 const tab = ref('settings')
@@ -74,15 +107,15 @@ const tabItems = computed(() => [
 
 // ── Size tab (flex layout) ───────────────────────────────────
 // Empty means "not set": the layout falls back to its own default.
-const cardWidth = ref<number | ''>(props.initialSize?.width ?? manifest?.defaultSize?.width ?? '')
-const cardHeight = ref<number | ''>(props.initialSize?.height ?? manifest?.defaultSize?.height ?? '')
+const cardWidth = ref<number | ''>(props.initialSize?.width ?? effectiveDefaultSize.value?.width ?? '')
+const cardHeight = ref<number | ''>(props.initialSize?.height ?? effectiveDefaultSize.value?.height ?? '')
 
 // Keep the fields in sync when the card is resized by dragging
 watch(
   () => props.initialSize,
   (size) => {
-    cardWidth.value = size?.width ?? manifest?.defaultSize?.width ?? ''
-    cardHeight.value = size?.height ?? manifest?.defaultSize?.height ?? ''
+    cardWidth.value = size?.width ?? effectiveDefaultSize.value?.width ?? ''
+    cardHeight.value = size?.height ?? effectiveDefaultSize.value?.height ?? ''
   },
   { deep: true },
 )
@@ -145,6 +178,8 @@ watch(tab, (value) => {
 })
 
 function onSave() {
+  saveAttempted.value = true
+  if (missingRequiredVariables.value) return
   // Only store an override when it actually differs from the card default
   const css = cssDraft.value.trim()
   const isOverride = css !== '' && css !== defaultCss.value.trim()
@@ -163,7 +198,7 @@ function resetCss() {
 const previewStyle = computed(() => {
   if (!props.sizable) return undefined
   const style: Record<string, string> = { maxWidth: 'none' }
-  const defaultSize = manifest?.defaultSize
+  const defaultSize = effectiveDefaultSize.value
   style.width = `${sizeValue(cardWidth.value) ?? defaultSize?.width ?? 140}px`
   const height = sizeValue(cardHeight.value) ?? defaultSize?.height
   if (height) style.height = `${height}px`
@@ -176,7 +211,7 @@ const isBarArea = computed(() => props.area !== 'default')
 
 <template>
   <BaseDialog
-    :title="t('editor.configureTitle', { name: manifest ? t(manifest.name) : cardType })"
+    :title="t('editor.configureTitle', { name: dialogName })"
     size="xl"
     @close="emit('close')"
   >
@@ -185,8 +220,11 @@ const isBarArea = computed(() => props.area !== 'default')
     <div class="config-layout">
       <div v-show="tab === 'settings'" class="form-col">
         <component :is="editorComponent" v-if="editorComponent" v-model="draft" />
-        <SchemaForm v-if="manifest?.schema" v-model="draft" :schema="manifest.schema" />
-        <p v-if="!manifest?.schema && !editorComponent" class="no-options">
+        <SchemaForm v-if="hasSchema" v-model="draft" :schema="effectiveSchema" />
+        <p v-if="saveAttempted && missingRequiredVariables" class="validation-error">
+          {{ t('customCards.variables.requiredError') }}
+        </p>
+        <p v-if="!hasSchema && !editorComponent" class="no-options">
           {{ t('editor.noOptions') }}
         </p>
       </div>
@@ -303,7 +341,12 @@ const isBarArea = computed(() => props.area !== 'default')
 
 <style scoped>
 .dialog-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 4;
   margin-bottom: 18px;
+  background: var(--nav-bg);
+  box-shadow: 0 10px 14px -16px rgba(0, 0, 0, 0.75);
 }
 .config-layout {
   display: grid;
@@ -389,7 +432,7 @@ const isBarArea = computed(() => props.area !== 'default')
 /* Set apart from the form: own panel with the background of the target area */
 .preview-col {
   position: sticky;
-  top: 0;
+  top: 62px;
   display: flex;
   flex-direction: column;
   border: 1px solid var(--divider);
@@ -434,5 +477,10 @@ const isBarArea = computed(() => props.area !== 'default')
 }
 .no-options {
   color: var(--text-secondary);
+}
+.validation-error {
+  margin: 0;
+  color: var(--danger, #ef4444);
+  font-size: 12px;
 }
 </style>

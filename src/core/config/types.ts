@@ -102,6 +102,34 @@ export interface HeaderConfig {
   centerAlign: { vertical: NavAlign; horizontal: NavAlign }
 }
 
+/** A reusable browser-authored card definition stored with the dashboard. */
+export type CustomCardVariableType = 'entity' | 'string' | 'number' | 'boolean' | 'icon'
+
+export interface CustomCardVariable {
+  id: string
+  /** JavaScript-safe key exposed through vuePanel.config. */
+  key: string
+  /** User-facing label in the generated instance editor. */
+  label: string
+  type: CustomCardVariableType
+  required: boolean
+  /** Optional entity domain filter, e.g. "light". */
+  domain?: string
+  default?: string | number | boolean
+}
+
+export interface CustomCardDefinition {
+  id: string
+  name: string
+  description: string
+  icon: string
+  html: string
+  css: string
+  javascript: string
+  variables: CustomCardVariable[]
+  defaultSize: { cols: number; rows: number; width: number; height: number }
+}
+
 /** The bottom bar mirrors the header with left, center and right slots. */
 export interface BottomConfig {
   slots: Record<BottomSlot, CardConfig[]>
@@ -127,6 +155,8 @@ export interface DashboardSettings {
 
 export interface DashboardConfig {
   version: 1
+  /** Reusable HTML/CSS/JS cards persisted through HA frontend user data. */
+  customCards?: CustomCardDefinition[]
   settings?: Partial<DashboardSettings>
   nav?: Partial<NavConfig>
   header?: Partial<HeaderConfig>

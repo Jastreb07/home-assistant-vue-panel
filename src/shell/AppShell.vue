@@ -9,6 +9,7 @@ import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
 import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
 import DashboardSettingsDialog from '@/core/editor/DashboardSettingsDialog.vue'
+import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import DevSidebar from '@/core/dev/DevSidebar.vue'
@@ -70,6 +71,7 @@ watch(idleSeconds, (idle) => {
 // ── View management (edit mode) ──────────────────────────────
 const viewDialog = ref<'closed' | 'edit' | 'new' | 'duplicate'>('closed')
 const settingsOpen = ref(false)
+const customCardDialogOpen = ref(false)
 
 function onViewCreated(viewId: string) {
   navigate(viewId)
@@ -127,6 +129,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               >
                 <MdiIcon icon="mdi:content-copy" :size="17" />
               </button>
+              <button
+                class="toolbar-icon-btn custom-card-button"
+                :title="t('shell.newCustomCard')"
+                @click="customCardDialogOpen = true"
+              >
+                <MdiIcon icon="mdi:code-tags" :size="18" />
+              </button>
               <div class="toolbar-actions">
                 <button
                   class="toolbar-icon-btn"
@@ -176,6 +185,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       @navigate="onViewCreated"
     />
     <DashboardSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
+    <CustomCardDialog
+      v-if="customCardDialogOpen"
+      @close="customCardDialogOpen = false"
+    />
   </div>
 </template>
 
@@ -255,6 +268,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 .toolbar-icon-btn:not(:disabled):hover {
   border-color: var(--accent);
+}
+.custom-card-button {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--divider));
 }
 .toolbar-btn {
   display: flex;

@@ -6,8 +6,8 @@ const Dialog = themed('Dialog')
 
 defineProps<{
   title: string
-  /** Dialog width: md (default), lg, xl */
-  size?: 'md' | 'lg' | 'xl'
+  /** Dialog width: md (default), lg, xl, full */
+  size?: 'md' | 'lg' | 'xl' | 'full'
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
