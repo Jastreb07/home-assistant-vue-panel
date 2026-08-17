@@ -19,11 +19,14 @@ const props = withDefaults(
   }>(),
   { size: 'md', type: 'text' },
 )
-const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string | number]
+  blur: [event: FocusEvent]
+}>()
 
 function onInput(e: Event) {
   const value = (e.target as HTMLInputElement).value
-  emit('update:modelValue', props.type === 'number' ? Number(value) : value)
+  emit('update:modelValue', props.type === 'number' && value !== '' ? Number(value) : value)
 }
 </script>
 
@@ -42,5 +45,6 @@ function onInput(e: Event) {
     :step="step"
     :list="list"
     @input="onInput"
+    @blur="emit('blur', $event)"
   />
 </template>

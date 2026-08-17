@@ -1,6 +1,11 @@
 import { defineAsyncComponent, type Component } from 'vue'
 import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
 import type { BarPosition } from '@/core/config/types'
+import {
+  defaultResponsiveVisibility,
+  withResponsiveCss,
+  type ResponsiveVisibility,
+} from '@/core/ui/responsiveCss'
 
 // Re-exported so consumers have a single import site for the registry API
 export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
@@ -92,6 +97,8 @@ export interface CardManifest {
   areas?: CardArea[]
   /** Shell bar positions this card can occupy. Bar-only cards stay out of the normal picker. */
   barPositions?: BarPosition[]
+  /** Card-specific defaults for the CSS-backed responsive visibility editor. */
+  defaultResponsive?: Partial<ResponsiveVisibility>
   /**
    * Default CSS per area, applied unless the card instance overrides it.
    * `default` is the fallback for areas without their own entry:
@@ -132,8 +139,18 @@ const rawCardSources = import.meta.glob<string>('../../cards/*/*.vue', {
  * manifest's 'default'. Empty when the card declares none.
  */
 export function cardAreaCss(type: string, area: CardCssArea = 'default'): string {
-  const css = cardRegistry[type]?.css
-  return css?.[area] ?? css?.default ?? ''
+  const manifest = cardRegistry[type]
+  const css = manifest?.css
+  return applyResponsiveDefaults(manifest, css?.[area] ?? css?.default ?? '')
+}
+
+function applyResponsiveDefaults(manifest: CardManifest | undefined, css: string): string {
+  if (!manifest?.defaultResponsive) return css
+  const visibility: ResponsiveVisibility = {
+    ...defaultResponsiveVisibility,
+    ...manifest.defaultResponsive,
+  }
+  return withResponsiveCss(css, visibility)
 }
 
 /**
@@ -142,8 +159,9 @@ export function cardAreaCss(type: string, area: CardCssArea = 'default'): string
  * <style> blocks of the card's .vue files as a starting point.
  */
 export async function cardDefaultCss(type: string, area: CardCssArea = 'default'): Promise<string> {
-  const declared = cardAreaCss(type, area)
-  if (declared) return declared
+  const manifest = cardRegistry[type]
+  const declared = manifest?.css?.[area] ?? manifest?.css?.default
+  if (declared !== undefined) return applyResponsiveDefaults(manifest, declared)
   const dir = cardDirs[type]
   if (!dir) return ''
   const prefix = `../../cards/${dir}/`
@@ -156,7 +174,7 @@ export async function cardDefaultCss(type: string, area: CardCssArea = 'default'
       if (css) parts.push(css)
     }
   }
-  return parts.join('\n\n')
+  return applyResponsiveDefaults(manifest, parts.join('\n\n'))
 }
 
 /** Cards offered for an area — 'dashboard' is the default when unset. */

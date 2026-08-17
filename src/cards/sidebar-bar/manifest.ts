@@ -6,6 +6,7 @@ export default defineCard({
   icon: 'mdi:dock-left',
   component: () => import('./SidebarBarCard.vue'),
   barPositions: ['sidebar'],
+  defaultResponsive: { mobile: false },
   schema: {
     width: { type: 'number', label: 'editor.nav.width', default: 280, min: 160, max: 560, step: 10 },
     verticalAlign: {

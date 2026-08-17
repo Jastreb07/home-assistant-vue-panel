@@ -3,7 +3,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
-import { useMediaQuery } from '@/core/composables/useMediaQuery'
 import { useTheme } from '@/core/composables/useTheme'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
 import Screensaver from '@/core/kiosk/Screensaver.vue'
@@ -25,9 +24,6 @@ const route = useRoute()
 const router = useRouter()
 
 useTheme()
-
-// Wall tablet / desktop: sidebar on the left. It is hidden on smaller screens.
-const isWide = useMediaQuery('(min-width: 1024px)')
 
 const views = computed(() => store.config.views)
 
@@ -101,7 +97,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <div class="shell-body">
       <!-- Global bar cards configure themselves through the dashboard store. -->
-      <ShellBarHost v-if="isWide && showSidebar" position="sidebar" />
+      <ShellBarHost v-if="showSidebar" position="sidebar" />
       <div class="view-column">
         <ShellBarHost v-if="showHeader && headerInViewArea" position="header" />
         <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">

@@ -5,7 +5,7 @@ import { useEntity, useService } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = defineProps<{
-  config: { entity: string; name?: string; showBrightness?: boolean }
+  config: { entity: string; name?: string; icon?: string; showBrightness?: boolean }
 }>()
 
 const { t } = useI18n()
@@ -13,6 +13,9 @@ const light = useEntity(() => props.config.entity)
 const { toggle } = useService('light')
 
 const isOn = computed(() => light.value?.state === 'on')
+const icon = computed(
+  () => props.config.icon || (isOn.value ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'),
+)
 const displayName = computed(
   () =>
     props.config.name ??
@@ -31,7 +34,7 @@ function onTap() {
 
 <template>
   <div class="light-card" :class="{ active: isOn }" @click="onTap">
-    <MdiIcon :icon="isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="32" />
+    <MdiIcon :icon="icon" :size="32" />
     <div class="info">
       <div class="name">{{ displayName || t('cards.light.defaultName') }}</div>
       <div class="state">

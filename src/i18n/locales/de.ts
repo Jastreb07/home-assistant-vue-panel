@@ -308,6 +308,7 @@ export default {
       name: 'Licht',
       entity: 'Licht-Entity',
       displayName: 'Anzeigename',
+      icon: 'Icon (mdi)',
       showBrightness: 'Helligkeit anzeigen',
       defaultName: 'Licht',
       on: 'An',

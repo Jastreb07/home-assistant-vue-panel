@@ -19,7 +19,10 @@ defineProps<{
   /** id of a <datalist> for native suggestions */
   list?: string
 }>()
-const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
+const emit = defineEmits<{
+  'update:modelValue': [value: string | number]
+  blur: [event: FocusEvent]
+}>()
 </script>
 
 <template>
@@ -37,5 +40,6 @@ const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
     :step="step"
     :list="list"
     @update:model-value="emit('update:modelValue', $event)"
+    @blur="emit('blur', $event)"
   />
 </template>

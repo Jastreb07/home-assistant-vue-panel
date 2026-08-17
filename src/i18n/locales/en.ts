@@ -307,6 +307,7 @@ export default {
       name: 'Light',
       entity: 'Light entity',
       displayName: 'Display name',
+      icon: 'Icon (mdi)',
       showBrightness: 'Show brightness',
       defaultName: 'Light',
       on: 'On',

@@ -181,12 +181,12 @@ interface CardConfig {
 
 | Breakpoint | Shell | Verhalten |
 |---|---|---|
-| ≥ 1024 px landscape (Wand-Tablet) | Globale Sidebar-Bar links; Header-/Bottom-Bar gemäß View-Einstellung | Grid mit `layoutOptions.maxColumns` |
-| < 1024 px (Smartphone) | Globale Sidebar-Bar ausgeblendet; Header-/Bottom-Bar bleiben gemäß View-Einstellung | Cards einspaltig gestapelt, Sections untereinander |
+| Tablet/Desktop | Globale Sidebar-Bar links; Header-/Bottom-Bar gemäß View-Einstellung | Grid mit `layoutOptions.maxColumns` |
+| Smartphone (standardmäßig bis 767 px) | Globale Sidebar-Bar über ihre Card-Sichtbarkeit ausgeblendet; Header-/Bottom-Bar bleiben gemäß View-Einstellung | Cards einspaltig gestapelt, Sections untereinander |
 
 Umsetzung: CSS Grid + Container Queries; Cards deklarieren nur `defaultSize`, die Layouts kümmern sich um den Rest.
 
-Sidebar, Header und Bottom sind keine statischen Shell-Komponenten, sondern global ausgewählte, automatisch entdeckte Cards. Ein Manifest kennzeichnet unterstützte Positionen über `barPositions`; dadurch lassen sich eigene Bar-Typen ohne zentrale Registrierung ergänzen. Im Edit-Modus öffnet jede Bar über ihren Stift denselben CardConfigDialog wie normale Cards. Breite/Höhe und Slot-Ausrichtung werden aus dem Schema des jeweiligen Bar-Manifests erzeugt; der CSS-Tab bleibt daneben verfügbar. Header und Bottom bieten außerdem `placement: full|view` (Standard: `view`): über die gesamte App-Breite außerhalb der Shell-Zeile oder nur innerhalb der View-Spalte neben der Sidebar. Separate Navigation-/Header-/Bottom-Einstellungsdialoge gibt es nicht. Die Default-Bar-Cards stellen editierbare Slots bereit; die Sidebar hat rechts eine Trennlinie. Pro View wird nur die Sichtbarkeit über `showSidebar`, `showHeader` und `showBottom` gesteuert, wobei die Bottom-Bar standardmäßig sichtbar ist.
+Sidebar, Header und Bottom sind keine statischen Shell-Komponenten, sondern global ausgewählte, automatisch entdeckte Cards. Ein Manifest kennzeichnet unterstützte Positionen über `barPositions`; dadurch lassen sich eigene Bar-Typen ohne zentrale Registrierung ergänzen. Im Edit-Modus öffnet jede Bar über ihren Stift denselben CardConfigDialog wie normale Cards. Breite/Höhe und Slot-Ausrichtung werden aus dem Schema des jeweiligen Bar-Manifests erzeugt; der CSS-Tab bleibt daneben verfügbar. Header und Bottom bieten außerdem `placement: full|view` (Standard: `view`): über die gesamte App-Breite außerhalb der Shell-Zeile oder nur innerhalb der View-Spalte neben der Sidebar. Separate Navigation-/Header-/Bottom-Einstellungsdialoge gibt es nicht. Die Default-Bar-Cards stellen editierbare Slots bereit; die Sidebar hat rechts eine Trennlinie. Es gibt keinen festen Shell-Breakpoint für die Sidebar: Ihre responsive Darstellung folgt ausschließlich dem CSS-basierten Sichtbarkeitsblock der Card. Das Default-Manifest blendet sie auf Smartphones aus und lässt sie auf Tablets sowie Desktops sichtbar. Pro View wird nur die Sichtbarkeit über `showSidebar`, `showHeader` und `showBottom` gesteuert, wobei die Bottom-Bar standardmäßig sichtbar ist.
 
 ## 8. HA-Integration & Auth
 

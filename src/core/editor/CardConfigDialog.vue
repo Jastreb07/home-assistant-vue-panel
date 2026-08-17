@@ -95,23 +95,38 @@ const defaultCss = ref('')
 // Pre-filled with the card's full default CSS so users can tweak it
 const cssDraft = ref(props.initialCss ?? '')
 const visibility = ref({ ...defaultResponsiveVisibility })
+const mobileBreakpointDraft = ref<string | number>(defaultResponsiveVisibility.mobileMax)
+const tabletBreakpointDraft = ref<string | number>(defaultResponsiveVisibility.tabletMax)
 const responsiveReady = ref(false)
 
 function readResponsiveCss() {
   visibility.value = responsiveVisibilityFromCss(cssDraft.value)
+  mobileBreakpointDraft.value = visibility.value.mobileMax
+  tabletBreakpointDraft.value = visibility.value.tabletMax
 }
 
-function setMobileBreakpoint(raw: string | number) {
-  const value = Math.min(Math.max(Math.round(Number(raw) || 767), 320), 2000)
+function commitMobileBreakpoint() {
+  const raw = mobileBreakpointDraft.value
+  const parsed = raw === '' ? Number.NaN : Number(raw)
+  const value = Number.isFinite(parsed)
+    ? Math.min(Math.max(Math.round(parsed), 320), 2000)
+    : visibility.value.mobileMax
   visibility.value.mobileMax = value
-  if (visibility.value.tabletMax <= value) visibility.value.tabletMax = value + 1
+  mobileBreakpointDraft.value = value
+  if (visibility.value.tabletMax <= value) {
+    visibility.value.tabletMax = value + 1
+    tabletBreakpointDraft.value = value + 1
+  }
 }
 
-function setTabletBreakpoint(raw: string | number) {
-  visibility.value.tabletMax = Math.min(
-    Math.max(Math.round(Number(raw) || 1023), visibility.value.mobileMax + 1),
-    4000,
-  )
+function commitTabletBreakpoint() {
+  const raw = tabletBreakpointDraft.value
+  const parsed = raw === '' ? Number.NaN : Number(raw)
+  const value = Number.isFinite(parsed)
+    ? Math.min(Math.max(Math.round(parsed), visibility.value.mobileMax + 1), 4000)
+    : visibility.value.tabletMax
+  visibility.value.tabletMax = value
+  tabletBreakpointDraft.value = value
 }
 
 onMounted(async () => {
@@ -232,23 +247,25 @@ const isBarArea = computed(() => props.area !== 'default')
             <div class="field">
               <span>{{ t('editor.visibility.mobileBreakpoint') }}</span>
               <BaseInput
-                :model-value="visibility.mobileMax"
+                :model-value="mobileBreakpointDraft"
                 type="number"
                 :min="320"
                 :max="2000"
                 :step="1"
-                @update:model-value="setMobileBreakpoint"
+                @update:model-value="mobileBreakpointDraft = $event"
+                @blur="commitMobileBreakpoint"
               />
             </div>
             <div class="field">
               <span>{{ t('editor.visibility.tabletBreakpoint') }}</span>
               <BaseInput
-                :model-value="visibility.tabletMax"
+                :model-value="tabletBreakpointDraft"
                 type="number"
                 :min="visibility.mobileMax + 1"
                 :max="4000"
                 :step="1"
-                @update:model-value="setTabletBreakpoint"
+                @update:model-value="tabletBreakpointDraft = $event"
+                @blur="commitTabletBreakpoint"
               />
             </div>
           </div>

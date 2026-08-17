@@ -10,6 +10,7 @@ export default defineCard({
   schema: {
     entity: { type: 'entity', domain: 'light', label: 'cards.light.entity' },
     name: { type: 'string', label: 'cards.light.displayName', optional: true },
+    icon: { type: 'icon', label: 'cards.light.icon', optional: true },
     showBrightness: { type: 'boolean', label: 'cards.light.showBrightness', default: true },
   },
   defaultSize: { cols: 1, rows: 1 },
