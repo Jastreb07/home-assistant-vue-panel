@@ -1,0 +1,93 @@
+/* Four-sided value editor — sizes come from the shared .vp-size-* tokens */
+.vp-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vp-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vp-box-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.vp-box-unit {
+  width: 84px;
+  flex-shrink: 0;
+}
+/* The four fields sit flush next to each other, the chain button closes the row */
+.vp-box-row {
+  display: flex;
+  align-items: flex-start;
+}
+.vp-box-cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+input.vp-box-input {
+  width: 100%;
+  height: var(--vp-control-height);
+  padding: 0 6px;
+  border: 1px solid var(--divider);
+  border-radius: 0;
+  margin-left: -1px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  text-align: center;
+  outline: none;
+}
+.vp-box-cell:first-child input.vp-box-input {
+  margin-left: 0;
+  border-top-left-radius: var(--vp-control-radius);
+  border-bottom-left-radius: var(--vp-control-radius);
+}
+input.vp-box-input:focus {
+  border-color: var(--accent);
+  position: relative;
+  z-index: 1;
+}
+/* Spinners would steal most of the already narrow field */
+input.vp-box-input::-webkit-outer-spin-button,
+input.vp-box-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.vp-box-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.vp-box-side {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.vp-box-link {
+  flex-shrink: 0;
+  width: var(--vp-control-height);
+  height: var(--vp-control-height);
+  margin-left: -1px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--divider);
+  border-top-right-radius: var(--vp-control-radius);
+  border-bottom-right-radius: var(--vp-control-radius);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.vp-box-link:hover {
+  color: var(--text-primary);
+}
+.vp-box-link.active {
+  color: var(--text-on-active);
+  background: var(--accent);
+  border-color: var(--accent);
+}

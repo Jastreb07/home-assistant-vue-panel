@@ -65,6 +65,11 @@ export interface CardManifest {
   editor?: () => Promise<{ default: Component }>
   defaultSize?: { cols: number; rows: number }
   /**
+   * Card always occupies a full row of its section (e.g. a heading):
+   * width 100 % in every layout, and no resize handle in the flex layout.
+   */
+  fullRow?: boolean
+  /**
    * Areas the card can be placed in — list every area it suits, e.g.
    * `areas: ['dashboard', 'sidebar_top', 'sidebar_bottom']`.
    * Defaults to `['dashboard']`.

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useDashboardStore } from '@/core/config/dashboardStore'
+import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import type { MenuItem } from './items'
 
@@ -36,13 +36,19 @@ const items = computed<MenuItem[]>(() => {
   }))
 })
 
-const activeId = computed(() => (route.params.viewId as string) || store.config.views[0]?.id)
+/** Menu items reference view ids, the URL carries the view's path. */
+const activeId = computed(() => {
+  const segment = route.params.viewId as string
+  const view = segment ? store.viewByRoute(segment) : store.config.views[0]
+  return view?.id
+})
 
 const showTitles = computed(() => props.config.showTitles !== false)
 const showIcons = computed(() => props.config.showIcons !== false)
 
 function activate(item: MenuItem) {
-  if (item.viewId) router.push({ params: { viewId: item.viewId } })
+  const view = item.viewId ? store.viewById(item.viewId) : undefined
+  if (view) router.push({ params: { viewId: viewPath(view) } })
 }
 </script>
 

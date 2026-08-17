@@ -1,13 +1,20 @@
 import { ref, type Ref } from 'vue'
-import type { SectionConfig, ViewConfig } from '@/core/config/types'
+import type { CardConfig, SectionConfig, ViewConfig } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import { cardRegistry } from '@/core/registry/cardRegistry'
-import { confirmDialog, promptDialog } from '@/core/ui/dialogService'
+import { confirmDialog } from '@/core/ui/dialogService'
 import { t } from '@/i18n'
 
 export type ConfigTarget =
   | { mode: 'new'; sectionId: string; cardType: string }
-  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown>; css?: string }
+  | {
+      mode: 'edit'
+      cardId: string
+      cardType: string
+      config: Record<string, unknown>
+      css?: string
+      size?: CardConfig['size']
+    }
   | null
 
 /**
@@ -28,7 +35,7 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     configTarget.value = { mode: 'new', sectionId, cardType }
   }
 
-  function onConfigSave(config: Record<string, unknown>, css?: string) {
+  function onConfigSave(config: Record<string, unknown>, css?: string, size?: CardConfig['size']) {
     const target = configTarget.value
     if (!target) return
     if (target.mode === 'new') {
@@ -36,21 +43,23 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
         type: target.cardType,
         config,
         css,
-        size: cardRegistry[target.cardType]?.defaultSize,
+        size: size ?? cardRegistry[target.cardType]?.defaultSize,
       })
     } else {
       store.updateCardConfig(getView().id, target.cardId, config, css)
+      if (size) store.updateCardSize(getView().id, target.cardId, size)
     }
     configTarget.value = null
   }
 
-  function editCard(card: { id: string; type: string; config: Record<string, unknown>; css?: string }) {
+  function editCard(card: CardConfig) {
     configTarget.value = {
       mode: 'edit',
       cardId: card.id,
       cardType: card.type,
       config: card.config,
       css: card.css,
+      size: card.size,
     }
   }
 
@@ -58,15 +67,33 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     store.removeCard(getView().id, cardId)
   }
 
-  // ── Sections ─────────────────────────────────────────────────
-  async function addSection() {
-    const title = await promptDialog(t('editor.sectionTitlePrompt'), t('editor.newSectionDefault'))
-    if (title !== null) store.addSection(getView().id, title || undefined)
+  /** Live card from the store — its size changes with every resize. */
+  function cardById(cardId: string): CardConfig | undefined {
+    for (const section of getView().sections) {
+      const card = section.cards.find((c) => c.id === cardId)
+      if (card) return card
+    }
+    return undefined
   }
 
-  async function renameSection(section: SectionConfig) {
-    const title = await promptDialog(t('editor.sectionTitlePrompt'), section.title ?? '')
-    if (title !== null) store.updateSection(getView().id, section.id, { title: title || undefined })
+  // ── Sections ─────────────────────────────────────────────────
+  /** The section currently open in the SectionSettingsDialog. */
+  const sectionTarget = ref<SectionConfig | null>(null)
+
+  /** New sections are created right away and open their settings dialog. */
+  function addSection() {
+    const section = store.addSection(getView().id)
+    if (section) sectionTarget.value = section
+  }
+
+  function editSection(section: SectionConfig) {
+    sectionTarget.value = section
+  }
+
+  function onSectionSave(patch: Partial<Omit<SectionConfig, 'id' | 'cards'>>) {
+    const section = sectionTarget.value
+    if (!section) return
+    store.updateSection(getView().id, section.id, patch)
   }
 
   async function removeSection(section: SectionConfig) {
@@ -74,9 +101,19 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     store.removeSection(getView().id, section.id)
   }
 
-  // ── Drag & Drop ──────────────────────────────────────────────
+  /** Delete triggered inside the settings dialog — that one already confirmed. */
+  function onSectionRemove() {
+    const section = sectionTarget.value
+    if (section) store.removeSection(getView().id, section.id)
+  }
+
+  // ── Drag & Drop (cards) ──────────────────────────────────────
   const draggingId = ref<string | null>(null)
   const dropTarget = ref<{ sectionId: string; index: number } | null>(null)
+
+  // ── Drag & Drop (whole sections, via the ≡ handle) ───────────
+  const draggingSectionId = ref<string | null>(null)
+  const sectionDropId = ref<string | null>(null)
 
   function onDragStart(e: DragEvent, cardId: string) {
     draggingId.value = cardId
@@ -84,13 +121,28 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     e.dataTransfer!.effectAllowed = 'move'
   }
 
+  function onSectionDragStart(e: DragEvent, sectionId: string) {
+    draggingSectionId.value = sectionId
+    e.dataTransfer!.setData('text/plain', `section:${sectionId}`)
+    e.dataTransfer!.effectAllowed = 'move'
+  }
+
   function onDragOverCard(e: DragEvent, sectionId: string, index: number) {
     e.preventDefault()
+    if (draggingSectionId.value) {
+      // While dragging a section, hovering its cards targets that section
+      if (sectionId !== draggingSectionId.value) sectionDropId.value = sectionId
+      return
+    }
     dropTarget.value = { sectionId, index }
   }
 
   function onDragOverSection(e: DragEvent, section: SectionConfig) {
     e.preventDefault()
+    if (draggingSectionId.value) {
+      if (section.id !== draggingSectionId.value) sectionDropId.value = section.id
+      return
+    }
     if (dropTarget.value?.sectionId !== section.id) {
       dropTarget.value = { sectionId: section.id, index: section.cards.length }
     }
@@ -98,6 +150,15 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
 
   function onDrop(e: DragEvent) {
     e.preventDefault()
+    if (draggingSectionId.value) {
+      if (sectionDropId.value) {
+        const toIndex = getView().sections.findIndex((s) => s.id === sectionDropId.value)
+        store.moveSection(getView().id, draggingSectionId.value, toIndex)
+      }
+      draggingSectionId.value = null
+      sectionDropId.value = null
+      return
+    }
     const cardId = e.dataTransfer!.getData('text/plain')
     if (cardId && dropTarget.value) {
       store.moveCard(getView().id, cardId, dropTarget.value.sectionId, dropTarget.value.index)
@@ -109,6 +170,8 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
   function onDragEnd() {
     draggingId.value = null
     dropTarget.value = null
+    draggingSectionId.value = null
+    sectionDropId.value = null
   }
 
   return {
@@ -119,12 +182,19 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     onConfigSave,
     editCard,
     removeCard,
+    cardById,
+    sectionTarget,
     addSection,
-    renameSection,
+    editSection,
+    onSectionSave,
+    onSectionRemove,
     removeSection,
     draggingId,
     dropTarget,
+    draggingSectionId,
+    sectionDropId,
     onDragStart,
+    onSectionDragStart,
     onDragOverCard,
     onDragOverSection,
     onDrop,

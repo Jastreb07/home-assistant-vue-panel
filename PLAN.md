@@ -51,7 +51,7 @@ vue-panel/
 │   │       └── CardConfigDialog.vue # Auto-generiertes Formular aus Manifest
 │   ├── layouts/            # View-Layouts (analog Lovelace)
 │   │   ├── SectionsLayout.vue   # Abschnitte (Standard)
-│   │   ├── TilesLayout.vue      # Kacheln-Grid
+│   │   ├── FlexLayout.vue       # Feste Card-Größen (resizable)
 │   │   ├── PanelLayout.vue      # Eine Card fullscreen
 │   │   ├── SidebarLayout.vue    # Hauptbereich + rechte Spalte
 │   │   └── GridLayout.vue       # Freies Grid (Spalten/Zeilen definierbar)
@@ -127,10 +127,21 @@ interface DashboardConfig {
 }
 interface ViewConfig {
   id: string; title: string; icon: string
-  layout: 'sections' | 'tiles' | 'panel' | 'sidebar' | 'grid'
+  path?: string                              // URL-Segment, Fallback = id
+  layout: 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'  // 'tiles' = Legacy-Alias für flex
   layoutOptions?: Record<string, unknown>   // z.B. maxColumns
   subview?: boolean                          // kein Nav-Eintrag, mit Zurück-Button
-  sections: { title?: string; icon?: string; cards: CardConfig[] }[]
+  padding?: BoxValue; margin?: BoxValue      // Tab "Erweitert"
+  width?: 'default' | 'full'                 // 'full' hebt die max-width des Layouts auf
+  align?: 'left' | 'center' | 'right'        // waagerechte Position im View-Bereich
+  sections: {                                // Überschrift = Card 'section-title'
+    columnSpan?: number                      // Breite in Spalten (sections-Layout)
+    cardOrientation?: 'auto' | 'vertical' | 'horizontal'
+    contentAlign?: 'left' | 'center' | 'right'   // justify-content der Card-Zeile
+    width?: number                               // feste Breite in px (flex), sonst 100%
+    padding?: BoxValue; margin?: BoxValue
+    cards: CardConfig[]
+  }[]
 }
 interface CardConfig {
   id: string; type: string                   // = manifest.type
@@ -160,7 +171,8 @@ interface CardConfig {
   1. `style.css` des Default-Themes wird immer zuerst geladen.
   2. Hat das aktive Theme eine `style.css` für die Komponente, wird sie zusätzlich geladen (überschreibt) — Themes ohne `.vue`-Dateien restylen so nur das Default-Markup.
   3. Hat das aktive Theme eine `index.vue`, ersetzt sie die Default-Komponente — sonst Fallback auf `default/`.
-- Aufrufer nutzen die Wrapper in `src/core/ui/` (`BaseCard`, `BaseDialog`, `BaseButton`) — Import-Pfade bleiben stabil, der Wrapper rendert die Komponente des aktiven Themes.
+- Aufrufer nutzen die Wrapper in `src/core/ui/` (`BaseCard`, `BaseDialog`, `BaseButton`, `BaseBoxInput`, …) — Import-Pfade bleiben stabil, der Wrapper rendert die Komponente des aktiven Themes.
+- `BoxInput` ist das wiederverwendbare Padding-/Margin-Feld (vier Seiten + Einheit + Ketten-Button), genutzt vom View- und vom Abschnitts-Dialog.
 - Theme-Auswahl: Dashboard-Einstellungen → „Komponenten-Theme" (`settings.uiTheme`, synced via HA `.storage`). Neues Theme = neuen Ordner `src/theme/mein-theme/` anlegen, nur die Komponenten/CSS ablegen, die abweichen sollen.
 
 ## 7. Responsive Verhalten
@@ -200,7 +212,7 @@ Umsetzung: CSS Grid + Container Queries; Cards deklarieren nur `defaultSize`, di
 
 - **Phase 1 — Fundament** ✅: HA-Verbindung (`connection.ts`, `useEntity`, `useService`), AppShell mit SideNav/BottomNav, ViewRenderer, `SectionsLayout`, Config-Store + localStorage-Persistenz, 2 Basis-Cards (clock, light). *→ Erstes lauffähiges Dashboard.*
 - **Phase 2 — Editor** ✅: Edit-Modus, CardPicker, Schema-Formulare, Drag & Drop, View-Verwaltung, Persistenz via `frontend/set_user_data`.
-- **Phase 3 — Layouts & Cards** ✅: Tiles-, Panel-, Sidebar-, Grid-Layout (gemeinsame Basis: `useSectionEditing` + `LayoutSection`); Cards: weather, thermostat, room-tile, sensor, cover, media; Subviews mit Zurück-Button (room-tile navigiert per `targetView`).
+- **Phase 3 — Layouts & Cards** ✅: Flex- (ex Tiles), Panel-, Sidebar-, Grid-Layout (gemeinsame Basis: `useSectionEditing` + `LayoutSection`); Cards: weather, thermostat, room-tile, sensor, cover, media; Subviews mit Zurück-Button (room-tile navigiert per `targetView`).
 - **Phase 4 — Polish** ✅: Themes (dunkel/hell/auto, umschaltbar in den Dashboard-Einstellungen; Hintergrund pro View als CSS), Undo/Redo (50 Schritte, Strg+Z/Strg+Y + Toolbar-Buttons), Kiosk-Optionen (Bildschirmschoner mit Uhr nach N Minuten, Auto-Return zur Start-View nach N Sekunden). Export/Import über die Dev-Sidebar.
 
 ## 10. Deployment-Workflow

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
+import SectionSettingsDialog from '@/core/editor/SectionSettingsDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import LayoutSection from './LayoutSection.vue'
 import { useSectionEditing } from './useSectionEditing'
@@ -23,12 +24,18 @@ const {
   onConfigSave,
   editCard,
   removeCard,
+  sectionTarget,
   addSection,
-  renameSection,
+  editSection,
+  onSectionSave,
+  onSectionRemove,
   removeSection,
   draggingId,
   dropTarget,
+  draggingSectionId,
+  sectionDropId,
   onDragStart,
+  onSectionDragStart,
   onDragOverCard,
   onDragOverSection,
   onDrop,
@@ -57,11 +64,14 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         :edit-mode="store.editMode"
         :dragging-id="draggingId"
         :drop-target="dropTarget"
+        :section-dragging="draggingSectionId === section.id"
+        :section-drop-target="sectionDropId === section.id"
         @pick="pickerSectionId = $event"
         @edit-card="editCard"
         @remove-card="removeCard"
-        @rename-section="renameSection"
+        @edit-section="editSection"
         @remove-section="removeSection"
+        @section-dragstart="onSectionDragStart"
         @dragstart="onDragStart"
         @dragover-card="onDragOverCard"
         @dragover-section="onDragOverSection"
@@ -89,7 +99,7 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @pick="pickerSectionId = $event"
         @edit-card="editCard"
         @remove-card="removeCard"
-        @rename-section="renameSection"
+        @edit-section="editSection"
         @remove-section="removeSection"
         @dragstart="onDragStart"
         @dragover-card="onDragOverCard"
@@ -108,6 +118,14 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
       @close="configTarget = null"
       @save="onConfigSave"
     />
+    <SectionSettingsDialog
+      v-if="sectionTarget"
+      :section="sectionTarget"
+      :view="view"
+      @close="sectionTarget = null"
+      @save="onSectionSave"
+      @remove="onSectionRemove"
+    />
   </div>
 </template>
 
@@ -116,8 +134,9 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: var(--view-max-width, 1400px);
+  /* --view-align holds the auto margins of the view's alignment setting */
+  margin: var(--view-align, 0 auto);
   align-items: start;
 }
 @media (min-width: 900px) {

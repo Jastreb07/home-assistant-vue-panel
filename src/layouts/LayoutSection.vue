@@ -1,33 +1,45 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
-import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
+import { cardAreaCss, cardRegistry, resolveCardComponent } from '@/core/registry/cardRegistry'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import CardCss from '@/core/ui/CardCss.vue'
+import { boxToCss } from '@/core/ui/boxInput'
 
 /**
- * Renders one section (header + cards grid + edit overlays).
- * Shared by the sections / tiles / grid / sidebar layouts —
- * the grid itself is styled by the parent via `gridStyle`.
+ * Renders one section (cards grid + edit overlays). Shared by the
+ * sections / flex / grid / sidebar layouts — the grid itself is styled by
+ * the parent via `gridStyle`. Headings are cards ('section-title').
  */
-defineProps<{
+const props = defineProps<{
   section: SectionConfig
   editMode: boolean
   draggingId: string | null
   dropTarget: { sectionId: string; index: number } | null
-  /** CSS for the cards grid, e.g. grid-template-columns */
+  /** CSS for the cards grid, e.g. grid-template-columns (or display:flex) */
   gridStyle?: Record<string, string>
-  /** Hide the section header entirely (tiles layout) */
-  hideHeader?: boolean
+  /** Per-card slot style override (e.g. fixed px sizes in the flex layout) */
+  slotStyle?: (card: CardConfig) => Record<string, string> | undefined
+  /** Allow resizing card slots in edit mode (flex layout) */
+  resizable?: boolean
+  /** This section is currently being dragged (reorder) */
+  sectionDragging?: boolean
+  /** A dragged section would be dropped at this section's position */
+  sectionDropTarget?: boolean
+  /** Width in grid columns — only meaningful in a column-based parent */
+  columnSpan?: number
 }>()
 
 const emit = defineEmits<{
   pick: [sectionId: string]
   'edit-card': [card: CardConfig]
   'remove-card': [cardId: string]
-  'rename-section': [section: SectionConfig]
+  'resize-card': [cardId: string, width: number, height: number]
+  'edit-section': [section: SectionConfig]
   'remove-section': [section: SectionConfig]
+  'section-dragstart': [e: DragEvent, sectionId: string]
   dragstart: [e: DragEvent, cardId: string]
   'dragover-card': [e: DragEvent, sectionId: string, index: number]
   'dragover-section': [e: DragEvent, section: SectionConfig]
@@ -37,47 +49,136 @@ const emit = defineEmits<{
 
 const { t } = useI18n()
 
-function slotStyle(card: CardConfig): Record<string, string> | undefined {
-  return card.size ? { gridColumn: `span ${card.size.cols}` } : undefined
+/** Spacing and column width configured in the section settings dialog. */
+const sectionStyle = computed(() => {
+  const style: Record<string, string> = {}
+  const padding = boxToCss(props.section.padding)
+  const margin = boxToCss(props.section.margin)
+  if (padding) style.padding = padding
+  if (margin) style.margin = margin
+  if (props.columnSpan && props.columnSpan > 1) style.gridColumn = `span ${props.columnSpan}`
+  if (props.section.width) {
+    // `flex` beats the parent's stylesheet rule, so the section keeps its
+    // width and lines up next to other fixed-width sections
+    style.flex = '0 0 auto'
+    style.width = `${props.section.width}px`
+    style.maxWidth = '100%'
+  }
+  return style
+})
+
+const orientation = computed(() => props.section.cardOrientation ?? 'auto')
+
+/** Section alignment → justify-content of the cards container. */
+const justify: Record<string, string> = { left: 'flex-start', center: 'center', right: 'flex-end' }
+
+/**
+ * Card flow: an explicit orientation wins over the grid the parent layout
+ * passes in — 'auto' keeps the layout's own arrangement.
+ */
+const cardsStyle = computed(() => {
+  const base: Record<string, string> = { ...(props.gridStyle ?? {}) }
+  if (props.section.contentAlign) {
+    base.justifyContent = justify[props.section.contentAlign]!
+  }
+  if (orientation.value === 'vertical') {
+    return { ...base, display: 'grid', gridTemplateColumns: '1fr' }
+  }
+  if (orientation.value === 'horizontal') {
+    return { ...base, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start' }
+  }
+  return base
+})
+
+/** Headings & co. claim the whole row — in a grid as well as in a flex row. */
+function isFullRow(card: CardConfig): boolean {
+  return cardRegistry[card.type]?.fullRow === true
+}
+
+function styleFor(card: CardConfig): Record<string, string> | undefined {
+  // A full-row card keeps its width even where the layout sizes slots itself
+  if (isFullRow(card)) return { gridColumn: '1 / -1', flexBasis: '100%', width: '100%' }
+  if (props.slotStyle) return props.slotStyle(card)
+  return card.size?.cols ? { gridColumn: `span ${card.size.cols}` } : undefined
+}
+
+/** Full-row cards have no size of their own, so they cannot be resized. */
+function canResize(card: CardConfig): boolean {
+  return props.resizable === true && props.editMode && !isFullRow(card)
 }
 
 /** Instance override wins, otherwise the card's default CSS for the dashboard. */
 function cssFor(card: CardConfig): string {
   return card.css ?? cardAreaCss(card.type)
 }
+
+// ── Resize (flex layout) ─────────────────────────────────────
+// The native CSS resize handle sits in the bottom-right corner. While the
+// pointer starts there we must suppress HTML5 drag & drop on the slot.
+const resizing = ref(false)
+
+function onSlotPointerDown(e: PointerEvent, card: CardConfig) {
+  if (!canResize(card)) return
+  const el = e.currentTarget as HTMLElement
+  const r = el.getBoundingClientRect()
+  resizing.value = e.clientX > r.right - 24 && e.clientY > r.bottom - 24
+}
+
+function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
+  if (!canResize(card) || !resizing.value) return
+  resizing.value = false
+  const el = e.currentTarget as HTMLElement
+  const width = Math.round(el.offsetWidth)
+  const height = Math.round(el.offsetHeight)
+  if (width !== card.size?.width || height !== card.size?.height) {
+    emit('resize-card', card.id, width, height)
+  }
+}
 </script>
 
 <template>
   <section
     class="layout-section"
+    :class="{
+      editing: editMode,
+      'section-dragging': sectionDragging,
+      'section-drop': sectionDropTarget,
+    }"
+    :style="sectionStyle"
     @dragover="editMode && emit('dragover-section', $event, section)"
     @drop="editMode && emit('drop', $event)"
   >
-    <header v-if="!hideHeader && (section.title || editMode)" class="section-header">
-      <MdiIcon v-if="section.icon" :icon="section.icon" :size="20" />
-      <h2>{{ section.title ?? t('editor.untitledSection') }}</h2>
-      <template v-if="editMode">
-        <button class="icon-btn" :title="t('editor.rename')" @click="emit('rename-section', section)">
-          <MdiIcon icon="mdi:pencil" :size="16" />
-        </button>
-        <button class="icon-btn" :title="t('editor.deleteSection')" @click="emit('remove-section', section)">
-          <MdiIcon icon="mdi:delete-outline" :size="16" />
-        </button>
-      </template>
-      <div class="rule" />
-    </header>
+    <div v-if="editMode" class="section-toolbar">
+      <button
+        class="icon-btn drag-handle"
+        draggable="true"
+        :title="t('editor.moveSection')"
+        @dragstart="emit('section-dragstart', $event, section.id)"
+      >
+        <MdiIcon icon="mdi:drag-horizontal-variant" :size="18" />
+      </button>
+      <button class="icon-btn" :title="t('editor.section.title')" @click="emit('edit-section', section)">
+        <MdiIcon icon="mdi:pencil" :size="16" />
+      </button>
+      <button class="icon-btn" :title="t('editor.deleteSection')" @click="emit('remove-section', section)">
+        <MdiIcon icon="mdi:delete-outline" :size="16" />
+      </button>
+    </div>
 
-    <div class="cards-grid" :style="gridStyle">
+    <div class="cards-grid" :class="`orient-${orientation}`" :style="cardsStyle">
       <template v-for="(card, index) in section.cards" :key="card.id">
         <div
           class="card-slot"
           :class="{
             dragging: draggingId === card.id,
             'drop-before': dropTarget?.sectionId === section.id && dropTarget?.index === index,
+            resizable: canResize(card),
           }"
-          :style="slotStyle(card)"
+          :style="styleFor(card)"
           :data-vp-card="cssFor(card) ? card.id : undefined"
-          :draggable="editMode"
+          :draggable="editMode && !resizing"
+          @pointerdown="onSlotPointerDown($event, card)"
+          @pointerup="onSlotPointerUp($event, card)"
           @dragstart="emit('dragstart', $event, card.id)"
           @dragover="editMode && emit('dragover-card', $event, section.id, index)"
           @dragend="emit('dragend')"
@@ -111,33 +212,61 @@ function cssFor(card: CardConfig): string {
 </template>
 
 <style scoped>
-.section-header {
+/* Edit mode: the section becomes a real visible box with a floating toolbar */
+.layout-section.editing {
+  position: relative;
+  border: 2px dashed color-mix(in srgb, var(--text-secondary) 40%, transparent);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  padding-top: 22px;
+}
+.layout-section.section-dragging {
+  opacity: 0.4;
+}
+.layout-section.section-drop {
+  border-color: var(--accent);
+  border-style: solid;
+}
+.section-toolbar {
+  position: absolute;
+  top: -16px;
+  right: 12px;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 2px;
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  padding: 3px;
+  box-shadow: var(--card-shadow);
+  z-index: 3;
 }
-.section-header h2 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-secondary);
+.section-toolbar .drag-handle {
+  cursor: grab;
 }
-.section-header .rule {
-  flex: 1;
-  height: 2px;
-  background: var(--divider);
-  border-radius: 1px;
+.section-toolbar .drag-handle:active {
+  cursor: grabbing;
 }
 .cards-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 16px;
 }
+/* Horizontal orientation: the grid becomes a flex row — give the cards a base width */
+.cards-grid.orient-horizontal > * {
+  flex: 1 1 160px;
+  min-width: 0;
+}
 .card-slot {
   position: relative;
+}
+.card-slot.resizable {
+  resize: both;
+  overflow: hidden;
+  min-width: 120px;
+  min-height: 60px;
+  outline: 1px dashed var(--divider);
+  outline-offset: 2px;
+  border-radius: var(--card-radius);
 }
 .card-slot.dragging {
   opacity: 0.4;

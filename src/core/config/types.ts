@@ -1,6 +1,17 @@
 /** Data model of the dashboard configuration — the single source of truth, no YAML. */
 
-export type ViewLayout = 'sections' | 'tiles' | 'panel' | 'sidebar' | 'grid'
+import type { BoxValue } from '@/core/ui/boxInput'
+
+export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
+
+/** How the cards of a section flow — 'auto' keeps the layout's own grid. */
+export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
+
+/** Content width of a view — 'full' drops the layout's max-width. */
+export type ViewWidth = 'default' | 'full'
+
+/** Horizontal alignment of content that does not fill its container. */
+export type ViewAlign = 'left' | 'center' | 'right'
 
 export interface CardConfig {
   id: string
@@ -10,13 +21,25 @@ export interface CardConfig {
   config: Record<string, unknown>
   /** Per-card custom CSS override, scoped to this card instance via [data-vp-card] */
   css?: string
-  size?: { cols: number; rows: number }
+  /** cols/rows: grid span (grid layouts) — width/height: fixed px size (flex layout) */
+  size?: { cols?: number; rows?: number; width?: number; height?: number }
 }
 
+/** Headings are ordinary cards of type 'section-title' — a section itself has no title. */
 export interface SectionConfig {
   id: string
-  title?: string
-  icon?: string
+  /** Width in grid columns (sections layout) — clamped to layoutOptions.maxColumns */
+  columnSpan?: number
+  /** Direction the cards are arranged in */
+  cardOrientation?: CardOrientation
+  /** Horizontal alignment of the cards inside the section (flex rows) */
+  contentAlign?: ViewAlign
+  /** Fixed section width in px (flex layout) — unset means full width */
+  width?: number
+  /** Space inside the section box */
+  padding?: BoxValue
+  /** Space around the section box */
+  margin?: BoxValue
   cards: CardConfig[]
 }
 
@@ -24,6 +47,8 @@ export interface ViewConfig {
   id: string
   title: string
   icon: string
+  /** URL segment of the view — falls back to the id when unset */
+  path?: string
   layout: ViewLayout
   layoutOptions?: Record<string, unknown>
   /** CSS background of the view area, e.g. '#1a2b3c' or 'url(...) center/cover' */
@@ -32,6 +57,14 @@ export interface ViewConfig {
   showSidebar?: boolean
   /** Show the header bar on this view (default: false) */
   showHeader?: boolean
+  /** Space inside the view area, around the layout */
+  padding?: BoxValue
+  /** Space around the layout itself */
+  margin?: BoxValue
+  /** 'full' lets the layout use the whole width instead of its max-width */
+  width?: ViewWidth
+  /** Horizontal position of the layout inside the view area (default: center) */
+  align?: ViewAlign
   sections: SectionConfig[]
 }
 

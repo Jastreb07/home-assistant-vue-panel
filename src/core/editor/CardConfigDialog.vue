@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import {
   cardRegistry,
@@ -13,6 +13,7 @@ import BaseButton from '@/core/ui/BaseButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -24,10 +25,17 @@ const props = withDefaults(
     initialCss?: string
     /** Where the card sits — decides which default CSS is loaded */
     area?: CardCssArea
+    /** Offer the size tab — only layouts with fixed px sizes (flex) do */
+    sizable?: boolean
+    /** Current px size of the card, for the size tab */
+    initialSize?: { width?: number; height?: number }
   }>(),
   { area: 'default' },
 )
-const emit = defineEmits<{ close: []; save: [config: Record<string, unknown>, css?: string] }>()
+const emit = defineEmits<{
+  close: []
+  save: [config: Record<string, unknown>, css?: string, size?: { width?: number; height?: number }]
+}>()
 
 const { t } = useI18n()
 const manifest = cardRegistry[props.cardType]
@@ -50,8 +58,31 @@ const draft = ref<Record<string, unknown>>(applyDefaults(props.initialConfig))
 const tab = ref('settings')
 const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
+  ...(props.sizable
+    ? [{ value: 'size', label: t('editor.tabSize'), icon: 'mdi:resize' }]
+    : []),
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
+
+// ── Size tab (flex layout) ───────────────────────────────────
+// Empty means "not set": the layout falls back to its own default.
+const cardWidth = ref<number | ''>(props.initialSize?.width ?? '')
+const cardHeight = ref<number | ''>(props.initialSize?.height ?? '')
+
+// Keep the fields in sync when the card is resized by dragging
+watch(
+  () => props.initialSize,
+  (size) => {
+    cardWidth.value = size?.width ?? ''
+    cardHeight.value = size?.height ?? ''
+  },
+  { deep: true },
+)
+
+function sizeValue(raw: number | ''): number | undefined {
+  const n = Number(raw)
+  return raw === '' || !Number.isFinite(n) || n <= 0 ? undefined : Math.round(n)
+}
 const defaultCss = ref('')
 // Pre-filled with the card's full default CSS so users can tweak it
 const cssDraft = ref(props.initialCss ?? '')
@@ -65,12 +96,26 @@ function onSave() {
   // Only store an override when it actually differs from the card default
   const css = cssDraft.value.trim()
   const isOverride = css !== '' && css !== defaultCss.value.trim()
-  emit('save', draft.value, isOverride ? cssDraft.value : undefined)
+  const size = props.sizable
+    ? { width: sizeValue(cardWidth.value), height: sizeValue(cardHeight.value) }
+    : undefined
+  emit('save', draft.value, isOverride ? cssDraft.value : undefined, size)
 }
 
 function resetCss() {
   cssDraft.value = defaultCss.value
 }
+
+/** The preview mirrors the fixed size so typed values are visible right away. */
+const previewStyle = computed(() => {
+  if (!props.sizable) return undefined
+  const style: Record<string, string> = { maxWidth: 'none' }
+  // 220px is the flex layout's fallback width for cards without a size
+  style.width = `${sizeValue(cardWidth.value) ?? 220}px`
+  const height = sizeValue(cardHeight.value)
+  if (height) style.height = `${height}px`
+  return style
+})
 
 /** Bar areas sit on the nav background, not the dashboard background. */
 const isBarArea = computed(() => props.area !== 'default')
@@ -92,6 +137,29 @@ const isBarArea = computed(() => props.area !== 'default')
           {{ t('editor.noOptions') }}
         </p>
       </div>
+      <div v-show="tab === 'size'" class="form-col">
+        <p class="css-hint">{{ t('editor.size.hint') }}</p>
+        <div class="field">
+          <span>{{ t('editor.size.width') }}</span>
+          <BaseInput
+            :model-value="cardWidth"
+            type="number"
+            :min="40"
+            :max="4000"
+            @update:model-value="cardWidth = Number($event) || ''"
+          />
+        </div>
+        <div class="field">
+          <span>{{ t('editor.size.height') }}</span>
+          <BaseInput
+            :model-value="cardHeight"
+            type="number"
+            :min="40"
+            :max="4000"
+            @update:model-value="cardHeight = Number($event) || ''"
+          />
+        </div>
+      </div>
       <div v-show="tab === 'css'" class="form-col css-col">
         <p class="css-hint">{{ t('editor.cssHint') }}</p>
         <BaseCodeEditor v-model="cssDraft" language="css" min-height="300px" />
@@ -107,7 +175,7 @@ const isBarArea = computed(() => props.area !== 'default')
         <!-- Always applied: this is exactly what the area renders with -->
         <div class="preview-stage" :class="{ 'on-bar': isBarArea }">
           <CardCss card-id="__preview__" :css="cssDraft">
-            <div data-vp-card="__preview__" class="preview-card">
+            <div data-vp-card="__preview__" class="preview-card" :style="previewStyle">
               <component :is="previewComponent" v-if="previewComponent" :config="draft" />
             </div>
           </CardCss>
@@ -149,6 +217,15 @@ const isBarArea = computed(() => props.area !== 'default')
   font-size: 12px;
   color: var(--text-secondary);
 }
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field > span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
 .css-actions {
   display: flex;
   justify-content: flex-end;
@@ -188,6 +265,8 @@ const isBarArea = computed(() => props.area !== 'default')
   min-height: 160px;
   display: grid;
   place-items: center;
+  /* A card wider than the panel stays reachable instead of being clipped */
+  overflow: auto;
 }
 /* Cards in a bar sit on the nav background — mirror that here */
 .preview-stage.on-bar {

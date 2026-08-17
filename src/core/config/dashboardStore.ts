@@ -69,6 +69,26 @@ export function newId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${(idCounter++).toString(36)}`
 }
 
+/** URL segment of a view — the id is the fallback for views without a path. */
+export function viewPath(view: Pick<ViewConfig, 'id' | 'path'>): string {
+  return view.path || view.id
+}
+
+/** Turn a title into a URL segment: 'Wohnzimmer OG' → 'wohnzimmer-og'. */
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/ä/g, 'ae')
+    .replace(/ö/g, 'oe')
+    .replace(/ü/g, 'ue')
+    .replace(/ß/g, 'ss')
+    // NFD splits accented letters, \p{M} then drops the accents (é → e)
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 function defaultConfig(): DashboardConfig {
   return {
     version: 1,
@@ -81,8 +101,8 @@ function defaultConfig(): DashboardConfig {
         sections: [
           {
             id: 'sec-start',
-            title: t('defaults.start'),
             cards: [
+              { id: 'card-title', type: 'section-title', config: { title: t('defaults.start') } },
               { id: 'card-clock', type: 'clock', config: {} },
               { id: 'card-light-demo', type: 'light', config: { entity: '' } },
             ],
@@ -121,6 +141,11 @@ export const useDashboardStore = defineStore('dashboard', {
     viewById(state) {
       return (id: string): ViewConfig | undefined =>
         state.config.views.find((v) => v.id === id)
+    },
+    /** Resolve the URL segment from the router — path first, id as fallback. */
+    viewByRoute(state) {
+      return (segment: string): ViewConfig | undefined =>
+        state.config.views.find((v) => viewPath(v) === segment)
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
@@ -340,10 +365,10 @@ export const useDashboardStore = defineStore('dashboard', {
     },
 
     // ── Sections ─────────────────────────────────────────────
-    addSection(viewId: string, title?: string): SectionConfig | undefined {
+    addSection(viewId: string): SectionConfig | undefined {
       const view = this.viewById(viewId)
       if (!view) return
-      const section: SectionConfig = { id: newId('sec'), title, cards: [] }
+      const section: SectionConfig = { id: newId('sec'), cards: [] }
       view.sections.push(section)
       this.save()
       return section
@@ -358,6 +383,16 @@ export const useDashboardStore = defineStore('dashboard', {
       const view = this.viewById(viewId)
       if (!view) return
       view.sections = view.sections.filter((s) => s.id !== sectionId)
+      this.save()
+    },
+    /** Reorder sections within a view (drag handle in edit mode). */
+    moveSection(viewId: string, sectionId: string, toIndex: number) {
+      const view = this.viewById(viewId)
+      if (!view) return
+      const idx = view.sections.findIndex((s) => s.id === sectionId)
+      if (idx < 0 || toIndex < 0 || idx === toIndex) return
+      const [section] = view.sections.splice(idx, 1)
+      view.sections.splice(Math.min(toIndex, view.sections.length), 0, section)
       this.save()
     },
 
@@ -385,6 +420,16 @@ export const useDashboardStore = defineStore('dashboard', {
           card.config = config
           card.css = css
         }
+      }
+      this.save()
+    },
+    /** Set a card's fixed pixel size (flex layout resize handle / size tab). */
+    updateCardSize(viewId: string, cardId: string, size: Partial<NonNullable<CardConfig['size']>>) {
+      const view = this.viewById(viewId)
+      if (!view) return
+      for (const section of view.sections) {
+        const card = section.cards.find((c) => c.id === cardId)
+        if (card) card.size = { ...card.size, ...size }
       }
       this.save()
     },

@@ -1,60 +1,135 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ViewConfig, ViewLayout } from '@/core/config/types'
-import { useDashboardStore } from '@/core/config/dashboardStore'
+import type { ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
+import { slugify, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
+import BaseTabs from '@/core/ui/BaseTabs.vue'
+import BaseBoxInput from '@/core/ui/BaseBoxInput.vue'
+import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import { normalizeBox, type BoxValue } from '@/core/ui/boxInput'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 
 const props = defineProps<{
   /** Edit an existing view — or undefined to create a new one */
   view?: ViewConfig
 }>()
-const emit = defineEmits<{ close: []; created: [viewId: string] }>()
+const emit = defineEmits<{ close: []; navigate: [viewId: string] }>()
 
 const { t } = useI18n()
 const store = useDashboardStore()
 
 const title = ref(props.view?.title ?? '')
 const icon = ref(props.view?.icon ?? 'mdi:view-dashboard')
-const layout = ref<ViewLayout>(props.view?.layout ?? 'sections')
+
+// ── URL ──────────────────────────────────────────────────────
+// Follows the title until the user edits it by hand.
+const path = ref(props.view?.path ?? slugify(props.view?.title ?? ''))
+const pathEdited = ref(props.view?.path !== undefined)
+
+watch(title, (value) => {
+  if (!pathEdited.value) path.value = slugify(value)
+})
+
+function onPathInput(value: string) {
+  pathEdited.value = true
+  path.value = value
+}
+
+/** Sanitized and unique among the other views (their path or id). */
+function finalPath(): string {
+  const taken = new Set(
+    store.config.views.filter((v) => v.id !== props.view?.id).map((v) => viewPath(v)),
+  )
+  const base = slugify(path.value) || slugify(title.value) || 'view'
+  let candidate = base
+  for (let i = 2; taken.has(candidate); i++) candidate = `${base}-${i}`
+  return candidate
+}
+const layout = ref<ViewLayout>(
+  // 'tiles' is a legacy value — it was replaced by the flex layout
+  (props.view?.layout as string) === 'tiles' ? 'flex' : (props.view?.layout ?? 'sections'),
+)
 const background = ref(props.view?.background ?? '')
 const showSidebar = ref(props.view?.showSidebar !== false)
 const showHeader = ref(props.view?.showHeader === true)
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
+// Sections view specific options
+const maxColumns = ref(Number(props.view?.layoutOptions?.maxColumns) || 4)
+const denseSections = ref(props.view?.layoutOptions?.dense === true)
+const topMargin = ref(props.view?.layoutOptions?.topMargin === true)
 
-const layouts: ViewLayout[] = ['sections', 'tiles', 'panel', 'sidebar', 'grid']
+// Advanced tab
+const padding = ref<BoxValue>({ ...props.view?.padding })
+const margin = ref<BoxValue>({ ...props.view?.margin })
+const width = ref<ViewWidth>(props.view?.width ?? 'default')
+const align = ref<ViewAlign>(props.view?.align ?? 'center')
+
+const layouts: ViewLayout[] = ['sections', 'flex', 'panel', 'sidebar', 'grid']
+
+const tab = ref('general')
+const tabItems = computed(() => [
+  { value: 'general', label: t('editor.view.tabGeneral'), icon: 'mdi:tune' },
+  { value: 'advanced', label: t('editor.view.tabAdvanced'), icon: 'mdi:page-layout-body' },
+])
 
 const iconOptions = computed(() => mdiIconOptions())
 const layoutOptionList = computed(() =>
   layouts.map((l) => ({ value: l, label: t('editor.layouts.' + l) })),
 )
+const widthOptions = computed(() =>
+  (['default', 'full'] as ViewWidth[]).map((w) => ({ value: w, label: t('editor.view.widths.' + w) })),
+)
+const alignOptions = computed(() =>
+  (['left', 'center', 'right'] as ViewAlign[]).map((a) => ({
+    value: a,
+    label: t('editor.aligns.' + a),
+  })),
+)
+
+function layoutOptionsFor(l: ViewLayout): Record<string, unknown> | undefined {
+  if (l === 'grid') return { columns: Math.min(Math.max(gridColumns.value, 1), 12) }
+  if (l === 'sections') {
+    return {
+      maxColumns: Math.min(Math.max(maxColumns.value, 1), 6),
+      dense: denseSections.value,
+      topMargin: topMargin.value,
+    }
+  }
+  return undefined
+}
 
 function save() {
   if (!title.value.trim()) return
   const patch = {
     title: title.value.trim(),
     icon: icon.value.trim() || 'mdi:view-dashboard',
+    path: finalPath(),
     layout: layout.value,
     background: background.value.trim() || undefined,
     showSidebar: showSidebar.value,
     showHeader: showHeader.value,
-    layoutOptions:
-      layout.value === 'grid' ? { columns: Math.min(Math.max(gridColumns.value, 1), 12) } : undefined,
+    padding: normalizeBox(padding.value),
+    margin: normalizeBox(margin.value),
+    width: width.value === 'default' ? undefined : width.value,
+    align: align.value === 'center' ? undefined : align.value,
+    layoutOptions: layoutOptionsFor(layout.value),
   }
   if (props.view) {
     store.updateView(props.view.id, patch)
+    // The URL may have changed — follow it so the route stays valid
+    emit('navigate', props.view.id)
   } else {
     const v = store.addView({
       ...patch,
-      sections: [{ id: 'sec-1', title: t('editor.view.newSectionTitle'), cards: [] }],
+      sections: [{ id: 'sec-1', cards: [] }],
     })
-    emit('created', v.id)
+    emit('navigate', v.id)
   }
   emit('close')
 }
@@ -72,10 +147,25 @@ function remove() {
 
 <template>
   <BaseDialog :title="view ? t('editor.view.editTitle') : t('editor.view.newTitle')" @close="emit('close')">
-    <div class="view-form">
+    <BaseTabs v-model="tab" :items="tabItems" class="dialog-tabs" />
+
+    <div v-show="tab === 'general'" class="view-form">
       <div class="field">
         <span>{{ t('editor.view.title') }}</span>
         <BaseInput v-model="title" :placeholder="t('editor.view.titlePlaceholder')" />
+      </div>
+      <div class="field">
+        <span>{{ t('editor.view.path') }}</span>
+        <div class="path-row">
+          <span class="path-prefix">#/</span>
+          <BaseInput
+            :model-value="path"
+            :placeholder="t('editor.view.pathPlaceholder')"
+            :spellcheck="false"
+            @update:model-value="onPathInput(String($event))"
+          />
+        </div>
+        <small>{{ t('editor.view.pathHint') }}</small>
       </div>
       <div class="field">
         <span>{{ t('editor.view.icon') }}</span>
@@ -105,6 +195,7 @@ function remove() {
           @update:model-value="gridColumns = Number($event)"
         />
       </div>
+
       <div class="field">
         <span>{{ t('editor.view.background') }}</span>
         <BaseInput
@@ -124,6 +215,72 @@ function remove() {
         <BaseCheckbox v-model="showHeader" />
       </div>
     </div>
+
+    <div v-show="tab === 'advanced'" class="view-form">
+      <BaseCollapsible
+        v-if="layout === 'sections'"
+        :title="t('editor.view.sectionsSettings')"
+        icon="mdi:view-dashboard-outline"
+        default-open
+      >
+        <div class="field">
+          <span>{{ t('editor.view.maxColumns') }}</span>
+          <div class="slider-row">
+            <input
+              type="range"
+              min="1"
+              max="6"
+              step="1"
+              :value="maxColumns"
+              @input="maxColumns = Number(($event.target as HTMLInputElement).value)"
+            />
+            <span class="slider-value">{{ maxColumns }}</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <span>{{ t('editor.view.denseSections') }}</span>
+            <small>{{ t('editor.view.denseSectionsHint') }}</small>
+          </div>
+          <BaseCheckbox v-model="denseSections" />
+        </div>
+        <div class="row">
+          <div class="row-text">
+            <span>{{ t('editor.view.topMargin') }}</span>
+            <small>{{ t('editor.view.topMarginHint') }}</small>
+          </div>
+          <BaseCheckbox v-model="topMargin" />
+        </div>
+      </BaseCollapsible>
+
+      <!-- Open when it is the first box, i.e. no sections box above it -->
+      <BaseCollapsible
+        :title="t('editor.view.spacing')"
+        icon="mdi:page-layout-body"
+        :default-open="layout !== 'sections'"
+      >
+        <BaseBoxInput v-model="margin" :label="t('editor.box.margin')" :min="-200" />
+        <BaseBoxInput v-model="padding" :label="t('editor.box.padding')" />
+        <div class="field">
+          <span>{{ t('editor.view.width') }}</span>
+          <BaseSelectMenu
+            :model-value="width"
+            :options="widthOptions"
+            @update:model-value="width = $event as ViewWidth"
+          />
+          <small>{{ t('editor.view.widthHint') }}</small>
+        </div>
+        <div class="field">
+          <span>{{ t('editor.view.align') }}</span>
+          <BaseSelectMenu
+            :model-value="align"
+            :options="alignOptions"
+            @update:model-value="align = $event as ViewAlign"
+          />
+          <small>{{ t('editor.view.alignHint') }}</small>
+        </div>
+      </BaseCollapsible>
+    </div>
     <template #footer>
       <BaseButton v-if="view" variant="danger" @click="remove">{{ t('common.delete') }}</BaseButton>
       <BaseButton @click="emit('close')">{{ t('common.cancel') }}</BaseButton>
@@ -135,6 +292,9 @@ function remove() {
 </template>
 
 <style scoped>
+.dialog-tabs {
+  margin-bottom: 18px;
+}
 .view-form {
   display: flex;
   flex-direction: column;
@@ -151,6 +311,23 @@ label span,
   font-size: 13px;
   color: var(--text-secondary);
 }
+.field > small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.path-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.path-row > :last-child {
+  flex: 1;
+  min-width: 0;
+}
+.path-prefix {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
 .row {
   display: flex;
   flex-direction: row;
@@ -161,6 +338,38 @@ label span,
 .row > span {
   font-size: 13px;
   color: var(--text-secondary);
+}
+.row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.row-text > span {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+.row-text > small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.slider-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.slider-row input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+.slider-value {
+  min-width: 40px;
+  text-align: center;
+  padding: 6px 8px;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--text-primary);
 }
 h3 {
   margin: 8px 0 0;

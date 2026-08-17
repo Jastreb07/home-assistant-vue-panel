@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRouter } from 'vue-router'
 import { useEntity, useService } from '@/core/ha'
+import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 /**
@@ -21,6 +22,7 @@ const props = defineProps<{
 
 const { t } = useI18n()
 const router = useRouter()
+const store = useDashboardStore()
 
 const temp = useEntity(() => props.config.temperatureEntity)
 const light = useEntity(() => props.config.lightGroup)
@@ -33,8 +35,10 @@ const tempText = computed(() => {
   return `${temp.value.state} ${unit}`
 })
 
+/** targetView holds a view id — the URL uses that view's path. */
 function open() {
-  if (props.config.targetView) router.push({ params: { viewId: props.config.targetView } })
+  const view = props.config.targetView ? store.viewById(props.config.targetView) : undefined
+  if (view) router.push({ params: { viewId: viewPath(view) } })
 }
 
 function toggleLight(e: Event) {

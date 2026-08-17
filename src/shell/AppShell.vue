@@ -2,7 +2,7 @@
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useRoute, useRouter } from 'vue-router'
-import { useDashboardStore } from '@/core/config/dashboardStore'
+import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { useMediaQuery } from '@/core/composables/useMediaQuery'
 import { useTheme } from '@/core/composables/useTheme'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
@@ -34,8 +34,8 @@ const isWide = useMediaQuery('(min-width: 1024px)')
 const views = computed(() => store.config.views)
 
 const activeView = computed(() => {
-  const id = (route.params.viewId as string) || views.value[0]?.id
-  return id ? store.viewById(id) : undefined
+  const segment = route.params.viewId as string
+  return segment ? store.viewByRoute(segment) : views.value[0]
 })
 
 /** All pages as options for the edit toolbar picker. */
@@ -47,8 +47,10 @@ const viewOptions = computed(() =>
 const showSidebar = computed(() => activeView.value?.showSidebar !== false)
 const showHeader = computed(() => activeView.value?.showHeader === true)
 
+/** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {
-  router.push({ params: { viewId } })
+  const view = store.viewById(viewId)
+  if (view) router.push({ params: { viewId: viewPath(view) } })
 }
 
 // ── Kiosk: screensaver + auto-return to the first view ───────
@@ -162,7 +164,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       v-if="viewDialog !== 'closed'"
       :view="viewDialog === 'edit' ? activeView : undefined"
       @close="viewDialog = 'closed'"
-      @created="onViewCreated"
+      @navigate="onViewCreated"
     />
     <DashboardSettingsDialog v-if="settingsOpen" @close="settingsOpen = false" />
   </div>

@@ -52,14 +52,15 @@ src/
 │  └─ dev/DevSidebar.vue      # Dev-only Tools (Sprache, Export/Import, Reset) — nicht i18n'd
 ├─ shell/                     # AppShell (Toolbar, Undo/Redo, Kiosk, Subview-Header), SideNav,
 │                             # BottomNav, ViewRenderer (Layout-Map)
-├─ layouts/                   # SectionsLayout, TilesLayout, GridLayout, SidebarLayout, PanelLayout
+├─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
 │                             # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
 ├─ cards/                     # 1 Ordner = 1 Card (siehe §5)
 └─ theme/                     # Theme-System (siehe §6)
 ```
 
 ### Datenmodell (`core/config/types.ts`)
-`DashboardConfig { version:1, settings?, views[] }` → `ViewConfig { id, title, icon, layout, layoutOptions?, subview?, background?, sections[] }` → `SectionConfig { id, title?, icon?, cards[] }` → `CardConfig { id, type, config, size? }`.
+`DashboardConfig { version:1, settings?, views[] }` → `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebar?, showHeader?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `section-title`) → `CardConfig { id, type, config, css?, size? }`.
+`padding`/`margin` sind `BoxValue { top?, right?, bottom?, left?, unit?, linked? }` aus `core/ui/boxInput.ts` (`boxToCss()` → CSS-Shorthand, `normalizeBox()` verwirft leere Werte).
 `DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, screensaverMinutes, autoReturnSeconds }` (0 = aus).
 
 ### Persistenz (kein YAML!)
@@ -94,12 +95,15 @@ export default defineCard({
 - **Cards nutzen KEIN `BaseCard`** — jede Card trägt die komplette Kachel-Optik (background, border-radius, padding, box-shadow, active-Zustand, …) selbst in ihrem eigenen `<style scoped>`-Block. Grund: der CSS-Tab zeigt/kontrolliert so die GESAMTE Card inkl. Kachel. Standard-Kachel-Block (in jede Card kopieren und anpassen): `background: var(--card-bg); border-radius: var(--card-radius); padding: 16px; min-height: 80px; height: 100%; box-shadow: var(--card-shadow); color: var(--text-primary);` — aktiv: `background: var(--card-bg-active); color: var(--text-on-active);`.
 - **Regel: Cards importieren nur aus dem eigenen Ordner + `@/core/*`** — nie aus anderen Cards.
 - i18n-Keys der Card in `en.ts` UND `de.ts` ergänzen. Gemeinsame Keys: `cards.common.noEntity/notFound`.
-- Vorhandene Cards: clock, light, sensor, thermostat, cover, weather, media, room-tile (Referenz: `light`).
+- Vorhandene Cards: clock, light, sensor, thermostat, cover, weather, media, room-tile, menu, section-title (Referenz: `light`).
+- `manifest.fullRow: true` → die Card belegt immer eine ganze Zeile ihres Abschnitts (`grid-column: 1 / -1`, `flex-basis/width: 100%`, gesetzt in `LayoutSection.styleFor` — schlägt auch das `slotStyle` des Layouts) und ist im Flex-Layout **nicht** resizebar (`canResize()`). Nutzt `section-title`.
 - **Per-Card-CSS**: Jede Card hat im Konfigurationsdialog einen Tab „CSS“ (`CardConfigDialog.vue`), vorbefüllt mit dem Default-CSS der Card (`cardDefaultCss()` in `cardRegistry.ts` extrahiert die `<style>`-Blöcke der SFCs per `?raw`-Glob). Abweichungen werden als `CardConfig.css` gespeichert und zur Laufzeit über `core/ui/CardCss.vue` angewendet: injizierter `<style>` mit nativem CSS-Nesting `[data-vp-card="<id>"] { … }`; der Render-Wrapper (`.card-slot`/`.nav-card-slot`/`.panel-slot`) trägt das passende `data-vp-card`-Attribut. Entspricht das CSS dem Default oder ist leer, wird KEIN Override gespeichert.
 
 ## 6. Theme-System (`src/theme/`)
 
-- `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{Card,Dialog,Button}`.
+- `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{AddTile,BoxInput,Button,Card,Checkbox,CodeEditor,Collapsible,Dialog,Input,SelectMenu,Tabs}`.
+- **Collapsible** = aufklappbare Box zum Gruppieren von Einstellungen (`title`, `icon?`, `defaultOpen?` — **Default zu**, Default-Slot); Wrapper `@/core/ui/BaseCollapsible.vue`. Konvention: In jedem „Erweitert"-Tab liegen die Gruppen in Collapsibles, die **erste sichtbare** Box bekommt `default-open`.
+- **BoxInput** = wiederverwendbares Vierseiten-Feld (Oben/Rechts/Unten/Links + Einheit + Ketten-Button) für Padding/Margin; Wrapper `@/core/ui/BaseBoxInput.vue`, Wert-Typ + Helfer in `@/core/ui/boxInput.ts`.
 - **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
@@ -119,9 +123,12 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 
 ## 8. Layouts & Editor
 
-- 5 Layouts (`ViewRenderer.vue`-Map): sections (Default), tiles (dichte Kacheln, Header versteckt), grid (feste Spalten via `layoutOptions.columns`), sidebar (letzter Abschnitt = rechte Spalte), panel (erste Card der ersten Section füllt alles).
-- Geteilte Edit-Logik in `layouts/useSectionEditing.ts` (Dialoge, Drag&Drop, Section-Ops) + `LayoutSection.vue` (props/emits-basiert, `gridStyle`/`hideHeader` für Varianten). **Neue Layouts diese Bausteine wiederverwenden.**
+- 5 Layouts (`ViewRenderer.vue`-Map): sections (Default, wie HA "Sections": Abschnitte als Spalten nebeneinander; `layoutOptions.maxColumns` 1–6, `dense` = Masonry via CSS-Multi-Columns, `topMargin` = 80px Platz oben; Einstellungen im ViewSettingsDialog nur bei layout=sections sichtbar), flex (jede Card mit eigener fester Pixelgröße, im Edit-Mode per Resize-Griff an der rechten unteren Ecke; ersetzt das alte `tiles`-Layout — gespeicherte `layout: 'tiles'`-Werte werden als Alias auf FlexLayout gemappt. Der Container ist `flex-wrap: wrap`: Abschnitte ohne `width` füllen per `flex: 1 1 100%` eine eigene Zeile, Abschnitte mit fester `width` stehen per inline `flex: 0 0 auto` nebeneinander), grid (feste Spalten via `layoutOptions.columns`), sidebar (letzter Abschnitt = rechte Spalte), panel (erste Card der ersten Section füllt alles). Card-Größe liegt in `card.size.width/height` (px), gesetzt via `store.updateCardSize()` — entweder per Resize-Griff oder im Card-Dialog über den Tab „Größe" (`CardConfigDialog` mit `sizable`/`initialSize`, gibt die Größe als 3. Argument von `save` zurück; nur FlexLayout setzt das Prop).
+- Geteilte Edit-Logik in `layouts/useSectionEditing.ts` (Dialoge, Drag&Drop für Cards UND ganze Sections, Section-Ops) + `LayoutSection.vue` (props/emits-basiert, `gridStyle`/`hideHeader`/`columnSpan` für Varianten). Im Edit-Modus wird jede Section eine sichtbare Box (gestrichelter Rahmen) mit schwebender Toolbar oben rechts: ≡ Drag-Handle (Section umsortieren via `store.moveSection`), ✏ Einstellungen, Löschen. **Neue Layouts diese Bausteine wiederverwenden.**
+- **Section-Dialog** (`core/editor/SectionSettingsDialog.vue`): Tab „Allgemein" (Ausrichtung der Cards `auto|vertical|horizontal`; dazu `contentAlign` = `left|center|right` als `justify-content` der Card-Zeile — nur sichtbar bei layout=flex oder horizontaler Ausrichtung, schlägt die View-Ausrichtung) + Tab „Erweitert" mit Collapsibles „Größe" (bei layout=sections: Breite in Spalten; bei layout=flex: Volle Breite (Default) oder eigene Breite in px → `SectionConfig.width`) und „Abstände" (Margin/Padding via `BaseBoxInput`). Wird von allen 4 Section-Layouts gerendert; `addSection` legt den Abschnitt sofort an und öffnet den Dialog. Ausrichtung/Spacing wertet `LayoutSection.vue` aus, `columnSpan` setzt `grid-column: span N` (in `dense`-Modus ignoriert).
+- **View-Tab „Erweitert"** (`ViewSettingsDialog`): zwei `BaseCollapsible`-Boxen — „Spezifische Einstellungen für die Abschnittsansicht" (nur bei layout=sections: maxColumns, dense, topMargin) und „Abstände & Ausrichtung" mit Margin, Padding, Breite (`default|full`), Ausrichtung (`left|center|right`). `ViewRenderer.vue` legt einen `.view-box`-Wrapper darum, setzt Padding/Margin inline, bei `full` die Variable `--view-max-width: none` und für die Ausrichtung `--view-align` (die Auto-Margins). Alle Layouts nutzen `max-width: var(--view-max-width, …)` und `margin: var(--view-align, 0 auto)` statt fester Werte. Damit die Ausrichtung überhaupt sichtbar wird, rechnet `SectionsLayout` seine `max-width` aus den **tatsächlich belegten** Spalten (`usedColumns`, inkl. Add-Tile im Edit-Modus), nicht aus `maxColumns`. Im Flex-Layout wirkt die Ausrichtung als `justify-content` auf die **Abschnitts-Reihe** (Default links); wie die Cards innerhalb eines Abschnitts stehen, regelt dessen eigenes `contentAlign`.
 - Edit-Modus: `store.editMode` (EditFab unten rechts). Toolbar: Undo/Redo, View-Einstellungen, Dashboard-Einstellungen. Im Edit-Modus erscheinen Subviews in der Nav.
+- **View-URLs**: Intern referenzieren Menü, room-tile & Co. immer die **View-`id`**; die URL nutzt `view.path` (Fallback: `id`). Helfer in `dashboardStore.ts`: `viewPath(view)`, `slugify(title)`, Getter `viewByRoute(segment)`. Der View-Dialog erzeugt den Slug aus dem Titel, bis der Nutzer das URL-Feld selbst anfasst, und macht ihn beim Speichern eindeutig; danach emittiert er `navigate`, damit die Route dem neuen Pfad folgt.
 - Subviews: `view.subview = true` → kein Nav-Eintrag, Header mit Zurück-Button in AppShell; room-tile-Card navigiert dorthin.
 - Kiosk: `useIdleSeconds` → Screensaver (Vollbild-Uhr) und Auto-Return zur ersten View; beides im Edit-Modus pausiert.
 
