@@ -9,7 +9,7 @@
 **vue-panel** ist eine Dashboard-Engine für Home Assistant (HA), die Lovelace **komplett ersetzt**:
 - Kein YAML — die gesamte Dashboard-Konfiguration wird **im Browser visuell bearbeitet** (wie Lovelace-Editor) und via HA-WebSocket in `.storage` gespeichert (pro User, geräteübergreifend).
 - Vue 3.5 (Composition API, `<script setup>`) + TypeScript + Vite + Pinia + vue-router (Hash) + vue-i18n v11.
-- Zielgeräte: Wand-Tablets im Landscape (SideNav links) und Smartphones (BottomNav unten), Breakpoint 1024px.
+- Zielgeräte: Wand-Tablets im Landscape (SideNav links) und Smartphones (SideNav ausgeblendet), Breakpoint 1024px.
 - Oberstes Designziel: **Neue Cards und Themes müssen extrem einfach zu erstellen sein** (1 Ordner, Auto-Discovery, keine zentrale Registrierung).
 
 **Alle 4 Phasen aus PLAN.md §9 sind abgeschlossen** (Fundament, Editor, Layouts & Cards, Polish) plus Theme-System und Dialog-Service.
@@ -51,7 +51,7 @@ src/
 │  ├─ kiosk/                  # useIdleSeconds, Screensaver.vue
 │  └─ dev/DevSidebar.vue      # Dev-only Tools (Sprache, Export/Import, Reset) — nicht i18n'd
 ├─ shell/                     # AppShell (Toolbar, Undo/Redo, Kiosk, Subview-Header), SideNav,
-│                             # BottomNav, ViewRenderer (Layout-Map)
+│                             # ViewRenderer (Layout-Map); SideNav ist unter 1024px ausgeblendet
 ├─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
 │                             # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
 ├─ cards/                     # 1 Ordner = 1 Card (siehe §5)

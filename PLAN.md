@@ -8,7 +8,7 @@ Kein YAML, alles visuell im Browser editierbar, Cards als einfache Vue-Komponent
 ## 1. Ziele
 
 - **Lovelace-Ersatz**: Views/Unterseiten, Cards, Layouts, visueller Edit-Modus — alles ohne YAML.
-- **Responsive**: Ein Design für Wand-Tablets (Landscape, mit Sidebar) und Smartphones (Bottom-Nav, gestapelt).
+- **Responsive**: Ein Design für Wand-Tablets (Landscape, mit Sidebar) und Smartphones (Sidebar ausgeblendet, Inhalte gestapelt).
 - **Cards extrem einfach erstellbar**: Ein neuer Ordner unter `src/cards/`, eine `.vue`-Datei + Manifest — fertig. Keine Registrierung an zentraler Stelle nötig (Auto-Discovery).
 - **Deployment**: `npm run build` → Inhalt von `dist/` nach `config/www/vue-panel/` hochladen → als `panel_custom` in HA einbinden.
 
@@ -58,7 +58,7 @@ vue-panel/
 │   ├── shell/              # App-Rahmen
 │   │   ├── AppShell.vue         # Responsive Wrapper
 │   │   ├── SideNav.vue          # Sidebar (Tablet landscape) — wie Screenshot
-│   │   ├── BottomNav.vue        # Bottom-Tabs (Smartphone)
+│   │   ├── BottomNav.vue        # Legacy-Komponente, aktuell nicht im AppShell eingebunden
 │   │   └── ViewRenderer.vue     # Rendert aktive View mit gewähltem Layout
 │   └── cards/              # ⭐ Hier entstehen Cards — 1 Ordner = 1 Card
 │       ├── clock/
@@ -180,7 +180,7 @@ interface CardConfig {
 | Breakpoint | Shell | Verhalten |
 |---|---|---|
 | ≥ 1024 px landscape (Wand-Tablet) | `SideNav` links (Uhr, Datum, Wetter, View-Liste — wie Screenshot) | Grid mit `layoutOptions.maxColumns` |
-| < 1024 px (Smartphone) | `BottomNav` mit View-Icons | Cards einspaltig gestapelt, Sections untereinander |
+| < 1024 px (Smartphone) | `SideNav` ausgeblendet, keine Ersatznavigation unten | Cards einspaltig gestapelt, Sections untereinander |
 
 Umsetzung: CSS Grid + Container Queries; Cards deklarieren nur `defaultSize`, die Layouts kümmern sich um den Rest.
 
@@ -210,7 +210,7 @@ Umsetzung: CSS Grid + Container Queries; Cards deklarieren nur `defaultSize`, di
 
 ## 9. Umsetzungs-Phasen
 
-- **Phase 1 — Fundament** ✅: HA-Verbindung (`connection.ts`, `useEntity`, `useService`), AppShell mit SideNav/BottomNav, ViewRenderer, `SectionsLayout`, Config-Store + localStorage-Persistenz, 2 Basis-Cards (clock, light). *→ Erstes lauffähiges Dashboard.*
+- **Phase 1 — Fundament** ✅: HA-Verbindung (`connection.ts`, `useEntity`, `useService`), AppShell mit responsiver SideNav (auf Smartphones ausgeblendet), ViewRenderer, `SectionsLayout`, Config-Store + localStorage-Persistenz, 2 Basis-Cards (clock, light). *→ Erstes lauffähiges Dashboard.*
 - **Phase 2 — Editor** ✅: Edit-Modus, CardPicker, Schema-Formulare, Drag & Drop, View-Verwaltung, Persistenz via `frontend/set_user_data`.
 - **Phase 3 — Layouts & Cards** ✅: Flex- (ex Tiles), Panel-, Sidebar-, Grid-Layout (gemeinsame Basis: `useSectionEditing` + `LayoutSection`); Cards: weather, thermostat, room-tile, sensor, cover, media; Subviews mit Zurück-Button (room-tile navigiert per `targetView`).
 - **Phase 4 — Polish** ✅: Themes (dunkel/hell/auto, umschaltbar in den Dashboard-Einstellungen; Hintergrund pro View als CSS), Undo/Redo (50 Schritte, Strg+Z/Strg+Y + Toolbar-Buttons), Kiosk-Optionen (Bildschirmschoner mit Uhr nach N Minuten, Auto-Return zur Start-View nach N Sekunden). Export/Import über die Dev-Sidebar.

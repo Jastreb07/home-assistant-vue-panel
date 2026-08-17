@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
-import { slugify, slugifyPath, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
+import type { SectionConfig, ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
+import { newId, slugify, slugifyPath, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
@@ -18,19 +18,38 @@ import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 const props = defineProps<{
   /** Edit an existing view — or undefined to create a new one */
   view?: ViewConfig
+  /** Use the supplied view as a template without changing it. */
+  duplicate?: boolean
 }>()
 const emit = defineEmits<{ close: []; navigate: [viewId: string] }>()
 
 const { t } = useI18n()
 const store = useDashboardStore()
 
-const title = ref(props.view?.title ?? '')
+const editing = computed(() => Boolean(props.view && !props.duplicate))
+
+function nextAvailablePath(base: string): string {
+  const taken = new Set(store.config.views.map((view) => viewPath(view)))
+  if (!taken.has(base)) return base
+  let suffix = 2
+  while (taken.has(`${base}-${suffix}`)) suffix++
+  return `${base}-${suffix}`
+}
+
+const title = ref(
+  props.duplicate && props.view
+    ? t('editor.view.duplicateName', { title: props.view.title })
+    : (props.view?.title ?? ''),
+)
 const icon = ref(props.view?.icon ?? 'mdi:view-dashboard')
 
 // ── URL ──────────────────────────────────────────────────────
 // Follows the title until the user edits it by hand.
-const path = ref(props.view?.path ?? slugify(props.view?.title ?? ''))
-const pathEdited = ref(props.view?.path !== undefined)
+const sourcePath = props.view
+  ? (props.duplicate ? viewPath(props.view) : (props.view.path ?? slugify(props.view.title)))
+  : ''
+const path = ref(props.duplicate ? nextAvailablePath(sourcePath) : sourcePath)
+const pathEdited = ref(props.duplicate || props.view?.path !== undefined)
 
 watch(title, (value) => {
   if (!pathEdited.value) path.value = slugify(value)
@@ -42,15 +61,13 @@ function onPathInput(value: string) {
 }
 
 /** Sanitized and unique among the other views (their path or id). */
-function finalPath(): string {
-  const taken = new Set(
-    store.config.views.filter((v) => v.id !== props.view?.id).map((v) => viewPath(v)),
+const finalPath = computed(() => slugifyPath(path.value) || slugify(title.value) || 'view')
+const pathConflict = computed(() => {
+  if (!path.value.trim() && !title.value.trim()) return false
+  return store.config.views.some(
+    (view) => viewPath(view) === finalPath.value && (!editing.value || view.id !== props.view?.id),
   )
-  const base = slugifyPath(path.value) || slugify(title.value) || 'view'
-  let candidate = base
-  for (let i = 2; taken.has(candidate); i++) candidate = `${base}-${i}`
-  return candidate
-}
+})
 const layout = ref<ViewLayout>(
   // 'tiles' is a legacy value — it was replaced by the flex layout
   (props.view?.layout as string) === 'tiles' ? 'flex' : (props.view?.layout ?? 'sections'),
@@ -105,11 +122,11 @@ function layoutOptionsFor(l: ViewLayout): Record<string, unknown> | undefined {
 }
 
 function save() {
-  if (!title.value.trim()) return
+  if (!title.value.trim() || pathConflict.value) return
   const patch = {
     title: title.value.trim(),
     icon: icon.value.trim() || 'mdi:view-dashboard',
-    path: finalPath(),
+    path: finalPath.value,
     layout: layout.value,
     background: background.value.trim() || undefined,
     showSidebar: showSidebar.value,
@@ -120,18 +137,30 @@ function save() {
     align: align.value === 'center' ? undefined : align.value,
     layoutOptions: layoutOptionsFor(layout.value),
   }
-  if (props.view) {
+  if (editing.value && props.view) {
     store.updateView(props.view.id, patch)
     // The URL may have changed — follow it so the route stays valid
     emit('navigate', props.view.id)
   } else {
+    const sections = props.duplicate && props.view
+      ? duplicateSections(props.view.sections)
+      : [{ id: newId('sec'), cards: [] }]
     const v = store.addView({
       ...patch,
-      sections: [{ id: 'sec-1', cards: [] }],
+      sections,
     })
     emit('navigate', v.id)
   }
   emit('close')
+}
+
+function duplicateSections(sections: SectionConfig[]): SectionConfig[] {
+  const copy = JSON.parse(JSON.stringify(sections)) as SectionConfig[]
+  return copy.map((section) => ({
+    ...section,
+    id: newId('sec'),
+    cards: section.cards.map((card) => ({ ...card, id: newId('card') })),
+  }))
 }
 
 function remove() {
@@ -146,7 +175,10 @@ function remove() {
 </script>
 
 <template>
-  <BaseDialog :title="view ? t('editor.view.editTitle') : t('editor.view.newTitle')" @close="emit('close')">
+  <BaseDialog
+    :title="duplicate ? t('editor.view.duplicateTitle') : view ? t('editor.view.editTitle') : t('editor.view.newTitle')"
+    @close="emit('close')"
+  >
     <BaseTabs v-model="tab" :items="tabItems" class="dialog-tabs" />
 
     <div v-show="tab === 'general'" class="view-form">
@@ -154,7 +186,7 @@ function remove() {
         <span>{{ t('editor.view.title') }}</span>
         <BaseInput v-model="title" :placeholder="t('editor.view.titlePlaceholder')" />
       </div>
-      <div class="field">
+      <div class="field" :class="{ invalid: pathConflict }">
         <span>{{ t('editor.view.path') }}</span>
         <div class="path-row">
           <span class="path-prefix">#/</span>
@@ -162,10 +194,12 @@ function remove() {
             :model-value="path"
             :placeholder="t('editor.view.pathPlaceholder')"
             :spellcheck="false"
+            :invalid="pathConflict"
             @update:model-value="onPathInput(String($event))"
           />
         </div>
-        <small>{{ t('editor.view.pathHint') }}</small>
+        <small v-if="pathConflict" class="path-error">{{ t('editor.view.pathConflict') }}</small>
+        <small v-else>{{ t('editor.view.pathHint') }}</small>
       </div>
       <div class="field">
         <span>{{ t('editor.view.icon') }}</span>
@@ -282,9 +316,9 @@ function remove() {
       </BaseCollapsible>
     </div>
     <template #footer>
-      <BaseButton v-if="view" variant="danger" @click="remove">{{ t('common.delete') }}</BaseButton>
+      <BaseButton v-if="editing" variant="danger" @click="remove">{{ t('common.delete') }}</BaseButton>
       <BaseButton @click="emit('close')">{{ t('common.cancel') }}</BaseButton>
-      <BaseButton variant="primary" :disabled="!title.trim()" @click="save">
+      <BaseButton variant="primary" :disabled="!title.trim() || pathConflict" @click="save">
         {{ t('common.save') }}
       </BaseButton>
     </template>
@@ -314,6 +348,10 @@ label span,
 .field > small {
   font-size: 12px;
   color: var(--text-secondary);
+}
+.field > small.path-error,
+.field.invalid > span {
+  color: var(--danger, #ef4444);
 }
 .path-row {
   display: flex;

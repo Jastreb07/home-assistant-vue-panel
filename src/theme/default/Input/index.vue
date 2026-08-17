@@ -9,6 +9,7 @@ const props = withDefaults(
     size?: ControlSize
     placeholder?: string
     disabled?: boolean
+    invalid?: boolean
     spellcheck?: boolean
     min?: number | string
     max?: number | string
@@ -34,6 +35,7 @@ function onInput(e: Event) {
     :type="type"
     :placeholder="placeholder"
     :disabled="disabled"
+    :aria-invalid="invalid || undefined"
     :spellcheck="spellcheck"
     :min="min"
     :max="max"

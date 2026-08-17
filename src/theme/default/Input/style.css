@@ -15,6 +15,13 @@ input.vp-input {
 input.vp-input:focus {
   border-color: var(--accent);
 }
+input.vp-input[aria-invalid='true'] {
+  border-color: var(--danger, #ef4444);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #ef4444) 28%, transparent);
+}
+input.vp-input[aria-invalid='true']:focus {
+  border-color: var(--danger, #ef4444);
+}
 input.vp-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;

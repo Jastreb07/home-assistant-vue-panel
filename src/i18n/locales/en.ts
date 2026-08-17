@@ -29,6 +29,7 @@ export default {
     editing: 'Editing: {title}',
     viewSettings: 'View settings',
     newView: 'New view',
+    duplicateView: 'Duplicate view',
     new: 'New',
   },
   editor: {
@@ -146,6 +147,8 @@ export default {
     view: {
       editTitle: 'Edit view',
       newTitle: 'New view',
+      duplicateTitle: 'Duplicate view',
+      duplicateName: '{title} copy',
       tabGeneral: 'General',
       tabAdvanced: 'Advanced',
       width: 'Width',
@@ -162,6 +165,7 @@ export default {
       path: 'URL',
       pathPlaceholder: 'overview/living-room',
       pathHint: 'Use / to create parent paths, for example overview/living-room.',
+      pathConflict: 'This URL is already used by another view.',
       icon: 'Icon (mdi)',
       layout: 'Layout',
       deleteConfirm: 'Really delete view “{title}”?',

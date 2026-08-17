@@ -11,6 +11,7 @@ defineProps<{
   size?: ControlSize
   placeholder?: string
   disabled?: boolean
+  invalid?: boolean
   spellcheck?: boolean
   min?: number | string
   max?: number | string
@@ -29,6 +30,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string | number] }>()
     :size="size"
     :placeholder="placeholder"
     :disabled="disabled"
+    :invalid="invalid"
     :spellcheck="spellcheck"
     :min="min"
     :max="max"

@@ -29,6 +29,7 @@ export default {
     editing: 'Bearbeiten: {title}',
     viewSettings: 'View-Einstellungen',
     newView: 'Neue View',
+    duplicateView: 'View duplizieren',
     new: 'Neu',
   },
   editor: {
@@ -147,6 +148,8 @@ export default {
     view: {
       editTitle: 'View bearbeiten',
       newTitle: 'Neue View',
+      duplicateTitle: 'View duplizieren',
+      duplicateName: '{title} Kopie',
       tabGeneral: 'Allgemein',
       tabAdvanced: 'Erweitert',
       width: 'Breite',
@@ -163,6 +166,7 @@ export default {
       path: 'URL',
       pathPlaceholder: 'uebersicht/wohnzimmer',
       pathHint: 'Mit / lassen sich übergeordnete Pfade anlegen, z. B. uebersicht/wohnzimmer.',
+      pathConflict: 'Diese URL wird bereits von einer anderen View verwendet.',
       icon: 'Icon (mdi)',
       layout: 'Layout',
       deleteConfirm: 'View „{title}“ wirklich löschen?',

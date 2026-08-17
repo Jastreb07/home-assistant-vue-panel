@@ -15,7 +15,6 @@ import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import DevSidebar from '@/core/dev/DevSidebar.vue'
 import SideNav from './SideNav.vue'
 import HeaderBar from './HeaderBar.vue'
-import BottomNav from './BottomNav.vue'
 import ViewRenderer from './ViewRenderer.vue'
 
 // Dev sidebar only in dev mode — production follows the HA language
@@ -28,7 +27,7 @@ const router = useRouter()
 
 useTheme()
 
-// Wall tablet / desktop: sidebar on the left. Smartphone: bottom nav.
+// Wall tablet / desktop: sidebar on the left. It is hidden on smaller screens.
 const isWide = useMediaQuery('(min-width: 1024px)')
 
 const views = computed(() => store.config.views)
@@ -71,7 +70,7 @@ watch(idleSeconds, (idle) => {
 })
 
 // ── View management (edit mode) ──────────────────────────────
-const viewDialog = ref<'closed' | 'edit' | 'new'>('closed')
+const viewDialog = ref<'closed' | 'edit' | 'new' | 'duplicate'>('closed')
 const settingsOpen = ref(false)
 
 function onViewCreated(viewId: string) {
@@ -98,7 +97,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   <div class="app-shell">
     <HeaderBar v-if="showHeader" />
 
-    <div class="shell-body" :class="isWide ? 'wide' : 'narrow'">
+    <div class="shell-body">
       <!-- Both bars configure themselves via the store — views come from the menu card -->
       <SideNav v-if="isWide && showSidebar" />
       <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
@@ -115,6 +114,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         </div>
         <button class="toolbar-icon-btn" :title="t('shell.newView')" @click="viewDialog = 'new'">
           <MdiIcon icon="mdi:plus" :size="18" />
+        </button>
+        <button
+          class="toolbar-icon-btn"
+          :title="t('shell.duplicateView')"
+          @click="viewDialog = 'duplicate'"
+        >
+          <MdiIcon icon="mdi:content-copy" :size="17" />
         </button>
         <div class="toolbar-actions">
           <button
@@ -146,14 +152,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         <ViewRenderer v-if="activeView" :view="activeView" />
         <div v-else class="empty">{{ t('shell.noView') }}</div>
       </main>
-      <BottomNav
-        v-if="!isWide"
-        :views="views"
-        :active-id="activeView?.id"
-        :edit-mode="store.editMode"
-        @navigate="navigate"
-        @add-view="viewDialog = 'new'"
-      />
     </div>
 
     <EditFab />
@@ -162,7 +160,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <ViewSettingsDialog
       v-if="viewDialog !== 'closed'"
-      :view="viewDialog === 'edit' ? activeView : undefined"
+      :view="viewDialog === 'edit' || viewDialog === 'duplicate' ? activeView : undefined"
+      :duplicate="viewDialog === 'duplicate'"
       @close="viewDialog = 'closed'"
       @navigate="onViewCreated"
     />
@@ -181,9 +180,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   flex: 1;
   display: flex;
   min-height: 0;
-}
-.shell-body.narrow {
-  flex-direction: column;
 }
 .view-area {
   flex: 1;
