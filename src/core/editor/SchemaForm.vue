@@ -43,7 +43,10 @@ const viewOptions = computed<SelectOption[]>(() => [
 ])
 
 function selectOptions(field: CardSchemaField): SelectOption[] {
-  return (field.options ?? []).map((opt) => ({ value: opt, label: opt }))
+  return (field.options ?? []).map((opt) => ({
+    value: opt,
+    label: field.optionLabels?.[opt] ? t(field.optionLabels[opt]) : opt,
+  }))
 }
 
 /**
@@ -96,6 +99,9 @@ function needsPlainWrapper(field: CardSchemaField): boolean {
         v-else-if="field.type === 'number'"
         :model-value="(modelValue[key] as number | undefined) ?? (field.default as number | undefined) ?? 0"
         type="number"
+        :min="field.min"
+        :max="field.max"
+        :step="field.step"
         @update:model-value="set(key, Number($event))"
       />
 

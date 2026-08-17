@@ -35,6 +35,9 @@ export default defineCard({
     'header_left',
     'header_center',
     'header_right',
+    'bottom_left',
+    'bottom_center',
+    'bottom_right',
   ],
   css: {
     sidebar_top: BARE,
@@ -43,5 +46,8 @@ export default defineCard({
     header_left: BARE,
     header_center: BARE,
     header_right: BARE,
+    bottom_left: BARE,
+    bottom_center: BARE,
+    bottom_right: BARE,
   },
 })

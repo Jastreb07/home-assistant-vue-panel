@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import type {
+  BarConfig,
+  BarPosition,
+  BottomConfig,
+  BottomSlot,
   CardConfig,
   DashboardConfig,
   DashboardSettings,
@@ -61,6 +65,36 @@ export const defaultHeader: HeaderConfig = {
 function resolveHeaderSlots(raw: Partial<HeaderConfig>): Record<HeaderSlot, CardConfig[]> {
   const slots = raw.slots
   if (!slots) return defaultHeader.slots
+  return { left: slots.left ?? [], center: slots.center ?? [], right: slots.right ?? [] }
+}
+
+export const defaultBottom: BottomConfig = {
+  slots: { left: [], center: [], right: [] },
+  height: 64,
+  centerAlign: { vertical: 'center', horizontal: 'center' },
+}
+
+export const defaultBars: BarConfig = {
+  sidebar: {
+    id: 'bar-sidebar',
+    type: 'sidebar-bar',
+    config: { width: 280, verticalAlign: 'start', horizontalAlign: 'stretch' },
+  },
+  header: {
+    id: 'bar-header',
+    type: 'header-bar',
+    config: { placement: 'view', height: 64, verticalAlign: 'center', horizontalAlign: 'center' },
+  },
+  bottom: {
+    id: 'bar-bottom',
+    type: 'bottom-bar',
+    config: { placement: 'view', height: 64, verticalAlign: 'center', horizontalAlign: 'center' },
+  },
+}
+
+function resolveBottomSlots(raw: Partial<BottomConfig>): Record<BottomSlot, CardConfig[]> {
+  const slots = raw.slots
+  if (!slots) return defaultBottom.slots
   return { left: slots.left ?? [], center: slots.center ?? [], right: slots.right ?? [] }
 }
 
@@ -190,6 +224,56 @@ export const useDashboardStore = defineStore('dashboard', {
         centerAlign: { ...defaultHeader.centerAlign, ...raw.centerAlign },
       }
     },
+    bottom(state): BottomConfig {
+      const raw = state.config.bottom ?? {}
+      return {
+        ...defaultBottom,
+        ...raw,
+        slots: resolveBottomSlots(raw),
+        centerAlign: { ...defaultBottom.centerAlign, ...raw.centerAlign },
+      }
+    },
+    bars(state): BarConfig {
+      const selected = { ...defaultBars, ...state.config.bars }
+      const sidebar = selected.sidebar
+      const header = selected.header
+      const bottom = selected.bottom
+      const savedSidebar = state.config.bars?.sidebar
+      const savedHeader = state.config.bars?.header
+      const savedBottom = state.config.bars?.bottom
+      return {
+        sidebar: sidebar.type === 'sidebar-bar' ? {
+          ...sidebar,
+          config: {
+            ...defaultBars.sidebar.config,
+            width: state.config.nav?.width ?? defaultNav.width,
+            verticalAlign: state.config.nav?.centerAlign?.vertical ?? defaultNav.centerAlign.vertical,
+            horizontalAlign: state.config.nav?.centerAlign?.horizontal ?? defaultNav.centerAlign.horizontal,
+            ...savedSidebar?.config,
+          },
+        } : sidebar,
+        header: header.type === 'header-bar' ? {
+          ...header,
+          config: {
+            ...defaultBars.header.config,
+            height: state.config.header?.height ?? defaultHeader.height,
+            verticalAlign: state.config.header?.centerAlign?.vertical ?? defaultHeader.centerAlign.vertical,
+            horizontalAlign: state.config.header?.centerAlign?.horizontal ?? defaultHeader.centerAlign.horizontal,
+            ...savedHeader?.config,
+          },
+        } : header,
+        bottom: bottom.type === 'bottom-bar' ? {
+          ...bottom,
+          config: {
+            ...defaultBars.bottom.config,
+            height: state.config.bottom?.height ?? defaultBottom.height,
+            verticalAlign: state.config.bottom?.centerAlign?.vertical ?? defaultBottom.centerAlign.vertical,
+            horizontalAlign: state.config.bottom?.centerAlign?.horizontal ?? defaultBottom.centerAlign.horizontal,
+            ...savedBottom?.config,
+          },
+        } : bottom,
+      }
+    },
     canUndo(state): boolean {
       return state.undoStack.length > 0
     },
@@ -261,6 +345,15 @@ export const useDashboardStore = defineStore('dashboard', {
     // ── Settings ─────────────────────────────────────────────
     updateSettings(patch: Partial<DashboardSettings>) {
       this.config.settings = { ...this.config.settings, ...patch }
+      this.save()
+    },
+    updateSettingsAndBars(patch: Partial<DashboardSettings>, bars: BarConfig) {
+      this.config.settings = { ...this.config.settings, ...patch }
+      this.config.bars = bars
+      this.save()
+    },
+    setBar(position: BarPosition, card: CardConfig) {
+      this.config.bars = { ...this.bars, [position]: card }
       this.save()
     },
 
@@ -375,6 +468,62 @@ export const useDashboardStore = defineStore('dashboard', {
       if (!card) return
       slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
       this.setHeader({ slots })
+    },
+
+    // ── Bottom bar ───────────────────────────────────────────
+    setBottom(patch: Partial<BottomConfig>) {
+      this.config.bottom = { ...this.bottom, ...patch }
+      this.save()
+    },
+    updateBottom(patch: Partial<Omit<BottomConfig, 'slots'>>) {
+      this.setBottom(patch)
+    },
+    addBottomCard(slot: BottomSlot, card: Omit<CardConfig, 'id'>) {
+      const slots = { ...this.bottom.slots }
+      slots[slot] = [...slots[slot], { ...card, id: newId('btmcard') }]
+      this.setBottom({ slots })
+    },
+    duplicateBottomCard(slot: BottomSlot, cardId: string) {
+      const slots = { ...this.bottom.slots }
+      const cards = [...slots[slot]]
+      const index = cards.findIndex((card) => card.id === cardId)
+      if (index < 0) return
+      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'btmcard'))
+      slots[slot] = cards
+      this.setBottom({ slots })
+    },
+    removeBottomCard(slot: BottomSlot, cardId: string) {
+      const slots = { ...this.bottom.slots }
+      slots[slot] = slots[slot].filter((card) => card.id !== cardId)
+      this.setBottom({ slots })
+    },
+    updateBottomCardConfig(
+      slot: BottomSlot,
+      cardId: string,
+      config: Record<string, unknown>,
+      css?: string,
+    ) {
+      const slots = { ...this.bottom.slots }
+      slots[slot] = slots[slot].map((card) => card.id === cardId ? { ...card, config, css } : card)
+      this.setBottom({ slots })
+    },
+    moveBottomCard(cardId: string, toSlot: BottomSlot, toIndex: number) {
+      const slots: Record<BottomSlot, CardConfig[]> = {
+        left: [...this.bottom.slots.left],
+        center: [...this.bottom.slots.center],
+        right: [...this.bottom.slots.right],
+      }
+      let card: CardConfig | undefined
+      for (const key of Object.keys(slots) as BottomSlot[]) {
+        const index = slots[key].findIndex((entry) => entry.id === cardId)
+        if (index < 0) continue
+        if (key === toSlot && index < toIndex) toIndex--
+        card = slots[key].splice(index, 1)[0]
+        break
+      }
+      if (!card) return
+      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
+      this.setBottom({ slots })
     },
 
     // ── Views ────────────────────────────────────────────────

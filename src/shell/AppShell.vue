@@ -13,8 +13,7 @@ import DashboardSettingsDialog from '@/core/editor/DashboardSettingsDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import DevSidebar from '@/core/dev/DevSidebar.vue'
-import SideNav from './SideNav.vue'
-import HeaderBar from './HeaderBar.vue'
+import ShellBarHost from './ShellBarHost.vue'
 import ViewRenderer from './ViewRenderer.vue'
 
 // Dev sidebar only in dev mode — production follows the HA language
@@ -45,6 +44,9 @@ const viewOptions = computed(() =>
 // Per-view bar visibility — sidebar on by default, header off
 const showSidebar = computed(() => activeView.value?.showSidebar !== false)
 const showHeader = computed(() => activeView.value?.showHeader === true)
+const showBottom = computed(() => activeView.value?.showBottom !== false)
+const headerInViewArea = computed(() => store.bars.header.config.placement === 'view')
+const bottomInViewArea = computed(() => store.bars.bottom.config.placement === 'view')
 
 /** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {
@@ -95,66 +97,78 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 <template>
   <div class="app-shell">
-    <HeaderBar v-if="showHeader" />
+    <ShellBarHost v-if="showHeader && !headerInViewArea" position="header" />
 
     <div class="shell-body">
-      <!-- Both bars configure themselves via the store — views come from the menu card -->
-      <SideNav v-if="isWide && showSidebar" />
-      <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
-      <div v-if="store.editMode && activeView" class="edit-toolbar">
-        <MdiIcon icon="mdi:pencil" :size="16" />
-        <div class="view-picker">
-          <BaseSelectMenu
-            :model-value="activeView.id"
-            :options="viewOptions"
-            size="sm"
-            searchable
-            @update:model-value="navigate($event)"
-          />
-        </div>
-        <button class="toolbar-icon-btn" :title="t('shell.newView')" @click="viewDialog = 'new'">
-          <MdiIcon icon="mdi:plus" :size="18" />
-        </button>
-        <button
-          class="toolbar-icon-btn"
-          :title="t('shell.duplicateView')"
-          @click="viewDialog = 'duplicate'"
-        >
-          <MdiIcon icon="mdi:content-copy" :size="17" />
-        </button>
-        <div class="toolbar-actions">
-          <button
-            class="toolbar-icon-btn"
-            :disabled="!store.canUndo"
-            :title="t('editor.undo')"
-            @click="store.undo()"
-          >
-            <MdiIcon icon="mdi:undo" :size="18" />
-          </button>
-          <button
-            class="toolbar-icon-btn"
-            :disabled="!store.canRedo"
-            :title="t('editor.redo')"
-            @click="store.redo()"
-          >
-            <MdiIcon icon="mdi:redo" :size="18" />
-          </button>
-          <button class="toolbar-btn" @click="viewDialog = 'edit'">
-            <MdiIcon icon="mdi:cog" :size="16" />
-            {{ t('shell.viewSettings') }}
-          </button>
-          <button class="toolbar-btn" @click="settingsOpen = true">
-            <MdiIcon icon="mdi:tune" :size="16" />
-            {{ t('settings.title') }}
-          </button>
-        </div>
+      <!-- Global bar cards configure themselves through the dashboard store. -->
+      <ShellBarHost v-if="isWide && showSidebar" position="sidebar" />
+      <div class="view-column">
+        <ShellBarHost v-if="showHeader && headerInViewArea" position="header" />
+        <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
+          <div class="view-scroll">
+            <div v-if="store.editMode && activeView" class="edit-toolbar">
+              <MdiIcon icon="mdi:pencil" :size="16" />
+              <div class="view-picker">
+                <BaseSelectMenu
+                  :model-value="activeView.id"
+                  :options="viewOptions"
+                  size="sm"
+                  searchable
+                  @update:model-value="navigate($event)"
+                />
+              </div>
+              <button
+                class="toolbar-icon-btn"
+                :title="t('shell.newView')"
+                @click="viewDialog = 'new'"
+              >
+                <MdiIcon icon="mdi:plus" :size="18" />
+              </button>
+              <button
+                class="toolbar-icon-btn"
+                :title="t('shell.duplicateView')"
+                @click="viewDialog = 'duplicate'"
+              >
+                <MdiIcon icon="mdi:content-copy" :size="17" />
+              </button>
+              <div class="toolbar-actions">
+                <button
+                  class="toolbar-icon-btn"
+                  :disabled="!store.canUndo"
+                  :title="t('editor.undo')"
+                  @click="store.undo()"
+                >
+                  <MdiIcon icon="mdi:undo" :size="18" />
+                </button>
+                <button
+                  class="toolbar-icon-btn"
+                  :disabled="!store.canRedo"
+                  :title="t('editor.redo')"
+                  @click="store.redo()"
+                >
+                  <MdiIcon icon="mdi:redo" :size="18" />
+                </button>
+                <button class="toolbar-btn" @click="viewDialog = 'edit'">
+                  <MdiIcon icon="mdi:cog" :size="16" />
+                  {{ t('shell.viewSettings') }}
+                </button>
+                <button class="toolbar-btn" @click="settingsOpen = true">
+                  <MdiIcon icon="mdi:tune" :size="16" />
+                  {{ t('settings.title') }}
+                </button>
+              </div>
+            </div>
+            <ViewRenderer v-if="activeView" :view="activeView" />
+            <div v-else class="empty">{{ t('shell.noView') }}</div>
+          </div>
+          <EditFab />
+        </main>
+        <ShellBarHost v-if="showBottom && bottomInViewArea" position="bottom" />
       </div>
-        <ViewRenderer v-if="activeView" :view="activeView" />
-        <div v-else class="empty">{{ t('shell.noView') }}</div>
-      </main>
     </div>
 
-    <EditFab />
+    <ShellBarHost v-if="showBottom && !bottomInViewArea" position="bottom" />
+
     <DevSidebar v-if="isDev" />
     <Screensaver v-if="screensaverActive" />
 
@@ -182,7 +196,22 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   min-height: 0;
 }
 .view-area {
+  position: relative;
   flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.view-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.view-scroll {
+  height: 100%;
+  box-sizing: border-box;
   overflow-y: auto;
   padding: 16px;
 }

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { DashboardSettings } from '@/core/config/types'
-import { useDashboardStore } from '@/core/config/dashboardStore'
+import type { BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
+import { newId, useDashboardStore } from '@/core/config/dashboardStore'
+import { cardsForBar, type CardCssArea } from '@/core/registry/cardRegistry'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -10,6 +11,7 @@ import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
+import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -20,6 +22,9 @@ const theme = ref<DashboardSettings['theme']>(store.settings.theme)
 const uiTheme = ref(store.settings.uiTheme)
 const screensaverMinutes = ref(store.settings.screensaverMinutes)
 const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
+const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
+const barConfigTarget = ref<BarPosition | null>(null)
+const barPositions: BarPosition[] = ['sidebar', 'header', 'bottom']
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
 const uiThemes = availableThemes()
@@ -28,11 +33,37 @@ const themeOptions = computed(() =>
   themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
 )
 const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
+const barCssArea = computed<CardCssArea>(() => `bar_${barConfigTarget.value ?? 'sidebar'}`)
+
+function barOptions(position: BarPosition) {
+  return cardsForBar(position).map((manifest) => ({
+    value: manifest.type,
+    label: t(manifest.name),
+    icon: manifest.icon,
+  }))
+}
+
+function selectBar(position: BarPosition, type: string) {
+  const current = barDrafts.value[position]
+  barDrafts.value[position] = {
+    id: current?.id ?? newId('bar'),
+    type,
+    config: {},
+  }
+}
+
+function saveBarConfig(config: Record<string, unknown>, css?: string) {
+  const position = barConfigTarget.value
+  if (!position) return
+  barDrafts.value[position] = { ...barDrafts.value[position], config, css }
+  barConfigTarget.value = null
+}
 
 // ── Tabs ─────────────────────────────────────────────────────
 const tab = ref('settings')
 const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
+  { value: 'bars', label: t('settings.bars'), icon: 'mdi:dock-window' },
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
 
@@ -55,13 +86,13 @@ function save() {
   // Only store an override when it actually differs from the theme default
   const css = cssDraft.value.trim()
   const isOverride = css !== '' && css !== defaultCss.value.trim()
-  store.updateSettings({
+  store.updateSettingsAndBars({
     theme: theme.value,
     uiTheme: uiTheme.value,
     screensaverMinutes: Math.max(0, Number(screensaverMinutes.value) || 0),
     autoReturnSeconds: Math.max(0, Number(autoReturnSeconds.value) || 0),
     customCss: isOverride ? cssDraft.value : undefined,
-  })
+  }, JSON.parse(JSON.stringify(barDrafts.value)) as BarConfig)
   emit('close')
   // Themed components are cached — a reload applies the new component theme
   if (uiThemeChanged) setTimeout(() => location.reload(), 300)
@@ -112,6 +143,24 @@ function save() {
       </div>
     </div>
 
+    <div v-show="tab === 'bars'" class="bars-form">
+      <p class="bars-hint">{{ t('settings.barsHint') }}</p>
+      <div v-for="position in barPositions" :key="position" class="bar-field">
+        <div class="bar-field-heading">
+          <span>{{ t(`settings.barPositions.${position}`) }}</span>
+          <small>{{ t(`settings.barPositionHints.${position}`) }}</small>
+        </div>
+        <BaseSelectMenu
+          :model-value="barDrafts[position].type"
+          :options="barOptions(position)"
+          @update:model-value="selectBar(position, String($event))"
+        />
+        <BaseButton size="sm" @click="barConfigTarget = position">
+          {{ t('settings.configureBar') }}
+        </BaseButton>
+      </div>
+    </div>
+
     <div v-show="tab === 'css'" class="css-tab">
       <p class="css-hint">{{ t('settings.cssHint') }}</p>
       <BaseCodeEditor v-model="cssDraft" language="css" min-height="340px" />
@@ -124,6 +173,16 @@ function save() {
       <BaseButton variant="primary" @click="save">{{ t('common.save') }}</BaseButton>
     </template>
   </BaseDialog>
+
+  <CardConfigDialog
+    v-if="barConfigTarget"
+    :card-type="barDrafts[barConfigTarget].type"
+    :initial-config="barDrafts[barConfigTarget].config"
+    :initial-css="barDrafts[barConfigTarget].css"
+    :area="barCssArea"
+    @close="barConfigTarget = null"
+    @save="saveBarConfig"
+  />
 </template>
 
 <style scoped>
@@ -131,6 +190,43 @@ function save() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.bars-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.bars-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.bar-field {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.2fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+}
+.bar-field-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.bar-field-heading > span {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.bar-field-heading > small {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+@media (max-width: 720px) {
+  .bar-field {
+    grid-template-columns: 1fr;
+  }
 }
 label,
 .field {

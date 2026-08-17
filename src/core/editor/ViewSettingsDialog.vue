@@ -75,6 +75,7 @@ const layout = ref<ViewLayout>(
 const background = ref(props.view?.background ?? '')
 const showSidebar = ref(props.view?.showSidebar !== false)
 const showHeader = ref(props.view?.showHeader === true)
+const showBottom = ref(props.view?.showBottom !== false)
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
 // Sections view specific options
 const maxColumns = ref(Number(props.view?.layoutOptions?.maxColumns) || 4)
@@ -131,6 +132,7 @@ function save() {
     background: background.value.trim() || undefined,
     showSidebar: showSidebar.value,
     showHeader: showHeader.value,
+    showBottom: showBottom.value,
     padding: normalizeBox(padding.value),
     margin: normalizeBox(margin.value),
     width: width.value === 'default' ? undefined : width.value,
@@ -247,6 +249,10 @@ function remove() {
       <div class="row">
         <span>{{ t('editor.view.showHeader') }}</span>
         <BaseCheckbox v-model="showHeader" />
+      </div>
+      <div class="row">
+        <span>{{ t('editor.view.showBottom') }}</span>
+        <BaseCheckbox v-model="showBottom" />
       </div>
     </div>
 

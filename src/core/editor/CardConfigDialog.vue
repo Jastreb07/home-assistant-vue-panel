@@ -14,6 +14,13 @@ import CardCss from '@/core/ui/CardCss.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
+import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import {
+  defaultResponsiveVisibility,
+  responsiveVisibilityFromCss,
+  withResponsiveCss,
+} from '@/core/ui/responsiveCss'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -61,6 +68,7 @@ const tabItems = computed(() => [
   ...(props.sizable
     ? [{ value: 'size', label: t('editor.tabSize'), icon: 'mdi:resize' }]
     : []),
+  { value: 'visibility', label: t('editor.tabVisibility'), icon: 'mdi:eye-outline' },
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
 
@@ -86,10 +94,39 @@ function sizeValue(raw: number | ''): number | undefined {
 const defaultCss = ref('')
 // Pre-filled with the card's full default CSS so users can tweak it
 const cssDraft = ref(props.initialCss ?? '')
+const visibility = ref({ ...defaultResponsiveVisibility })
+const responsiveReady = ref(false)
+
+function readResponsiveCss() {
+  visibility.value = responsiveVisibilityFromCss(cssDraft.value)
+}
+
+function setMobileBreakpoint(raw: string | number) {
+  const value = Math.min(Math.max(Math.round(Number(raw) || 767), 320), 2000)
+  visibility.value.mobileMax = value
+  if (visibility.value.tabletMax <= value) visibility.value.tabletMax = value + 1
+}
+
+function setTabletBreakpoint(raw: string | number) {
+  visibility.value.tabletMax = Math.min(
+    Math.max(Math.round(Number(raw) || 1023), visibility.value.mobileMax + 1),
+    4000,
+  )
+}
 
 onMounted(async () => {
   defaultCss.value = await cardDefaultCss(props.cardType, props.area)
   if (!props.initialCss) cssDraft.value = defaultCss.value
+  readResponsiveCss()
+  responsiveReady.value = true
+})
+
+watch(visibility, (value) => {
+  if (responsiveReady.value) cssDraft.value = withResponsiveCss(cssDraft.value, value)
+}, { deep: true })
+
+watch(tab, (value) => {
+  if (value === 'visibility' && responsiveReady.value) readResponsiveCss()
 })
 
 function onSave() {
@@ -104,6 +141,7 @@ function onSave() {
 
 function resetCss() {
   cssDraft.value = defaultCss.value
+  readResponsiveCss()
 }
 
 /** The preview mirrors the fixed size so typed values are visible right away. */
@@ -159,6 +197,63 @@ const isBarArea = computed(() => props.area !== 'default')
             @update:model-value="cardHeight = Number($event) || ''"
           />
         </div>
+      </div>
+      <div v-show="tab === 'visibility'" class="form-col">
+        <BaseCollapsible
+          :title="t('editor.visibility.responsiveDesign')"
+          icon="mdi:responsive"
+          default-open
+        >
+          <p class="visibility-hint">{{ t('editor.visibility.hint') }}</p>
+          <div class="device-list">
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.mobile') }}</span>
+                <small>{{ t('editor.visibility.mobileRange', { max: visibility.mobileMax }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility.mobile" />
+            </div>
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.tablet') }}</span>
+                <small>{{ t('editor.visibility.tabletRange', { min: visibility.mobileMax + 1, max: visibility.tabletMax }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility.tablet" />
+            </div>
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.desktop') }}</span>
+                <small>{{ t('editor.visibility.desktopRange', { min: visibility.tabletMax + 1 }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility.desktop" />
+            </div>
+          </div>
+          <div class="breakpoint-grid">
+            <div class="field">
+              <span>{{ t('editor.visibility.mobileBreakpoint') }}</span>
+              <BaseInput
+                :model-value="visibility.mobileMax"
+                type="number"
+                :min="320"
+                :max="2000"
+                :step="1"
+                @update:model-value="setMobileBreakpoint"
+              />
+            </div>
+            <div class="field">
+              <span>{{ t('editor.visibility.tabletBreakpoint') }}</span>
+              <BaseInput
+                :model-value="visibility.tabletMax"
+                type="number"
+                :min="visibility.mobileMax + 1"
+                :max="4000"
+                :step="1"
+                @update:model-value="setTabletBreakpoint"
+              />
+            </div>
+          </div>
+          <small class="css-write-hint">{{ t('editor.visibility.cssHint') }}</small>
+        </BaseCollapsible>
       </div>
       <div v-show="tab === 'css'" class="form-col css-col">
         <p class="css-hint">{{ t('editor.cssHint') }}</p>
@@ -229,6 +324,50 @@ const isBarArea = computed(() => props.area !== 'default')
 .css-actions {
   display: flex;
   justify-content: flex-end;
+}
+.visibility-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.device-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 48px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.device-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.device-label > span {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.device-label > small,
+.css-write-hint {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.breakpoint-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 4px;
+}
+@media (max-width: 560px) {
+  .breakpoint-grid {
+    grid-template-columns: 1fr;
+  }
 }
 /* Set apart from the form: own panel with the background of the target area */
 .preview-col {

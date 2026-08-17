@@ -57,8 +57,7 @@ vue-panel/
 │   │   └── GridLayout.vue       # Freies Grid (Spalten/Zeilen definierbar)
 │   ├── shell/              # App-Rahmen
 │   │   ├── AppShell.vue         # Responsive Wrapper
-│   │   ├── SideNav.vue          # Sidebar (Tablet landscape) — wie Screenshot
-│   │   ├── BottomNav.vue        # Legacy-Komponente, aktuell nicht im AppShell eingebunden
+│   │   ├── ShellBarHost.vue     # Rendert globale Sidebar-/Header-/Bottom-Bar-Card
 │   │   └── ViewRenderer.vue     # Rendert aktive View mit gewähltem Layout
 │   └── cards/              # ⭐ Hier entstehen Cards — 1 Ordner = 1 Card
 │       ├── clock/
@@ -123,6 +122,7 @@ Die gesamte Dashboard-Definition ist **ein JSON-Objekt**:
 ```ts
 interface DashboardConfig {
   views: ViewConfig[]
+  bars?: Record<'sidebar' | 'header' | 'bottom', CardConfig> // globale Shell-Cards
   theme?: ThemeConfig
 }
 interface ViewConfig {
@@ -131,6 +131,7 @@ interface ViewConfig {
   layout: 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'  // 'tiles' = Legacy-Alias für flex
   layoutOptions?: Record<string, unknown>   // z.B. maxColumns
   subview?: boolean                          // kein Nav-Eintrag, mit Zurück-Button
+  showSidebar?: boolean; showHeader?: boolean; showBottom?: boolean // nur Sichtbarkeit
   padding?: BoxValue; margin?: BoxValue      // Tab "Erweitert"
   width?: 'default' | 'full'                 // 'full' hebt die max-width des Layouts auf
   align?: 'left' | 'center' | 'right'        // waagerechte Position im View-Bereich
@@ -157,8 +158,9 @@ interface CardConfig {
 
 ## 6. Visueller Editor
 
-- ✏️-Button in der Titelleiste aktiviert den Edit-Modus (wie Lovelace).
+- Der ✏️-FAB im View-Bereich aktiviert den Edit-Modus (wie Lovelace); er bleibt mit je 24px Abstand rechts unten im `.view-area`, während `.view-scroll` den Inhalt scrollt.
 - Im Edit-Modus: Cards per Drag & Drop verschieben, ＋ Card hinzufügen (CardPicker mit Vorschau), ⚙ Card konfigurieren (Formular auto-generiert aus Manifest-Schema mit Live-Preview), 🗑 löschen.
+- Jeder Card-Dialog enthält den Tab „Sichtbarkeit“ mit einem aufklappbaren Bereich „Responsive Design“. Die Anzeige auf Smartphone, Tablet und Desktop sowie die beiden Breakpoints sind pro Card einstellbar. Die Engine schreibt daraus direkt einen markierten Media-Query-Block in das instanzbezogene Card-CSS; der CSS-Tab zeigt denselben Block und bleibt damit die maßgebliche Laufzeitquelle.
 - Views verwalten: hinzufügen/umbenennen/sortieren, Layout pro View umschaltbar (Abschnitte / Kacheln / Panel / Seitenleiste / Grid — vgl. Lovelace "Ansicht anpassen").
 - Undo/Redo über Snapshot-Stack im Pinia-Store; Speichern schreibt die Config via WebSocket.
 
@@ -179,10 +181,12 @@ interface CardConfig {
 
 | Breakpoint | Shell | Verhalten |
 |---|---|---|
-| ≥ 1024 px landscape (Wand-Tablet) | `SideNav` links (Uhr, Datum, Wetter, View-Liste — wie Screenshot) | Grid mit `layoutOptions.maxColumns` |
-| < 1024 px (Smartphone) | `SideNav` ausgeblendet, keine Ersatznavigation unten | Cards einspaltig gestapelt, Sections untereinander |
+| ≥ 1024 px landscape (Wand-Tablet) | Globale Sidebar-Bar links; Header-/Bottom-Bar gemäß View-Einstellung | Grid mit `layoutOptions.maxColumns` |
+| < 1024 px (Smartphone) | Globale Sidebar-Bar ausgeblendet; Header-/Bottom-Bar bleiben gemäß View-Einstellung | Cards einspaltig gestapelt, Sections untereinander |
 
 Umsetzung: CSS Grid + Container Queries; Cards deklarieren nur `defaultSize`, die Layouts kümmern sich um den Rest.
+
+Sidebar, Header und Bottom sind keine statischen Shell-Komponenten, sondern global ausgewählte, automatisch entdeckte Cards. Ein Manifest kennzeichnet unterstützte Positionen über `barPositions`; dadurch lassen sich eigene Bar-Typen ohne zentrale Registrierung ergänzen. Im Edit-Modus öffnet jede Bar über ihren Stift denselben CardConfigDialog wie normale Cards. Breite/Höhe und Slot-Ausrichtung werden aus dem Schema des jeweiligen Bar-Manifests erzeugt; der CSS-Tab bleibt daneben verfügbar. Header und Bottom bieten außerdem `placement: full|view` (Standard: `view`): über die gesamte App-Breite außerhalb der Shell-Zeile oder nur innerhalb der View-Spalte neben der Sidebar. Separate Navigation-/Header-/Bottom-Einstellungsdialoge gibt es nicht. Die Default-Bar-Cards stellen editierbare Slots bereit; die Sidebar hat rechts eine Trennlinie. Pro View wird nur die Sichtbarkeit über `showSidebar`, `showHeader` und `showBottom` gesteuert, wobei die Bottom-Bar standardmäßig sichtbar ist.
 
 ## 8. HA-Integration & Auth
 

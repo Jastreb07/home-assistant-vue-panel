@@ -1,5 +1,6 @@
 import { defineAsyncComponent, type Component } from 'vue'
 import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
+import type { BarPosition } from '@/core/config/types'
 
 // Re-exported so consumers have a single import site for the registry API
 export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
@@ -16,12 +17,20 @@ export type CardArea =
   | 'header_left'
   | 'header_center'
   | 'header_right'
+  | 'bottom_left'
+  | 'bottom_center'
+  | 'bottom_right'
 
 /**
  * Areas a card can ship default CSS for. 'default' covers the dashboard
  * and acts as the fallback for every area without its own entry.
  */
-export type CardCssArea = 'default' | Exclude<CardArea, 'dashboard'>
+export type CardCssArea =
+  | 'default'
+  | Exclude<CardArea, 'dashboard'>
+  | 'bar_sidebar'
+  | 'bar_header'
+  | 'bar_bottom'
 
 /** Per-area default CSS of a card — assign one string to several keys to share it. */
 export type CardCssMap = Partial<Record<CardCssArea, string>>
@@ -40,6 +49,12 @@ export interface CardSchemaField {
   domain?: string
   /** For type 'select' */
   options?: string[]
+  /** Optional i18n labels keyed by the stored select value. */
+  optionLabels?: Record<string, string>
+  /** Optional constraints for number fields. */
+  min?: number
+  max?: number
+  step?: number
   optional?: boolean
   default?: unknown
 }
@@ -75,6 +90,8 @@ export interface CardManifest {
    * Defaults to `['dashboard']`.
    */
   areas?: CardArea[]
+  /** Shell bar positions this card can occupy. Bar-only cards stay out of the normal picker. */
+  barPositions?: BarPosition[]
   /**
    * Default CSS per area, applied unless the card instance overrides it.
    * `default` is the fallback for areas without their own entry:
@@ -144,7 +161,15 @@ export async function cardDefaultCss(type: string, area: CardCssArea = 'default'
 
 /** Cards offered for an area — 'dashboard' is the default when unset. */
 export function cardsForArea(area: CardArea): CardManifest[] {
-  return Object.values(cardRegistry).filter((m) => (m.areas ?? ['dashboard']).includes(area))
+  return Object.values(cardRegistry).filter((m) => {
+    const areas = m.areas ?? (m.barPositions?.length ? [] : ['dashboard'])
+    return areas.includes(area)
+  })
+}
+
+/** Auto-discovered cards suitable as the outer shell bar at a position. */
+export function cardsForBar(position: BarPosition): CardManifest[] {
+  return Object.values(cardRegistry).filter((manifest) => manifest.barPositions?.includes(position))
 }
 
 export interface CardGroupEntry extends CardGroup {

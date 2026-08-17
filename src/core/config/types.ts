@@ -57,6 +57,8 @@ export interface ViewConfig {
   showSidebar?: boolean
   /** Show the header bar on this view (default: false) */
   showHeader?: boolean
+  /** Show the bottom bar on this view (default: true) */
+  showBottom?: boolean
   /** Space inside the view area, around the layout */
   padding?: BoxValue
   /** Space around the layout itself */
@@ -74,7 +76,7 @@ export type NavSlot = 'top' | 'center' | 'bottom'
 /** Alignment of the center slot content — 'stretch' fills the width. */
 export type NavAlign = 'start' | 'center' | 'end' | 'stretch'
 
-/** Configuration of the navigation (SideNav on wide screens, BottomNav on narrow). */
+/** Content and sizing of the default global sidebar card. */
 export interface NavConfig {
   /** Cards per slot — the manifest must allow the matching `sidebar_*` area */
   slots: Record<NavSlot, CardConfig[]>
@@ -86,6 +88,7 @@ export interface NavConfig {
 
 /** The three card slots of the header bar, left to right. */
 export type HeaderSlot = 'left' | 'center' | 'right'
+export type BottomSlot = HeaderSlot
 
 /** The header bar — the horizontal counterpart of the sidebar. */
 export interface HeaderConfig {
@@ -96,6 +99,17 @@ export interface HeaderConfig {
   /** Where the center slot content sits inside the free space */
   centerAlign: { vertical: NavAlign; horizontal: NavAlign }
 }
+
+/** The bottom bar mirrors the header with left, center and right slots. */
+export interface BottomConfig {
+  slots: Record<BottomSlot, CardConfig[]>
+  height: number
+  centerAlign: { vertical: NavAlign; horizontal: NavAlign }
+}
+
+/** Global shell positions occupied by exactly one auto-discovered bar card. */
+export type BarPosition = 'sidebar' | 'header' | 'bottom'
+export type BarConfig = Record<BarPosition, CardConfig>
 
 export interface DashboardSettings {
   theme: 'dark' | 'light' | 'auto'
@@ -114,5 +128,7 @@ export interface DashboardConfig {
   settings?: Partial<DashboardSettings>
   nav?: Partial<NavConfig>
   header?: Partial<HeaderConfig>
+  bottom?: Partial<BottomConfig>
+  bars?: Partial<BarConfig>
   views: ViewConfig[]
 }

@@ -20,5 +20,8 @@ export default defineCard({
     'header_left',
     'header_center',
     'header_right',
+    'bottom_left',
+    'bottom_center',
+    'bottom_right',
   ],
 })

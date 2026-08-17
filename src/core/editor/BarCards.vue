@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { CardConfig, HeaderSlot, NavSlot } from '@/core/config/types'
+import type { BarPosition, BottomSlot, CardConfig, HeaderSlot, NavSlot } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import {
   cardAreaCss,
@@ -17,39 +17,25 @@ import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { copyCardToClipboard } from '@/core/ui/cardClipboard'
 
-/**
- * Cards of one bar slot — shared by SideNav (column), HeaderBar (row)
- * and BottomNav (row). Editing mirrors the layout sections: picker,
- * config dialog and drag & drop, against the slot of the given bar.
- */
-const props = withDefaults(
-  defineProps<{
-    /** Which slot these cards belong to ('slot' is reserved in Vue) */
-    navSlot: NavSlot | HeaderSlot
-    /** Which bar the slot belongs to */
-    bar?: 'sidebar' | 'header'
-    /** Stack vertically (SideNav) or scroll horizontally (header/bottom) */
-    direction: 'column' | 'row'
-    /** Card types to leave out, e.g. the menu card in the BottomNav */
-    hideTypes?: string[]
-  }>(),
-  { bar: 'sidebar' },
-)
+type BarSlot = NavSlot | HeaderSlot | BottomSlot
+
+const props = defineProps<{
+  bar: BarPosition
+  barSlot: BarSlot
+  direction: 'column' | 'row'
+}>()
 
 const { t } = useI18n()
 const store = useDashboardStore()
 
-/** The stored (unfiltered) cards of this slot. */
-const slotCards = computed<CardConfig[]>(() =>
-  props.bar === 'header'
-    ? store.header.slots[props.navSlot as HeaderSlot]
-    : store.nav.slots[props.navSlot as NavSlot],
-)
+const cards = computed<CardConfig[]>(() => {
+  if (props.bar === 'sidebar') return store.nav.slots[props.barSlot as NavSlot]
+  if (props.bar === 'header') return store.header.slots[props.barSlot as HeaderSlot]
+  return store.bottom.slots[props.barSlot as BottomSlot]
+})
 
-const cards = computed(() => slotCards.value.filter((c) => !props.hideTypes?.includes(c.type)))
-const area = computed<CardArea>(() => `${props.bar}_${props.navSlot}` as CardArea)
+const area = computed<CardArea>(() => `${props.bar}_${props.barSlot}` as CardArea)
 
-/** Instance override wins, otherwise the card's default CSS for this area. */
 function cssFor(card: CardConfig): string {
   return card.css ?? cardAreaCss(card.type, cssAreaOf(area.value))
 }
@@ -61,11 +47,16 @@ const configTarget = ref<
   | null
 >(null)
 
+function addCard(card: Omit<CardConfig, 'id'>) {
+  if (props.bar === 'sidebar') store.addNavCard(props.barSlot as NavSlot, card)
+  else if (props.bar === 'header') store.addHeaderCard(props.barSlot as HeaderSlot, card)
+  else store.addBottomCard(props.barSlot as BottomSlot, card)
+}
+
 function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
   pickerOpen.value = false
   if (copiedCard) {
-    if (props.bar === 'header') store.addHeaderCard(props.navSlot as HeaderSlot, copiedCard)
-    else store.addNavCard(props.navSlot as NavSlot, copiedCard)
+    addCard(copiedCard)
     return
   }
   configTarget.value = { mode: 'new', cardType }
@@ -74,20 +65,14 @@ function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
 function onConfigSave(config: Record<string, unknown>, css?: string) {
   const target = configTarget.value
   if (!target) return
-  const card = {
-    type: target.cardType,
-    config,
-    css,
-    size: cardRegistry[target.cardType]?.defaultSize,
-  }
-  if (props.bar === 'header') {
-    const slot = props.navSlot as HeaderSlot
-    if (target.mode === 'new') store.addHeaderCard(slot, card)
-    else store.updateHeaderCardConfig(slot, target.cardId, config, css)
+  if (target.mode === 'new') {
+    addCard({ type: target.cardType, config, css, size: cardRegistry[target.cardType]?.defaultSize })
+  } else if (props.bar === 'sidebar') {
+    store.updateNavCardConfig(props.barSlot as NavSlot, target.cardId, config, css)
+  } else if (props.bar === 'header') {
+    store.updateHeaderCardConfig(props.barSlot as HeaderSlot, target.cardId, config, css)
   } else {
-    const slot = props.navSlot as NavSlot
-    if (target.mode === 'new') store.addNavCard(slot, card)
-    else store.updateNavCardConfig(slot, target.cardId, config, css)
+    store.updateBottomCardConfig(props.barSlot as BottomSlot, target.cardId, config, css)
   }
   configTarget.value = null
 }
@@ -103,13 +88,15 @@ function editCard(card: CardConfig) {
 }
 
 function removeCard(cardId: string) {
-  if (props.bar === 'header') store.removeHeaderCard(props.navSlot as HeaderSlot, cardId)
-  else store.removeNavCard(props.navSlot as NavSlot, cardId)
+  if (props.bar === 'sidebar') store.removeNavCard(props.barSlot as NavSlot, cardId)
+  else if (props.bar === 'header') store.removeHeaderCard(props.barSlot as HeaderSlot, cardId)
+  else store.removeBottomCard(props.barSlot as BottomSlot, cardId)
 }
 
 function duplicateCard(cardId: string) {
-  if (props.bar === 'header') store.duplicateHeaderCard(props.navSlot as HeaderSlot, cardId)
-  else store.duplicateNavCard(props.navSlot as NavSlot, cardId)
+  if (props.bar === 'sidebar') store.duplicateNavCard(props.barSlot as NavSlot, cardId)
+  else if (props.bar === 'header') store.duplicateHeaderCard(props.barSlot as HeaderSlot, cardId)
+  else store.duplicateBottomCard(props.barSlot as BottomSlot, cardId)
 }
 
 function copyCard(card: CardConfig) {
@@ -121,37 +108,30 @@ async function cutCard(card: CardConfig) {
   removeCard(card.id)
 }
 
-// ── Drag & Drop ──────────────────────────────────────────────
 const draggingId = ref<string | null>(null)
 const dropIndex = ref<number | null>(null)
 
-function onDragStart(e: DragEvent, cardId: string) {
+function onDragStart(event: DragEvent, cardId: string) {
   draggingId.value = cardId
-  e.dataTransfer!.setData('text/plain', cardId)
-  e.dataTransfer!.effectAllowed = 'move'
+  event.dataTransfer!.setData('text/plain', cardId)
+  event.dataTransfer!.effectAllowed = 'move'
 }
 
-function onDragOver(e: DragEvent, index: number) {
-  e.preventDefault()
+function onDragOver(event: DragEvent, index: number) {
+  event.preventDefault()
   dropIndex.value = index
 }
 
-/** Drop targets are indices into the filtered list — map back to the stored one. */
-function rawIndex(index: number): number {
-  const raw = slotCards.value
-  if (!props.hideTypes?.length) return index
-  const card = cards.value[index]
-  return card ? raw.findIndex((c) => c.id === card.id) : raw.length
+function moveCard(cardId: string, index: number) {
+  if (props.bar === 'sidebar') store.moveNavCard(cardId, props.barSlot as NavSlot, index)
+  else if (props.bar === 'header') store.moveHeaderCard(cardId, props.barSlot as HeaderSlot, index)
+  else store.moveBottomCard(cardId, props.barSlot as BottomSlot, index)
 }
 
-function onDrop(e: DragEvent) {
-  e.preventDefault()
-  const cardId = e.dataTransfer!.getData('text/plain')
-  if (cardId && dropIndex.value !== null) {
-    const index = rawIndex(dropIndex.value)
-    if (props.bar === 'header') store.moveHeaderCard(cardId, props.navSlot as HeaderSlot, index)
-    else store.moveNavCard(cardId, props.navSlot as NavSlot, index)
-  }
+function onDrop(event: DragEvent) {
+  event.preventDefault()
+  const cardId = event.dataTransfer!.getData('text/plain')
+  if (cardId && dropIndex.value !== null) moveCard(cardId, dropIndex.value)
   draggingId.value = null
   dropIndex.value = null
 }
@@ -165,7 +145,7 @@ function onDragEnd() {
 <template>
   <div
     v-if="cards.length > 0 || store.editMode"
-    class="nav-cards"
+    class="bar-cards"
     :class="direction"
     @dragover.prevent="onDragOver($event, cards.length)"
     @drop="onDrop"
@@ -173,7 +153,7 @@ function onDragEnd() {
     <div
       v-for="(card, index) in cards"
       :key="card.id"
-      class="nav-card-slot"
+      class="bar-card-slot"
       :class="{ dragging: draggingId === card.id, 'drop-before': dropIndex === index }"
       :data-vp-card="cssFor(card) ? card.id : undefined"
       :draggable="store.editMode"
@@ -222,29 +202,30 @@ function onDragEnd() {
 </template>
 
 <style scoped>
-.nav-cards {
+.bar-cards {
   display: flex;
   gap: 10px;
+  min-width: 0;
 }
-.nav-cards.column {
+.bar-cards.column {
   flex-direction: column;
 }
-.nav-cards.row {
+.bar-cards.row {
   flex-direction: row;
   overflow-x: auto;
   padding: 8px;
 }
-.nav-cards.row .nav-card-slot {
+.bar-cards.row .bar-card-slot {
   flex: 0 0 150px;
 }
-.nav-card-slot {
+.bar-card-slot {
   position: relative;
   min-width: 0;
 }
-.nav-card-slot.dragging {
+.bar-card-slot.dragging {
   opacity: 0.4;
 }
-.nav-card-slot.drop-before {
+.bar-card-slot.drop-before {
   outline: 2px dashed var(--accent);
   outline-offset: 3px;
   border-radius: var(--card-radius);
@@ -256,7 +237,7 @@ function onDragEnd() {
   font-size: 12px;
   color: var(--text-secondary);
 }
-.nav-cards.row :deep(.vp-add-tile) {
+.bar-cards.row :deep(.vp-add-tile) {
   flex: 0 0 auto;
 }
 </style>

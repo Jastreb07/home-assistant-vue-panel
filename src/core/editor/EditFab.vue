@@ -20,7 +20,7 @@ const store = useDashboardStore()
 
 <style scoped>
 .edit-fab {
-  position: fixed;
+  position: absolute;
   right: 24px;
   bottom: 24px;
   width: 56px;
