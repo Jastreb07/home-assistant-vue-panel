@@ -9,7 +9,7 @@ Kein YAML, alles visuell im Browser editierbar, Cards als einfache Vue-Komponent
 
 - **Lovelace-Ersatz**: Views/Unterseiten, Cards, Layouts, visueller Edit-Modus — alles ohne YAML.
 - **Responsive**: Ein Design für Wand-Tablets (Landscape, mit Sidebar) und Smartphones (Sidebar ausgeblendet, Inhalte gestapelt).
-- **Cards extrem einfach erstellbar**: Ein neuer Ordner unter `src/cards/`, eine `.vue`-Datei + Manifest — fertig. Keine Registrierung an zentraler Stelle nötig (Auto-Discovery).
+- **Cards extrem einfach erstellbar**: Ein eigener Anbieterordner unter `src/cards/`, darin ein Card-Ordner mit `.vue`-Datei + Manifest — fertig. Keine Registrierung an zentraler Stelle nötig (rekursive Auto-Discovery). Eingebaute Cards liegen getrennt unter `src/cards/core-cards/`.
 - **Deployment**: `npm run build` → Inhalt von `dist/` nach `config/www/vue-panel/` hochladen → als `panel_custom` in HA einbinden.
 
 ## 2. Tech-Stack
@@ -59,27 +59,27 @@ vue-panel/
 │   │   ├── AppShell.vue         # Responsive Wrapper
 │   │   ├── ShellBarHost.vue     # Rendert globale Sidebar-/Header-/Bottom-Bar-Card
 │   │   └── ViewRenderer.vue     # Rendert aktive View mit gewähltem Layout
-│   └── cards/              # ⭐ Hier entstehen Cards — 1 Ordner = 1 Card
-│       ├── clock/
-│       │   ├── manifest.ts      # Name, Icon, Config-Schema, Defaults
-│       │   └── ClockCard.vue
-│       ├── weather/
-│       ├── light/
-│       ├── thermostat/
-│       ├── room-tile/           # Raum-Kachel wie im Screenshot
-│       ├── sensor/
-│       └── ...
+│   └── cards/              # ⭐ Anbieterordner, rekursiv entdeckt
+│       ├── core-cards/          # Mitgelieferte Cards
+│       │   ├── clock/
+│       │   │   ├── manifest.ts
+│       │   │   └── ClockCard.vue
+│       │   ├── weather/
+│       │   ├── light/
+│       │   └── ...
+│       └── my-cards/            # Eigene/externe Cards
+│           └── example/
 └── dist/                   # Build → nach config/www/vue-panel/ hochladen
 ```
 
 ## 4. Card-System (Kernstück)
 
 ### Regeln
-1. Jede Card lebt in **einem eigenen Ordner** unter `src/cards/<name>/`.
+1. Jede Card lebt in **einem eigenen Ordner** unter `src/cards/<provider>/<name>/`. Core-Cards verwenden den Anbieterordner `core-cards`; weitere Entwickler legen eigene Ordner daneben an.
 2. Eine Card importiert **nur aus dem eigenen Ordner** und aus `@/core/ha/*` (Composables). Keine Abhängigkeiten zwischen Cards.
-3. Auto-Discovery: `cardRegistry.ts` lädt alle Cards per `import.meta.glob('../cards/*/manifest.ts')`. **Keine zentrale Registrierungsdatei anfassen.**
+3. Auto-Discovery: `cardRegistry.ts` lädt alle Cards rekursiv per `import.meta.glob('../../cards/**/manifest.ts')`. **Keine zentrale Registrierungsdatei anfassen.** Der Manifest-`type` muss über alle Anbieter hinweg eindeutig sein.
 
-### Manifest-Beispiel (`src/cards/light/manifest.ts`)
+### Manifest-Beispiel (`src/cards/core-cards/light/manifest.ts`)
 ```ts
 import { defineCard } from '@/core/registry/cardRegistry'
 

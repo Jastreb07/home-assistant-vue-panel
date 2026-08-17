@@ -54,7 +54,7 @@ src/
 │                             # Sidebar-Sichtbarkeit folgt ausschließlich den Card-Regeln
 ├─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
 │                             # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
-├─ cards/                     # 1 Ordner = 1 Card (siehe §5)
+├─ cards/                     # Anbieterordner; core-cards/ enthält eingebaute Cards
 └─ theme/                     # Theme-System (siehe §6)
 ```
 
@@ -81,10 +81,10 @@ src/
 
 ## 5. Cards erstellen (Kern-Feature!)
 
-1 Ordner unter `src/cards/<name>/` mit `manifest.ts` + Komponente — **fertig, keine Registrierung nötig** (eager glob in `cardRegistry.ts`).
+Jede Card liegt unter `src/cards/<provider>/<name>/` mit `manifest.ts` + Komponente — **fertig, keine Registrierung nötig** (rekursiver eager glob in `cardRegistry.ts`). Alle eingebauten Cards gehören nach `src/cards/core-cards/`; externe Entwickler legen einen eigenen Anbieterordner daneben an. Card-`type`-Werte müssen projektweit eindeutig bleiben.
 
 ```ts
-// src/cards/foo/manifest.ts
+// src/cards/my-cards/foo/manifest.ts
 export default defineCard({
   type: 'foo', name: 'cards.foo.name', icon: 'mdi:star',
   component: () => import('./FooCard.vue'),           // lazy!
@@ -97,7 +97,7 @@ export default defineCard({
 - **Cards nutzen KEIN `BaseCard`** — jede Card trägt die komplette Kachel-Optik (background, border-radius, padding, box-shadow, active-Zustand, …) selbst in ihrem eigenen `<style scoped>`-Block. Grund: der CSS-Tab zeigt/kontrolliert so die GESAMTE Card inkl. Kachel. Normale Tile-Cards folgen der kompakten Designsprache: `padding: 14px 16px`, `min-height: 120px`, vertikaler Aufbau, 38px große runde Icon-Fläche oben und Name/Status unten; aktive Entity-Cards verwenden `#f6d36b`. Card-Namen werden mit `@/core/ui/OverflowMarquee.vue` einzeilig dargestellt und laufen nur bei tatsächlichem Überlauf; `prefers-reduced-motion` fällt auf Ellipsis zurück. Strukturelle Cards wie `section-title`, Menü- und Bar-Cards behalten ihre funktionsgerechte Darstellung.
 - **Regel: Cards importieren nur aus dem eigenen Ordner + `@/core/*`** — nie aus anderen Cards.
 - i18n-Keys der Card in `en.ts` UND `de.ts` ergänzen. Gemeinsame Keys: `cards.common.noEntity/notFound`.
-- Vorhandene Cards: clock, light, sensor, thermostat, cover, weather, media, room-tile, menu, section-title sowie die globalen Shell-Cards sidebar-bar, header-bar und bottom-bar (Referenz: `light`).
+- Vorhandene Core-Cards unter `src/cards/core-cards/`: clock, light, sensor, thermostat, cover, weather, media, room-tile, menu, section-title sowie die globalen Shell-Cards sidebar-bar, header-bar und bottom-bar (Referenz: `light`).
 - **Globale Bar-Cards**: `manifest.barPositions: ('sidebar'|'header'|'bottom')[]` kennzeichnet Cards, die in Dashboard-Einstellungen für eine Shell-Position auswählbar sind. Ohne zusätzliches `areas` erscheinen reine Bar-Cards nicht im normalen CardPicker. `ShellBarHost.vue` rendert die globale Auswahl; im Edit-Modus öffnet der Stift direkt den normalen `CardConfigDialog` inklusive Schema-, Vorschau- und CSS-Tab. Bar-spezifische Einstellungen gehören ins Manifest-Schema und in `CardConfig.config`; keine separaten Einstellungsdialoge anlegen. Für übersetzte Select-Werte unterstützt `CardSchemaField.optionLabels` eine Zuordnung Wert → i18n-Key. Header- und Bottom-Bar nutzen `config.placement: 'full'|'view'` (**Default: `view`**): `full` liegt außerhalb von `.shell-body` über die gesamte App-Breite, `view` innerhalb der `.view-column` und spart die Sidebar-Breite aus. Eigene Bar-Cards werden wie alle Cards automatisch entdeckt. Sidebar, Header und Bottom sind global, nicht pro View; pro View existieren nur `showSidebar/showHeader/showBottom`.
 - `manifest.fullRow: true` → die Card belegt immer eine ganze Zeile ihres Abschnitts (`grid-column: 1 / -1`, `flex-basis/width: 100%`, gesetzt in `LayoutSection.styleFor` — schlägt auch das `slotStyle` des Layouts) und ist im Flex-Layout **nicht** resizebar (`canResize()`). Nutzt `section-title`.
 - **Per-Card-CSS**: Jede Card hat im Konfigurationsdialog einen Tab „CSS“ (`CardConfigDialog.vue`), vorbefüllt mit dem Default-CSS der Card (`cardDefaultCss()` in `cardRegistry.ts` extrahiert die `<style>`-Blöcke der SFCs per `?raw`-Glob). Abweichungen werden als `CardConfig.css` gespeichert und zur Laufzeit über `core/ui/CardCss.vue` angewendet: injizierter `<style>` mit nativem CSS-Nesting `[data-vp-card="<id>"] { … }`; der Render-Wrapper (`.card-slot`/`.nav-card-slot`/`.panel-slot`) trägt das passende `data-vp-card`-Attribut. Entspricht das CSS dem Default oder ist leer, wird KEIN Override gespeichert.

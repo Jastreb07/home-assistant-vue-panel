@@ -113,10 +113,10 @@ export function defineCard(manifest: CardManifest): CardManifest {
   return manifest
 }
 
-// ⭐ Auto-discovery: every src/cards/<name>/manifest.ts is registered
-// automatically — never register manually here!
+// ⭐ Auto-discovery: every src/cards/<provider>/<name>/manifest.ts is
+// registered automatically — never register manually here!
 const modules = import.meta.glob<{ default: CardManifest }>(
-  '../../cards/*/manifest.ts',
+  '../../cards/**/manifest.ts',
   { eager: true },
 )
 
@@ -124,13 +124,13 @@ export const cardRegistry: Record<string, CardManifest> = Object.fromEntries(
   Object.values(modules).map((m) => [m.default.type, m.default]),
 )
 
-// type → folder name under src/cards/ (folder may differ from the type)
-const cardDirs: Record<string, string> = Object.fromEntries(
-  Object.entries(modules).map(([path, m]) => [m.default.type, path.split('/').at(-2)!]),
+// type → complete source directory (provider path included)
+const cardSourceDirs: Record<string, string> = Object.fromEntries(
+  Object.entries(modules).map(([path, m]) => [m.default.type, path.slice(0, path.lastIndexOf('/'))]),
 )
 
 // Raw sources of all card SFCs (lazy) — used to show a card's default CSS
-const rawCardSources = import.meta.glob<string>('../../cards/*/*.vue', {
+const rawCardSources = import.meta.glob<string>('../../cards/**/*.vue', {
   query: '?raw',
   import: 'default',
 })
@@ -163,9 +163,9 @@ export async function cardDefaultCss(type: string, area: CardCssArea = 'default'
   const manifest = cardRegistry[type]
   const declared = manifest?.css?.[area] ?? manifest?.css?.default
   if (declared !== undefined) return applyResponsiveDefaults(manifest, declared)
-  const dir = cardDirs[type]
+  const dir = cardSourceDirs[type]
   if (!dir) return ''
-  const prefix = `../../cards/${dir}/`
+  const prefix = `${dir}/`
   const parts: string[] = []
   for (const [path, load] of Object.entries(rawCardSources)) {
     if (!path.startsWith(prefix)) continue
