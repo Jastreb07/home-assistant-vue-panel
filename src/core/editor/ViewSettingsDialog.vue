@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
-import { slugify, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
+import { slugify, slugifyPath, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import { confirmDialog } from '@/core/ui/dialogService'
@@ -46,7 +46,7 @@ function finalPath(): string {
   const taken = new Set(
     store.config.views.filter((v) => v.id !== props.view?.id).map((v) => viewPath(v)),
   )
-  const base = slugify(path.value) || slugify(title.value) || 'view'
+  const base = slugifyPath(path.value) || slugify(title.value) || 'view'
   let candidate = base
   for (let i = 2; taken.has(candidate); i++) candidate = `${base}-${i}`
   return candidate

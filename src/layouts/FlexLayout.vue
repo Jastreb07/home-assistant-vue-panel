@@ -24,6 +24,9 @@ const {
   onConfigSave,
   editCard,
   removeCard,
+  duplicateCard,
+  copyCard,
+  cutCard,
   cardById,
   sectionTarget,
   addSection,
@@ -97,6 +100,9 @@ function onResizeCard(cardId: string, width: number, height: number) {
       @pick="pickerSectionId = $event"
       @edit-card="editCard"
       @remove-card="removeCard"
+      @duplicate-card="duplicateCard"
+      @copy-card="copyCard"
+      @cut-card="cutCard"
       @resize-card="onResizeCard"
       @edit-section="editSection"
       @remove-section="removeSection"

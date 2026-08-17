@@ -38,7 +38,7 @@ const tempText = computed(() => {
 /** targetView holds a view id — the URL uses that view's path. */
 function open() {
   const view = props.config.targetView ? store.viewById(props.config.targetView) : undefined
-  if (view) router.push({ params: { viewId: viewPath(view) } })
+  if (view) router.push({ path: `/${viewPath(view)}` })
 }
 
 function toggleLight(e: Event) {

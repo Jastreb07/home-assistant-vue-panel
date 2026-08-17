@@ -47,7 +47,7 @@ export interface ViewConfig {
   id: string
   title: string
   icon: string
-  /** URL segment of the view — falls back to the id when unset */
+  /** Hierarchical URL path of the view — falls back to the id when unset */
   path?: string
   layout: ViewLayout
   layoutOptions?: Record<string, unknown>

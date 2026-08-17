@@ -34,8 +34,8 @@ const isWide = useMediaQuery('(min-width: 1024px)')
 const views = computed(() => store.config.views)
 
 const activeView = computed(() => {
-  const segment = route.params.viewId as string
-  return segment ? store.viewByRoute(segment) : views.value[0]
+  const path = route.path.replace(/^\/+|\/+$/g, '')
+  return path ? store.viewByRoute(path) : views.value[0]
 })
 
 /** All pages as options for the edit toolbar picker. */
@@ -50,7 +50,7 @@ const showHeader = computed(() => activeView.value?.showHeader === true)
 /** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {
   const view = store.viewById(viewId)
-  if (view) router.push({ params: { viewId: viewPath(view) } })
+  if (view) router.push({ path: `/${viewPath(view)}` })
 }
 
 // ── Kiosk: screensaver + auto-return to the first view ───────

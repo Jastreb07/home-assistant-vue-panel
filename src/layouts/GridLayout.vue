@@ -23,6 +23,9 @@ const {
   onConfigSave,
   editCard,
   removeCard,
+  duplicateCard,
+  copyCard,
+  cutCard,
   sectionTarget,
   addSection,
   editSection,
@@ -69,6 +72,9 @@ const gridStyle = computed(() => ({
       @pick="pickerSectionId = $event"
       @edit-card="editCard"
       @remove-card="removeCard"
+      @duplicate-card="duplicateCard"
+      @copy-card="copyCard"
+      @cut-card="cutCard"
       @edit-section="editSection"
       @remove-section="removeSection"
       @section-dragstart="onSectionDragStart"

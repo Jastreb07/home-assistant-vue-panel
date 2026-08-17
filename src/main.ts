@@ -12,7 +12,7 @@ import { loadGlobalStyles } from './theme/registry'
 const router = createRouter({
   // Hash mode: works without server rewrites under /local/vue-panel/
   history: createWebHashHistory(),
-  routes: [{ path: '/:viewId?', component: AppShell }],
+  routes: [{ path: '/:viewPath(.*)*', component: AppShell }],
 })
 
 const pinia = createPinia()

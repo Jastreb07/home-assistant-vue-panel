@@ -37,18 +37,30 @@ const items = computed<MenuItem[]>(() => {
 })
 
 /** Menu items reference view ids, the URL carries the view's path. */
-const activeId = computed(() => {
-  const segment = route.params.viewId as string
-  const view = segment ? store.viewByRoute(segment) : store.config.views[0]
-  return view?.id
+const activePath = computed(() => {
+  const path = route.path.replace(/^\/+|\/+$/g, '')
+  return path || (store.config.views[0] ? viewPath(store.config.views[0]) : '')
 })
+
+function isActive(item: MenuItem): boolean {
+  const view = item.viewId ? store.viewById(item.viewId) : undefined
+  if (!view) return false
+  const target = viewPath(view)
+  return activePath.value === target || activePath.value.startsWith(`${target}/`)
+}
+
+function isActiveParent(item: MenuItem): boolean {
+  const view = item.viewId ? store.viewById(item.viewId) : undefined
+  if (!view) return false
+  return activePath.value.startsWith(`${viewPath(view)}/`)
+}
 
 const showTitles = computed(() => props.config.showTitles !== false)
 const showIcons = computed(() => props.config.showIcons !== false)
 
 function activate(item: MenuItem) {
   const view = item.viewId ? store.viewById(item.viewId) : undefined
-  if (view) router.push({ params: { viewId: viewPath(view) } })
+  if (view) router.push({ path: `/${viewPath(view)}` })
 }
 </script>
 
@@ -60,7 +72,8 @@ function activate(item: MenuItem) {
       :key="item.id"
       class="item"
       :class="{
-        active: item.viewId && item.viewId === activeId,
+        active: isActive(item),
+        'active-parent': isActiveParent(item),
         group: !item.viewId,
         'icon-only': !showTitles,
       }"
@@ -129,5 +142,8 @@ function activate(item: MenuItem) {
 }
 .item.active {
   background: var(--nav-item-active);
+}
+/* Active path ancestors can be styled independently in the card CSS editor. */
+.item.active-parent {
 }
 </style>

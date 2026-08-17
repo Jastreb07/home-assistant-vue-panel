@@ -5,8 +5,8 @@ import type { ViewConfig } from '@/core/config/types'
 import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
-import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { useSectionEditing } from './useSectionEditing'
 
@@ -24,6 +24,9 @@ const {
   onConfigSave,
   editCard,
   removeCard,
+  duplicateCard,
+  copyCard,
+  cutCard,
 } = useSectionEditing(() => props.view)
 
 const { t } = useI18n()
@@ -49,14 +52,14 @@ const panelCss = computed(() =>
         />
         <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: panelCard.type }) }}</div>
 
-        <div v-if="store.editMode" class="card-edit-overlay">
-          <button class="icon-btn" :title="t('editor.configure')" @click.stop="editCard(panelCard)">
-            <MdiIcon icon="mdi:cog" :size="18" />
-          </button>
-          <button class="icon-btn" :title="t('common.delete')" @click.stop="removeCard(panelCard.id)">
-            <MdiIcon icon="mdi:delete-outline" :size="18" />
-          </button>
-        </div>
+        <BaseCardEditOverlay
+          v-if="store.editMode"
+          @edit="editCard(panelCard)"
+          @duplicate="duplicateCard(panelCard.id)"
+          @copy="copyCard(panelCard)"
+          @cut="cutCard(panelCard)"
+          @delete="removeCard(panelCard.id)"
+        />
       </div>
     </template>
 
@@ -97,30 +100,6 @@ const panelCss = computed(() =>
 }
 .panel-slot > :first-child {
   flex: 1;
-}
-.card-edit-overlay {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 10px;
-  padding: 3px;
-  z-index: 2;
-}
-.icon-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-}
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
 }
 .unknown-card {
   border: 2px dashed var(--divider);

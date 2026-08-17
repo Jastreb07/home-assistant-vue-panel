@@ -5,6 +5,7 @@ import type { CardConfig, SectionConfig } from '@/core/config/types'
 import { cardAreaCss, cardRegistry, resolveCardComponent } from '@/core/registry/cardRegistry'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { boxToCss } from '@/core/ui/boxInput'
 
@@ -36,6 +37,9 @@ const emit = defineEmits<{
   pick: [sectionId: string]
   'edit-card': [card: CardConfig]
   'remove-card': [cardId: string]
+  'duplicate-card': [cardId: string]
+  'copy-card': [card: CardConfig]
+  'cut-card': [card: CardConfig]
   'resize-card': [cardId: string, width: number, height: number]
   'edit-section': [section: SectionConfig]
   'remove-section': [section: SectionConfig]
@@ -191,14 +195,15 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
           />
           <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
 
-          <div v-if="editMode" class="card-edit-overlay">
-            <button class="icon-btn" :title="t('editor.configure')" @click.stop="emit('edit-card', card)">
-              <MdiIcon icon="mdi:cog" :size="18" />
-            </button>
-            <button class="icon-btn" :title="t('common.delete')" @click.stop="emit('remove-card', card.id)">
-              <MdiIcon icon="mdi:delete-outline" :size="18" />
-            </button>
-          </div>
+          <BaseCardEditOverlay
+            v-if="editMode"
+            :reserve-resize-corner="canResize(card)"
+            @edit="emit('edit-card', card)"
+            @duplicate="emit('duplicate-card', card.id)"
+            @copy="emit('copy-card', card)"
+            @cut="emit('cut-card', card)"
+            @delete="emit('remove-card', card.id)"
+          />
         </div>
       </template>
 
@@ -275,17 +280,6 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
   border-radius: var(--card-radius);
-}
-.card-edit-overlay {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 10px;
-  padding: 3px;
-  z-index: 2;
 }
 .icon-btn {
   border: none;

@@ -24,6 +24,9 @@ const {
   onConfigSave,
   editCard,
   removeCard,
+  duplicateCard,
+  copyCard,
+  cutCard,
   sectionTarget,
   addSection,
   editSection,
@@ -69,6 +72,9 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @pick="pickerSectionId = $event"
         @edit-card="editCard"
         @remove-card="removeCard"
+        @duplicate-card="duplicateCard"
+        @copy-card="copyCard"
+        @cut-card="cutCard"
         @edit-section="editSection"
         @remove-section="removeSection"
         @section-dragstart="onSectionDragStart"
@@ -99,6 +105,9 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @pick="pickerSectionId = $event"
         @edit-card="editCard"
         @remove-card="removeCard"
+        @duplicate-card="duplicateCard"
+        @copy-card="copyCard"
+        @cut-card="cutCard"
         @edit-section="editSection"
         @remove-section="removeSection"
         @dragstart="onDragStart"

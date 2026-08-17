@@ -127,7 +127,7 @@ interface DashboardConfig {
 }
 interface ViewConfig {
   id: string; title: string; icon: string
-  path?: string                              // URL-Segment, Fallback = id
+  path?: string                              // hierarchischer URL-Pfad, z. B. uebersicht/wohnzimmer; Fallback = id
   layout: 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'  // 'tiles' = Legacy-Alias für flex
   layoutOptions?: Record<string, unknown>   // z.B. maxColumns
   subview?: boolean                          // kein Nav-Eintrag, mit Zurück-Button

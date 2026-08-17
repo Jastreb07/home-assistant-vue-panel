@@ -12,9 +12,10 @@ import {
 } from '@/core/registry/cardRegistry'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
-import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
+import { copyCardToClipboard } from '@/core/ui/cardClipboard'
 
 /**
  * Cards of one bar slot — shared by SideNav (column), HeaderBar (row)
@@ -60,8 +61,13 @@ const configTarget = ref<
   | null
 >(null)
 
-function onPick(cardType: string) {
+function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
   pickerOpen.value = false
+  if (copiedCard) {
+    if (props.bar === 'header') store.addHeaderCard(props.navSlot as HeaderSlot, copiedCard)
+    else store.addNavCard(props.navSlot as NavSlot, copiedCard)
+    return
+  }
   configTarget.value = { mode: 'new', cardType }
 }
 
@@ -99,6 +105,20 @@ function editCard(card: CardConfig) {
 function removeCard(cardId: string) {
   if (props.bar === 'header') store.removeHeaderCard(props.navSlot as HeaderSlot, cardId)
   else store.removeNavCard(props.navSlot as NavSlot, cardId)
+}
+
+function duplicateCard(cardId: string) {
+  if (props.bar === 'header') store.duplicateHeaderCard(props.navSlot as HeaderSlot, cardId)
+  else store.duplicateNavCard(props.navSlot as NavSlot, cardId)
+}
+
+function copyCard(card: CardConfig) {
+  void copyCardToClipboard(card)
+}
+
+async function cutCard(card: CardConfig) {
+  await copyCardToClipboard(card)
+  removeCard(card.id)
 }
 
 // ── Drag & Drop ──────────────────────────────────────────────
@@ -169,18 +189,14 @@ function onDragEnd() {
       />
       <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
 
-      <div v-if="store.editMode" class="card-edit-overlay">
-        <button class="icon-btn" :title="t('editor.configure')" @click.stop="editCard(card)">
-          <MdiIcon icon="mdi:cog" :size="16" />
-        </button>
-        <button
-          class="icon-btn"
-          :title="t('common.delete')"
-          @click.stop="removeCard(card.id)"
-        >
-          <MdiIcon icon="mdi:delete-outline" :size="16" />
-        </button>
-      </div>
+      <BaseCardEditOverlay
+        v-if="store.editMode"
+        @edit="editCard(card)"
+        @duplicate="duplicateCard(card.id)"
+        @copy="copyCard(card)"
+        @cut="cutCard(card)"
+        @delete="removeCard(card.id)"
+      />
     </div>
 
     <BaseAddTile
@@ -232,30 +248,6 @@ function onDragEnd() {
   outline: 2px dashed var(--accent);
   outline-offset: 3px;
   border-radius: var(--card-radius);
-}
-.card-edit-overlay {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  display: flex;
-  gap: 2px;
-  background: rgba(0, 0, 0, 0.55);
-  border-radius: 8px;
-  padding: 2px;
-  z-index: 2;
-}
-.icon-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: 3px;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-}
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
 }
 .unknown-card {
   border: 2px dashed var(--divider);

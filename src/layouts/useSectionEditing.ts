@@ -3,6 +3,7 @@ import type { CardConfig, SectionConfig, ViewConfig } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import { cardRegistry } from '@/core/registry/cardRegistry'
 import { confirmDialog } from '@/core/ui/dialogService'
+import { copyCardToClipboard } from '@/core/ui/cardClipboard'
 import { t } from '@/i18n'
 
 export type ConfigTarget =
@@ -29,9 +30,13 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
   const pickerSectionId = ref<string | null>(null)
   const configTarget = ref<ConfigTarget>(null)
 
-  function onPick(cardType: string) {
+  function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
     const sectionId = pickerSectionId.value!
     pickerSectionId.value = null
+    if (copiedCard) {
+      store.addCard(getView().id, sectionId, copiedCard)
+      return
+    }
     configTarget.value = { mode: 'new', sectionId, cardType }
   }
 
@@ -65,6 +70,19 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
 
   function removeCard(cardId: string) {
     store.removeCard(getView().id, cardId)
+  }
+
+  function duplicateCard(cardId: string) {
+    store.duplicateCard(getView().id, cardId)
+  }
+
+  function copyCard(card: CardConfig) {
+    void copyCardToClipboard(card)
+  }
+
+  async function cutCard(card: CardConfig) {
+    await copyCardToClipboard(card)
+    store.removeCard(getView().id, card.id)
   }
 
   /** Live card from the store — its size changes with every resize. */
@@ -182,6 +200,9 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     onConfigSave,
     editCard,
     removeCard,
+    duplicateCard,
+    copyCard,
+    cutCard,
     cardById,
     sectionTarget,
     addSection,

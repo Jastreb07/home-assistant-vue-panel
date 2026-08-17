@@ -69,9 +69,24 @@ export function newId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${(idCounter++).toString(36)}`
 }
 
-/** URL segment of a view — the id is the fallback for views without a path. */
+/** Duplicate serializable card data without retaining reactive references. */
+function duplicateCardConfig(card: CardConfig, prefix: string): CardConfig {
+  return {
+    id: newId(prefix),
+    type: card.type,
+    config: JSON.parse(JSON.stringify(card.config)) as Record<string, unknown>,
+    css: card.css,
+    size: card.size ? { ...card.size } : undefined,
+  }
+}
+
+/** Normalize a hierarchical URL path; the view id remains the fallback. */
+export function normalizeRoutePath(value: string): string {
+  return value.split('/').map((segment) => segment.trim()).filter(Boolean).join('/')
+}
+
 export function viewPath(view: Pick<ViewConfig, 'id' | 'path'>): string {
-  return view.path || view.id
+  return normalizeRoutePath(view.path || view.id)
 }
 
 /** Turn a title into a URL segment: 'Wohnzimmer OG' → 'wohnzimmer-og'. */
@@ -87,6 +102,11 @@ export function slugify(value: string): string {
     .replace(/\p{M}/gu, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+/** Slugify every path segment while preserving the hierarchy separators. */
+export function slugifyPath(value: string): string {
+  return value.split('/').map(slugify).filter(Boolean).join('/')
 }
 
 function defaultConfig(): DashboardConfig {
@@ -142,10 +162,12 @@ export const useDashboardStore = defineStore('dashboard', {
       return (id: string): ViewConfig | undefined =>
         state.config.views.find((v) => v.id === id)
     },
-    /** Resolve the URL segment from the router — path first, id as fallback. */
+    /** Resolve the complete router path — configured path first, id as fallback. */
     viewByRoute(state) {
-      return (segment: string): ViewConfig | undefined =>
-        state.config.views.find((v) => viewPath(v) === segment)
+      return (path: string): ViewConfig | undefined => {
+        const normalized = normalizeRoutePath(path)
+        return state.config.views.find((v) => viewPath(v) === normalized)
+      }
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
@@ -256,6 +278,15 @@ export const useDashboardStore = defineStore('dashboard', {
       slots[slot] = [...slots[slot], { ...card, id: newId('navcard') }]
       this.setNav({ slots })
     },
+    duplicateNavCard(slot: NavSlot, cardId: string) {
+      const slots = { ...this.nav.slots }
+      const cards = [...slots[slot]]
+      const index = cards.findIndex((card) => card.id === cardId)
+      if (index < 0) return
+      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'navcard'))
+      slots[slot] = cards
+      this.setNav({ slots })
+    },
     removeNavCard(slot: NavSlot, cardId: string) {
       const slots = { ...this.nav.slots }
       slots[slot] = slots[slot].filter((c) => c.id !== cardId)
@@ -299,6 +330,15 @@ export const useDashboardStore = defineStore('dashboard', {
     addHeaderCard(slot: HeaderSlot, card: Omit<CardConfig, 'id'>) {
       const slots = { ...this.header.slots }
       slots[slot] = [...slots[slot], { ...card, id: newId('hdrcard') }]
+      this.setHeader({ slots })
+    },
+    duplicateHeaderCard(slot: HeaderSlot, cardId: string) {
+      const slots = { ...this.header.slots }
+      const cards = [...slots[slot]]
+      const index = cards.findIndex((card) => card.id === cardId)
+      if (index < 0) return
+      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'hdrcard'))
+      slots[slot] = cards
       this.setHeader({ slots })
     },
     removeHeaderCard(slot: HeaderSlot, cardId: string) {
@@ -402,6 +442,17 @@ export const useDashboardStore = defineStore('dashboard', {
       if (!section) return
       section.cards.push({ ...card, id: newId('card') })
       this.save()
+    },
+    duplicateCard(viewId: string, cardId: string) {
+      const view = this.viewById(viewId)
+      if (!view) return
+      for (const section of view.sections) {
+        const index = section.cards.findIndex((card) => card.id === cardId)
+        if (index < 0) continue
+        section.cards.splice(index + 1, 0, duplicateCardConfig(section.cards[index]!, 'card'))
+        this.save()
+        return
+      }
     },
     removeCard(viewId: string, cardId: string) {
       const view = this.viewById(viewId)
