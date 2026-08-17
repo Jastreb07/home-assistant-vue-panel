@@ -39,6 +39,7 @@ const iconSize = computed(() => ICON_SIZE[props.size])
 
 const root = ref<HTMLElement | null>(null)
 const listEl = ref<HTMLElement | null>(null)
+const searchInput = ref<HTMLInputElement | null>(null)
 const open = ref(false)
 const query = ref('')
 const activeIndex = ref(0)
@@ -79,6 +80,7 @@ async function openList() {
   open.value = true
   // Start on the current value so ↑/↓ continues from there
   await nextTick()
+  if (props.searchable) searchInput.value?.focus()
   const index = results.value.findIndex((o) => o.value === props.modelValue)
   activeIndex.value = index >= 0 ? index : 0
   listEl.value?.scrollIntoView({ block: 'nearest' })
@@ -156,10 +158,10 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
       />
       <input
         v-if="open && searchable"
+        ref="searchInput"
         v-model="query"
         class="vp-select-search"
         type="text"
-        autofocus
         spellcheck="false"
         :placeholder="$t('common.selectMenu.search')"
         @keydown="onKeydown"
