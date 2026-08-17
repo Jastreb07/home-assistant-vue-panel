@@ -125,6 +125,9 @@ export default {
       spacing: 'Spacing',
       orientation: 'Card alignment',
       orientationHint: 'Direction the cards of this section are arranged in.',
+      cardsPerRow: 'Cards per row',
+      cardsPerRowAuto: 'Automatic',
+      cardsPerRowHint: 'Applies to every orientation. Automatic uses the responsive default grid.',
       contentAlign: 'Content alignment',
       contentAlignHint: 'Horizontal position of the cards when they do not fill the row.',
       orientations: {

@@ -125,6 +125,9 @@ export default {
       spacing: 'Abstände',
       orientation: 'Ausrichtung der Cards',
       orientationHint: 'Richtung, in der die Cards dieses Abschnitts angeordnet werden.',
+      cardsPerRow: 'Cards pro Reihe',
+      cardsPerRowAuto: 'Automatisch',
+      cardsPerRowHint: 'Gilt für jede Ausrichtung. Automatisch verwendet das responsive Standardraster.',
       contentAlign: 'Ausrichtung des Inhalts',
       contentAlignHint: 'Waagerechte Position der Cards, wenn sie die Zeile nicht ausfüllen.',
       orientations: {

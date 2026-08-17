@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import OverflowMarquee from '@/core/ui/OverflowMarquee.vue'
 
 const props = defineProps<{
   config: { entity: string; name?: string; icon?: string; showBrightness?: boolean }
@@ -36,7 +37,7 @@ function onTap() {
   <div class="light-card" :class="{ active: isOn }" @click="onTap">
     <MdiIcon :icon="icon" :size="32" />
     <div class="info">
-      <div class="name">{{ displayName || t('cards.light.defaultName') }}</div>
+      <OverflowMarquee class="name" :text="displayName || t('cards.light.defaultName')" />
       <div class="state">
         <template v-if="!config.entity">{{ t('cards.light.noEntity') }}</template>
         <template v-else-if="!light">{{ t('cards.light.notFound') }}</template>
@@ -56,31 +57,54 @@ function onTap() {
 .light-card {
   background: var(--card-bg);
   border-radius: var(--card-radius);
-  padding: 16px;
-  min-height: 80px;
+  padding: 14px 16px;
+  min-height: 120px;
   height: 100%;
   box-shadow: var(--card-shadow);
   color: var(--text-primary);
-  transition: background 0.2s, transform 0.1s;
   cursor: pointer;
   user-select: none;
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  transition: background 0.2s, transform 0.1s;
+}
+.light-card > .mdi {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+  color: #737373;
+  display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+}
+.info {
+  width: 100%;
+  margin-top: auto;
 }
 .light-card:active {
   transform: scale(0.98);
 }
 .light-card.active {
-  background: var(--card-bg-active);
-  color: var(--text-on-active);
+  background: #f6d36b;
+  color: #111111;
+}
+.light-card.active > .mdi {
+  background: rgba(255, 255, 255, 0.4);
+  color: #111111;
 }
 .name {
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
 }
 .state {
-  font-size: 13px;
-  opacity: 0.75;
-  margin-top: 2px;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #666666;
+  opacity: 1;
 }
 </style>

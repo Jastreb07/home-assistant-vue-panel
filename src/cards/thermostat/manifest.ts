@@ -12,5 +12,5 @@ export default defineCard({
     name: { type: 'string', label: 'cards.thermostat.displayName', optional: true },
     step: { type: 'number', label: 'cards.thermostat.step', default: 0.5 },
   },
-  defaultSize: { cols: 2, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
 })

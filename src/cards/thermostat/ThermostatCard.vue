@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import OverflowMarquee from '@/core/ui/OverflowMarquee.vue'
 
 const props = defineProps<{
   config: { entity: string; name?: string; step?: number }
@@ -40,7 +41,7 @@ function adjust(direction: 1 | -1) {
   <div class="thermostat-card" :class="{ active: isHeating }">
     <MdiIcon :icon="isHeating ? 'mdi:fire' : 'mdi:thermostat'" :size="30" />
     <div class="info">
-      <div class="name">{{ displayName }}</div>
+      <OverflowMarquee class="name" :text="displayName" />
       <div class="state">
         <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
         <template v-else-if="!climate">{{ t('cards.common.notFound') }}</template>
@@ -68,58 +69,86 @@ function adjust(direction: 1 | -1) {
 .thermostat-card {
   background: var(--card-bg);
   border-radius: var(--card-radius);
-  padding: 16px;
-  min-height: 80px;
+  padding: 14px 16px;
+  min-height: 120px;
   height: 100%;
   box-shadow: var(--card-shadow);
   color: var(--text-primary);
   transition: background 0.2s;
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 14px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
 }
 .thermostat-card.active {
-  background: var(--card-bg-active);
-  color: var(--text-on-active);
+  background: #f6d36b;
+  color: #111111;
+}
+.thermostat-card > .mdi {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+  color: #737373;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.thermostat-card.active > .mdi {
+  background: rgba(255, 255, 255, 0.4);
+  color: #111111;
 }
 .info {
-  flex: 1;
+  width: 100%;
+  margin-top: auto;
   min-width: 0;
 }
 .name {
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .state {
-  font-size: 13px;
-  opacity: 0.75;
-  margin-top: 2px;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #666666;
 }
 .target {
-  display: flex;
+  position: absolute;
+  top: 11px;
+  right: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, 22px);
   align-items: center;
-  gap: 8px;
+  justify-items: center;
+  gap: 1px 2px;
 }
 .target-value {
-  font-size: 17px;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  font-size: 11px;
   font-weight: 600;
-  min-width: 48px;
+  min-width: 44px;
   text-align: center;
 }
 .temp-btn {
-  border: 1px solid var(--divider);
+  grid-row: 2;
+  border: none;
   background: transparent;
   color: inherit;
   border-radius: 50%;
-  width: 32px;
-  height: 32px;
+  width: 22px;
+  height: 22px;
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 .temp-btn:hover {
-  border-color: var(--accent);
+  background: rgb(215 215 215 / 35%);
 }
 </style>

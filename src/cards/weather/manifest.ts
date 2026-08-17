@@ -136,7 +136,7 @@ export default defineCard({
     },
     animation: { type: 'boolean', label: 'cards.weather.animation', default: false },
   },
-  defaultSize: { cols: 2, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
   areas: ['dashboard', 'sidebar_top', 'sidebar_center', 'sidebar_bottom'],
   css: {
     default: ANIMATION,

@@ -6,6 +6,7 @@ import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import SectionSettingsDialog from '@/core/editor/SectionSettingsDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import { cardRegistry } from '@/core/registry/cardRegistry'
 import LayoutSection from './LayoutSection.vue'
 import { useSectionEditing } from './useSectionEditing'
 
@@ -68,11 +69,13 @@ const flexContainer = {
 
 /** Fixed per-card size — width defaults to 220px until the user resizes. */
 function flexSlotStyle(card: CardConfig): Record<string, string> {
+  const defaults = cardRegistry[card.type]?.defaultSize
   const style: Record<string, string> = {
-    width: `${card.size?.width ?? 220}px`,
+    width: `${card.size?.width ?? defaults?.width ?? 140}px`,
     flex: '0 0 auto',
   }
-  if (card.size?.height) style.height = `${card.size.height}px`
+  const height = card.size?.height ?? defaults?.height
+  if (height) style.height = `${height}px`
   return style
 }
 

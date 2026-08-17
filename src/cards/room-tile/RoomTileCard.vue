@@ -5,6 +5,7 @@ import { useRouter } from 'vue-router'
 import { useEntity, useService } from '@/core/ha'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import OverflowMarquee from '@/core/ui/OverflowMarquee.vue'
 
 /**
  * Room tile: navigates to a (sub)view on tap. Optionally shows the room
@@ -61,7 +62,7 @@ function toggleLight(e: Event) {
         <MdiIcon :icon="lightOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline'" :size="18" />
       </button>
     </div>
-    <div class="name">{{ config.name || t('cards.roomTile.defaultName') }}</div>
+    <OverflowMarquee class="name" :text="config.name || t('cards.roomTile.defaultName')" />
     <div class="meta">
       <span v-if="tempText">{{ tempText }}</span>
       <MdiIcon v-if="config.targetView" icon="mdi:chevron-right" :size="16" class="chev" />
@@ -74,8 +75,8 @@ function toggleLight(e: Event) {
 .room-tile {
   background: var(--card-bg);
   border-radius: var(--card-radius);
-  padding: 16px;
-  min-height: 80px;
+  padding: 14px 16px;
+  min-height: 120px;
   height: 100%;
   box-shadow: var(--card-shadow);
   color: var(--text-primary);
@@ -84,15 +85,27 @@ function toggleLight(e: Event) {
   user-select: none;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 0;
 }
 .room-tile:active {
   transform: scale(0.98);
 }
 .head {
+  width: 100%;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+}
+.head > .mdi {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+  color: #737373;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .light-toggle {
   border: 1px solid var(--divider);
@@ -111,16 +124,22 @@ function toggleLight(e: Event) {
   border-color: transparent;
 }
 .name {
+  width: 100%;
+  margin-top: auto;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
+  line-height: 1.2;
 }
 .meta {
+  width: 100%;
+  margin-top: 3px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 13px;
-  opacity: 0.75;
-  min-height: 16px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #666666;
+  min-height: 13px;
 }
 .meta .chev {
   margin-left: auto;

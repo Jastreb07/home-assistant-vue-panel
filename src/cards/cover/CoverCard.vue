@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity, useService } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import OverflowMarquee from '@/core/ui/OverflowMarquee.vue'
 
 const props = defineProps<{
   config: { entity: string; name?: string }
@@ -41,7 +42,7 @@ function service(name: 'open_cover' | 'close_cover' | 'stop_cover') {
     <div class="top">
       <MdiIcon :icon="isOpen ? 'mdi:window-shutter-open' : 'mdi:window-shutter'" :size="28" />
       <div class="info">
-        <div class="name">{{ displayName }}</div>
+        <OverflowMarquee class="name" :text="displayName" />
         <div class="state">
           <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
           <template v-else-if="!cover">{{ t('cards.common.notFound') }}</template>
@@ -71,49 +72,79 @@ function service(name: 'open_cover' | 'close_cover' | 'stop_cover') {
 .cover-card {
   background: var(--card-bg);
   border-radius: var(--card-radius);
-  padding: 16px;
-  min-height: 80px;
+  padding: 14px 16px;
+  min-height: 120px;
   height: 100%;
   box-shadow: var(--card-shadow);
   color: var(--text-primary);
   transition: background 0.2s;
+  position: relative;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 0;
 }
 .cover-card.active {
-  background: var(--card-bg-active);
-  color: var(--text-on-active);
+  background: #f6d36b;
+  color: #111111;
 }
 .top {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.top > .mdi {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+  color: #737373;
   display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+}
+.cover-card.active .top > .mdi {
+  background: rgba(255, 255, 255, 0.4);
+  color: #111111;
+}
+.info {
+  width: 100%;
+  margin-top: auto;
 }
 .name {
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1.2;
 }
 .state {
-  font-size: 13px;
-  opacity: 0.75;
-  margin-top: 2px;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #666666;
 }
 .controls {
+  position: absolute;
+  top: 16px;
+  right: 12px;
   display: flex;
-  gap: 8px;
+  gap: 2px;
 }
 .ctl-btn {
-  flex: 1;
-  border: 1px solid var(--divider);
+  width: 24px;
+  height: 24px;
+  border: none;
   background: transparent;
   color: inherit;
-  border-radius: 8px;
-  padding: 6px 0;
+  border-radius: 50%;
+  padding: 0;
   display: grid;
   place-items: center;
   cursor: pointer;
 }
 .ctl-btn:hover {
-  border-color: var(--accent);
+  background: rgb(215 215 215 / 35%);
 }
 </style>

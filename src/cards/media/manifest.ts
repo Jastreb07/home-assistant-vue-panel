@@ -12,5 +12,5 @@ export default defineCard({
     name: { type: 'string', label: 'cards.media.displayName', optional: true },
     showVolume: { type: 'boolean', label: 'cards.media.showVolume', default: true },
   },
-  defaultSize: { cols: 2, rows: 1 },
+  defaultSize: { cols: 2, rows: 1, width: 140, height: 120 },
 })

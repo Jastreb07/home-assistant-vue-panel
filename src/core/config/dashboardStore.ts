@@ -167,10 +167,31 @@ function defaultConfig(): DashboardConfig {
   }
 }
 
+/** Apply one-time compatibility updates to persisted dashboard data. */
+function migrateDashboardConfig(config: DashboardConfig): { config: DashboardConfig; changed: boolean } {
+  let changed = false
+  for (const view of config.views) {
+    for (const section of view.sections) {
+      for (const card of section.cards) {
+        // These cards used to ship with a two-column default. They now match compact tiles.
+        if (['thermostat', 'weather'].includes(card.type) && card.size?.cols === 2) {
+          card.size = { ...card.size, cols: 1 }
+          changed = true
+        }
+      }
+    }
+  }
+  return { config, changed }
+}
+
 function loadLocal(): DashboardConfig {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return JSON.parse(raw) as DashboardConfig
+    if (raw) {
+      const migrated = migrateDashboardConfig(JSON.parse(raw) as DashboardConfig)
+      if (migrated.changed) localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated.config))
+      return migrated.config
+    }
   } catch (err) {
     console.warn('[vue-panel] Could not load stored config:', err)
   }
@@ -324,11 +345,13 @@ export const useDashboardStore = defineStore('dashboard', {
       try {
         const remote = await loadRemote()
         if (remote && Array.isArray(remote.views)) {
-          this.config = remote
+          const migrated = migrateDashboardConfig(remote)
+          this.config = migrated.config
           this.undoStack = []
           this.redoStack = []
-          this.lastSnapshot = JSON.stringify(remote)
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))
+          this.lastSnapshot = JSON.stringify(migrated.config)
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated.config))
+          if (migrated.changed) await saveRemote(migrated.config)
         } else {
           // First device: upload the local/default config as the starting point
           await saveRemote(this.config)

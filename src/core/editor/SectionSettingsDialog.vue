@@ -27,6 +27,7 @@ const emit = defineEmits<{
 const { t } = useI18n()
 
 const orientation = ref<CardOrientation>(props.section.cardOrientation ?? 'auto')
+const cardsPerRow = ref(props.section.cardsPerRow ? String(props.section.cardsPerRow) : 'auto')
 const contentAlign = ref<ViewAlign>(props.section.contentAlign ?? 'left')
 const padding = ref<BoxValue>({ ...props.section.padding })
 const margin = ref<BoxValue>({ ...props.section.margin })
@@ -61,6 +62,13 @@ const orientationOptions = computed(() =>
     label: t('editor.section.orientations.' + o),
   })),
 )
+const cardsPerRowOptions = computed(() => [
+  { value: 'auto', label: t('editor.section.cardsPerRowAuto') },
+  ...Array.from({ length: 6 }, (_, index) => ({
+    value: String(index + 1),
+    label: String(index + 1),
+  })),
+])
 
 /** Both the flex layout and a horizontal section lay the cards out in a row. */
 const isRow = computed(() => props.view.layout === 'flex' || orientation.value === 'horizontal')
@@ -74,6 +82,10 @@ const alignOptions = computed(() =>
 function save() {
   emit('save', {
     cardOrientation: orientation.value === 'auto' ? undefined : orientation.value,
+    cardsPerRow:
+      isSectionsLayout.value && cardsPerRow.value !== 'auto'
+        ? Math.min(Math.max(Number(cardsPerRow.value), 1), 6)
+        : undefined,
     contentAlign: isRow.value && contentAlign.value !== 'left' ? contentAlign.value : undefined,
     columnSpan: isSectionsLayout.value && columnSpan.value > 1 ? columnSpan.value : undefined,
     width:
@@ -106,6 +118,15 @@ async function remove() {
           @update:model-value="orientation = $event as CardOrientation"
         />
         <small>{{ t('editor.section.orientationHint') }}</small>
+      </div>
+      <div v-if="isSectionsLayout" class="field">
+        <span>{{ t('editor.section.cardsPerRow') }}</span>
+        <BaseSelectMenu
+          :model-value="cardsPerRow"
+          :options="cardsPerRowOptions"
+          @update:model-value="cardsPerRow = $event"
+        />
+        <small>{{ t('editor.section.cardsPerRowHint') }}</small>
       </div>
       <div v-if="isRow" class="field">
         <span>{{ t('editor.section.contentAlign') }}</span>

@@ -32,6 +32,8 @@ export interface SectionConfig {
   columnSpan?: number
   /** Direction the cards are arranged in */
   cardOrientation?: CardOrientation
+  /** Exact number of cards per row in the sections layout; unset means automatic. */
+  cardsPerRow?: number
   /** Horizontal alignment of the cards inside the section (flex rows) */
   contentAlign?: ViewAlign
   /** Fixed section width in px (flex layout) — unset means full width */

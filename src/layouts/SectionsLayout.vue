@@ -112,6 +112,7 @@ const containerStyle = computed(() => {
       :section-dragging="draggingSectionId === section.id"
       :section-drop-target="sectionDropId === section.id"
       :column-span="spanFor(section)"
+      :cards-per-row="section.cardsPerRow"
       @pick="pickerSectionId = $event"
       @edit-card="editCard"
       @remove-card="removeCard"

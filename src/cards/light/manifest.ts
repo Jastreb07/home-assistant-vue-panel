@@ -13,7 +13,7 @@ export default defineCard({
     icon: { type: 'icon', label: 'cards.light.icon', optional: true },
     showBrightness: { type: 'boolean', label: 'cards.light.showBrightness', default: true },
   },
-  defaultSize: { cols: 1, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
   areas: [
     'dashboard',
     'sidebar_top',

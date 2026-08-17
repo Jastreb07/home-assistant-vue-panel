@@ -21,6 +21,8 @@ const props = defineProps<{
   dropTarget: { sectionId: string; index: number } | null
   /** CSS for the cards grid, e.g. grid-template-columns (or display:flex) */
   gridStyle?: Record<string, string>
+  /** Exact columns for this section; only supplied by the sections layout. */
+  cardsPerRow?: number
   /** Per-card slot style override (e.g. fixed px sizes in the flex layout) */
   slotStyle?: (card: CardConfig) => Record<string, string> | undefined
   /** Allow resizing card slots in edit mode (flex layout) */
@@ -85,6 +87,13 @@ const cardsStyle = computed(() => {
   if (props.section.contentAlign) {
     base.justifyContent = justify[props.section.contentAlign]!
   }
+  if (props.cardsPerRow) {
+    return {
+      ...base,
+      display: 'grid',
+      gridTemplateColumns: `repeat(${props.cardsPerRow}, minmax(0, 1fr))`,
+    }
+  }
   if (orientation.value === 'vertical') {
     return { ...base, display: 'grid', gridTemplateColumns: '1fr' }
   }
@@ -103,6 +112,7 @@ function styleFor(card: CardConfig): Record<string, string> | undefined {
   // A full-row card keeps its width even where the layout sizes slots itself
   if (isFullRow(card)) return { gridColumn: '1 / -1', flexBasis: '100%', width: '100%' }
   if (props.slotStyle) return props.slotStyle(card)
+  if (props.cardsPerRow) return undefined
   return card.size?.cols ? { gridColumn: `span ${card.size.cols}` } : undefined
 }
 

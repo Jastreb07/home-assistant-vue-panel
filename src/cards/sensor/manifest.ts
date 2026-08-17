@@ -12,7 +12,7 @@ export default defineCard({
     name: { type: 'string', label: 'cards.sensor.displayName', optional: true },
     icon: { type: 'icon', label: 'cards.sensor.icon', optional: true },
   },
-  defaultSize: { cols: 1, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
   areas: [
     'dashboard',
     'sidebar_top',

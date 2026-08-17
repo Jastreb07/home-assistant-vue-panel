@@ -74,15 +74,15 @@ const tabItems = computed(() => [
 
 // ── Size tab (flex layout) ───────────────────────────────────
 // Empty means "not set": the layout falls back to its own default.
-const cardWidth = ref<number | ''>(props.initialSize?.width ?? '')
-const cardHeight = ref<number | ''>(props.initialSize?.height ?? '')
+const cardWidth = ref<number | ''>(props.initialSize?.width ?? manifest?.defaultSize?.width ?? '')
+const cardHeight = ref<number | ''>(props.initialSize?.height ?? manifest?.defaultSize?.height ?? '')
 
 // Keep the fields in sync when the card is resized by dragging
 watch(
   () => props.initialSize,
   (size) => {
-    cardWidth.value = size?.width ?? ''
-    cardHeight.value = size?.height ?? ''
+    cardWidth.value = size?.width ?? manifest?.defaultSize?.width ?? ''
+    cardHeight.value = size?.height ?? manifest?.defaultSize?.height ?? ''
   },
   { deep: true },
 )
@@ -163,9 +163,9 @@ function resetCss() {
 const previewStyle = computed(() => {
   if (!props.sizable) return undefined
   const style: Record<string, string> = { maxWidth: 'none' }
-  // 220px is the flex layout's fallback width for cards without a size
-  style.width = `${sizeValue(cardWidth.value) ?? 220}px`
-  const height = sizeValue(cardHeight.value)
+  const defaultSize = manifest?.defaultSize
+  style.width = `${sizeValue(cardWidth.value) ?? defaultSize?.width ?? 140}px`
+  const height = sizeValue(cardHeight.value) ?? defaultSize?.height
   if (height) style.height = `${height}px`
   return style
 })

@@ -12,6 +12,12 @@ const BARE = `.clock-card {
   padding: 0;
   min-height: 0;
 }
+.clock-card > .mdi {
+  display: none;
+}
+.clock-card .info {
+  margin-top: 0;
+}
 .time {
   font-size: 44px;
 }`
@@ -26,7 +32,7 @@ export default defineCard({
     showTime: { type: 'boolean', label: 'cards.clock.showTime', default: true },
     showDate: { type: 'boolean', label: 'cards.clock.showDate', default: true },
   },
-  defaultSize: { cols: 1, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
   areas: [
     'dashboard',
     'sidebar_top',

@@ -24,7 +24,7 @@ export default defineCard({
       optional: true,
     },
   },
-  defaultSize: { cols: 1, rows: 1 },
+  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
   areas: [
     'dashboard',
     'sidebar_top',

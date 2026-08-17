@@ -83,7 +83,8 @@ export interface CardManifest {
    * Receives `modelValue` (the draft config) and emits `update:modelValue`.
    */
   editor?: () => Promise<{ default: Component }>
-  defaultSize?: { cols: number; rows: number }
+  /** Grid span plus optional fixed fallback size for the flex layout. */
+  defaultSize?: { cols: number; rows: number; width?: number; height?: number }
   /**
    * Card always occupies a full row of its section (e.g. a heading):
    * width 100 % in every layout, and no resize handle in the flex layout.

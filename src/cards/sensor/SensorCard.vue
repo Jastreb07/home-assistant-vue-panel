@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useEntity } from '@/core/ha'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import OverflowMarquee from '@/core/ui/OverflowMarquee.vue'
 
 const props = defineProps<{
   config: { entity: string; name?: string; icon?: string }
@@ -29,7 +30,7 @@ const unit = computed(
   <div class="sensor-card">
     <MdiIcon :icon="icon" :size="30" />
     <div class="info">
-      <div class="name">{{ displayName }}</div>
+      <OverflowMarquee class="name" :text="displayName" />
       <div class="value">
         <template v-if="!config.entity">{{ t('cards.common.noEntity') }}</template>
         <template v-else-if="!entity">{{ t('cards.common.notFound') }}</template>
@@ -44,22 +45,39 @@ const unit = computed(
 .sensor-card {
   background: var(--card-bg);
   border-radius: var(--card-radius);
-  padding: 16px;
-  min-height: 80px;
+  padding: 14px 16px;
+  min-height: 120px;
   height: 100%;
   box-shadow: var(--card-shadow);
   color: var(--text-primary);
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+}
+.sensor-card > .mdi {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+  color: #737373;
+  display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+}
+.info {
+  width: 100%;
+  margin-top: auto;
 }
 .name {
-  font-size: 13px;
-  opacity: 0.75;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
 }
 .value {
-  font-size: 20px;
-  font-weight: 600;
-  margin-top: 2px;
+  margin-top: 3px;
+  font-size: 11px;
+  line-height: 1.2;
+  color: #666666;
 }
 </style>
