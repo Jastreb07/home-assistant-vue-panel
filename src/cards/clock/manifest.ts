@@ -11,6 +11,7 @@ const BARE = `.clock-card {
   border-radius: 0;
   padding: 0;
   min-height: 0;
+  text-align: center;
 }
 .clock-card > .mdi {
   display: none;
