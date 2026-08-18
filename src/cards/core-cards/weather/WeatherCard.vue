@@ -118,8 +118,6 @@ const stateClasses = computed(() => [
 .weather-card > .mdi {
   width: 38px;
   height: 38px;
-  border-radius: 50%;
-  background: rgb(215 215 215 / 35%);
   color: #737373;
   display: flex;
   align-items: center;

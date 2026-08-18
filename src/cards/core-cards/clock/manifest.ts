@@ -20,7 +20,10 @@ const BARE = `.clock-card {
   margin-top: 0;
 }
 .time {
-  font-size: 44px;
+  font-size: 72px;
+}
+.date {
+  font-size: 18px;
 }`
 
 export default defineCard({
