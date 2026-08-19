@@ -38,29 +38,24 @@ function cssFor(card: CardConfig): string {
 }
 
 /**
- * Sandboxed cards render into an iframe and have no intrinsic size, so every
- * bar card needs an explicit box. Along the bar axis a card fills the
- * available space by default — the manifest's `defaultSize` is meant for
- * the dashboard grid, not for a docked bar, so it is only used as a fixed
- * box here when the instance explicitly sets `card.size` for that axis.
- * Across the bar axis a card falls back to its natural size unless the
+ * Bar cards size themselves: the manifest's `defaultSize` is meant for the
+ * dashboard grid, not for a docked bar, so it is never applied here. Along
+ * the bar axis a card simply takes its natural content size (fit-content) —
+ * it neither stretches to fill the bar nor gets clamped to a fixed pixel
+ * box. Across the bar axis a card falls back to its natural size unless the
  * column's crossAlign is 'stretch' (`--bar-card-cross: 100%`, set by
  * ShellBarHost).
  */
 function styleFor(card: CardConfig): Record<string, string> {
   const defaults = cardRegistry[card.type]?.defaultSize
-  const along = props.direction === 'row' ? card.size?.width : card.size?.height
-  const fixed = typeof along === 'number' && along > 0
   const cross = props.direction === 'row'
     ? (card.size?.height ?? defaults?.height)
     : (card.size?.width ?? defaults?.width)
   const crossFallback = `${cross || 120}px`
-  const style: Record<string, string> = { flex: fixed ? '0 0 auto' : '1 1 0' }
+  const style: Record<string, string> = { flex: '0 1 auto' }
   if (props.direction === 'row') {
-    if (fixed) style.width = `${along}px`
     style.height = `var(--bar-card-cross, ${crossFallback})`
   } else {
-    if (fixed) style.height = `${along}px`
     style.width = `var(--bar-card-cross, ${crossFallback})`
   }
   return style
@@ -86,12 +81,7 @@ function onConfigSave(config: Record<string, unknown>, css?: string) {
   const target = configTarget.value
   if (!target) return
   if (target.mode === 'new') {
-    store.addBarCard(props.bar, props.column.id, {
-      type: target.cardType,
-      config,
-      css,
-      size: cardRegistry[target.cardType]?.defaultSize,
-    })
+    store.addBarCard(props.bar, props.column.id, { type: target.cardType, config, css })
   } else {
     store.updateBarCardConfig(props.bar, props.column.id, target.cardId, config, css)
   }

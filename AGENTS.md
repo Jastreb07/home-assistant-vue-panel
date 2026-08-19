@@ -90,6 +90,18 @@ Aktueller Stand:
   `history.pushState`/`replaceState` samt `location-changed` in der HA-Adresszeile. Damit steht
   der View-Pfad als `/<panel>/<view-pfad>` im Browser und funktioniert für Deep-Links, Reload,
   Teilen und die Zurück-Taste;
+- ab `2.0.0-alpha.26`/Engine `2.1.23` sizen sich Bar-Cards nach ihrem eigenen Inhalt
+  (fit-content) statt nach einer festen Box oder einem erzwungenen Ausfüllen: `BarColumnCards.styleFor()`
+  setzt entlang der Balkenachse weder eine feste Pixelgröße noch `flex: 1 1 0`, sondern
+  `flex: 0 1 auto` ohne Breiten-/Höhenvorgabe — das Manifest-`defaultSize` wird für Bar-Cards
+  nirgends mehr verwendet. Quer zur Balkenachse bleibt der bestehende `--bar-card-cross`-Fallback
+  unverändert. Zwei vorherige Versuche sind daran gescheitert, dass entweder ein per Manifest
+  vergebenes `defaultSize` die Navigation künstlich auf eine feste Box klemmte, oder ein
+  pauschales `flex: 1 1 0` kompakte Cards wie Uhr/Wetter auf die volle Breite/Höhe der Leiste
+  gestreckt hat; ein dafür ergänzter Größen-Tab im Bar-Card-Dialog erwies sich als unnötig
+  kompliziert und wurde wieder entfernt, weil praktisch jede Card ihr Wurzelelement ohnehin auf
+  `width: 100%; height: 100%` ihres Slots stylt (siehe `menu.html`) — ein Slot ohne eigene feste
+  Box lässt solche Cards einfach auf ihre natürliche Inhaltsgröße schrumpfen;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
