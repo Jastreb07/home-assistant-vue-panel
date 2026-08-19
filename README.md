@@ -10,12 +10,14 @@ die Engine selbst aus und speichert Dashboards sowie eigene Cards in privaten JS
   den Engine-Build und die schreibgeschützten Core-Cards.
 - `<config>/vue-panel/dashboards/<name>.json` enthält je Panel eine Dashboard-Konfiguration.
 - `<config>/vue-panel/cards/<manufacturer>/<cardName>.html` enthält lokale oder importierte Cards.
-- `custom_components/vue_panel/bundled_cards/vue-panel/*.html` enthält die 13 mitgelieferten Cards.
-- Jede Card läuft in einem eigenen `sandbox="allow-scripts"`-iframe und erhält nur deklarierte
-  Funktionen der versionierten `vuePanel`-API.
+- `custom_components/vue_panel/bundled_cards/vue-panel/*.html` enthält die 10 mitgelieferten Cards.
+- Jede Card läuft eingebettet im Engine-Dokument: ihr CSS ist auf die Card begrenzt, das
+  Theme-Stylesheet gilt auch in der Card, und das Card-Skript erhält nur die deklarierten
+  Funktionen der versionierten `vuePanel`-API. Das ist eine Style- und DOM-Grenze, keine
+  Sicherheitsgrenze — nur vertrauenswürdige Cards installieren.
 
 Das normative Dateiformat steht in
-[`docs/architecture/card-format-v2.md`](docs/architecture/card-format-v2.md), die Sandbox-API in
+[`docs/architecture/card-format-v2.md`](docs/architecture/card-format-v2.md), die Card-API in
 [`docs/architecture/sandbox-api-v1.md`](docs/architecture/sandbox-api-v1.md). Der laufende Umbau
 und seine Phasen sind in
 [`INTEGRATION_RESTRUCTURE_PLAN.md`](INTEGRATION_RESTRUCTURE_PLAN.md) dokumentiert.

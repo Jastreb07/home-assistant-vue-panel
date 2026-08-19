@@ -42,13 +42,19 @@ Ab `2.0.0-alpha.19`/Engine `2.0.16` ist Phase 3 des Greenfield-Plans umgesetzt. 
 Card-Format-v2-Dateien liegen privat unter
 `<config>/vue-panel/cards/<manufacturer>/<cardName>.html`, werden serverseitig validiert und über
 authentifizierte WebSocket-Befehle verwaltet. Der Runtime-Katalog speist Picker, Instanzdialog und
-Sandbox ohne Engine-Neubuild. Der Browser-Editor arbeitet direkt mit diesen Dateien; Content-Hashes,
-atomare Writes, fünf Backups und Admin-Rechte schützen Änderungen. Sandbox API v1 erzwingt die pro
-Card deklarierten Capabilities. Der frühere Dashboard-`customCards`-/`custom-html`-Pfad ist entfernt.
+Card-Runtime ohne Engine-Neubuild. Der Browser-Editor arbeitet direkt mit diesen Dateien;
+Content-Hashes, atomare Writes, fünf Backups und Admin-Rechte schützen Änderungen. Card API v1
+erzwingt die pro Card deklarierten Capabilities. Der frühere Dashboard-`customCards`-/`custom-html`-Pfad ist entfernt.
 Seit `2.0.0-alpha.20`/Engine `2.0.17` werden alle mitgelieferten Core- und Bar-Cards
 ausschließlich als portable, schreibgeschützte HTML-Dateien aus dem Integrationspaket geladen.
 `src/cards/core-cards`, die SFC-Fallback-Registry und die verschachtelten Legacy-Bar-Slots sind
-entfernt. Als Nächstes folgt Phase 5 mit Release-, Installations- und Recovery-Dokumentation.
+entfernt. Ab Engine `2.1.0` sind die vier Bars (`sidebar-left`, `sidebar-right`, `header`,
+`bottom`) feste Engine-Komponenten mit frei konfigurierbaren Spalten; die drei früheren Bar-Cards
+sind entfallen, die Navigation liefert die Katalog-Card `vue-panel/menu`. Ab Engine `2.1.15`
+laufen portable Cards eingebettet im Engine-Dokument statt in einem Sandbox-iframe: das Card-CSS
+wird per nativem CSS-Nesting auf die Card begrenzt, wodurch das Theme-Stylesheet auch in der Card
+gilt. Damit ist die Card-Grenze eine Style- und DOM-Grenze und keine Sicherheitsgrenze mehr.
+Als Nächstes folgt Phase 5 mit Release-, Installations- und Recovery-Dokumentation.
 
 Ein vollständiger Lovelace-Ersatz als Vue 3 (Composition API + TypeScript) SPA.
 Kein YAML, alles visuell im Browser editierbar, Cards als einfache Vue-Komponenten.

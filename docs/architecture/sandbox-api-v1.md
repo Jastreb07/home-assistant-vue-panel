@@ -1,42 +1,23 @@
-# Vue Panel Sandbox API v1
+# Vue Panel Card API v1
 
-Status: normative security and messaging contract for Card Format v2.
+Status: normative capability and API contract for Card Format v2.
 
-## Security boundary
+## Execution model
 
-Every portable card runs in its own iframe with `sandbox="allow-scripts"`. The iframe must not
-receive `allow-same-origin`, `allow-forms`, `allow-popups`, or top-navigation permissions. Its
-document uses a restrictive Content Security Policy with no network connections, frames,
-objects, forms, or base URL.
+Every portable card runs embedded in the engine document so that the active theme's global
+stylesheet applies to it. The engine injects the card markup into a scoped element, wraps the
+card CSS in that scope through native CSS nesting, and runs the card script with a scoped
+`document` (element lookups resolve inside the card) plus tracked timers and listeners that are
+disposed with the card.
 
-The host never sends an access token, the Home Assistant `hass` object, a WebSocket connection,
-DOM references, functions, or Vue reactive proxies. Messages contain structured-clone-safe
-snapshots only. The host validates the iframe window, namespace, channel, message kind, payload,
-declared capability, and response correlation before performing an action.
-
-## Message envelope
-
-All host/card messages use this envelope:
-
-```json
-{
-  "namespace": "vue-panel:card",
-  "apiVersion": 1,
-  "channel": "runtime-generated-id",
-  "kind": "request",
-  "requestId": "1",
-  "action": "getEntity",
-  "payload": {}
-}
-```
-
-`kind` is one of `ready`, `request`, `response`, `event`, or `runtime-error`. Responses echo the
-request ID and contain either `{ "ok": true, "result": ... }` or
-`{ "ok": false, "error": { "code": "...", "message": "..." } }`.
+This is a styling and DOM boundary, not a security boundary: an embedded card shares the engine
+origin and can reach the surrounding document. Only install cards you trust. The engine still
+serves HA data as fresh JSON snapshots and validates entity IDs, icon names, service names, view
+IDs, payload shapes, and the declared capability before performing an action.
 
 ## JavaScript API
 
-The iframe exposes one frozen global object:
+The engine passes one frozen object into the card script as `vuePanel`:
 
 ```ts
 interface VuePanelCardApiV1 {
@@ -64,7 +45,7 @@ interface VuePanelCardApiV1 {
 ```
 
 Entity, view, and dashboard context values are immutable JSON snapshots. Subscriptions are
-disposed when the returned function is called or when the iframe is destroyed.
+disposed when the returned function is called or when the card is removed.
 
 ## Capabilities
 
@@ -86,7 +67,7 @@ provided. Unknown actions and capabilities fail closed.
 
 ## Preview mode
 
-Preview mode uses the same sandbox and validation path as runtime. Mutating capabilities are
+Preview mode uses the same runtime and validation path as a live card. Mutating capabilities are
 disabled regardless of declarations: `service:call`, `navigation:write`, and `shell:events`.
 The API returns a structured `preview_action_denied` error for those operations.
 

@@ -330,10 +330,11 @@ export default {
       header: 'Header bar',
       bottom: 'Bottom bar',
     },
+    previewThemed: 'Theme styles active',
     hints: {
       html: 'The card content. JavaScript belongs exclusively in the JS tab.',
       css: 'This CSS runs inside the isolated card and can use the theme variables.',
-      javascript: 'Runs in a sandbox. Service calls are disabled in the preview.',
+      javascript: 'Runs in the engine document against the checked vuePanel API. Service calls are disabled in the preview.',
     },
     errors: {
       nameRequired: 'Enter a name.',

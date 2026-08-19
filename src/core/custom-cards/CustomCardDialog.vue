@@ -30,7 +30,7 @@ import type { SelectOption } from '@/core/ui/selectMenu'
 import type { TabItem } from '@/core/ui/tabs'
 import { alertDialog, choiceDialog, confirmDialog } from '@/core/ui/dialogService'
 import EntityPicker from '@/core/editor/EntityPicker.vue'
-import CustomCardSandbox from './CustomCardSandbox.vue'
+import CardRuntime from './CardRuntime.vue'
 import { editorDefinitionFromDocument } from './cardEditorModel'
 
 const props = defineProps<{ definition?: CustomCardDefinition }>()
@@ -74,7 +74,7 @@ const DEFAULT_CSS = `.my-card {
   font-size: 11px;
 }`
 
-const DEFAULT_JAVASCRIPT = `// The sandbox exposes a controlled Home Assistant API as "vuePanel".
+const DEFAULT_JAVASCRIPT = `// The runtime exposes a controlled Home Assistant API as "vuePanel".
 // Read instance variables with vuePanel.config, for example:
 // const entityId = vuePanel.config.entity;
 // const entity = await vuePanel.getEntity('sensor.example');
@@ -1076,11 +1076,11 @@ const previewStyle = computed(() => ({
       <aside class="preview-panel">
         <div class="preview-head">
           <span>{{ t('common.preview') }}</span>
-          <span class="sandbox-badge"><MdiIcon icon="mdi:shield-check-outline" :size="13" /> Sandbox</span>
+          <span class="preview-badge"><MdiIcon icon="mdi:palette-outline" :size="13" /> {{ t('customCards.previewThemed') }}</span>
         </div>
         <div class="preview-stage">
           <div class="preview-card" :style="previewStyle">
-            <CustomCardSandbox :definition="draft" :config="previewConfig" preview />
+            <CardRuntime :definition="draft" :config="previewConfig" preview />
           </div>
         </div>
         <div class="preview-foot">
@@ -1334,7 +1334,7 @@ const previewStyle = computed(() => ({
 }
 .preview-head { border-bottom: 1px solid var(--divider); letter-spacing: .1em; text-transform: uppercase; }
 .preview-foot { border-top: 1px solid var(--divider); }
-.sandbox-badge { display: inline-flex; align-items: center; gap: 4px; color: #44a46f; letter-spacing: 0; text-transform: none; }
+.preview-badge { display: inline-flex; align-items: center; gap: 4px; color: #44a46f; letter-spacing: 0; text-transform: none; }
 .preview-stage {
   min-height: 250px;
   padding: 24px;

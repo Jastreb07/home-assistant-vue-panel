@@ -6,8 +6,8 @@ Datum: 18. August 2026
 
 ### Aktueller Umsetzungsstand
 
-- Phase 0 ist abgeschlossen: Card Format v2, Sandbox API v1 und portable Beispiele sind
-  dokumentiert.
+- Phase 0 ist abgeschlossen: Card Format v2, Card API v1 (`docs/architecture/sandbox-api-v1.md`)
+  und portable Beispiele sind dokumentiert.
 - Phase 1 ist technisch weit fortgeschritten: Config-/Dashboard-Subentry-Flow,
   Panel-Registrierung, direkte statische Auslieferung aus dem Integrationspaket und der echte
   query-versionierte Integrations-Build sind vorhanden.
@@ -19,7 +19,7 @@ Datum: 18. August 2026
   Export und Import.
 - Phase 3 ist lokal implementiert: strikter Card-Format-v2-Parser, privater Katalog und
   revisionsgeschütztes Admin-CRUD, Runtime-Registry, lokaler Dateiimport, Browser-Editor sowie
-  capability-basierte Sandbox API v1. Offen ist der echte HA-Abnahmetest mit einer importierten
+  capability-basierte Card API v1. Offen ist der echte HA-Abnahmetest mit einer importierten
   Drittanbieter-Card.
 - Dashboard-Dateien werden beim Löschen ihres Subentries zunächst gesichert und anschließend
   entfernt. Revisionskonflikte überschreiben nichts, sondern bieten im Frontend „Neu laden“
@@ -30,6 +30,12 @@ Datum: 18. August 2026
 - Das Produktionspanel läuft in einem vom Loader erzeugten iframe und verwendet die dateibasierte
   Integrations-API. Der Loader überträgt das aktuelle HA-Token und die Panel-Metadaten über eine
   schmale `postMessage`-Brücke; die Dashboard-Kopie im `localStorage` bleibt entfernt.
+- Die Bars sind seit Engine `2.1.0` feste Engine-Komponenten: vier Positionen (`sidebar-left`,
+  `sidebar-right`, `header`, `bottom`) mit frei konfigurierbaren Spalten je Bar. Die früheren
+  Bar-Cards sind entfallen; die Navigation liefert die Katalog-Card `vue-panel/menu`.
+- Seit Engine `2.1.15` rendert die Engine portable Cards eingebettet statt im Sandbox-iframe,
+  damit das Theme-Stylesheet in der Card gilt. Die Card-Grenze ist damit eine Style- und
+  DOM-Grenze und keine Sicherheitsgrenze mehr (siehe Abschnitt 4.3).
 
 ## 1. Zielbild
 
@@ -113,7 +119,7 @@ Daher gilt:
 - Dashboard-JSON unter `<config>/vue-panel/dashboards/`, also außerhalb von `.storage` und
   außerhalb statischer HTTP-Routen;
 - lokale und importierte Card-Dateien unter `<config>/vue-panel/cards/`; ihr Inhalt wird nur über
-  authentifizierte WebSocket-Befehle geladen und als Sandbox-`srcdoc` gerendert;
+  authentifizierte WebSocket-Befehle geladen und von der Card-Runtime eingebettet gerendert;
 - Panel-Metadaten als normale HA-Config-Subentries der Integration;
 - Zugriff auf Dashboard-Daten ausschließlich über authentifizierte WebSocket-Befehle.
 
@@ -272,9 +278,15 @@ verwaltete Assets entfallen.
 Bei Token-Aktualisierungen sendet der Loader den neuen Auth-Kontext erneut. Das von
 `home-assistant-js-websocket` verwendete Auth-Objekt wartet beim Refresh auf eine solche Nachricht.
 
-Die Sicherheitsgrenze bleibt das separate Sandbox-iframe jeder dateibasierten Card. Es läuft mit
-`sandbox="allow-scripts"` ohne `allow-same-origin`, erhält weder `hass` noch Token oder
-Parent-DOM-Zugriff und kommuniziert nur über eine validierte, versionierte Message-Bridge.
+Dateibasierte Cards liefen ursprünglich in einem eigenen Sandbox-iframe. Seit Engine `2.1.15`
+werden sie eingebettet in das Engine-Dokument gerendert, damit das Theme-Stylesheet auch in der
+Card gilt. Ihr CSS wird per nativem CSS-Nesting auf das Card-Element begrenzt und ihr Skript
+erhält ein auf die Card begrenztes `document` sowie nachverfolgte Timer und Listener — das ist
+eine Style- und DOM-Grenze, keine Sicherheitsgrenze. Eine eingebettete Card teilt den
+Engine-Origin und kann das umgebende Dokument erreichen; es dürfen deshalb nur vertrauenswürdige
+Cards installiert werden. Die Engine übergibt HA-Daten weiterhin ausschließlich als frische
+JSON-Snapshots und prüft Entity-IDs, Icon-Namen, Servicenamen, View-IDs, Payload-Form und die
+deklarierte Fähigkeit vor jeder Aktion.
 
 ## 5. Dateibasierte Dashboard-Persistenz
 
@@ -336,7 +348,7 @@ const vuePanelCard = {
 </style>
 
 <script data-vue-panel-javascript>
-  // Sandboxed runtime code
+  // Card runtime code
 </script>
 ```
 
@@ -386,8 +398,8 @@ duplizieren, aber niemals die verwaltete Originaldatei überschreiben.
 
 ### 6.2 Card-Ausführung und Card SDK
 
-Alle dateibasierten Cards laufen weiterhin in einer Sandbox. Die globale API `vuePanel` wird
-versioniert und zunächst mindestens um folgende Fähigkeiten ergänzt:
+Alle dateibasierten Cards laufen eingebettet im Engine-Dokument mit auf die Card begrenztem CSS.
+Die API `vuePanel` wird versioniert und zunächst mindestens um folgende Fähigkeiten ergänzt:
 
 - `config`, `getEntity`, `subscribeEntity`, `callService`, `getIcon`;
 - `navigate`, `currentView`, `listViews`;
@@ -396,8 +408,9 @@ versioniert und zunächst mindestens um folgende Fähigkeiten ergänzt:
 - später Forecast-, History- oder Kamera-Helfer über ausdrücklich erlaubte Bridges.
 
 Die Engine gewährt nur deklarierte Fähigkeiten. Service-Aufrufe bleiben in der Vorschau
-deaktiviert. Card-Dateien erhalten keinen direkten Zugriff auf HA-Token, Parent-DOM oder
-Dateisystem.
+deaktiviert. Die API reicht weder HA-Token noch Dateisystemzugriff durch; eine eingebettete Card
+kann das umgebende DOM jedoch technisch erreichen, weshalb nur vertrauenswürdige Cards installiert
+werden dürfen.
 
 ### 6.3 Auslagerung der heutigen Core-Cards
 
@@ -529,8 +542,8 @@ bearbeitet, dupliziert und aktualisiert werden.
 
 Umsetzungsstand: Implementiert. Parser und Katalog validieren Card Format v2 strikt, lokale
 Dateien werden atomar und revisionsgeschützt mit fünf Backups verwaltet, und alle Schreibbefehle
-erfordern Administratorrechte. Runtime-Registry, Dateiimport, Browser-Editor, CSS-Weitergabe in die
-Sandbox sowie die capability-basierte Sandbox API v1 sind angeschlossen. Der Admin-Devbereich kann
+erfordern Administratorrechte. Runtime-Registry, Dateiimport, Browser-Editor, CSS-Weitergabe an die
+Card-Runtime sowie die capability-basierte Card API v1 sind angeschlossen. Der Admin-Devbereich kann
 extern geänderte Card-Dateien ohne Engine-Neubuild neu einlesen. Der echte HA-Laufzeittest mit einer
 importierten Drittanbieter-Card bleibt Teil der Abnahme vor Phase 4.
 
@@ -544,10 +557,12 @@ importierten Drittanbieter-Card bleibt Teil der Abnahme vor Phase 4.
 Abnahme: Die Engine startet ohne `src/cards/core-cards/`; die vorgesehenen Standardfunktionen
 laufen ausschließlich mit Dateien aus `custom_components/vue_panel/bundled_cards/vue-panel/`.
 
-Umsetzungsstand: Abgeschlossen. Alle 13 Core- und Bar-Cards werden vom Integrationskatalog als
-schreibgeschützte Card-Format-v2-Dateien geladen. Die Sandbox-Navigation unterstützt reaktive
+Umsetzungsstand: Abgeschlossen. Die Core-Cards werden vom Integrationskatalog als
+schreibgeschützte Card-Format-v2-Dateien geladen. Die Navigations-API unterstützt reaktive
 Routen-Abonnements für aktive Menüeinträge und Pfad-Eltern. SFC-Core-Registry, Build-Time-
-Discovery, verschachtelte Legacy-Bar-Slots und ihre Kompatibilitätstypen sind entfernt.
+Discovery, verschachtelte Legacy-Bar-Slots und ihre Kompatibilitätstypen sind entfernt. Die
+ursprünglich mitportierten Bar-Cards sind mit Engine `2.1.0` wieder entfallen, weil die Bars
+seither Engine-Komponenten mit eigenen Spalten sind; es verbleiben zehn mitgelieferte Cards.
 
 ### Phase 5 – Bereinigung und Release
 
@@ -608,7 +623,7 @@ Die folgenden Punkte sind für die erste Umsetzung verbindlich und keine offenen
 - automatische Installation direkt von beliebigen URLs;
 - kryptografisch signierte Card-Pakete;
 - kollaboratives Echtzeit-Editing;
-- direkte Ausführung unsandboxed Drittanbieter-Module;
+- direkte Ausführung beliebiger Drittanbieter-Module ohne Card-Format und Capability-Prüfung;
 - Import oder Zusammenführung von Dashboards aus der bisherigen Vue-Panel-Version.
 
 ## 13. Referenzen

@@ -14,8 +14,8 @@ path supplied by the document:
 
 `vue-panel` is reserved for integration-managed core cards shipped inside the integration.
 Browser-created cards default to `local`. Editable card content is transferred through the
-authenticated WebSocket API and rendered as sandbox `srcdoc`; its private filesystem path is not
-exposed as a static URL. A display name is mutable and never changes the identity or file path.
+authenticated WebSocket API and rendered by the embedded card runtime; its private filesystem
+path is not exposed as a static URL. A display name is mutable and never changes the identity or file path.
 
 ## Document structure
 
@@ -72,17 +72,17 @@ Required metadata:
 
 - `format`: exactly `vue-panel-card`;
 - `formatVersion`: exactly `2`;
-- `apiVersion`: sandbox API major version required by the card;
+- `apiVersion`: card API major version required by the card;
 - `manufacturer` and `cardName`: immutable identity;
 - `name`, `description`, `icon`, and `group`: picker metadata;
 - `areas`: one or more of `dashboard`, `sidebar`, `header`, `bottom`;
-- `capabilities`: explicit sandbox permissions;
+- `capabilities`: explicit card API permissions;
 - `defaultSize`: positive `cols`, `rows`, `width`, and `height` values;
 - `defaultResponsive`: device defaults and ordered breakpoints;
 - `fullRow`: whether the card always spans its container;
 - `variables`: generated configuration schema.
 
-The supported API v1 capabilities are defined in `sandbox-api-v1.md`. Unknown capabilities or a
+The supported API v1 capabilities are defined in `sandbox-api-v1.md` (Card API v1). Unknown capabilities or a
 newer API major version make a card incompatible instead of silently granting access.
 
 ## Variables
@@ -125,4 +125,6 @@ identity creates a different card.
 
 The integration validates structure, metadata, identity, declared API version, capabilities, and
 the server-derived destination before writing a file. A card is rendered only after validation.
-HTML, CSS, and runtime JavaScript execute exclusively in the sandbox described by Sandbox API v1.
+HTML, CSS, and runtime JavaScript execute in the embedded card runtime described by Card API v1:
+the card CSS is scoped to the card element, the theme's global stylesheet applies, and the script
+receives the capability-checked `vuePanel` API.

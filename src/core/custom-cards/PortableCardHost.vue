@@ -4,7 +4,7 @@ import { getPortableCard, usePortableCardCatalogRevision } from '@/core/ha'
 import type { PortableCardDocument } from '@/core/registry/portableCardTypes'
 import { cardCssContextKey } from '@/core/ui/cardCssContext'
 import { withoutResponsiveCss } from '@/core/ui/responsiveCss'
-import CustomCardSandbox from './CustomCardSandbox.vue'
+import CardRuntime from './CardRuntime.vue'
 
 const props = defineProps<{
   cardType: string
@@ -18,7 +18,7 @@ const definition = ref<PortableCardDocument | null>(null)
 const loadError = ref('')
 const catalogRevision = usePortableCardCatalogRevision()
 const cardCss = inject(cardCssContextKey, null)
-const sandboxDefinition = computed(() => {
+const runtimeDefinition = computed(() => {
   if (!definition.value) return null
   const override = cardCss?.value.trim()
   const contentOverride = override ? withoutResponsiveCss(override) : ''
@@ -51,9 +51,9 @@ watch([() => props.cardType, catalogRevision], load)
 </script>
 
 <template>
-  <CustomCardSandbox
-    v-if="sandboxDefinition"
-    :definition="sandboxDefinition"
+  <CardRuntime
+    v-if="runtimeDefinition"
+    :definition="runtimeDefinition"
     :config="config"
     @action="forwardAction"
   />

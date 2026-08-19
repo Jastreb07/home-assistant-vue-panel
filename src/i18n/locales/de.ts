@@ -331,10 +331,11 @@ export default {
       header: 'Header-Leiste',
       bottom: 'Bottom-Leiste',
     },
+    previewThemed: 'Theme-Stile aktiv',
     hints: {
       html: 'Der Inhalt der Card. JavaScript gehört ausschließlich in den JS-Tab.',
-      css: 'Dieses CSS läuft isoliert innerhalb der Card und kann die Theme-Variablen verwenden.',
-      javascript: 'Läuft in einer Sandbox. Service-Aufrufe sind in der Vorschau deaktiviert.',
+      css: 'Dieses CSS gilt nur innerhalb dieser Card und kann die Theme-Variablen verwenden.',
+      javascript: 'Läuft im Engine-Dokument mit der geprüften vuePanel-API. Service-Aufrufe sind in der Vorschau deaktiviert.',
     },
     errors: {
       nameRequired: 'Bitte einen Namen eingeben.',

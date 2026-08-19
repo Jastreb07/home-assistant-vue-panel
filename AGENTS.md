@@ -70,6 +70,15 @@ Aktueller Stand:
   einschließlich Sidebar, Header und Bottom-Bar liegen als validierte Card-Format-v2-Dateien
   unter `custom_components/vue_panel/bundled_cards/vue-panel/`. SFC-Core-Registry,
   Build-Time-Card-Discovery und verschachtelte Legacy-Bar-Slots sind entfernt;
+- ab Engine `2.1.0` sind die Bars feste Engine-Komponenten mit beliebig vielen Spalten
+  (`fit`/`full`/`fixed`, Abstände und Ausrichtung je Spalte). Es gibt vier Positionen
+  `sidebar-left`, `sidebar-right`, `header` und `bottom`; die rechte Seitenleiste ist bei
+  neuen Views aus. Die drei früheren Bar-Cards sind entfallen, die Navigation kommt aus der
+  Katalog-Card `vue-panel/menu`;
+- ab Engine `2.1.15` laufen portable Cards eingebettet im Engine-Dokument statt in einem
+  Sandbox-iframe. Das Card-CSS wird per nativem CSS-Nesting auf die Card begrenzt, das
+  Theme-Stylesheet gilt damit auch innerhalb der Card. Das ist eine Style- und DOM-Grenze,
+  keine Sicherheitsgrenze mehr;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
@@ -85,7 +94,8 @@ Aktueller Stand:
 - Runtime und ausgelieferte Core-Cards liegen im Integrationspaket. Nur der gezielt registrierte
   Frontend-Ordner ist unter `/vue-panel-static/` erreichbar;
 - der Loader läuft als HA-Custom-Element und hält die Engine in einem eigenen iframe-Dokument;
-  portable Cards laufen innerhalb der Engine zusätzlich in strikt isolierten Sandbox-iframes.
+  portable Cards laufen innerhalb dieses Dokuments eingebettet — mit auf die Card begrenztem CSS,
+  aber ohne eigene Sicherheitsgrenze.
 
 ## 1. Was ist dieses Projekt?
 
@@ -136,7 +146,7 @@ src/
 │  ├─ ui/                     # DÜNNE WRAPPER: BaseCard/BaseDialog/BaseButton → themed('…'),
 │  │                          # MdiIcon, OverflowMarquee, DialogHost.vue + dialogService.ts
 │  ├─ composables/            # useClock, useMediaQuery, useTheme
-│  ├─ custom-cards/           # Browser-Editor + isolierter HTML/CSS/JS-Sandbox-Renderer
+│  ├─ custom-cards/           # Browser-Editor + eingebettete HTML/CSS/JS-Card-Runtime
 │  ├─ kiosk/                  # useIdleSeconds, Screensaver.vue
 │  └─ dev/DevSidebar.vue      # Dev-only Tools (Sprache, Export/Import, Reset) — nicht i18n'd
 ├─ shell/                     # AppShell, ShellBarHost (globale Bar-Cards), ViewRenderer;
@@ -147,7 +157,7 @@ src/
 ```
 
 ### Datenmodell (`core/config/types.ts`)
-`DashboardConfig { format, formatVersion, revision, settings?, bars?, views[] }` → `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebar?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `vue-panel/section-title`) → `CardConfig { id, type, config, css?, size? }`.
+`DashboardConfig { format, formatVersion, revision, settings?, bars?, views[] }` → `BarConfig` je Position (`sidebar-left|sidebar-right|header|bottom`) → `BarEntry { id, size, placement?, css?, columns[] }` → `BarColumn { id, sizeMode?, size?, padding?, margin?, align?, crossAlign?, cards[] }`; `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebarLeft?, showSidebarRight?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `vue-panel/section-title`) → `CardConfig { id, type, config, css?, size? }`.
 Portable Card-Definitionen sind kein Teil des Dashboard-JSON. Eine Instanz referenziert direkt den
 unveränderlichen Runtime-Typ `<manufacturer>/<cardName>` und speichert nur Variablenwerte, CSS und
 Größe. Das Card-Dokument liegt separat als private HTML-Datei.
@@ -186,9 +196,9 @@ Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
 `docs/architecture/card-format-v2.md` und `examples/cards/vue-panel/`. Variablen unterstützen
 `entity`, `icon`, `view`, `select`, `string`, `number` und `boolean`; daraus erzeugt die Engine das
 Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
-ausschließlich die versionierte globale `vuePanel`-Sandbox-API.
+ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
-  room-tile, menu, section-title sowie sidebar-bar, header-bar und bottom-bar.
+  room-tile, menu und section-title. Die Bars sind Engine-Komponenten und keine Cards mehr.
 - **Portable Cards und Browser-Editor**: Der Code-Button öffnet `CustomCardDialog.vue`. Das
   Card-Format besitzt `format: 'vue-panel-card'`, `formatVersion: 2`, `apiVersion: 1`, die
   unveränderliche Identität `manufacturer/cardName`, Metadaten, Bereiche, deklarierte
@@ -196,20 +206,23 @@ ausschließlich die versionierte globale `vuePanel`-Sandbox-API.
   speichert direkt über `vue_panel/cards/create|update|import|delete`; verwaltete Cards können als
   neue lokale Identität dupliziert werden. Änderungen werden nach einem Katalog-Rescan ohne
   Engine-Neubuild im Picker sichtbar. Maximalgröße: 512 KB pro Datei.
-- `CustomCardSandbox.vue` rendert jede portable Card in `iframe sandbox="allow-scripts"` ohne
-  Same-Origin-Recht und mit restriktiver CSP. Sandbox API v1 gewährt ausschließlich deklarierte
-  Fähigkeiten für Entities, Icons, Services, Navigation, Dashboard-Kontext und Shell-Events;
-  Service-, Navigations- und Shell-Aktionen sind in der Vorschau gesperrt. Instanzwerte stehen
-  schreibgeschützt in `vuePanel.config`. Details: `docs/architecture/card-format-v2.md` und
-  `docs/architecture/sandbox-api-v1.md`.
-- **Globale Bar-Cards**: `areas` enthält `sidebar`, `header` und/oder `bottom`. Der Runtime-Katalog
-  bildet dies auf die vorhandenen Bar-Positionen ab. `ShellBarHost.vue` rendert die
-  globale Auswahl; pro View existieren nur `showSidebar/showHeader/showBottom`.
+- `CardRuntime.vue` rendert jede portable Card eingebettet im Engine-Dokument: Markup landet in
+  einem Scope-Element, das Card-CSS wird per nativem CSS-Nesting darauf begrenzt (das
+  Theme-Stylesheet greift dadurch in der Card), und das Card-Skript erhält ein auf die Card
+  begrenztes `document` sowie nachverfolgte Timer und Listener. Card API v1 gewährt ausschließlich
+  deklarierte Fähigkeiten für Entities, Icons, Services, Navigation, Dashboard-Kontext und
+  Shell-Events; Service-, Navigations- und Shell-Aktionen sind in der Vorschau gesperrt.
+  Instanzwerte stehen schreibgeschützt in `vuePanel.config`. Eingebettete Cards teilen den
+  Engine-Origin — es gibt keine Sicherheitsgrenze mehr, nur vertrauenswürdige Cards installieren.
+  Details: `docs/architecture/card-format-v2.md` und `docs/architecture/sandbox-api-v1.md`.
+- **Cards in Bars**: `areas` enthält `sidebar`, `header` und/oder `bottom`; beide Seitenleisten
+  teilen sich den Bereich `sidebar` (`barCardArea()`). `ShellBarHost.vue` rendert die Spalten, pro
+  View schalten `showSidebarLeft/showSidebarRight/showHeader/showBottom` die Bars.
 - `fullRow: true` belegt eine ganze Abschnittszeile und ist im Flex-Layout nicht resizebar.
 - **Per-Card-CSS**: `cardDefaultCss()` lädt bei portablen Cards das Stylesheet aus dem privaten
   Card-Dokument. Abweichungen liegen als `CardConfig.css` an der Instanz. Responsive-Regeln wirken
-  am äußeren Slot; das übrige Override wird über `CardCss` in die Sandbox gereicht und ersetzt dort
-  das Card-Stylesheet.
+  am äußeren Slot; das übrige Override wird über `CardCss` an die Card-Runtime gereicht und ersetzt
+  dort das Card-Stylesheet.
 - **Responsive Sichtbarkeit jeder Card**: `CardConfigDialog` besitzt immer den Tab „Sichtbarkeit“ → Collapsible „Responsive Design“. Smartphone, Tablet und Desktop lassen sich einzeln aktivieren; `mobileMax` (Default 767px) und `tabletMax` (Default 1023px) sind frei einstellbar. `core/ui/responsiveCss.ts` schreibt die Auswahl unmittelbar als markierten Block `vue-panel:responsive:start/end` mit verschachtelten Media Queries in `CardConfig.css`. Der Block ist im CSS-Tab sichtbar; beim erneuten Öffnen wird die UI aus seinen JSON-Metadaten rekonstruiert. Manifeste können über `defaultResponsive` abweichende Card-Defaults vorgeben; die Sidebar-Bar ist dadurch auf Smartphones standardmäßig aus. Keine separaten Visibility-Felder im Datenmodell anlegen.
 
 ## 6. Theme-System (`src/theme/`)
@@ -242,12 +255,14 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - **Section-Dialog** (`core/editor/SectionSettingsDialog.vue`): Tab „Allgemein" (Ausrichtung der Cards `auto|vertical|horizontal`; im Sections-Layout zusätzlich `cardsPerRow` = Auto oder 1–6, unabhängig von der Ausrichtung; dazu `contentAlign` = `left|center|right` als `justify-content` der Card-Zeile — nur sichtbar bei layout=flex oder horizontaler Ausrichtung, schlägt die View-Ausrichtung) + Tab „Erweitert" mit Collapsibles „Größe" (bei layout=sections: Breite in Spalten; bei layout=flex: Volle Breite (Default) oder eigene Breite in px → `SectionConfig.width`) und „Abstände" (Margin/Padding via `BaseBoxInput`). Wird von allen 4 Section-Layouts gerendert; `addSection` legt den Abschnitt sofort an und öffnet den Dialog. Ausrichtung/Spacing wertet `LayoutSection.vue` aus, `columnSpan` setzt `grid-column: span N` (in `dense`-Modus ignoriert). Eine feste `cardsPerRow`-Zahl erzeugt ein exaktes Abschnittsraster und ignoriert normale Card-Spans; `fullRow` bleibt davon unberührt.
 - **View-Tab „Erweitert"** (`ViewSettingsDialog`): zwei `BaseCollapsible`-Boxen — „Spezifische Einstellungen für die Abschnittsansicht" (nur bei layout=sections: maxColumns, dense, topMargin) und „Abstände & Ausrichtung" mit Margin, Padding, Breite (`default|full`), Ausrichtung (`left|center|right`). `ViewRenderer.vue` legt einen `.view-box`-Wrapper darum, setzt Padding/Margin inline, bei `full` die Variable `--view-max-width: none` und für die Ausrichtung `--view-align` (die Auto-Margins). Alle Layouts nutzen `max-width: var(--view-max-width, …)` und `margin: var(--view-align, 0 auto)` statt fester Werte. Damit die Ausrichtung überhaupt sichtbar wird, rechnet `SectionsLayout` seine `max-width` aus den **tatsächlich belegten** Spalten (`usedColumns`, inkl. Add-Tile im Edit-Modus), nicht aus `maxColumns`. Im Flex-Layout wirkt die Ausrichtung als `justify-content` auf die **Abschnitts-Reihe** (Default links); wie die Cards innerhalb eines Abschnitts stehen, regelt dessen eigenes `contentAlign`.
 - Edit-Modus: `store.editMode` (EditFab absolut im `.view-area`, rechts/unten je 24px; der Inhalt scrollt separat in `.view-scroll`). Toolbar: Undo/Redo, View-Einstellungen, Dashboard-Einstellungen. Im Edit-Modus erscheinen Subviews in der Nav.
-- **Globale Bars**: Dashboard-Einstellungen → Tab „Bars“ wählt und konfiguriert je eine portable
-  Card für Sidebar, Header und Bottom. Die Standard-Bars beziehen Ansichten und aktive Route über
-  die reaktive Sandbox-Navigations-API. Die Sidebar bleibt links stehen, hat rechts eine Trennlinie
-  und wird nie durch einen festen Shell-Breakpoint ausgeblendet; ausschließlich ihre Card-
-  Sichtbarkeit entscheidet. Sie ist auf Smartphones standardmäßig aus. Alle drei Bars können pro
-  View ein-/ausgeschaltet werden und sind standardmäßig sichtbar.
+- **Globale Bars**: vier Engine-Container — `sidebar-left`, `sidebar-right`, `header`, `bottom`.
+  Dashboard-Einstellungen → Tab „Bars“ setzt Größe und (bei Header/Bottom) die Platzierung
+  `view|full`. Jede Bar besteht aus beliebig vielen Spalten; im Bearbeitungsmodus legt „+ Spalte“
+  neue an, die Spalten-Toolbar verschiebt, konfiguriert und löscht sie, und jede Spalte nimmt
+  eigene Cards auf. Pro Spalte einstellbar: Größe (`fit` = an Inhalt anpassen als Default, `full`,
+  `fixed`), Abstände und die Ausrichtung entlang sowie quer zur Leiste. Die Navigation liefert die
+  Card `vue-panel/menu` über die reaktive Navigations-API. Alle Bars lassen sich pro View
+  schalten; nur die rechte Seitenleiste ist bei neuen Views aus.
 - **View-URLs**: Intern referenzieren Menü, room-tile & Co. immer die **View-`id`**; die URL nutzt `view.path` (Fallback: `id`) und darf hierarchisch sein, z. B. `uebersicht/wohnzimmer`. Helfer in `dashboardStore.ts`: `viewPath(view)`, `normalizeRoutePath(path)`, `slugify(title)`, `slugifyPath(path)`, Getter `viewByRoute(path)`. Der Catch-all-Hash-Router akzeptiert beliebig viele Segmente. Der View-Dialog slugifiziert jedes Segment einzeln, erhält `/` und macht den vollständigen Pfad beim Speichern eindeutig; danach emittiert er `navigate`, damit die Route dem neuen Pfad folgt. Die Menu-Card markiert neben dem exakten Ziel auch Pfad-Eltern aktiv (`uebersicht` bei `uebersicht/wohnzimmer`).
 - Subviews: `view.subview = true` → kein Nav-Eintrag, Header mit Zurück-Button in AppShell; room-tile-Card navigiert dorthin.
 - Kiosk: `useIdleSeconds` → Screensaver (Vollbild-Uhr) und Auto-Return zur ersten View; beides im Edit-Modus pausiert.
