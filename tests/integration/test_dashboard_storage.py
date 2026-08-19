@@ -123,45 +123,86 @@ class DashboardStorageTests(unittest.TestCase):
         document["views"][0]["sections"][0]["cards"][0]["type"] = "vue-panel/light"
         dashboard_storage.validate_dashboard(document)
 
-    def test_bars_are_containers_with_three_card_slots(self) -> None:
+    def test_bars_are_containers_with_card_columns(self) -> None:
         document = deepcopy(dashboard_storage.default_dashboard())
-        sidebar = document["bars"]["sidebar"]
 
-        self.assertEqual(set(sidebar["slots"]), {"start", "center", "end"})
         self.assertEqual(
-            sidebar["slots"]["center"][0]["type"], "vue-panel/sidebar-bar"
+            set(document["bars"]),
+            {"sidebar-left", "sidebar-right", "header", "bottom"},
+        )
+        sidebar = document["bars"]["sidebar-left"]
+        self.assertEqual(
+            [card["type"] for card in sidebar["columns"][0]["cards"]],
+            ["vue-panel/clock", "vue-panel/menu"],
         )
 
-        sidebar["slots"]["end"] = [
-            {"id": "sidebar-clock", "type": "vue-panel/clock", "config": {}}
-        ]
+        sidebar["columns"].append(
+            {
+                "id": "sidebar-left-second",
+                "size": 120,
+                "padding": {"top": 8, "bottom": 8},
+                "align": "end",
+                "crossAlign": "center",
+                "cards": [],
+            }
+        )
         dashboard_storage.validate_dashboard(document)
 
-        del sidebar["slots"]["end"]
+        sidebar["columns"] = []
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
 
     def test_bar_containers_reject_invalid_geometry(self) -> None:
         document = deepcopy(dashboard_storage.default_dashboard())
 
-        document["bars"]["sidebar"]["size"] = 40
+        document["bars"]["sidebar-left"]["size"] = 40
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
 
-        document["bars"]["sidebar"]["size"] = 280
-        document["bars"]["sidebar"]["placement"] = "full"
+        document["bars"]["sidebar-left"]["size"] = 280
+        document["bars"]["sidebar-left"]["placement"] = "full"
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
 
-        del document["bars"]["sidebar"]["placement"]
-        document["bars"]["header"]["centerAlign"] = {"vertical": "middle"}
+        del document["bars"]["sidebar-left"]["placement"]
+        document["bars"]["header"]["columns"][0]["align"] = "middle"
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
+
+        document["bars"]["header"]["columns"][0]["align"] = "center"
+        document["bars"]["header"]["columns"][0]["padding"] = {"middle": 4}
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+    def test_bar_column_size_modes(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+        column = document["bars"]["sidebar-left"]["columns"][0]
+
+        column["sizeMode"] = "fit"
+        dashboard_storage.validate_dashboard(document)
+
+        column["sizeMode"] = "full"
+        dashboard_storage.validate_dashboard(document)
+
+        column["sizeMode"] = "fixed"
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+        column["size"] = 200
+        dashboard_storage.validate_dashboard(document)
+
+        column["sizeMode"] = "huge"
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+        # Legacy documents without sizeMode: a bare size still means fixed.
+        del column["sizeMode"]
+        dashboard_storage.validate_dashboard(document)
 
     def test_bar_card_ids_share_the_dashboard_id_namespace(self) -> None:
         document = deepcopy(dashboard_storage.default_dashboard())
-        document["bars"]["header"]["slots"]["start"] = [
-            {"id": "bar-sidebar-nav", "type": "vue-panel/clock", "config": {}}
+        document["bars"]["header"]["columns"][0]["cards"] = [
+            {"id": "bar-sidebar-left-clock", "type": "vue-panel/clock", "config": {}}
         ]
 
         with self.assertRaises(dashboard_storage.DashboardFileError):

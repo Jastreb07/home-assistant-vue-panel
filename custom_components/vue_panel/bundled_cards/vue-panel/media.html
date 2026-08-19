@@ -1,14 +1,214 @@
 <script data-vue-panel-config>
-const vuePanelCard={"format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"media","name":"Medien","description":"Steuert einen Media Player","icon":"mdi:speaker","group":"Vue Panel","areas":["dashboard"],"capabilities":["entity:read","entity:subscribe","icon:render","service:call"],"defaultSize":{"cols":2,"rows":1,"width":140,"height":120},"defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":false,"variables":[{"key":"entity","label":"Media-Player-Entity","type":"entity","required":true,"domain":"media_player","default":""},{"key":"name","label":"Anzeigename","type":"string","required":false,"default":""},{"key":"showVolume","label":"Lautstärke anzeigen","type":"boolean","required":false,"default":true}]};
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "media",
+    "name": "Medien",
+    "description": "Steuert einen Media Player",
+    "icon": "mdi:speaker",
+    "group": "Vue Panel",
+    "areas": ["dashboard"],
+    "capabilities": ["entity:read", "entity:subscribe", "icon:render", "service:call"],
+    "defaultSize": {"cols": 2, "rows": 1, "width": 140, "height": 120},
+    "defaultResponsive": {"mobile": true, "tablet": true, "desktop": true, "mobileMax": 767, "tabletMax": 1023},
+    "fullRow": false,
+    "variables": [{
+      "key": "entity",
+      "label": "Media-Player-Entity",
+      "type": "entity",
+      "required": true,
+      "domain": "media_player",
+      "default": ""
+    }, {
+      "key": "name",
+      "label": "Anzeigename",
+      "type": "string",
+      "required": false,
+      "default": ""
+    }, {"key": "showVolume", "label": "Lautstärke anzeigen", "type": "boolean", "required": false, "default": true}]
+  };
 </script>
+
 <template data-vue-panel-html>
-<article class="tile media-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span><div class="controls" id="controls"><button data-service="media_previous_track"><img id="previous" alt=""></button><button data-service="media_play_pause"><img id="play" alt=""></button><button data-service="media_next_track"><img id="next" alt=""></button></div><div class="tile__info"><div class="tile__name" id="name"></div><div class="tile__state" id="state"></div></div><label class="volume" id="volume-wrap"><img id="volume-icon" alt=""><input id="volume" type="range" min="0" max="100"><span id="volume-value"></span></label></article>
+  <article class="tile media-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span>
+    <div class="controls" id="controls">
+      <button data-service="media_previous_track"><img id="previous" alt=""></button>
+      <button data-service="media_play_pause"><img id="play" alt=""></button>
+      <button data-service="media_next_track"><img id="next" alt=""></button>
+    </div>
+    <div class="tile__info">
+      <div class="tile__name" id="name"></div>
+      <div class="tile__state" id="state"></div>
+    </div>
+    <label class="volume" id="volume-wrap"><img id="volume-icon" alt=""><input id="volume" type="range" min="0"
+                                                                               max="100"><span id="volume-value"></span></label>
+  </article>
 </template>
+
 <style data-vue-panel-css>
-.tile{position:relative;width:100%;height:100%;min-height:120px;padding:14px 16px;border-radius:var(--card-radius);display:flex;flex-direction:column;align-items:flex-start;background:var(--card-bg);box-shadow:var(--card-shadow);color:var(--text-primary);overflow:hidden;transition:background .2s}.tile.active{background:#f6d36b;color:#111}.tile__icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:rgb(215 215 215 / 35%)}.tile.active .tile__icon{background:rgb(255 255 255 / 40%)}.tile__icon img{width:24px;height:24px}.tile__info{width:100%;min-width:0;margin-top:auto}.tile__name,.tile__state{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}.tile__name{font-size:14px;font-weight:600;line-height:1.2}.tile__state{margin-top:3px;color:#666;font-size:11px;line-height:1.2}.controls{position:absolute;top:16px;right:10px;display:flex}.controls[hidden],.volume[hidden]{display:none}.controls button{width:22px;height:22px;padding:0;border:0;border-radius:50%;display:grid;place-items:center;background:transparent;cursor:pointer}.controls img{width:18px;height:18px}.volume{width:100%;display:flex;align-items:center;gap:4px}.volume img{width:14px;height:14px}.volume input{min-width:0;flex:1}.volume span{min-width:30px;font-size:9px;text-align:right}
+    .tile {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        min-height: 120px;
+        padding: 14px 16px;
+        border-radius: var(--card-radius);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        overflow: hidden;
+        transition: background .2s
+    }
+
+    .tile.active {
+        background: #f6d36b;
+        color: #111
+    }
+
+    .tile__icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgb(215 215 215 / 35%)
+    }
+
+    .tile.active .tile__icon {
+        background: rgb(255 255 255 / 40%)
+    }
+
+    .tile__icon img {
+        width: 24px;
+        height: 24px
+    }
+
+    .tile__info {
+        width: 100%;
+        min-width: 0;
+        margin-top: auto
+    }
+
+    .tile__name, .tile__state {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis
+    }
+
+    .tile__name {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2
+    }
+
+    .tile__state {
+        margin-top: 3px;
+        color: #666;
+        font-size: 11px;
+        line-height: 1.2
+    }
+
+    .controls {
+        position: absolute;
+        top: 16px;
+        right: 10px;
+        display: flex
+    }
+
+    .controls[hidden], .volume[hidden] {
+        display: none
+    }
+
+    .controls button {
+        width: 22px;
+        height: 22px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: transparent;
+        cursor: pointer
+    }
+
+    .controls img {
+        width: 18px;
+        height: 18px
+    }
+
+    .volume {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 4px
+    }
+
+    .volume img {
+        width: 14px;
+        height: 14px
+    }
+
+    .volume input {
+        min-width: 0;
+        flex: 1
+    }
+
+    .volume span {
+        min-width: 30px;
+        font-size: 9px;
+        text-align: right
+    }
 </style>
+
 <script data-vue-panel-javascript>
-const config=vuePanel.config;const entityId=String(config.entity||'');const card=document.getElementById('card');const name=document.getElementById('name');const state=document.getElementById('state');const icon=document.getElementById('icon');const controls=document.getElementById('controls');const volumeWrap=document.getElementById('volume-wrap');const volume=document.getElementById('volume');const volumeValue=document.getElementById('volume-value');for(const [id,value]of[['previous','mdi:skip-previous'],['next','mdi:skip-next'],['volume-icon','mdi:volume-high']])document.getElementById(id).src=await vuePanel.getIcon(value,{size:48,color:'#111111'});
-async function render(entity){const playing=entity?.state==='playing';const idle=['idle','off','standby'].includes(entity?.state)||!entity;card.classList.toggle('active',playing);name.textContent=String(config.name||entity?.attributes?.friendly_name||entityId||'Medien');state.textContent=!entityId?'Keine Entity ausgewählt':!entity?'Entity nicht gefunden':idle?'Inaktiv':`${entity.attributes?.media_title||'Unbekannter Titel'}${entity.attributes?.media_artist?` · ${entity.attributes.media_artist}`:''}`;controls.hidden=idle;const level=Math.round(Number(entity?.attributes?.volume_level)*100);volumeWrap.hidden=config.showVolume===false||!Number.isFinite(level);volume.value=String(level||0);volumeValue.textContent=`${level||0} %`;icon.src=await vuePanel.getIcon(playing?'mdi:speaker-play':'mdi:speaker',{size:64,color:playing?'#111111':'#737373'});document.getElementById('play').src=await vuePanel.getIcon(playing?'mdi:pause':'mdi:play',{size:48,color:'#111111'});}
-controls.addEventListener('click',async event=>{const button=event.target.closest('button');if(button)await vuePanel.callService('media_player',button.dataset.service,{}, {entity_id:entityId});});volume.addEventListener('change',()=>vuePanel.callService('media_player','volume_set',{volume_level:Number(volume.value)/100},{entity_id:entityId}));if(entityId){await render(await vuePanel.getEntity(entityId));vuePanel.subscribeEntity(entityId,render);}else await render(null);
+  const config = vuePanel.config;
+  const entityId = String(config.entity || '');
+  const card = document.getElementById('card');
+  const name = document.getElementById('name');
+  const state = document.getElementById('state');
+  const icon = document.getElementById('icon');
+  const controls = document.getElementById('controls');
+  const volumeWrap = document.getElementById('volume-wrap');
+  const volume = document.getElementById('volume');
+  const volumeValue = document.getElementById('volume-value');
+  for (const [id, value] of [['previous', 'mdi:skip-previous'], ['next', 'mdi:skip-next'], ['volume-icon', 'mdi:volume-high']]) document.getElementById(id).src = await vuePanel.getIcon(value, {
+    size: 48,
+    color: '#111111'
+  });
+
+  async function render(entity) {
+    const playing = entity?.state === 'playing';
+    const idle = ['idle', 'off', 'standby'].includes(entity?.state) || !entity;
+    card.classList.toggle('active', playing);
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Medien');
+    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' : idle ? 'Inaktiv' : `${entity.attributes?.media_title || 'Unbekannter Titel'}${entity.attributes?.media_artist ? ` · ${entity.attributes.media_artist}` : ''}`;
+    controls.hidden = idle;
+    const level = Math.round(Number(entity?.attributes?.volume_level) * 100);
+    volumeWrap.hidden = config.showVolume === false || !Number.isFinite(level);
+    volume.value = String(level || 0);
+    volumeValue.textContent = `${level || 0} %`;
+    icon.src = await vuePanel.getIcon(playing ? 'mdi:speaker-play' : 'mdi:speaker', {
+      size: 64,
+      color: playing ? '#111111' : '#737373'
+    });
+    document.getElementById('play').src = await vuePanel.getIcon(playing ? 'mdi:pause' : 'mdi:play', {
+      size: 48,
+      color: '#111111'
+    });
+  }
+
+  controls.addEventListener('click', async event => {
+    const button = event.target.closest('button');
+    if (button) await vuePanel.callService('media_player', button.dataset.service, {}, {entity_id: entityId});
+  });
+  volume.addEventListener('change', () => vuePanel.callService('media_player', 'volume_set', {volume_level: Number(volume.value) / 100}, {entity_id: entityId}));
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, render);
+  } else await render(null);
 </script>

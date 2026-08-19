@@ -73,7 +73,9 @@ const layout = ref<ViewLayout>(
   (props.view?.layout as string) === 'tiles' ? 'flex' : (props.view?.layout ?? 'sections'),
 )
 const background = ref(props.view?.background ?? '')
-const showSidebar = ref(props.view?.showSidebar !== false)
+const showSidebarLeft = ref(props.view?.showSidebarLeft !== false)
+// A new view starts without the right sidebar
+const showSidebarRight = ref(props.view?.showSidebarRight === true)
 const showHeader = ref(props.view?.showHeader !== false)
 const showBottom = ref(props.view?.showBottom !== false)
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
@@ -130,7 +132,8 @@ function save() {
     path: finalPath.value,
     layout: layout.value,
     background: background.value.trim() || undefined,
-    showSidebar: showSidebar.value,
+    showSidebarLeft: showSidebarLeft.value,
+    showSidebarRight: showSidebarRight.value,
     showHeader: showHeader.value,
     showBottom: showBottom.value,
     padding: normalizeBox(padding.value),
@@ -243,8 +246,12 @@ function remove() {
 
       <h3>{{ t('editor.view.bars') }}</h3>
       <div class="row">
-        <span>{{ t('editor.view.showSidebar') }}</span>
-        <BaseCheckbox v-model="showSidebar" />
+        <span>{{ t('editor.view.showSidebarLeft') }}</span>
+        <BaseCheckbox v-model="showSidebarLeft" />
+      </div>
+      <div class="row">
+        <span>{{ t('editor.view.showSidebarRight') }}</span>
+        <BaseCheckbox v-model="showSidebarRight" />
       </div>
       <div class="row">
         <span>{{ t('editor.view.showHeader') }}</span>

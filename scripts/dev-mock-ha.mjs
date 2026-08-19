@@ -62,43 +62,56 @@ function defaultDashboard() {
     revision: 1,
     settings: { theme: 'dark', uiTheme: 'default', screensaverMinutes: 0, autoReturnSeconds: 0 },
     bars: {
-      sidebar: {
-        id: 'bar-sidebar',
+      'sidebar-left': {
+        id: 'bar-sidebar-left',
         size: 280,
-        centerAlign: { vertical: 'start', horizontal: 'stretch' },
-        slots: {
-          start: [],
-          center: [{ id: 'bar-sidebar-nav', type: 'vue-panel/sidebar-bar', config: {} }],
-          end: [],
-        },
+        columns: [{
+          id: 'bar-sidebar-left-col',
+          align: 'start',
+          crossAlign: 'stretch',
+          cards: [
+            { id: 'bar-sidebar-left-clock', type: 'vue-panel/clock', config: {} },
+            { id: 'bar-sidebar-left-menu', type: 'vue-panel/menu', config: {}, size: { height: 0 } },
+          ],
+        }],
+      },
+      'sidebar-right': {
+        id: 'bar-sidebar-right',
+        size: 220,
+        columns: [{
+          id: 'bar-sidebar-right-col',
+          align: 'start',
+          crossAlign: 'stretch',
+          cards: [{ id: 'bar-sidebar-right-clock', type: 'vue-panel/clock', config: {} }],
+        }],
       },
       header: {
         id: 'bar-header',
         size: 64,
         placement: 'view',
-        centerAlign: { vertical: 'center', horizontal: 'center' },
-        slots: {
-          start: [{ id: 'bar-header-clock', type: 'vue-panel/clock', config: {} }],
-          center: [{ id: 'bar-header-nav', type: 'vue-panel/header-bar', config: {} }],
-          end: [],
-        },
+        columns: [
+          { id: 'bar-header-a', size: 200, align: 'start', crossAlign: 'center',
+            cards: [{ id: 'bar-header-clock', type: 'vue-panel/clock', config: {} }] },
+          { id: 'bar-header-b', align: 'end', crossAlign: 'center',
+            cards: [{ id: 'bar-header-menu', type: 'vue-panel/menu', config: { orientation: 'horizontal' } }] },
+        ],
       },
       bottom: {
         id: 'bar-bottom',
         size: 64,
         placement: 'view',
-        centerAlign: { vertical: 'center', horizontal: 'center' },
-        slots: {
-          start: [],
-          center: [{ id: 'bar-bottom-nav', type: 'vue-panel/bottom-bar', config: {} }],
-          end: [],
-        },
+        columns: [{
+          id: 'bar-bottom-col',
+          align: 'center',
+          crossAlign: 'center',
+          cards: [{ id: 'bar-bottom-menu', type: 'vue-panel/menu', config: { orientation: 'horizontal' } }],
+        }],
       },
     },
     views: [
       {
         id: 'overview', title: 'Übersicht', icon: 'mdi:home', path: 'overview',
-        layout: 'sections', showSidebar: true, showHeader: true, showBottom: true,
+        layout: 'sections', showSidebarLeft: true, showSidebarRight: true, showHeader: true, showBottom: true,
         sections: [{
           id: 'sec-main',
           cards: [{
@@ -111,7 +124,7 @@ function defaultDashboard() {
       },
       {
         id: 'garden', title: 'Garten', icon: 'mdi:flower', path: 'garten',
-        layout: 'sections', showSidebar: true, showHeader: true, showBottom: true,
+        layout: 'sections', showSidebarLeft: true, showSidebarRight: true, showHeader: true, showBottom: true,
         sections: [],
       },
     ],
@@ -173,12 +186,13 @@ function handleCommand(message) {
   if (type === 'get_config') return ok({ location_name: 'Mock', version: '2026.8.0' })
   if (type === 'vue_panel/dashboard/get') return ok(dashboard)
   if (type === 'vue_panel/dashboard/save') {
-    if (message.dashboard.revision !== dashboard.revision) {
+    if (message.expected_revision !== dashboard.revision) {
       return fail('revision_conflict', 'Dashboard revision conflict')
     }
-    dashboard = { ...message.dashboard, revision: dashboard.revision + 1 }
+    dashboard = { ...message.document, revision: dashboard.revision + 1 }
     console.log('[mock-ha] dashboard saved, revision', dashboard.revision)
-    return ok({ revision: dashboard.revision })
+    // The integration answers with the stored document, not just the revision
+    return ok(dashboard)
   }
   if (type === 'vue_panel/cards/list') {
     return ok(cards.map(({ document, html, css, javascript, ...entry }) => entry))
@@ -254,7 +268,12 @@ server.on('upgrade', (request, socket) => {
         send({ type: 'auth_ok', ha_version: '2026.8.0' })
         continue
       }
-      send(handleCommand(message))
+      try {
+        send(handleCommand(message))
+      } catch (error) {
+        console.error('[mock-ha] command failed', message.type, error)
+        send({ id: message.id, type: 'result', success: false, error: { code: 'mock_error', message: String(error) } })
+      }
       if (message.type === 'subscribe_entities') {
         send({ id: message.id, type: 'event', event: { a: {} } })
       }

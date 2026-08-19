@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import BaseButton from '@/core/ui/BaseButton.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import { boxSides, boxUnits, type BoxSide, type BoxUnit, type BoxValue } from '@/core/ui/boxInput'
 
@@ -71,24 +73,27 @@ function toggleLink() {
 
     <div class="vp-box-row">
       <label v-for="side in boxSides" :key="side" class="vp-box-cell">
-        <input
+        <BaseInput
           class="vp-box-input"
           type="number"
+          size="sm"
           :min="min"
-          :value="fieldValue(side)"
-          @input="onSideInput(side, ($event.target as HTMLInputElement).value)"
+          :model-value="fieldValue(side)"
+          @update:model-value="onSideInput(side, String($event))"
         />
         <small class="vp-box-side">{{ t('editor.box.' + side) }}</small>
       </label>
-      <button
+
+      <BaseButton
         type="button"
         class="vp-box-link"
-        :class="{ active: linked }"
+        :variant="linked ? 'primary' : 'default'"
+        size="sm"
         :title="t(linked ? 'editor.box.unlink' : 'editor.box.link')"
         @click="toggleLink"
       >
         <MdiIcon :icon="linked ? 'mdi:link-variant' : 'mdi:link-variant-off'" :size="16" />
-      </button>
+      </BaseButton>
     </div>
   </div>
 </template>

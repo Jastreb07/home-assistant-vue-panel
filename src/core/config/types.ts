@@ -34,7 +34,9 @@ export interface ViewConfig {
   layoutOptions?: Record<string, unknown>
   subview?: boolean
   background?: string
-  showSidebar?: boolean
+  /** Global bars on this view — the right sidebar is off unless enabled */
+  showSidebarLeft?: boolean
+  showSidebarRight?: boolean
   showHeader?: boolean
   showBottom?: boolean
   padding?: BoxValue
@@ -108,29 +110,49 @@ export interface CustomCardDefinition {
   source?: 'bundled' | 'local'
 }
 
-export type BarPosition = 'sidebar' | 'header' | 'bottom'
+export type BarPosition = 'sidebar-left' | 'sidebar-right' | 'header' | 'bottom'
 
-/**
- * The three card slots of every bar. The sidebar stacks them top to bottom,
- * the header and bottom bars place them left to right.
- */
-export type BarSlot = 'start' | 'center' | 'end'
-
-/** Alignment of the center slot inside the free space — 'stretch' fills it. */
+/** Alignment of the cards inside a bar column — 'stretch' fills the axis. */
 export type BarAlign = 'start' | 'center' | 'end' | 'stretch'
 
-/** A global bar: an engine-rendered container that hosts cards in three slots. */
+/**
+ * One column of a bar. Columns run along the bar: left to right in the header
+ * and bottom bars, top to bottom in the sidebars.
+ */
+/**
+ * How a column is sized along the bar axis:
+ * 'fit' shrinks to its cards, 'full' shares the remaining space evenly with
+ * other 'full' columns, 'fixed' uses the explicit `size` in px.
+ */
+export type BarSizeMode = 'fit' | 'full' | 'fixed'
+
+export interface BarColumn {
+  id: string
+  /** How the column is sized along the bar — defaults to 'full' */
+  sizeMode?: BarSizeMode
+  /** Fixed size along the bar in px — only meaningful when sizeMode is 'fixed' */
+  size?: number
+  /** Space inside the column */
+  padding?: BoxValue
+  /** Space around the column */
+  margin?: BoxValue
+  /** Where the cards sit along the bar */
+  align?: BarAlign
+  /** Where the cards sit across the bar */
+  crossAlign?: BarAlign
+  cards: CardConfig[]
+}
+
+/** A global bar: an engine-rendered container that hosts columns of cards. */
 export interface BarEntry {
   id: string
   /** Sidebar width in px — bar height in px for the header and bottom bars */
   size: number
   /** Header and bottom bars only: span the view column or the whole app */
   placement?: 'view' | 'full'
-  /** Where the center slot sits in the space the outer slots leave over */
-  centerAlign: { vertical: BarAlign; horizontal: BarAlign }
   /** Custom CSS for the bar container, scoped via [data-vp-card] */
   css?: string
-  slots: Record<BarSlot, CardConfig[]>
+  columns: BarColumn[]
 }
 
 export type BarConfig = Record<BarPosition, BarEntry>

@@ -37,8 +37,9 @@ const viewOptions = computed(() =>
   views.value.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
 )
 
-// Per-view bar visibility — all global bars are on unless explicitly disabled.
-const showSidebar = computed(() => activeView.value?.showSidebar !== false)
+// Per-view bar visibility — every bar but the right sidebar is on by default.
+const showSidebarLeft = computed(() => activeView.value?.showSidebarLeft !== false)
+const showSidebarRight = computed(() => activeView.value?.showSidebarRight === true)
 const showHeader = computed(() => activeView.value?.showHeader !== false)
 const showBottom = computed(() => activeView.value?.showBottom !== false)
 const headerInViewArea = computed(() => store.bars.header.placement === 'view')
@@ -97,8 +98,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
     <ShellBarHost v-if="showHeader && !headerInViewArea" position="header" />
 
     <div class="shell-body">
-      <!-- Global bar cards configure themselves through the dashboard store. -->
-      <ShellBarHost v-if="showSidebar" position="sidebar" />
+      <!-- The global bars are engine components fed by the dashboard store. -->
+      <ShellBarHost v-if="showSidebarLeft" position="sidebar-left" />
       <div class="view-column">
         <ShellBarHost v-if="showHeader && headerInViewArea" position="header" />
         <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
@@ -169,6 +170,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
         </main>
         <ShellBarHost v-if="showBottom && bottomInViewArea" position="bottom" />
       </div>
+      <ShellBarHost v-if="showSidebarRight" position="sidebar-right" />
     </div>
 
     <ShellBarHost v-if="showBottom && !bottomInViewArea" position="bottom" />

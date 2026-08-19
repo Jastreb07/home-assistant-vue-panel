@@ -6,8 +6,8 @@ var e=`/* ───────────────────────�
    ───────────────────────────────────────────────────────────── */\r
 \r
 /* Theme variables — dark is the default theme */\r
-:root,
-:host {
+:root,\r
+:host {\r
   --bg: #14161a;\r
   --nav-bg: #1b1e24;\r
   --card-bg: #23272f;\r
@@ -35,9 +35,9 @@ var e=`/* ───────────────────────�
   --code-invalid: #e0706f;\r
 }\r
 \r
-[data-theme='light'],
-:host([data-theme='light']),
-:host-context([data-theme='light']) {
+[data-theme='light'],\r
+:host([data-theme='light']),\r
+:host-context([data-theme='light']) {\r
   --bg: #f2f4f8;\r
   --nav-bg: #ffffff;\r
   --card-bg: #ffffff;\r
@@ -107,15 +107,15 @@ var e=`/* ───────────────────────�
   box-sizing: border-box;\r
 }\r
 \r
-html,
-body,
-#app {
+html,\r
+body,\r
+#app {\r
   height: 100%;\r
   margin: 0;\r
 }\r
 \r
-body,
-:host {
+body,\r
+:host {\r
   background: var(--bg);\r
   color: var(--text-primary);\r
   font-family:\r

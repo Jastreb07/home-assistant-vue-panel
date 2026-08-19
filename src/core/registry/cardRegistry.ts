@@ -17,8 +17,13 @@ import {
 
 export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
 
-/** Where a card may be placed — the dashboard grid or one of the global bars. */
-export type CardArea = 'dashboard' | BarPosition
+/** Where a card may be placed — the dashboard grid or a kind of global bar. */
+export type CardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom'
+
+/** Both sidebars accept the same cards, so they share one card area. */
+export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard'> {
+  return position === 'sidebar-left' || position === 'sidebar-right' ? 'sidebar' : position
+}
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'
 
 export interface CardSchemaField {
@@ -49,7 +54,6 @@ export interface CardManifest {
   defaultSize?: { cols: number; rows: number; width?: number; height?: number }
   fullRow?: boolean
   areas?: CardArea[]
-  barPositions?: BarPosition[]
   defaultResponsive?: Partial<ResponsiveVisibility>
   portable: PortableCardCatalogEntry
 }
@@ -105,8 +109,7 @@ function portableManifest(entry: PortableCardCatalogEntry): CardManifest {
     schema: portableSchema(entry.variables),
     defaultSize: entry.defaultSize,
     fullRow: entry.fullRow,
-    areas: entry.areas.includes('dashboard') ? ['dashboard'] : [],
-    barPositions: entry.areas.filter((area): area is BarPosition => area !== 'dashboard'),
+    areas: entry.areas as CardArea[],
     defaultResponsive: entry.defaultResponsive,
     portable: entry,
   }
@@ -142,12 +145,11 @@ export async function cardDefaultCss(
 }
 
 export function cardsForArea(area: CardArea): CardManifest[] {
-  if (area !== 'dashboard') return cardsForBar(area)
   return Object.values(cardRegistry).filter((manifest) => manifest.areas?.includes(area))
 }
 
 export function cardsForBar(position: BarPosition): CardManifest[] {
-  return Object.values(cardRegistry).filter((manifest) => manifest.barPositions?.includes(position))
+  return cardsForArea(barCardArea(position))
 }
 
 export interface CardGroupEntry extends CardGroup {

@@ -23,12 +23,28 @@ _VIEW_PATH_PATTERN = re.compile(
     r"^[a-z0-9]+(?:-[a-z0-9]+)*(?:/[a-z0-9]+(?:-[a-z0-9]+)*)*$"
 )
 _LAYOUTS = {"sections", "flex", "panel", "sidebar", "grid"}
-_BAR_POSITIONS = {"sidebar", "header", "bottom"}
-_BAR_SLOTS = {"start", "center", "end"}
-_BAR_FIELDS = {"id", "size", "placement", "centerAlign", "css", "slots"}
+_BAR_POSITIONS = {"sidebar-left", "sidebar-right", "header", "bottom"}
+_BAR_FIELDS = {"id", "size", "placement", "css", "columns"}
+_BAR_COLUMN_FIELDS = {
+    "id",
+    "sizeMode",
+    "size",
+    "padding",
+    "margin",
+    "align",
+    "crossAlign",
+    "cards",
+}
+_BAR_SIZE_MODES = {"fit", "full", "fixed"}
+_BOX_SIDES = {"top", "right", "bottom", "left"}
 _BAR_ALIGNMENTS = {"start", "center", "end", "stretch"}
 _BAR_PLACEMENTS = {"view", "full"}
-_BAR_SIZE_LIMITS = {"sidebar": (160, 560), "header": (40, 240), "bottom": (40, 240)}
+_BAR_SIZE_LIMITS = {
+    "sidebar-left": (160, 560),
+    "sidebar-right": (160, 560),
+    "header": (40, 240),
+    "bottom": (40, 240),
+}
 
 
 class DashboardFileError(Exception):
@@ -57,35 +73,66 @@ def default_dashboard() -> dict[str, Any]:
             "autoReturnSeconds": 0,
         },
         "bars": {
-            "sidebar": {
-                "id": "bar-sidebar",
+            "sidebar-left": {
+                "id": "bar-sidebar-left",
                 "size": 280,
-                "centerAlign": {"vertical": "start", "horizontal": "stretch"},
-                "slots": {
-                    "start": [],
-                    "center": [
-                        {
-                            "id": "bar-sidebar-nav",
-                            "type": "vue-panel/sidebar-bar",
-                            "config": {},
-                        }
-                    ],
-                    "end": [],
-                },
+                "columns": [
+                    {
+                        "id": "bar-sidebar-left-col",
+                        "align": "start",
+                        "crossAlign": "stretch",
+                        "cards": [
+                            {
+                                "id": "bar-sidebar-left-clock",
+                                "type": "vue-panel/clock",
+                                "config": {},
+                            },
+                            {
+                                "id": "bar-sidebar-left-menu",
+                                "type": "vue-panel/menu",
+                                "config": {},
+                            },
+                        ],
+                    }
+                ],
+            },
+            "sidebar-right": {
+                "id": "bar-sidebar-right",
+                "size": 280,
+                "columns": [
+                    {
+                        "id": "bar-sidebar-right-col",
+                        "align": "start",
+                        "crossAlign": "stretch",
+                        "cards": [],
+                    }
+                ],
             },
             "header": {
                 "id": "bar-header",
                 "size": 64,
                 "placement": "view",
-                "centerAlign": {"vertical": "center", "horizontal": "center"},
-                "slots": {"start": [], "center": [], "end": []},
+                "columns": [
+                    {
+                        "id": "bar-header-col",
+                        "align": "center",
+                        "crossAlign": "center",
+                        "cards": [],
+                    }
+                ],
             },
             "bottom": {
                 "id": "bar-bottom",
                 "size": 64,
                 "placement": "view",
-                "centerAlign": {"vertical": "center", "horizontal": "center"},
-                "slots": {"start": [], "center": [], "end": []},
+                "columns": [
+                    {
+                        "id": "bar-bottom-col",
+                        "align": "center",
+                        "crossAlign": "center",
+                        "cards": [],
+                    }
+                ],
             },
         },
         "views": [
@@ -95,7 +142,8 @@ def default_dashboard() -> dict[str, Any]:
                 "icon": "mdi:home",
                 "path": "overview",
                 "layout": "sections",
-                "showSidebar": True,
+                "showSidebarLeft": True,
+                "showSidebarRight": False,
                 "showHeader": True,
                 "showBottom": True,
                 "sections": [],
@@ -148,29 +196,64 @@ def _validate_bar(
         raise DashboardFileError("Bar size is out of range")
 
     placement = bar.get("placement")
-    if position == "sidebar":
+    if position.startswith("sidebar"):
         if placement is not None:
-            raise DashboardFileError("The sidebar has no placement")
+            raise DashboardFileError("Sidebars have no placement")
     elif placement not in _BAR_PLACEMENTS:
         raise DashboardFileError("Unsupported bar placement")
-
-    align = bar.get("centerAlign")
-    if not isinstance(align, dict) or set(align) != {"vertical", "horizontal"}:
-        raise DashboardFileError("Bar centerAlign must define both axes")
-    if not _BAR_ALIGNMENTS.issuperset(align.values()):
-        raise DashboardFileError("Unsupported bar alignment")
 
     if "css" in bar and not isinstance(bar["css"], str):
         raise DashboardFileError("Bar CSS must be a string")
 
-    slots = bar.get("slots")
-    if not isinstance(slots, dict) or set(slots) != _BAR_SLOTS:
-        raise DashboardFileError("Bars require exactly three card slots")
-    for cards in slots.values():
-        if not isinstance(cards, list):
-            raise DashboardFileError("Bar slots must be arrays")
-        for card in cards:
-            _validate_card(card, identifiers)
+    columns = bar.get("columns")
+    if not isinstance(columns, list) or not columns:
+        raise DashboardFileError("Bars require at least one column")
+    for column in columns:
+        _validate_bar_column(column, identifiers)
+
+
+def _validate_box(value: Any, label: str) -> None:
+    if not isinstance(value, dict) or set(value) - _BOX_SIDES:
+        raise DashboardFileError(f"{label} must be a box object")
+    for side in value.values():
+        if isinstance(side, bool) or not isinstance(side, (int, float)):
+            raise DashboardFileError(f"{label} sides must be numbers")
+
+
+def _validate_bar_column(column: Any, identifiers: set[str]) -> None:
+    """Validate one bar column: geometry, spacing, alignment, and its cards."""
+
+    if not isinstance(column, dict) or set(column) - _BAR_COLUMN_FIELDS:
+        raise DashboardFileError("Bar columns contain unsupported fields")
+    column_id = column.get("id")
+    if not isinstance(column_id, str) or not _IDENTIFIER_PATTERN.fullmatch(column_id):
+        raise DashboardFileError("Bar column IDs must be URL-safe identifiers")
+    if column_id in identifiers:
+        raise DashboardFileError("Dashboard IDs must be unique")
+    identifiers.add(column_id)
+
+    size_mode = column.get("sizeMode")
+    if size_mode is not None and size_mode not in _BAR_SIZE_MODES:
+        raise DashboardFileError("Unsupported bar column size mode")
+    effective_mode = size_mode or ("fixed" if "size" in column else "fit")
+    if "size" in column:
+        size = column["size"]
+        if isinstance(size, bool) or not isinstance(size, int) or not 1 <= size <= 1200:
+            raise DashboardFileError("Bar column size is out of range")
+    if effective_mode == "fixed" and "size" not in column:
+        raise DashboardFileError("A fixed-size bar column requires a size")
+    for field in ("padding", "margin"):
+        if field in column:
+            _validate_box(column[field], f"Bar column {field}")
+    for field in ("align", "crossAlign"):
+        if field in column and column[field] not in _BAR_ALIGNMENTS:
+            raise DashboardFileError("Unsupported bar column alignment")
+
+    cards = column.get("cards")
+    if not isinstance(cards, list):
+        raise DashboardFileError("Bar column cards must be an array")
+    for card in cards:
+        _validate_card(card, identifiers)
 
 
 def validate_dashboard(document: Any) -> dict[str, Any]:

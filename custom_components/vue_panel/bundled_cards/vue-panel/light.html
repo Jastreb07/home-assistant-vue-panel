@@ -1,123 +1,191 @@
 <script data-vue-panel-config>
-const vuePanelCard = {
-  "format": "vue-panel-card",
-  "formatVersion": 2,
-  "apiVersion": 1,
-  "manufacturer": "vue-panel",
-  "cardName": "light",
-  "name": "Licht",
-  "description": "Steuert ein Licht und zeigt Status sowie Helligkeit an",
-  "icon": "mdi:lightbulb",
-  "group": "Vue Panel",
-  "areas": [
-    "dashboard",
-    "sidebar",
-    "header",
-    "bottom"
-  ],
-  "capabilities": [
-    "entity:read",
-    "entity:subscribe",
-    "icon:render",
-    "service:call"
-  ],
-  "defaultSize": {
-    "cols": 1,
-    "rows": 1,
-    "width": 140,
-    "height": 120
-  },
-  "defaultResponsive": {
-    "mobile": true,
-    "tablet": true,
-    "desktop": true,
-    "mobileMax": 767,
-    "tabletMax": 1023
-  },
-  "fullRow": false,
-  "variables": [
-    {
-      "key": "entity",
-      "label": "Licht-Entity",
-      "type": "entity",
-      "required": true,
-      "domain": "light",
-      "default": ""
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "light",
+    "name": "Licht",
+    "description": "Steuert ein Licht und zeigt Status sowie Helligkeit an",
+    "icon": "mdi:lightbulb",
+    "group": "Vue Panel",
+    "areas": [
+      "dashboard",
+      "sidebar",
+      "header",
+      "bottom"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 140,
+      "height": 120
     },
-    {
-      "key": "name",
-      "label": "Anzeigename",
-      "type": "string",
-      "required": false,
-      "default": ""
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
     },
-    {
-      "key": "icon",
-      "label": "Icon",
-      "type": "icon",
-      "required": false,
-      "default": "mdi:lightbulb-outline"
-    },
-    {
-      "key": "showBrightness",
-      "label": "Helligkeit anzeigen",
-      "type": "boolean",
-      "required": false,
-      "default": true
-    }
-  ]
-};
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "Licht-Entity",
+        "type": "entity",
+        "required": true,
+        "domain": "light",
+        "default": ""
+      },
+      {
+        "key": "name",
+        "label": "Anzeigename",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "icon",
+        "label": "Icon",
+        "type": "icon",
+        "required": false,
+        "default": "mdi:lightbulb-outline"
+      },
+      {
+        "key": "showBrightness",
+        "label": "Helligkeit anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      }
+    ]
+  };
 </script>
 
 <template data-vue-panel-html>
-<button class="tile light-card" id="card" type="button">
-  <span class="tile__icon"><img id="icon" alt=""></span>
-  <span class="tile__info">
+  <button class="tile light-card" id="card" type="button">
+    <span class="tile__icon"><img id="icon" alt=""></span>
+    <span class="tile__info">
     <span class="tile__name" id="name"></span>
     <span class="tile__state" id="state"></span>
   </span>
-</button>
+  </button>
 </template>
 
 <style data-vue-panel-css>
-.tile { width:100%; height:100%; min-height:120px; padding:14px 16px; border:0; border-radius:var(--card-radius); display:flex; flex-direction:column; align-items:flex-start; background:var(--card-bg); box-shadow:var(--card-shadow); color:var(--text-primary); font:inherit; text-align:left; cursor:pointer; user-select:none; transition:background .2s,transform .1s; overflow:hidden; }
-.tile:active { transform:scale(.98); }
-.tile.active { background:#f6d36b; color:#111; }
-.tile__icon { width:38px; height:38px; flex:none; border-radius:50%; display:grid; place-items:center; background:rgb(215 215 215 / 35%); }
-.tile.active .tile__icon { background:rgb(255 255 255 / 40%); }
-.tile__icon img { width:24px; height:24px; }
-.tile__info { width:100%; min-width:0; margin-top:auto; display:block; }
-.tile__name,.tile__state { display:block; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.tile__name { font-size:14px; font-weight:600; line-height:1.2; }
-.tile__state { margin-top:3px; color:#666; font-size:11px; line-height:1.2; }
+    .tile {
+        width: 100%;
+        height: 100%;
+        min-height: 120px;
+        padding: 14px 16px;
+        border: 0;
+        border-radius: var(--card-radius);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        user-select: none;
+        transition: background .2s, transform .1s;
+        overflow: hidden;
+    }
+
+    .tile:active {
+        transform: scale(.98);
+    }
+
+    .tile.active {
+        background: #f6d36b;
+        color: #111;
+    }
+
+    .tile__icon {
+        width: 38px;
+        height: 38px;
+        flex: none;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgb(215 215 215 / 35%);
+    }
+
+    .tile.active .tile__icon {
+        background: rgb(255 255 255 / 40%);
+    }
+
+    .tile__icon img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .tile__info {
+        width: 100%;
+        min-width: 0;
+        margin-top: auto;
+        display: block;
+    }
+
+    .tile__name, .tile__state {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .tile__name {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .tile__state {
+        margin-top: 3px;
+        color: #666;
+        font-size: 11px;
+        line-height: 1.2;
+    }
 </style>
 
 <script data-vue-panel-javascript>
-const config = vuePanel.config;
-const entityId = String(config.entity || '');
-const card = document.getElementById('card');
-const icon = document.getElementById('icon');
-const name = document.getElementById('name');
-const state = document.getElementById('state');
+  const config = vuePanel.config;
+  const entityId = String(config.entity || '');
+  const card = document.getElementById('card');
+  const icon = document.getElementById('icon');
+  const name = document.getElementById('name');
+  const state = document.getElementById('state');
 
-async function render(entity) {
-  const isOn = entity?.state === 'on';
-  const brightness = Number(entity?.attributes?.brightness);
-  card.classList.toggle('active', isOn);
-  name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Licht');
-  state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' :
-    `${isOn ? 'An' : 'Aus'}${isOn && config.showBrightness !== false && Number.isFinite(brightness) ? ` · ${Math.round(brightness / 255 * 100)} %` : ''}`;
-  icon.src = await vuePanel.getIcon(String(config.icon || (isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline')), { size:72, color:isOn ? '#111111' : '#737373' });
-}
+  async function render(entity) {
+    const isOn = entity?.state === 'on';
+    const brightness = Number(entity?.attributes?.brightness);
+    card.classList.toggle('active', isOn);
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Licht');
+    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' :
+      `${isOn ? 'An' : 'Aus'}${isOn && config.showBrightness !== false && Number.isFinite(brightness) ? ` · ${Math.round(brightness / 255 * 100)} %` : ''}`;
+    icon.src = await vuePanel.getIcon(String(config.icon || (isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline')), {
+      size: 72,
+      color: isOn ? '#111111' : '#737373'
+    });
+  }
 
-card.addEventListener('click', async () => {
-  if (!entityId) return;
-  const entity = await vuePanel.getEntity(entityId);
-  await vuePanel.callService('light', entity?.state === 'on' ? 'turn_off' : 'turn_on', {}, { entity_id:entityId });
-});
+  card.addEventListener('click', async () => {
+    if (!entityId) return;
+    const entity = await vuePanel.getEntity(entityId);
+    await vuePanel.callService('light', entity?.state === 'on' ? 'turn_off' : 'turn_on', {}, {entity_id: entityId});
+  });
 
-if (entityId) {
-  await render(await vuePanel.getEntity(entityId));
-  vuePanel.subscribeEntity(entityId, render);
-} else await render(null);
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, render);
+  } else await render(null);
 </script>

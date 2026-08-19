@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BarAlign, BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
-import { barSizeLimits, useDashboardStore } from '@/core/config/dashboardStore'
+import type { BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
+import { barPositions, barSizeLimits, isSidebar, useDashboardStore } from '@/core/config/dashboardStore'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -21,7 +21,6 @@ const uiTheme = ref(store.settings.uiTheme)
 const screensaverMinutes = ref(store.settings.screensaverMinutes)
 const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
-const barPositions: BarPosition[] = ['sidebar', 'header', 'bottom']
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
 const uiThemes = availableThemes()
@@ -30,31 +29,10 @@ const themeOptions = computed(() =>
   themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
 )
 const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
-const alignments: BarAlign[] = ['start', 'center', 'end', 'stretch']
-
 const placementOptions = computed(() => (['view', 'full'] as const).map((value) => ({
   value,
   label: t('editor.barPlacement.' + value),
 })))
-
-/** 'stretch' spreads along the bar axis and fills across it — hence two labels. */
-function alignOptions(position: BarPosition, axis: 'vertical' | 'horizontal') {
-  const along = position === 'sidebar' ? 'vertical' : 'horizontal'
-  const labels = axis === 'vertical'
-    ? { start: 'alignTop', center: 'alignMiddle', end: 'alignBottom' }
-    : { start: 'alignLeft', center: 'alignCenter', end: 'alignRight' }
-  return alignments.map((value) => ({
-    value,
-    label: t(`editor.nav.${value === 'stretch'
-      ? (axis === along ? 'alignSpread' : 'alignFull')
-      : labels[value]}`),
-  }))
-}
-
-function setAlign(position: BarPosition, axis: 'vertical' | 'horizontal', value: BarAlign) {
-  const bar = barDrafts.value[position]
-  bar.centerAlign = { ...bar.centerAlign, [axis]: value }
-}
 
 function setSize(position: BarPosition, value: number) {
   const limits = barSizeLimits[position]
@@ -154,7 +132,7 @@ function save() {
         </div>
         <div class="bar-controls">
           <label>
-            <span>{{ position === 'sidebar' ? t('editor.nav.width') : t('editor.header.height') }}</span>
+            <span>{{ isSidebar(position) ? t('editor.nav.width') : t('editor.header.height') }}</span>
             <BaseInput
               type="number"
               :model-value="barDrafts[position].size"
@@ -163,28 +141,12 @@ function save() {
               @update:model-value="setSize(position, Number($event))"
             />
           </label>
-          <label v-if="position !== 'sidebar'">
+          <label v-if="!isSidebar(position)">
             <span>{{ t('editor.barPlacement.label') }}</span>
             <BaseSelectMenu
               :model-value="barDrafts[position].placement ?? 'view'"
               :options="placementOptions"
               @update:model-value="barDrafts[position].placement = $event as 'view' | 'full'"
-            />
-          </label>
-          <label>
-            <span>{{ t('editor.nav.centerAlign') }} — {{ t('editor.nav.vertical') }}</span>
-            <BaseSelectMenu
-              :model-value="barDrafts[position].centerAlign.vertical"
-              :options="alignOptions(position, 'vertical')"
-              @update:model-value="setAlign(position, 'vertical', $event as BarAlign)"
-            />
-          </label>
-          <label>
-            <span>{{ t('editor.nav.centerAlign') }} — {{ t('editor.nav.horizontal') }}</span>
-            <BaseSelectMenu
-              :model-value="barDrafts[position].centerAlign.horizontal"
-              :options="alignOptions(position, 'horizontal')"
-              @update:model-value="setAlign(position, 'horizontal', $event as BarAlign)"
             />
           </label>
         </div>
