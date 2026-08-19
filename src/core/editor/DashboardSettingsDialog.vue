@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
-import { newId, useDashboardStore } from '@/core/config/dashboardStore'
-import { cardDisplayName, cardsForBar, type CardCssArea } from '@/core/registry/cardRegistry'
+import type { BarAlign, BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
+import { barSizeLimits, useDashboardStore } from '@/core/config/dashboardStore'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -11,7 +10,6 @@ import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
-import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -23,7 +21,6 @@ const uiTheme = ref(store.settings.uiTheme)
 const screensaverMinutes = ref(store.settings.screensaverMinutes)
 const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
-const barConfigTarget = ref<BarPosition | null>(null)
 const barPositions: BarPosition[] = ['sidebar', 'header', 'bottom']
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
@@ -33,30 +30,35 @@ const themeOptions = computed(() =>
   themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
 )
 const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
-const barCssArea = computed<CardCssArea>(() => `bar_${barConfigTarget.value ?? 'sidebar'}`)
+const alignments: BarAlign[] = ['start', 'center', 'end', 'stretch']
 
-function barOptions(position: BarPosition) {
-  return cardsForBar(position).map((manifest) => ({
-    value: manifest.type,
-    label: cardDisplayName(manifest, t),
-    icon: manifest.icon,
+const placementOptions = computed(() => (['view', 'full'] as const).map((value) => ({
+  value,
+  label: t('editor.barPlacement.' + value),
+})))
+
+/** 'stretch' spreads along the bar axis and fills across it — hence two labels. */
+function alignOptions(position: BarPosition, axis: 'vertical' | 'horizontal') {
+  const along = position === 'sidebar' ? 'vertical' : 'horizontal'
+  const labels = axis === 'vertical'
+    ? { start: 'alignTop', center: 'alignMiddle', end: 'alignBottom' }
+    : { start: 'alignLeft', center: 'alignCenter', end: 'alignRight' }
+  return alignments.map((value) => ({
+    value,
+    label: t(`editor.nav.${value === 'stretch'
+      ? (axis === along ? 'alignSpread' : 'alignFull')
+      : labels[value]}`),
   }))
 }
 
-function selectBar(position: BarPosition, type: string) {
-  const current = barDrafts.value[position]
-  barDrafts.value[position] = {
-    id: current?.id ?? newId('bar'),
-    type,
-    config: {},
-  }
+function setAlign(position: BarPosition, axis: 'vertical' | 'horizontal', value: BarAlign) {
+  const bar = barDrafts.value[position]
+  bar.centerAlign = { ...bar.centerAlign, [axis]: value }
 }
 
-function saveBarConfig(config: Record<string, unknown>, css?: string) {
-  const position = barConfigTarget.value
-  if (!position) return
-  barDrafts.value[position] = { ...barDrafts.value[position], config, css }
-  barConfigTarget.value = null
+function setSize(position: BarPosition, value: number) {
+  const limits = barSizeLimits[position]
+  barDrafts.value[position].size = Math.min(limits.max, Math.max(limits.min, value || limits.min))
 }
 
 // ── Tabs ─────────────────────────────────────────────────────
@@ -150,14 +152,42 @@ function save() {
           <span>{{ t(`settings.barPositions.${position}`) }}</span>
           <small>{{ t(`settings.barPositionHints.${position}`) }}</small>
         </div>
-        <BaseSelectMenu
-          :model-value="barDrafts[position].type"
-          :options="barOptions(position)"
-          @update:model-value="selectBar(position, String($event))"
-        />
-        <BaseButton size="sm" @click="barConfigTarget = position">
-          {{ t('settings.configureBar') }}
-        </BaseButton>
+        <div class="bar-controls">
+          <label>
+            <span>{{ position === 'sidebar' ? t('editor.nav.width') : t('editor.header.height') }}</span>
+            <BaseInput
+              type="number"
+              :model-value="barDrafts[position].size"
+              :min="barSizeLimits[position].min"
+              :max="barSizeLimits[position].max"
+              @update:model-value="setSize(position, Number($event))"
+            />
+          </label>
+          <label v-if="position !== 'sidebar'">
+            <span>{{ t('editor.barPlacement.label') }}</span>
+            <BaseSelectMenu
+              :model-value="barDrafts[position].placement ?? 'view'"
+              :options="placementOptions"
+              @update:model-value="barDrafts[position].placement = $event as 'view' | 'full'"
+            />
+          </label>
+          <label>
+            <span>{{ t('editor.nav.centerAlign') }} — {{ t('editor.nav.vertical') }}</span>
+            <BaseSelectMenu
+              :model-value="barDrafts[position].centerAlign.vertical"
+              :options="alignOptions(position, 'vertical')"
+              @update:model-value="setAlign(position, 'vertical', $event as BarAlign)"
+            />
+          </label>
+          <label>
+            <span>{{ t('editor.nav.centerAlign') }} — {{ t('editor.nav.horizontal') }}</span>
+            <BaseSelectMenu
+              :model-value="barDrafts[position].centerAlign.horizontal"
+              :options="alignOptions(position, 'horizontal')"
+              @update:model-value="setAlign(position, 'horizontal', $event as BarAlign)"
+            />
+          </label>
+        </div>
       </div>
     </div>
 
@@ -174,15 +204,6 @@ function save() {
     </template>
   </BaseDialog>
 
-  <CardConfigDialog
-    v-if="barConfigTarget"
-    :card-type="barDrafts[barConfigTarget].type"
-    :initial-config="barDrafts[barConfigTarget].config"
-    :initial-css="barDrafts[barConfigTarget].css"
-    :area="barCssArea"
-    @close="barConfigTarget = null"
-    @save="saveBarConfig"
-  />
 </template>
 
 <style scoped>
@@ -202,13 +223,17 @@ function save() {
   color: var(--text-secondary);
 }
 .bar-field {
-  display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(180px, 1.2fr) auto;
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--divider);
   border-radius: 10px;
+}
+.bar-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
 }
 .bar-field-heading {
   display: flex;
@@ -224,7 +249,7 @@ function save() {
   font-size: 11px;
 }
 @media (max-width: 720px) {
-  .bar-field {
+  .bar-controls {
     grid-template-columns: 1fr;
   }
 }

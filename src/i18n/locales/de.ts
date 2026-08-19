@@ -348,8 +348,7 @@ export default {
     autoReturnSeconds: 'Zur Start-View zurück nach (Sekunden)',
     zeroDisables: '0 = deaktiviert',
     bars: 'Bars',
-    barsHint: 'Die ausgewählten Bar-Cards gelten global für das gesamte Dashboard. Pro View wird nur festgelegt, ob eine Bar sichtbar ist.',
-    configureBar: 'Bar konfigurieren',
+    barsHint: 'Jede Leiste hat drei Bereiche, in die im Bearbeitungsmodus Cards eingefügt werden. Die Leisten gelten global für das gesamte Dashboard; pro View wird nur festgelegt, ob eine Leiste sichtbar ist.',
     barPositions: {
       sidebar: 'Seitenleiste',
       header: 'Header-Leiste',

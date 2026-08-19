@@ -1,68 +1,72 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { useI18n } from 'vue-i18n'
-import type { BarPosition } from '@/core/config/types'
-import { useDashboardStore } from '@/core/config/dashboardStore'
-import { cardAreaCss, resolveCardComponent, type CardCssArea } from '@/core/registry/cardRegistry'
+import { computed } from 'vue'
+import type { BarAlign, BarPosition } from '@/core/config/types'
+import { barSizeLimits, useDashboardStore } from '@/core/config/dashboardStore'
+import BarSlotCards from '@/core/editor/BarSlotCards.vue'
 import CardCss from '@/core/ui/CardCss.vue'
-import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
-import MdiIcon from '@/core/ui/MdiIcon.vue'
 
+/**
+ * A global bar: an engine-rendered container with three card slots. The
+ * sidebar stacks them top to bottom, the header and bottom bars left to
+ * right. Only the center slot grows, so `centerAlign` decides where its
+ * content sits in the space the outer slots leave over.
+ */
 const props = defineProps<{ position: BarPosition }>()
 
-const { t } = useI18n()
+const FLEX_ALIGN: Record<BarAlign, string> = {
+  start: 'flex-start',
+  center: 'center',
+  end: 'flex-end',
+  stretch: 'stretch',
+}
+
 const store = useDashboardStore()
-const card = computed(() => store.bars[props.position])
-const component = computed(() => resolveCardComponent(card.value.type))
-const cssArea = computed(() => `bar_${props.position}` as CardCssArea)
-const css = computed(() => card.value.css ?? cardAreaCss(card.value.type, cssArea.value))
-const configOpen = ref(false)
+const bar = computed(() => store.bars[props.position])
+const vertical = computed(() => bar.value.centerAlign.vertical)
+const horizontal = computed(() => bar.value.centerAlign.horizontal)
+const isSidebar = computed(() => props.position === 'sidebar')
+const direction = computed<'column' | 'row'>(() => (isSidebar.value ? 'column' : 'row'))
+
 const hostStyle = computed(() => {
-  if (props.position === 'sidebar') {
-    const width = Math.min(560, Math.max(160, Number(card.value.config.width) || 280))
-    return { width: `${width}px` }
-  }
-  const height = Math.min(240, Math.max(40, Number(card.value.config.height) || 64))
-  return { height: `${height}px` }
+  const limits = barSizeLimits[props.position]
+  const size = Math.min(limits.max, Math.max(limits.min, Number(bar.value.size) || limits.min))
+  return isSidebar.value ? { width: `${size}px` } : { height: `${size}px` }
 })
 
-function save(config: Record<string, unknown>, css?: string) {
-  store.setBar(props.position, { ...card.value, config, css })
-  configOpen.value = false
-}
+/**
+ * The alignment is handed to the center slot's own card container as custom
+ * properties: the main axis runs along the bar, the cross axis across it.
+ */
+const centerStyle = computed(() => {
+  const main = isSidebar.value ? vertical.value : horizontal.value
+  const cross = isSidebar.value ? horizontal.value : vertical.value
+  return {
+    '--bar-main-align': main === 'stretch' ? 'space-between' : FLEX_ALIGN[main],
+    '--bar-cross-align': FLEX_ALIGN[cross],
+    // Spreading the cards keeps their own size; otherwise they fill the slot
+    '--bar-card-grow': main === 'stretch' ? '0' : '1',
+    // 'initial' makes the cards fall back to their own size across the bar
+    '--bar-card-cross': cross === 'stretch' ? '100%' : 'initial',
+  }
+})
 </script>
 
 <template>
-  <div
+  <component
+    :is="isSidebar ? 'nav' : position === 'header' ? 'header' : 'footer'"
     class="shell-bar-host"
     :class="`shell-bar-host--${position}`"
-    :data-vp-card="css ? card.id : undefined"
+    :data-vp-card="bar.css ? bar.id : undefined"
     :style="hostStyle"
   >
-    <CardCss :card-id="card.id" :css="css">
-      <component :is="component" v-if="component" :config="card.config" />
-      <div v-else class="unknown-bar">{{ t('editor.unknownCard', { type: card.type }) }}</div>
+    <CardCss :card-id="bar.id" :css="bar.css ?? ''">
+      <BarSlotCards :bar="position" bar-slot="start" :direction="direction" />
+      <div class="bar-center" :style="centerStyle">
+        <BarSlotCards :bar="position" bar-slot="center" :direction="direction" />
+      </div>
+      <BarSlotCards :bar="position" bar-slot="end" :direction="direction" />
     </CardCss>
-    <button
-      v-if="store.editMode"
-      type="button"
-      class="bar-card-edit-trigger"
-      :title="t('editor.cardActions.edit')"
-      :aria-label="t('editor.cardActions.edit')"
-      @click.stop="configOpen = true"
-    >
-      <MdiIcon icon="mdi:pencil" :size="18" />
-    </button>
-    <CardConfigDialog
-      v-if="configOpen"
-      :card-type="card.type"
-      :initial-config="card.config"
-      :initial-css="card.css"
-      :area="cssArea"
-      @close="configOpen = false"
-      @save="save"
-    />
-  </div>
+  </component>
 </template>
 
 <style scoped>
@@ -71,69 +75,51 @@ function save(config: Record<string, unknown>, css?: string) {
   flex-shrink: 0;
   min-width: 0;
   z-index: 2;
-}
-.bar-card-edit-trigger {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  z-index: 8;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid color-mix(in srgb, var(--divider) 72%, transparent);
-  border-radius: 50%;
-  padding: 0;
-  background: var(--card-bg);
-  color: var(--text-primary);
-  box-shadow: 0 2px 9px rgba(0, 0, 0, 0.2);
-  cursor: pointer;
-  opacity: 0;
-  visibility: hidden;
-  transform: scale(0.9);
-  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
-}
-.shell-bar-host:hover > .bar-card-edit-trigger,
-.bar-card-edit-trigger:focus-visible {
-  opacity: 1;
-  visibility: visible;
-  transform: scale(1);
-}
-.bar-card-edit-trigger:hover,
-.bar-card-edit-trigger:focus-visible {
-  border-color: var(--accent);
-  color: var(--accent);
-  outline: none;
+  box-sizing: border-box;
+  display: flex;
+  background: var(--nav-bg);
 }
 .shell-bar-host--sidebar {
-  display: flex;
   height: 100%;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 16px;
+  border-right: 1px solid var(--divider);
+  overflow-y: auto;
 }
 .shell-bar-host--header,
 .shell-bar-host--bottom {
   width: 100%;
+  align-items: stretch;
+  gap: 16px;
+  padding: 8px 16px;
+  overflow-x: auto;
 }
-.shell-bar-host > :deep(.custom-card-sandbox) {
+.shell-bar-host--header {
+  border-bottom: 1px solid var(--divider);
+}
+.shell-bar-host--bottom {
+  border-top: 1px solid var(--divider);
+}
+/* The outer slots keep their cards centered across a horizontal bar … */
+.shell-bar-host--header > :deep(.bar-slot-cards),
+.shell-bar-host--bottom > :deep(.bar-slot-cards) {
+  align-items: center;
+}
+/* … and full width in the sidebar column. */
+.shell-bar-host--sidebar > :deep(.bar-slot-cards) {
+  --bar-card-cross: 100%;
+}
+.bar-center {
+  flex: 1;
+  display: flex;
+  min-width: 0;
   min-height: 0;
 }
-.shell-bar-host--sidebar > :deep(*) {
-  min-height: 0;
-}
-.unknown-bar {
-  padding: 12px 16px;
-  border: 2px dashed var(--divider);
-  color: var(--text-secondary);
-}
-@media (hover: none) {
-  .bar-card-edit-trigger {
-    opacity: 1;
-    visibility: visible;
-    transform: none;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .bar-card-edit-trigger {
-    transition: none;
-  }
+/* The slot container itself carries the alignment so it moves the cards. */
+.bar-center > :deep(.bar-slot-cards) {
+  flex: 1;
+  justify-content: var(--bar-main-align);
+  align-items: var(--bar-cross-align);
 }
 </style>

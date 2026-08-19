@@ -17,7 +17,8 @@ import {
 
 export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
 
-export type CardArea = 'dashboard'
+/** Where a card may be placed — the dashboard grid or one of the global bars. */
+export type CardArea = 'dashboard' | BarPosition
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'
 
 export interface CardSchemaField {
@@ -141,6 +142,7 @@ export async function cardDefaultCss(
 }
 
 export function cardsForArea(area: CardArea): CardManifest[] {
+  if (area !== 'dashboard') return cardsForBar(area)
   return Object.values(cardRegistry).filter((manifest) => manifest.areas?.includes(area))
 }
 

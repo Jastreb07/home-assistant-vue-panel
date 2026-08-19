@@ -1,5 +1,81 @@
 <script data-vue-panel-config>
-const vuePanelCard={"format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"room-tile","name":"Raum","description":"Öffnet eine Ansicht und kann Temperatur und Raumlicht anzeigen","icon":"mdi:door-open","group":"Vue Panel","areas":["dashboard"],"capabilities":["entity:read","entity:subscribe","icon:render","service:call","navigation:write"],"defaultSize":{"cols":1,"rows":1,"width":140,"height":120},"defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":false,"variables":[{"key":"name","label":"Raumname","type":"string","required":true,"default":"Raum"},{"key":"icon","label":"Icon","type":"icon","required":false,"default":"mdi:door-open"},{"key":"targetView","label":"Zielansicht","type":"view","required":false,"default":""},{"key":"temperatureEntity","label":"Temperatur-Entity","type":"entity","required":false,"domain":"sensor","default":""},{"key":"lightGroup","label":"Lichtgruppe","type":"entity","required":false,"domain":"light","default":""}]};
+const vuePanelCard={
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "room-tile",
+  "name": "Raum",
+  "description": "Öffnet eine Ansicht und kann Temperatur und Raumlicht anzeigen",
+  "icon": "mdi:door-open",
+  "group": "Vue Panel",
+  "areas": [
+    "dashboard",
+    "sidebar",
+    "header",
+    "bottom"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render",
+    "service:call",
+    "navigation:write"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": false,
+  "variables": [
+    {
+      "key": "name",
+      "label": "Raumname",
+      "type": "string",
+      "required": true,
+      "default": "Raum"
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "type": "icon",
+      "required": false,
+      "default": "mdi:door-open"
+    },
+    {
+      "key": "targetView",
+      "label": "Zielansicht",
+      "type": "view",
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "temperatureEntity",
+      "label": "Temperatur-Entity",
+      "type": "entity",
+      "required": false,
+      "domain": "sensor",
+      "default": ""
+    },
+    {
+      "key": "lightGroup",
+      "label": "Lichtgruppe",
+      "type": "entity",
+      "required": false,
+      "domain": "light",
+      "default": ""
+    }
+  ]
+};
 </script>
 <template data-vue-panel-html>
 <article class="tile room-tile" id="card"><div class="head"><span class="tile__icon"><img id="icon" alt=""></span><button id="light-button" title="Licht schalten"><img id="light-icon" alt=""></button></div><div class="tile__info"><div class="tile__name" id="name"></div><div class="meta"><span id="temperature"></span><img id="chevron" alt=""></div></div></article>

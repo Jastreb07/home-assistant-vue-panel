@@ -109,7 +109,31 @@ export interface CustomCardDefinition {
 }
 
 export type BarPosition = 'sidebar' | 'header' | 'bottom'
-export type BarConfig = Record<BarPosition, CardConfig>
+
+/**
+ * The three card slots of every bar. The sidebar stacks them top to bottom,
+ * the header and bottom bars place them left to right.
+ */
+export type BarSlot = 'start' | 'center' | 'end'
+
+/** Alignment of the center slot inside the free space — 'stretch' fills it. */
+export type BarAlign = 'start' | 'center' | 'end' | 'stretch'
+
+/** A global bar: an engine-rendered container that hosts cards in three slots. */
+export interface BarEntry {
+  id: string
+  /** Sidebar width in px — bar height in px for the header and bottom bars */
+  size: number
+  /** Header and bottom bars only: span the view column or the whole app */
+  placement?: 'view' | 'full'
+  /** Where the center slot sits in the space the outer slots leave over */
+  centerAlign: { vertical: BarAlign; horizontal: BarAlign }
+  /** Custom CSS for the bar container, scoped via [data-vp-card] */
+  css?: string
+  slots: Record<BarSlot, CardConfig[]>
+}
+
+export type BarConfig = Record<BarPosition, BarEntry>
 
 export interface DashboardSettings {
   theme: 'dark' | 'light' | 'auto'

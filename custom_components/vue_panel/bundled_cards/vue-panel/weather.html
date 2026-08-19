@@ -1,5 +1,76 @@
 <script data-vue-panel-config>
-const vuePanelCard={"format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"weather","name":"Wetter","description":"Zeigt Wetterzustand, Temperatur, Feuchtigkeit und Wind an","icon":"mdi:weather-partly-cloudy","group":"Vue Panel","areas":["dashboard"],"capabilities":["entity:read","entity:subscribe","icon:render"],"defaultSize":{"cols":1,"rows":1,"width":140,"height":120},"defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":false,"variables":[{"key":"entity","label":"Wetter-Entity","type":"entity","required":true,"domain":"weather","default":""},{"key":"name","label":"Anzeigename","type":"string","required":false,"default":""},{"key":"showDetails","label":"Luftfeuchte und Wind anzeigen","type":"boolean","required":false,"default":true},{"key":"roundTemperature","label":"Temperatur runden","type":"boolean","required":false,"default":true},{"key":"animation","label":"Animierter Hintergrund","type":"boolean","required":false,"default":false}]};
+const vuePanelCard={
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "weather",
+  "name": "Wetter",
+  "description": "Zeigt Wetterzustand, Temperatur, Feuchtigkeit und Wind an",
+  "icon": "mdi:weather-partly-cloudy",
+  "group": "Vue Panel",
+  "areas": [
+    "dashboard",
+    "sidebar"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": false,
+  "variables": [
+    {
+      "key": "entity",
+      "label": "Wetter-Entity",
+      "type": "entity",
+      "required": true,
+      "domain": "weather",
+      "default": ""
+    },
+    {
+      "key": "name",
+      "label": "Anzeigename",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "showDetails",
+      "label": "Luftfeuchte und Wind anzeigen",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "key": "roundTemperature",
+      "label": "Temperatur runden",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    },
+    {
+      "key": "animation",
+      "label": "Animierter Hintergrund",
+      "type": "boolean",
+      "required": false,
+      "default": false
+    }
+  ]
+};
 </script>
 <template data-vue-panel-html>
 <article class="tile weather-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span><div class="numbers" id="numbers"><div class="temperature" id="temperature"></div><div class="details" id="details"><span id="humidity"></span><span id="wind"></span></div></div><div class="tile__info"><div class="tile__name" id="name"></div><div class="tile__state" id="state"></div></div></article>

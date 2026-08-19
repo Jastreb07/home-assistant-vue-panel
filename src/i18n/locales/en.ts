@@ -347,8 +347,7 @@ export default {
     autoReturnSeconds: 'Return to start view after (seconds)',
     zeroDisables: '0 = disabled',
     bars: 'Bars',
-    barsHint: 'The selected bar cards apply globally to the whole dashboard. Each view only controls whether a bar is visible.',
-    configureBar: 'Configure bar',
+    barsHint: 'Every bar has three slots that hold cards added in edit mode. The bars apply globally to the whole dashboard; each view only controls whether a bar is visible.',
     barPositions: {
       sidebar: 'Sidebar',
       header: 'Header bar',

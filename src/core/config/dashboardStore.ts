@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import type {
   BarConfig,
+  BarEntry,
   BarPosition,
+  BarSlot,
   CardConfig,
   DashboardConfig,
   DashboardSettings,
@@ -27,21 +29,38 @@ export const defaultSettings: DashboardSettings = {
   autoReturnSeconds: 0,
 }
 
+/** Size limits per bar — the sidebar is sized in width, the others in height. */
+export const barSizeLimits: Record<BarPosition, { min: number; max: number }> = {
+  sidebar: { min: 160, max: 560 },
+  header: { min: 40, max: 240 },
+  bottom: { min: 40, max: 240 },
+}
+
 export const defaultBars: BarConfig = {
   sidebar: {
     id: 'bar-sidebar',
-    type: 'vue-panel/sidebar-bar',
-    config: { width: 280, showClock: true, showDate: true, showTitles: true, showIcons: true },
+    size: 280,
+    centerAlign: { vertical: 'start', horizontal: 'stretch' },
+    // The navigation itself is a card — replaceable like any other
+    slots: {
+      start: [],
+      center: [{ id: 'bar-sidebar-nav', type: 'vue-panel/sidebar-bar', config: {} }],
+      end: [],
+    },
   },
   header: {
     id: 'bar-header',
-    type: 'vue-panel/header-bar',
-    config: { placement: 'view', height: 64, showTitle: true, showNavigation: true, showIcons: true },
+    size: 64,
+    placement: 'view',
+    centerAlign: { vertical: 'center', horizontal: 'center' },
+    slots: { start: [], center: [], end: [] },
   },
   bottom: {
     id: 'bar-bottom',
-    type: 'vue-panel/bottom-bar',
-    config: { placement: 'view', height: 64, showTitles: true, showIcons: true },
+    size: 64,
+    placement: 'view',
+    centerAlign: { vertical: 'center', horizontal: 'center' },
+    slots: { start: [], center: [], end: [] },
   },
 }
 
@@ -156,11 +175,12 @@ export const useDashboardStore = defineStore('dashboard', {
     },
     bars(state): BarConfig {
       const selected = { ...defaultBars, ...state.config.bars }
-      return {
-        sidebar: { ...selected.sidebar, config: { ...defaultBars.sidebar.config, ...selected.sidebar.config } },
-        header: { ...selected.header, config: { ...defaultBars.header.config, ...selected.header.config } },
-        bottom: { ...selected.bottom, config: { ...defaultBars.bottom.config, ...selected.bottom.config } },
-      }
+      const merge = (position: BarPosition): BarEntry => ({
+        ...defaultBars[position],
+        ...selected[position],
+        slots: { ...defaultBars[position].slots, ...selected[position]?.slots },
+      })
+      return { sidebar: merge('sidebar'), header: merge('header'), bottom: merge('bottom') }
     },
     canUndo(state): boolean {
       return state.undoStack.length > 0
@@ -318,9 +338,71 @@ export const useDashboardStore = defineStore('dashboard', {
       this.config.bars = bars
       this.save()
     },
-    setBar(position: BarPosition, card: CardConfig) {
-      this.config.bars = { ...this.bars, [position]: card }
+    /** Persist the container settings of one bar without touching its slots. */
+    setBarLayout(position: BarPosition, patch: Partial<Omit<BarEntry, 'id' | 'slots'>>) {
+      const bars = this.bars
+      this.config.bars = { ...bars, [position]: { ...bars[position], ...patch } }
       this.save()
+    },
+
+    // ── Bar slot cards ───────────────────────────────────────
+    /**
+     * Materialize one bar in `config` so its slot arrays can be mutated.
+     * The merged getter may still hand out the module-level default arrays,
+     * so an unmaterialized bar is deep-copied before it is written to.
+     */
+    barSlot(position: BarPosition, slot: BarSlot): CardConfig[] {
+      const stored = this.config.bars?.[position]
+      if (!stored?.slots?.[slot]) {
+        const materialized = JSON.parse(JSON.stringify(this.bars[position])) as BarEntry
+        this.config.bars = { ...this.config.bars, [position]: materialized }
+      }
+      return this.config.bars![position]!.slots[slot]
+    },
+    addBarCard(position: BarPosition, slot: BarSlot, card: Omit<CardConfig, 'id'>) {
+      this.barSlot(position, slot).push({ ...card, id: newId('barcard') })
+      this.save()
+    },
+    updateBarCardConfig(
+      position: BarPosition,
+      slot: BarSlot,
+      cardId: string,
+      config: Record<string, unknown>,
+      css?: string,
+    ) {
+      const card = this.barSlot(position, slot).find((entry) => entry.id === cardId)
+      if (!card) return
+      card.config = config
+      card.css = css
+      this.save()
+    },
+    removeBarCard(position: BarPosition, slot: BarSlot, cardId: string) {
+      const cards = this.barSlot(position, slot)
+      const index = cards.findIndex((card) => card.id === cardId)
+      if (index < 0) return
+      cards.splice(index, 1)
+      this.save()
+    },
+    duplicateBarCard(position: BarPosition, slot: BarSlot, cardId: string) {
+      const cards = this.barSlot(position, slot)
+      const index = cards.findIndex((card) => card.id === cardId)
+      if (index < 0) return
+      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'barcard'))
+      this.save()
+    },
+    /** Reorder within a slot or move a card between the slots of one bar. */
+    moveBarCard(position: BarPosition, cardId: string, target: BarSlot, toIndex: number) {
+      const slots: BarSlot[] = ['start', 'center', 'end']
+      for (const slot of slots) {
+        const cards = this.barSlot(position, slot)
+        const index = cards.findIndex((card) => card.id === cardId)
+        if (index < 0) continue
+        const [card] = cards.splice(index, 1)
+        const destination = this.barSlot(position, target)
+        destination.splice(Math.min(toIndex, destination.length), 0, card!)
+        this.save()
+        return
+      }
     },
 
     // ── Views ────────────────────────────────────────────────

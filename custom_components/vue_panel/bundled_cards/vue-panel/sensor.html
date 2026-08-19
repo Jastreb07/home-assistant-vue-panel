@@ -1,14 +1,61 @@
 <script data-vue-panel-config>
 const vuePanelCard = {
-  "format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"sensor",
-  "name":"Sensor","description":"Zeigt den aktuellen Zustand eines Sensors an","icon":"mdi:gauge","group":"Vue Panel",
-  "areas":["dashboard"],"capabilities":["entity:read","entity:subscribe","icon:render"],
-  "defaultSize":{"cols":1,"rows":1,"width":140,"height":120},
-  "defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":false,
-  "variables":[
-    {"key":"entity","label":"Entity","type":"entity","required":true,"default":""},
-    {"key":"name","label":"Anzeigename","type":"string","required":false,"default":""},
-    {"key":"icon","label":"Icon","type":"icon","required":false,"default":"mdi:gauge"}
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "sensor",
+  "name": "Sensor",
+  "description": "Zeigt den aktuellen Zustand eines Sensors an",
+  "icon": "mdi:gauge",
+  "group": "Vue Panel",
+  "areas": [
+    "dashboard",
+    "sidebar",
+    "header",
+    "bottom"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": false,
+  "variables": [
+    {
+      "key": "entity",
+      "label": "Entity",
+      "type": "entity",
+      "required": true,
+      "default": ""
+    },
+    {
+      "key": "name",
+      "label": "Anzeigename",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "type": "icon",
+      "required": false,
+      "default": "mdi:gauge"
+    }
   ]
 };
 </script>

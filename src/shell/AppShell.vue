@@ -41,8 +41,8 @@ const viewOptions = computed(() =>
 const showSidebar = computed(() => activeView.value?.showSidebar !== false)
 const showHeader = computed(() => activeView.value?.showHeader !== false)
 const showBottom = computed(() => activeView.value?.showBottom !== false)
-const headerInViewArea = computed(() => store.bars.header.config.placement === 'view')
-const bottomInViewArea = computed(() => store.bars.bottom.config.placement === 'view')
+const headerInViewArea = computed(() => store.bars.header.placement === 'view')
+const bottomInViewArea = computed(() => store.bars.bottom.placement === 'view')
 
 /** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {

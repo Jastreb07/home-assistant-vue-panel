@@ -24,6 +24,11 @@ _VIEW_PATH_PATTERN = re.compile(
 )
 _LAYOUTS = {"sections", "flex", "panel", "sidebar", "grid"}
 _BAR_POSITIONS = {"sidebar", "header", "bottom"}
+_BAR_SLOTS = {"start", "center", "end"}
+_BAR_FIELDS = {"id", "size", "placement", "centerAlign", "css", "slots"}
+_BAR_ALIGNMENTS = {"start", "center", "end", "stretch"}
+_BAR_PLACEMENTS = {"view", "full"}
+_BAR_SIZE_LIMITS = {"sidebar": (160, 560), "header": (40, 240), "bottom": (40, 240)}
 
 
 class DashboardFileError(Exception):
@@ -54,35 +59,33 @@ def default_dashboard() -> dict[str, Any]:
         "bars": {
             "sidebar": {
                 "id": "bar-sidebar",
-                "type": "vue-panel/sidebar-bar",
-                "config": {
-                    "width": 280,
-                    "showClock": True,
-                    "showDate": True,
-                    "showTitles": True,
-                    "showIcons": True,
+                "size": 280,
+                "centerAlign": {"vertical": "start", "horizontal": "stretch"},
+                "slots": {
+                    "start": [],
+                    "center": [
+                        {
+                            "id": "bar-sidebar-nav",
+                            "type": "vue-panel/sidebar-bar",
+                            "config": {},
+                        }
+                    ],
+                    "end": [],
                 },
             },
             "header": {
                 "id": "bar-header",
-                "type": "vue-panel/header-bar",
-                "config": {
-                    "placement": "view",
-                    "height": 64,
-                    "showTitle": True,
-                    "showNavigation": True,
-                    "showIcons": True,
-                },
+                "size": 64,
+                "placement": "view",
+                "centerAlign": {"vertical": "center", "horizontal": "center"},
+                "slots": {"start": [], "center": [], "end": []},
             },
             "bottom": {
                 "id": "bar-bottom",
-                "type": "vue-panel/bottom-bar",
-                "config": {
-                    "placement": "view",
-                    "height": 64,
-                    "showTitles": True,
-                    "showIcons": True,
-                },
+                "size": 64,
+                "placement": "view",
+                "centerAlign": {"vertical": "center", "horizontal": "center"},
+                "slots": {"start": [], "center": [], "end": []},
             },
         },
         "views": [
@@ -119,6 +122,55 @@ def _validate_card(card: Any, identifiers: set[str]) -> None:
         raise DashboardFileError("Card CSS must be a string")
     if "size" in card and not isinstance(card["size"], dict):
         raise DashboardFileError("Card size must be an object")
+
+
+def _validate_bar(
+    position: str,
+    bar: Any,
+    identifiers: set[str],
+) -> None:
+    """Validate one global bar container and the cards in its three slots."""
+
+    if not isinstance(bar, dict) or set(bar) - _BAR_FIELDS:
+        raise DashboardFileError("Bar entries contain unsupported fields")
+    bar_id = bar.get("id")
+    if not isinstance(bar_id, str) or not _IDENTIFIER_PATTERN.fullmatch(bar_id):
+        raise DashboardFileError("Bar IDs must be URL-safe identifiers")
+    if bar_id in identifiers:
+        raise DashboardFileError("Dashboard IDs must be unique")
+    identifiers.add(bar_id)
+
+    minimum, maximum = _BAR_SIZE_LIMITS[position]
+    size = bar.get("size")
+    if isinstance(size, bool) or not isinstance(size, int):
+        raise DashboardFileError("Bar size must be an integer")
+    if not minimum <= size <= maximum:
+        raise DashboardFileError("Bar size is out of range")
+
+    placement = bar.get("placement")
+    if position == "sidebar":
+        if placement is not None:
+            raise DashboardFileError("The sidebar has no placement")
+    elif placement not in _BAR_PLACEMENTS:
+        raise DashboardFileError("Unsupported bar placement")
+
+    align = bar.get("centerAlign")
+    if not isinstance(align, dict) or set(align) != {"vertical", "horizontal"}:
+        raise DashboardFileError("Bar centerAlign must define both axes")
+    if not _BAR_ALIGNMENTS.issuperset(align.values()):
+        raise DashboardFileError("Unsupported bar alignment")
+
+    if "css" in bar and not isinstance(bar["css"], str):
+        raise DashboardFileError("Bar CSS must be a string")
+
+    slots = bar.get("slots")
+    if not isinstance(slots, dict) or set(slots) != _BAR_SLOTS:
+        raise DashboardFileError("Bars require exactly three card slots")
+    for cards in slots.values():
+        if not isinstance(cards, list):
+            raise DashboardFileError("Bar slots must be arrays")
+        for card in cards:
+            _validate_card(card, identifiers)
 
 
 def validate_dashboard(document: Any) -> dict[str, Any]:
@@ -185,8 +237,8 @@ def validate_dashboard(document: Any) -> dict[str, Any]:
             for card in cards:
                 _validate_card(card, identifiers)
 
-    for bar in bars.values():
-        _validate_card(bar, identifiers)
+    for position, bar in bars.items():
+        _validate_bar(position, bar, identifiers)
     return document
 
 

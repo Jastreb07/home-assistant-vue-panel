@@ -1,5 +1,58 @@
 <script data-vue-panel-config>
-const vuePanelCard={"format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"cover","name":"Rollladen","description":"Steuert einen Rollladen oder eine Abdeckung","icon":"mdi:window-shutter","group":"Vue Panel","areas":["dashboard"],"capabilities":["entity:read","entity:subscribe","icon:render","service:call"],"defaultSize":{"cols":1,"rows":1,"width":140,"height":120},"defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":false,"variables":[{"key":"entity","label":"Rollladen-Entity","type":"entity","required":true,"domain":"cover","default":""},{"key":"name","label":"Anzeigename","type":"string","required":false,"default":""}]};
+const vuePanelCard={
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "cover",
+  "name": "Rollladen",
+  "description": "Steuert einen Rollladen oder eine Abdeckung",
+  "icon": "mdi:window-shutter",
+  "group": "Vue Panel",
+  "areas": [
+    "dashboard",
+    "sidebar",
+    "header",
+    "bottom"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render",
+    "service:call"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": false,
+  "variables": [
+    {
+      "key": "entity",
+      "label": "Rollladen-Entity",
+      "type": "entity",
+      "required": true,
+      "domain": "cover",
+      "default": ""
+    },
+    {
+      "key": "name",
+      "label": "Anzeigename",
+      "type": "string",
+      "required": false,
+      "default": ""
+    }
+  ]
+};
 </script>
 <template data-vue-panel-html>
 <article class="tile cover-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span><div class="controls" id="controls"><button data-service="open_cover" title="Öffnen"><img id="open-icon" alt=""></button><button data-service="stop_cover" title="Stoppen"><img id="stop-icon" alt=""></button><button data-service="close_cover" title="Schließen"><img id="close-icon" alt=""></button></div><div class="tile__info"><div class="tile__name" id="name"></div><div class="tile__state" id="state"></div></div></article>

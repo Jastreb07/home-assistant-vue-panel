@@ -9,16 +9,62 @@ const vuePanelCard = {
   "description": "Steuert ein Licht und zeigt Status sowie Helligkeit an",
   "icon": "mdi:lightbulb",
   "group": "Vue Panel",
-  "areas": ["dashboard"],
-  "capabilities": ["entity:read", "entity:subscribe", "icon:render", "service:call"],
-  "defaultSize": { "cols": 1, "rows": 1, "width": 140, "height": 120 },
-  "defaultResponsive": { "mobile": true, "tablet": true, "desktop": true, "mobileMax": 767, "tabletMax": 1023 },
+  "areas": [
+    "dashboard",
+    "sidebar",
+    "header",
+    "bottom"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render",
+    "service:call"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
   "fullRow": false,
   "variables": [
-    { "key": "entity", "label": "Licht-Entity", "type": "entity", "required": true, "domain": "light", "default": "" },
-    { "key": "name", "label": "Anzeigename", "type": "string", "required": false, "default": "" },
-    { "key": "icon", "label": "Icon", "type": "icon", "required": false, "default": "mdi:lightbulb-outline" },
-    { "key": "showBrightness", "label": "Helligkeit anzeigen", "type": "boolean", "required": false, "default": true }
+    {
+      "key": "entity",
+      "label": "Licht-Entity",
+      "type": "entity",
+      "required": true,
+      "domain": "light",
+      "default": ""
+    },
+    {
+      "key": "name",
+      "label": "Anzeigename",
+      "type": "string",
+      "required": false,
+      "default": ""
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "type": "icon",
+      "required": false,
+      "default": "mdi:lightbulb-outline"
+    },
+    {
+      "key": "showBrightness",
+      "label": "Helligkeit anzeigen",
+      "type": "boolean",
+      "required": false,
+      "default": true
+    }
   ]
 };
 </script>
