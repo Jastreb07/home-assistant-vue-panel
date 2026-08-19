@@ -261,6 +261,12 @@ Panel-Metadaten und sendet sie als `vue-panel:auth` an das gleich-originige ifra
 sichtbaren Panel-URL. Im iframe stellt die Engine mit dem aktuellen Token eine eigene
 HA-WebSocket-Verbindung her und verwendet darüber die authentifizierten Integrationskommandos.
 
+Ab `2.0.0-alpha.22`/Engine `2.1.19` spiegelt der Loader zusätzlich die Route: Der Panel-Unterpfad
+aus `route` geht als `routePath` im Kontext und danach als `vue-panel:route` an die Engine, und
+jede Engine-Navigation meldet sich als `vue-panel:navigate` zurück. Der Loader schreibt sie über
+`history.pushState`/`replaceState` plus `location-changed` in die HA-Adresszeile, sodass
+`/<panel>/<view-pfad>` im Browser sichtbar, teilbar und per Zurück-Taste bedienbar bleibt.
+
 Das Vue-DOM, Theme-CSS, Dialoge und schwebende Menüs liegen vollständig im eigenen iframe-Dokument.
 `Teleport to="body"` bezieht sich damit ausschließlich auf den iframe-Body und kann weder HA-DOM
 noch HA-Styles berühren. Das Engine-iframe ist eine Dokument- und Style-Grenze, aber wegen seiner

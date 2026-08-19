@@ -95,6 +95,7 @@ input.vp-select-search:focus {
   font-size: var(--vp-control-font);
   text-align: left;
   cursor: pointer;
+  margin: 2px 0;
 }
 .vp-select-option:hover,
 .vp-select-option.active {

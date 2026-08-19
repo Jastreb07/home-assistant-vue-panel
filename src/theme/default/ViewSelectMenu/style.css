@@ -1,0 +1,167 @@
+/* Sizes come from the shared .vp-size-* tokens in the theme's main.css */
+.vp-view-select {
+  position: relative;
+}
+.vp-view-select-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--card-bg);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  padding: 0 var(--vp-control-pad-x);
+  /* Fixed height so swapping the button for the search input never shifts layout */
+  height: var(--vp-control-height);
+  box-sizing: border-box;
+}
+.vp-view-select-field:focus-within {
+  border-color: var(--accent);
+}
+.vp-view-select-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+/* input.* beats the global `input[type='text']` base styles, which would
+   otherwise draw a second border and add padding inside the field. */
+input.vp-view-select-search,
+.vp-view-select-value {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  padding: 0;
+  outline: none;
+  box-sizing: border-box;
+}
+input.vp-view-select-search:focus {
+  border: none;
+}
+.vp-view-select-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.vp-view-select-value.empty {
+  color: var(--text-secondary);
+}
+.vp-view-select-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-view-default {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.vp-view-select-dropdown {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--nav-bg);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  box-shadow: var(--card-shadow);
+  padding: 4px;
+}
+.vp-view-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  /* Child views are indented by their path depth */
+  padding-left: calc(var(--vp-view-depth, 0) * 16px);
+  margin: 2px 0;
+}
+.vp-view-option:hover,
+.vp-view-option.active {
+  background: var(--nav-item-hover);
+}
+.vp-view-option.selected .vp-view-option-label {
+  color: var(--accent);
+}
+/* Parents keep the plain look — only the marker hints at nested views */
+.vp-view-option.is-parent .vp-view-option-label::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--text-secondary);
+}
+.vp-view-option-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px var(--vp-control-pad-x);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  text-align: left;
+  cursor: pointer;
+}
+.vp-view-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-view-option-move {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+}
+.vp-view-option-move button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.vp-view-option-move button:not(:disabled):hover {
+  background: var(--nav-item-active);
+  color: var(--text-primary);
+}
+.vp-view-option-move button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.vp-view-select-empty,
+.vp-view-select-hint {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.vp-view-select-hint {
+  border-top: 1px solid var(--divider);
+  margin-top: 4px;
+}

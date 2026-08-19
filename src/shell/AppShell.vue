@@ -12,7 +12,8 @@ import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
 import DashboardSettingsDialog from '@/core/editor/DashboardSettingsDialog.vue'
 import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
-import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
+import BaseViewSelectMenu from '@/core/ui/BaseViewSelectMenu.vue'
+import type { ViewMoveDirection, ViewSelectOption } from '@/core/ui/viewSelect'
 import DevSidebar from '@/core/dev/DevSidebar.vue'
 import ShellBarHost from './ShellBarHost.vue'
 import ViewRenderer from './ViewRenderer.vue'
@@ -27,15 +28,47 @@ useTheme()
 
 const views = computed(() => store.config.views)
 
+/** The first view is the dashboard default — empty or unknown URLs land there. */
+const defaultView = computed(() => views.value[0])
+
 const activeView = computed(() => {
   const path = routePath.value
-  return path ? store.viewByRoute(path) : views.value[0]
+  return (path ? store.viewByRoute(path) : undefined) ?? defaultView.value
 })
 
-/** All pages as options for the edit toolbar picker. */
-const viewOptions = computed(() =>
-  views.value.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
+/**
+ * The URL always carries the path of the active view, so every view stays
+ * directly addressable and reloads or deep links keep working. Rewriting waits
+ * for the loaded dashboard — otherwise a deep link would be dropped while the
+ * placeholder config is still in place.
+ */
+watch(
+  [routePath, activeView, () => store.loaded],
+  () => {
+    if (!store.loaded) return
+    const view = activeView.value
+    if (!view) return
+    const path = viewPath(view)
+    if (routePath.value !== path) navigatePanel(path, { replace: true })
+  },
+  { immediate: true },
 )
+
+/** All pages as options for the edit toolbar picker. */
+const viewOptions = computed<ViewSelectOption[]>(() =>
+  views.value.map((v) => ({
+    id: v.id,
+    title: v.title,
+    icon: v.icon,
+    path: viewPath(v),
+    subview: v.subview,
+  })),
+)
+
+/** Reordering the views also changes which one is the default view. */
+function moveView(viewId: string, direction: ViewMoveDirection) {
+  store.moveView(viewId, direction)
+}
 
 // Per-view bar visibility — every bar but the right sidebar is on by default.
 const showSidebarLeft = computed(() => activeView.value?.showSidebarLeft !== false)
@@ -107,12 +140,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
             <div v-if="store.editMode && activeView" class="edit-toolbar">
               <MdiIcon icon="mdi:pencil" :size="16" />
               <div class="view-picker">
-                <BaseSelectMenu
+                <BaseViewSelectMenu
                   :model-value="activeView.id"
-                  :options="viewOptions"
+                  :views="viewOptions"
                   size="sm"
                   searchable
                   @update:model-value="navigate($event)"
+                  @move="moveView"
                 />
               </div>
               <button
@@ -244,7 +278,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   font-size: 14px;
 }
 .view-picker {
-  min-width: 200px;
+  min-width: 260px;
 }
 .toolbar-actions {
   margin-left: auto;

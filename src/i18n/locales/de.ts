@@ -12,6 +12,15 @@ export default {
       noResults: 'Kein Treffer',
       clear: 'Zurücksetzen',
     },
+    viewSelect: {
+      search: 'Suchen…',
+      empty: 'Keine View',
+      noResults: 'Kein Treffer',
+      defaultView: 'Standard-View — wird über die Dashboard-URL geöffnet',
+      moveUp: 'View nach oben schieben',
+      moveDown: 'View nach unten schieben',
+      defaultHint: 'Die oberste View ist die Standard-View.',
+    },
   },
   dialog: {
     alertTitle: 'Hinweis',

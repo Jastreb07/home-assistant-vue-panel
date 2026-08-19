@@ -19,6 +19,8 @@ export interface VuePanelRegistrationConfig {
 export interface EmbeddedPanelContext extends VuePanelRegistrationConfig {
   language: string
   isAdmin: boolean
+  /** Panel sub-path of the surrounding HA URL, e.g. 'overview/living-room' */
+  routePath: string
 }
 
 interface AuthData {
@@ -78,6 +80,7 @@ window.addEventListener('message', (event: MessageEvent) => {
     apiVersion: Number(message.apiVersion) || 1,
     language: message.language || '',
     isAdmin: message.isAdmin === true,
+    routePath: typeof message.routePath === 'string' ? message.routePath : '',
   }
   administrator.value = latestContext.isAdmin
   setPanelRegistration(latestContext)

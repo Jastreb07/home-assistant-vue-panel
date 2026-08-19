@@ -177,8 +177,21 @@
         background: var(--nav-item-active);
     }
 
-    .item.active-parent {
-        box-shadow: inset 3px 0 var(--accent);
+    /*
+     * Parent- und Child-Einträge sehen absichtlich identisch aus.
+     * Die Klassen existieren nur, damit Themes sie unterscheiden können.
+     */
+    .item.parent,
+    .item.child {
+        /* Kein eigener Look — bewusst leer */
+    }
+
+    /*
+     * Ist gerade eine Unteransicht aktiv, bekommt der zugehörige
+     * Parent nur einen dezenten Rahmen (inset, damit nichts springt).
+     */
+    .item.parent.active-parent {
+        box-shadow: inset 0 0 0 1px var(--accent);
     }
 
 
@@ -250,7 +263,9 @@
      * Views ebenfalls neu laden, damit auch showSubviews
      * bei einer Konfigurationsänderung korrekt berücksichtigt wird.
      */
-    const views = (await vuePanel.listViews()).filter(
+    const allViews = await vuePanel.listViews();
+
+    const views = allViews.filter(
       view => config.showSubviews === true || !view.subview
     );
 
@@ -262,14 +277,33 @@
       button.type = 'button';
       button.className = 'item';
 
+      /*
+       * Aktiv ist die View mit exakt passendem Pfad.
+       * Liegt der aktive Pfad unterhalb dieser View,
+       * ist sie der Parent der aktiven Unteransicht.
+       */
       const isActive = active?.path === view.path;
 
-      const isParent =
+      const isActiveParent =
         !isActive &&
-        active?.path?.startsWith(`${view.path}/`);
+        Boolean(active?.path?.startsWith(`${view.path}/`));
+
+      /*
+       * Struktur: hat die View Kinder (parent)
+       * bzw. liegt sie selbst unterhalb einer anderen View (child)?
+       */
+      const isParent = allViews.some(
+        other =>
+          other.path !== view.path &&
+          other.path.startsWith(`${view.path}/`)
+      );
+
+      const isChild = view.path.includes('/');
 
       button.classList.toggle('active', isActive);
-      button.classList.toggle('active-parent', Boolean(isParent));
+      button.classList.toggle('active-parent', isActiveParent);
+      button.classList.toggle('parent', isParent);
+      button.classList.toggle('child', isChild);
       button.classList.toggle('icon-only', config.showTitles === false);
 
       /*

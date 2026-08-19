@@ -8,6 +8,7 @@ import {
   getDashboardName,
 } from './core/ha'
 import { applyHaLocale } from './i18n'
+import { applyHostRoutePath } from './core/router/panelNavigation'
 import { syncPortableCardCatalog } from './core/registry/cardRegistry'
 
 const target = document.querySelector('#app')
@@ -24,6 +25,8 @@ async function start(): Promise<void> {
     const context = await connectForEmbeddedPanel()
     engineVersion = context.engineVersion
     applyHaLocale(context.language)
+    // Deep links live in the HA URL — adopt them before the dashboard renders.
+    applyHostRoutePath(context.routePath)
   }
 
   await syncPortableCardCatalog()

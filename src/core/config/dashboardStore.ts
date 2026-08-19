@@ -173,6 +173,8 @@ export const useDashboardStore = defineStore('dashboard', {
     return {
       config,
       editMode: false,
+      /** True once the dashboard document was fetched — guards URL redirects. */
+      loaded: false,
       // Undo/redo: JSON snapshots of previous config states
       undoStack: [] as string[],
       redoStack: [] as string[],
@@ -194,6 +196,10 @@ export const useDashboardStore = defineStore('dashboard', {
         const normalized = normalizeRoutePath(path)
         return state.config.views.find((v) => viewPath(v) === normalized)
       }
+    },
+    /** The first view is the dashboard default — unknown URLs redirect to it. */
+    defaultView(state): ViewConfig | undefined {
+      return state.config.views[0]
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
@@ -315,6 +321,7 @@ export const useDashboardStore = defineStore('dashboard', {
       if (!this.dashboardName) throw new Error('Dashboard name is not initialized.')
       const remote = await loadRemote(this.dashboardName)
       this.config = remote
+      this.loaded = true
       this.undoStack = []
       this.redoStack = []
       this.lastSnapshot = JSON.stringify(remote)

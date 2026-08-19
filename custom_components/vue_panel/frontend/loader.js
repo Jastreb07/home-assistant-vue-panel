@@ -19,6 +19,12 @@ frameUrl.searchParams.set('ver', version.engineVersion);
 
 const ELEMENT_NAME = 'vue-panel-panel';
 
+/** Panel sub-path of a HA route object: '/vue-test/overview' → 'overview'. */
+function routeSubPath(route) {
+  const path = typeof route?.path === 'string' ? route.path : '';
+  return path.replace(/^\/+|\/+$/g, '');
+}
+
 class VuePanelElement extends HTMLElement {
   constructor() {
     super();
@@ -28,6 +34,8 @@ class VuePanelElement extends HTMLElement {
     this._narrow = false;
     this._route = null;
     this._readyVersion = '';
+    /** Last path exchanged with the engine — guards against ping-pong updates. */
+    this._enginePath = null;
     this._onFrameLoad = () => this._sendContext();
     this._onWindowMessage = (event) => this._handleMessage(event);
 
@@ -86,10 +94,55 @@ class VuePanelElement extends HTMLElement {
   set route(value) {
     this._route = value;
     this._sendContext();
+    this._sendRoute();
   }
 
   get route() {
     return this._route;
+  }
+
+  /** Prefix of the panel inside the HA URL, e.g. '/vue-test'. */
+  _routePrefix() {
+    const prefix = typeof this._route?.prefix === 'string' ? this._route.prefix : '';
+    if (prefix) return prefix.replace(/\/+$/, '');
+    const urlPath = this._panel?.url_path;
+    if (urlPath) return `/${String(urlPath).replace(/^\/+|\/+$/g, '')}`;
+    return `/${location.pathname.replace(/^\/+/, '').split('/')[0] || ''}`;
+  }
+
+  /** Forward a HA-side route change (deep link, back button) to the engine. */
+  _sendRoute() {
+    const target = this._iframe?.contentWindow;
+    // Before the engine announced itself the initial path travels with the context.
+    if (!target || !this._readyVersion) return;
+    const path = routeSubPath(this._route);
+    if (path === this._enginePath) return;
+    this._enginePath = path;
+    target.postMessage({ type: 'vue-panel:route', path }, location.origin);
+  }
+
+  /**
+   * Mirror an engine navigation into the HA address bar so every view keeps a
+   * real, shareable URL. HA's router listens for 'location-changed'.
+   */
+  _applyEnginePath(path, replace) {
+    const normalized = String(path || '').replace(/^\/+|\/+$/g, '');
+    if (normalized === this._enginePath) return;
+    this._enginePath = normalized;
+
+    const url = `${this._routePrefix()}${normalized ? `/${normalized}` : ''}`;
+    if (url === location.pathname) return;
+
+    if (replace) window.history.replaceState(window.history.state, '', url);
+    else window.history.pushState(null, '', url);
+
+    window.dispatchEvent(
+      new CustomEvent('location-changed', {
+        detail: { replace: Boolean(replace) },
+        bubbles: true,
+        composed: true,
+      }),
+    );
   }
 
   _upgradeProperty(property) {
@@ -117,6 +170,7 @@ class VuePanelElement extends HTMLElement {
         engineVersion: config.engineVersion || version.engineVersion,
         apiVersion: config.apiVersion,
         narrow: this._narrow,
+        routePath: routeSubPath(this._route),
       },
       location.origin,
     );
@@ -128,10 +182,17 @@ class VuePanelElement extends HTMLElement {
       this._sendContext();
       return;
     }
+    if (event.data?.type === 'vue-panel:navigate') {
+      this._applyEnginePath(event.data.path, event.data.replace === true);
+      return;
+    }
     if (event.data?.type !== 'vue-panel:ready') return;
     const loadedVersion = String(event.data.engineVersion || version.engineVersion);
     if (loadedVersion === this._readyVersion) return;
     this._readyVersion = loadedVersion;
+    // Catch up on route changes that happened while the engine was starting —
+    // unless the engine already authored a path of its own.
+    if (this._enginePath === null) this._sendRoute();
     console.info(`[Vue Panel] Engine ${loadedVersion} loaded in isolated iframe`);
   }
 }

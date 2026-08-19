@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { PortableCardCapability } from '@/core/registry/portableCardTypes'
 import { callService, useEntities } from '@/core/ha'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
@@ -405,7 +405,24 @@ watch(entities, (value) => {
   }
 })
 
-watch(routePath, () => {
+/**
+ * Navigation subscribers also care about the view list itself: renaming or
+ * reordering views must reach a navigation card without a reload.
+ */
+const navigationSignature = computed(() =>
+  JSON.stringify([
+    routePath.value,
+    store.config.views.map((view) => [
+      view.id,
+      view.title,
+      view.icon,
+      viewPath(view),
+      view.subview === true,
+    ]),
+  ]),
+)
+
+watch(navigationSignature, () => {
   const view = viewSnapshot(store.viewByRoute(routePath.value))
   for (const callback of navigationSubscriptions.values()) callback(view)
 })

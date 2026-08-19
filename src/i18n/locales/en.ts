@@ -12,6 +12,15 @@ export default {
       noResults: 'No match',
       clear: 'Clear',
     },
+    viewSelect: {
+      search: 'Search…',
+      empty: 'No view',
+      noResults: 'No match',
+      defaultView: 'Default view — opened by the dashboard URL',
+      moveUp: 'Move view up',
+      moveDown: 'Move view down',
+      defaultHint: 'The topmost view is the default view.',
+    },
   },
   dialog: {
     alertTitle: 'Notice',

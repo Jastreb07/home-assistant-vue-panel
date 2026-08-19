@@ -79,6 +79,17 @@ Aktueller Stand:
   Sandbox-iframe. Das Card-CSS wird per nativem CSS-Nesting auf die Card begrenzt, das
   Theme-Stylesheet gilt damit auch innerhalb der Card. Das ist eine Style- und DOM-Grenze,
   keine Sicherheitsgrenze mehr;
+- ab `2.0.0-alpha.21`/Engine `2.1.18` hält die AppShell die URL immer auf dem Pfad der aktiven
+  View und leitet leere oder unbekannte Pfade auf die Standard-View (erste View) um. Die
+  Edit-Toolbar nutzt das neue `ViewSelectMenu`, das die Standard-View mit einem Stern markiert und
+  Views über Pfeile umsortiert; die Menu-Card unterscheidet `parent`/`child` und rahmt den Parent
+  nur ein, solange eine seiner Unteransichten aktiv ist;
+- ab `2.0.0-alpha.22`/Engine `2.1.19` spiegelt der Loader die Route in beide Richtungen: Der
+  Panel-Unterpfad kommt als `routePath` im Kontext und als `vue-panel:route` in die Engine, jede
+  Engine-Navigation geht als `vue-panel:navigate` zurück und landet über
+  `history.pushState`/`replaceState` samt `location-changed` in der HA-Adresszeile. Damit steht
+  der View-Pfad als `/<panel>/<view-pfad>` im Browser und funktioniert für Deep-Links, Reload,
+  Teilen und die Zurück-Taste;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
@@ -126,6 +137,10 @@ Aktueller Stand:
 - Der Config-/Subentry-Flow registriert die Dashboards programmgesteuert über `panel_custom`.
 - `loader.js?v=<integrationVersion>` lädt `version.json` mit demselben Cache-Key und erzeugt danach
   ein iframe auf `engine/index.html?ver=<engineVersion>`; Chunks, Styles und Fonts tragen Inhalts-Hashes.
+- Der Loader hält die HA-Adresszeile und die Engine-Route synchron: `route` → `routePath`/
+  `vue-panel:route` in die Engine, `vue-panel:navigate` → `history.pushState`/`replaceState` +
+  `location-changed` in HA. Deep-Links wie `/vue-test/uebersicht/wohnzimmer` funktionieren dadurch
+  direkt im Browser.
 - Nach einem Integrationsupdate ist ein HA-Neustart erforderlich, damit Python-Code, statische
   Route und Panel-Registrierungen sicher aus der neuen Version stammen.
 
@@ -227,10 +242,11 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 
 ## 6. Theme-System (`src/theme/`)
 
-- `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{AddTile,BoxInput,Button,Card,Checkbox,CodeEditor,Collapsible,Dialog,Input,SelectMenu,Tabs,VariableCard}`. Der CodeEditor unterstützt CSS, HTML, JavaScript und JSON; nur CSS aktiviert den CSS-Linter. Der Theme-Dialog unterstützt zusätzlich `size="full"` für randlose Vollbild-Werkzeuge; Tab-Einträge können mit `align: 'end'` rechts ausgerichtet werden.
+- `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{AddTile,BoxInput,Button,Card,Checkbox,CodeEditor,Collapsible,Dialog,Input,SelectMenu,Tabs,VariableCard,ViewSelectMenu}`. Der CodeEditor unterstützt CSS, HTML, JavaScript und JSON; nur CSS aktiviert den CSS-Linter. Der Theme-Dialog unterstützt zusätzlich `size="full"` für randlose Vollbild-Werkzeuge; Tab-Einträge können mit `align: 'end'` rechts ausgerichtet werden.
 - **Collapsible** = aufklappbare Box zum Gruppieren von Einstellungen (`title`, `icon?`, `defaultOpen?` — **Default zu**, Default-Slot); Wrapper `@/core/ui/BaseCollapsible.vue`. Konvention: In jedem „Erweitert"-Tab liegen die Gruppen in Collapsibles, die **erste sichtbare** Box bekommt `default-open`.
 - **BoxInput** = wiederverwendbares Vierseiten-Feld (Oben/Rechts/Unten/Links + Einheit + Ketten-Button) für Padding/Margin; Wrapper `@/core/ui/BaseBoxInput.vue`, Wert-Typ + Helfer in `@/core/ui/boxInput.ts`.
 - **VariableCard** = wiederverwendbare, aufklappbare Hülle für einen Variablen-Schemaeintrag (`title`, `marker?`, `defaultOpen?`, `removeLabel`, `remove`-Event, Default-Slot); Wrapper `@/core/ui/BaseVariableCard.vue`. Die Löschaktion ist vom Toggle getrennt.
+- **ViewSelectMenu** = auf Views spezialisiertes Dropdown statt des generischen SelectMenu (`modelValue` = View-`id`, `views`, `size`, `searchable`, `reorderable`; Events `update:modelValue` und `move`); Wrapper `@/core/ui/BaseViewSelectMenu.vue`, Typen und Helfer in `@/core/ui/viewSelect.ts`. Es rückt Unteransichten nach Pfadtiefe ein, markiert die oberste View als Standard-View mit `mdi:star` und verschiebt Views über die beiden Pfeile rechts (auch per Alt+↑/↓) via `store.moveView()`. Während einer Suche sind die Pfeile ausgeblendet, weil das Umsortieren einer gefilterten Liste mehrdeutig wäre. Verwendet in der Edit-Toolbar der AppShell.
 - **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
@@ -263,7 +279,7 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
   `fixed`), Abstände und die Ausrichtung entlang sowie quer zur Leiste. Die Navigation liefert die
   Card `vue-panel/menu` über die reaktive Navigations-API. Alle Bars lassen sich pro View
   schalten; nur die rechte Seitenleiste ist bei neuen Views aus.
-- **View-URLs**: Intern referenzieren Menü, room-tile & Co. immer die **View-`id`**; die URL nutzt `view.path` (Fallback: `id`) und darf hierarchisch sein, z. B. `uebersicht/wohnzimmer`. Helfer in `dashboardStore.ts`: `viewPath(view)`, `normalizeRoutePath(path)`, `slugify(title)`, `slugifyPath(path)`, Getter `viewByRoute(path)`. Der Catch-all-Hash-Router akzeptiert beliebig viele Segmente. Der View-Dialog slugifiziert jedes Segment einzeln, erhält `/` und macht den vollständigen Pfad beim Speichern eindeutig; danach emittiert er `navigate`, damit die Route dem neuen Pfad folgt. Die Menu-Card markiert neben dem exakten Ziel auch Pfad-Eltern aktiv (`uebersicht` bei `uebersicht/wohnzimmer`).
+- **View-URLs**: Intern referenzieren Menü, room-tile & Co. immer die **View-`id`**; die URL nutzt `view.path` (Fallback: `id`) und darf hierarchisch sein, z. B. `uebersicht/wohnzimmer`. Helfer in `dashboardStore.ts`: `viewPath(view)`, `normalizeRoutePath(path)`, `slugify(title)`, `slugifyPath(path)`, Getter `viewByRoute(path)` und `defaultView`. Der Catch-all-Hash-Router akzeptiert beliebig viele Segmente. Der View-Dialog slugifiziert jedes Segment einzeln, erhält `/` und macht den vollständigen Pfad beim Speichern eindeutig; danach emittiert er `navigate`, damit die Route dem neuen Pfad folgt. **Die AppShell hält die URL immer auf dem Pfad der aktiven View** (`navigatePanel(path, { replace: true })`): leere oder unbekannte Pfade landen auf der Standard-View (= erste View der Liste), jede View ist damit direkt per URL aufrufbar. Der Redirect wartet auf `store.loaded`, damit ein Deep-Link nicht von der Platzhalter-Config überschrieben wird. Die Menu-Card markiert neben dem exakten Ziel (`active`) auch Pfad-Eltern (`active-parent`) und kennzeichnet Struktur über `parent`/`child`; Parent und Child sehen gleich aus, der Parent bekommt nur einen dezenten Rahmen, solange eine seiner Unteransichten aktiv ist. `CardRuntime` benachrichtigt `subscribeNavigation` auch bei Änderungen an der View-Liste (Reihenfolge, Titel, Icon, Pfad).
 - Subviews: `view.subview = true` → kein Nav-Eintrag, Header mit Zurück-Button in AppShell; room-tile-Card navigiert dorthin.
 - Kiosk: `useIdleSeconds` → Screensaver (Vollbild-Uhr) und Auto-Return zur ersten View; beides im Edit-Modus pausiert.
 
