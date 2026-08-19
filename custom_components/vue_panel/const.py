@@ -23,7 +23,7 @@ STATIC_URL_BASE: Final = "/vue-panel-static"
 PANEL_MODULE_URL: Final = (
     f"{STATIC_URL_BASE}/loader.js?v={INTEGRATION_VERSION}"
 )
-ENGINE_VERSION: Final = "2.0.17"
+ENGINE_VERSION: Final = "2.0.18"
 API_VERSION: Final = 1
 
 PRIVATE_DIRECTORY: Final = "vue-panel"

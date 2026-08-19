@@ -1,5 +1,4 @@
 import {
-  defineAsyncComponent,
   defineComponent,
   h,
   shallowReactive,
@@ -43,7 +42,8 @@ export interface CardManifest {
   literalName?: boolean
   icon: string
   group?: CardGroup
-  component: () => Promise<{ default: Component }>
+  /** Sandbox host component for this card type, created once per catalog entry. */
+  component: Component
   schema?: Record<string, CardSchemaField>
   defaultSize?: { cols: number; rows: number; width?: number; height?: number }
   fullRow?: boolean
@@ -92,7 +92,6 @@ function portableComponent(type: string): Component {
 }
 
 function portableManifest(entry: PortableCardCatalogEntry): CardManifest {
-  const component = portableComponent(entry.type)
   return {
     type: entry.type,
     name: entry.name,
@@ -101,7 +100,7 @@ function portableManifest(entry: PortableCardCatalogEntry): CardManifest {
     group: entry.manufacturer === 'vue-panel'
       ? NATIVE_GROUP
       : { id: `portable-${entry.group}`, label: entry.group, literalLabel: true },
-    component: async () => ({ default: component }),
+    component: portableComponent(entry.type),
     schema: portableSchema(entry.variables),
     defaultSize: entry.defaultSize,
     fullRow: entry.fullRow,
@@ -116,7 +115,6 @@ export async function syncPortableCardCatalog(): Promise<void> {
   const catalog = await listPortableCards()
   for (const type of Object.keys(cardRegistry)) delete cardRegistry[type]
   for (const entry of catalog) cardRegistry[entry.type] = portableManifest(entry)
-  componentCache.clear()
   invalidatePortableCardCatalog()
 }
 
@@ -189,13 +187,6 @@ export function groupedCardsForArea(
   })
 }
 
-const componentCache = new Map<string, Component>()
-
 export function resolveCardComponent(type: string): Component | null {
-  const manifest = cardRegistry[type]
-  if (!manifest) return null
-  if (!componentCache.has(type)) {
-    componentCache.set(type, defineAsyncComponent(manifest.component))
-  }
-  return componentCache.get(type)!
+  return cardRegistry[type]?.component ?? null
 }
