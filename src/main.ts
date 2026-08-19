@@ -1,30 +1,35 @@
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
-import { createRouter, createWebHashHistory } from 'vue-router'
 import '@mdi/font/css/materialdesignicons.css'
-import App from './App.vue'
-import AppShell from './shell/AppShell.vue'
-import { i18n } from './i18n'
-import { connect } from './core/ha'
-import { useDashboardStore } from './core/config/dashboardStore'
-import { loadGlobalStyles } from './theme/registry'
+import { mountVuePanel } from './bootstrap'
+import {
+  announceEmbeddedPanelReady,
+  configureDevelopmentDashboard,
+  connectForEmbeddedPanel,
+  connectForDevelopment,
+  getDashboardName,
+} from './core/ha'
+import { applyHaLocale } from './i18n'
+import { syncPortableCardCatalog } from './core/registry/cardRegistry'
 
-const router = createRouter({
-  // Hash mode: works without server rewrites under /local/vue-panel/
-  history: createWebHashHistory(),
-  routes: [{ path: '/:viewPath(.*)*', component: AppShell }],
-})
+const target = document.querySelector('#app')
+if (!target) throw new Error('Vue Panel development mount element is missing.')
 
-const pinia = createPinia()
-createApp(App).use(pinia).use(router).use(i18n).mount('#app')
+const mounted = mountVuePanel(target)
 
-// Load the default theme's global styles immediately (base look while loading)
-loadGlobalStyles()
+async function start(): Promise<void> {
+  let engineVersion = 'development'
+  if (import.meta.env.DEV) {
+    configureDevelopmentDashboard()
+    await connectForDevelopment()
+  } else {
+    const context = await connectForEmbeddedPanel()
+    engineVersion = context.engineVersion
+    applyHaLocale(context.language)
+  }
 
-// Establish the HA connection in the background (status is shown in App.vue),
-// then load the dashboard config stored server-side
-connect()
-  .then(() => useDashboardStore(pinia).syncFromRemote())
-  // Re-run: settings.uiTheme is known now — loads the active theme's main.css
-  .then(() => loadGlobalStyles())
-  .catch((err) => console.error('[vue-panel] Connection failed:', err))
+  await syncPortableCardCatalog()
+  await mounted.syncDashboard(getDashboardName())
+  announceEmbeddedPanelReady(engineVersion)
+}
+
+start()
+  .catch((error) => console.error('[vue-panel] Engine startup failed:', error))

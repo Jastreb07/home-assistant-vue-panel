@@ -53,14 +53,11 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     const target = configTarget.value
     if (!target) return
     if (target.mode === 'new') {
-      const definitionSize = target.cardType === 'custom-html'
-        ? store.customCardById(String(config.definitionId ?? ''))?.defaultSize
-        : undefined
       store.addCard(getView().id, target.sectionId, {
         type: target.cardType,
         config,
         css,
-        size: size ?? definitionSize ?? cardRegistry[target.cardType]?.defaultSize,
+        size: size ?? cardRegistry[target.cardType]?.defaultSize,
       })
     } else {
       store.updateCardConfig(getView().id, target.cardId, config, css)

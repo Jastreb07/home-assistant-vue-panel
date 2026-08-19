@@ -1,0 +1,55 @@
+{
+  "title": "Vue Panel",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vue Panel einrichten",
+        "description": "Installiert die Vue-Panel-Engine. Dashboard-Panels werden anschließend als Einträge dieser Integration verwaltet."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Vue Panel ist bereits eingerichtet."
+    }
+  },
+  "config_subentries": {
+    "dashboard": {
+      "title": "Dashboard",
+      "step": {
+        "user": {
+          "title": "Dashboard hinzufügen",
+          "description": "Der eindeutige Name wird zum dauerhaften Home-Assistant-URL-Pfad.",
+          "data": {
+            "name": "Eindeutiger Name",
+            "title": "Titel",
+            "icon": "Icon",
+            "require_admin": "Administrator erforderlich"
+          },
+          "data_description": {
+            "name": "Kleingeschriebener URL-sicherer Name, beispielsweise wohnung oder wandtablet.",
+            "title": "Name in der Home-Assistant-Seitenleiste.",
+            "icon": "Icon in der Home-Assistant-Seitenleiste.",
+            "require_admin": "Nur Administratoren dürfen dieses Dashboard öffnen."
+          }
+        },
+        "reconfigure": {
+          "title": "Dashboard bearbeiten",
+          "description": "Der eindeutige Dashboard-Name und die URL bleiben unverändert.",
+          "data": {
+            "title": "Titel",
+            "icon": "Icon",
+            "require_admin": "Administrator erforderlich"
+          }
+        }
+      },
+      "error": {
+        "invalid_dashboard_title": "Gib einen Dashboard-Titel ein.",
+        "invalid_dashboard_name": "Gib einen gültigen Dashboard-Namen ein.",
+        "dashboard_name_exists": "Ein Vue-Panel-Dashboard verwendet diesen Namen bereits.",
+        "panel_path_exists": "Ein anderes Home-Assistant-Panel verwendet diesen URL-Pfad bereits."
+      },
+      "abort": {
+        "reconfigure_successful": "Dashboard-Einstellungen aktualisiert."
+      }
+    }
+  }
+}

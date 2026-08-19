@@ -4,10 +4,94 @@
 > Architektur, Konventionen und Fallstricke des Projekts. Details zur ursprünglichen
 > Planung stehen in `PLAN.md`. **Bei Architekturänderungen beide Dateien aktualisieren!**
 
+## 0. Aktiver Greenfield-Umbau
+
+Auf Branch `feature/integration` wird das Projekt nach
+`INTEGRATION_RESTRUCTURE_PLAN.md` zu einer Home-Assistant-Custom-Integration umgebaut. Dieser Plan
+ist für neue Arbeit maßgeblich; die nachfolgenden Abschnitte dokumentieren den noch vorhandenen
+Frontend-Altstand nur als Portierungsreferenz.
+
+Aktueller Stand:
+
+- Phase 0 abgeschlossen: `docs/architecture/card-format-v2.md`,
+  `docs/architecture/sandbox-api-v1.md` und zwei portable Beispiel-Cards;
+- Phase 1 weit fortgeschritten: `custom_components/vue_panel` mit
+  Config-/Dashboard-Subentry-Flow, Panel-Manager, loader-erzeugtem Engine-iframe, eigenem
+  Integrations-Build und statischer Auslieferung direkt aus dem Integrationspaket;
+- die Ersteinrichtung öffnet sofort „Dashboard hinzufügen“ und erzeugt eine minimale leere
+  Ansicht „Übersicht“ ohne Cards;
+- Phase 2 ist lokal implementiert und wartet auf den echten HA-Abnahmetest: mehrere
+  Dashboard-Subentries, private Dashboard-Dateien, atomare Schreibvorgänge, Revisionsschutz,
+  fünf Backups sowie authentifizierte WebSocket-Befehle für Laden, Speichern, Export und Import;
+- der erste echte HA-Test zeigte einen noch browserseitig gecachten 1.x-Loader; deshalb enthält
+  die registrierte Loader-`module_url` ab `2.0.0-alpha.2` stets die Integrationsversion als
+  Cache-Busting-Query;
+- ab `2.0.0-alpha.3` übernimmt das Custom Element auch `hass`, `panel`, `narrow` und `route`,
+  wenn HA sie bereits vor dem asynchronen Web-Component-Upgrade als eigene Properties gesetzt
+  hat; Engine `2.0.1` leert beim Build den gesamten generierten Engine-Ordner;
+- ab `2.0.0-alpha.4`/Engine `2.0.2` erfolgt dieses Aufräumen in einem Prebuild-Schritt und Vite
+  schreibt wieder direkt in den Versionsordner; so enthalten Modul-Preloads den Engine-Pfad nicht
+  doppelt;
+- ab `2.0.0-alpha.5` liegt die Engine ohne Versionsordner fest unter
+  `/local/vue-panel/engine/`; der Loader importiert `panel.js?ver=<engineVersion>`. Beim HA-Start
+  vergleicht die Integration die installierte Engine-Version und ersetzt bei einer Änderung den
+  gesamten öffentlichen Engine-Ordner, bevor sie den aktuellen Build kopiert;
+- ab `2.0.0-alpha.6`/Engine `2.0.3` liest die Menu-Card den aktiven Pfad über die reaktive
+  `router.currentRoute`; dadurch ist der erste Render während des Dashboard-Ladens abgesichert;
+- ab `2.0.0-alpha.7`/Engine `2.0.4` erhält auch `version.json` den Cache-Key des Loaders. Der
+  Loader protokolliert die angeforderte und erfolgreich geladene Engine-Version in der Konsole;
+  AppShell und Menu-Card verwenden beide ausschließlich `router.currentRoute`;
+- ab `2.0.0-alpha.8`/Engine `2.0.5` werden Loader, Version und Engine direkt aus
+  `custom_components/vue_panel/frontend` unter `/vue-panel-static/` ausgeliefert. Die frühere
+  Kopie nach `www/vue-panel`, das Hashmanifest und der öffentliche Asset-Zustand sind entfernt;
+- ab `2.0.0-alpha.9`/Engine `2.0.6` verwenden Shell, Menu-Card und Room-Tile eine gemeinsame
+  reaktive Hash-Navigation ohne Vue-Router-Injection. Dadurch funktionieren auch lazy geladene
+  Cards im HA-Custom-Element, ohne auf einen fehlenden Router-Kontext zuzugreifen;
+- ab `2.0.0-alpha.14`/Engine `2.0.11` erzeugt die Custom-Card-Sandbox ihre Nachrichtenkanäle
+  über einen HTTP-kompatiblen Runtime-ID-Helfer. Dieser verwendet `crypto.getRandomValues()` mit
+  einem lokalen Fallback und setzt nicht mehr das nur in sicheren Kontexten verfügbare
+  `crypto.randomUUID()` voraus;
+- ab `2.0.0-alpha.16`/Engine `2.0.13` erzeugt der HA-Custom-Element-Loader wieder ein eigenes
+  iframe nach dem bewährten 1.x-Prinzip. Die Engine wird als normale SPA aus `engine/index.html`
+  geladen und erhält Auth-Token, Sprache sowie Dashboard-Metadaten über `vue-panel:auth`; das
+  Shadow-Root-Mount und sein UI-Portal sind vollständig entfernt;
+- ab `2.0.0-alpha.17`/Engine `2.0.14` sind die inzwischen überflüssigen Dialog- und Bar-Workarounds
+  des direkten Custom-Element-Mounts entfernt. Dialoge teleportieren wieder in den iframe-Body,
+  alle Bar-Cards sind regulär lazy und das Card-Menü verwendet wieder seine ursprüngliche
+  viewport-feste Ebene;
+- ab `2.0.0-alpha.18`/Engine `2.0.15` übergibt der Loader den Administratorstatus des aktuellen
+  HA-Benutzers an die isolierte Engine. Die Dev-Sidebar ist im Vite-Dev-Modus immer und in Home
+  Assistant ausschließlich für Administratoren verfügbar;
+- ab `2.0.0-alpha.19`/Engine `2.0.16` ist Phase 3 implementiert: Die Integration verwaltet den
+  validierten Card-Format-v2-Katalog unter `<config>/vue-panel/cards/`, die Engine lädt ihn zur
+  Laufzeit und der Browser-Editor erstellt, importiert, aktualisiert, dupliziert und löscht diese
+  Dateien über eine revisionsgeschützte Admin-WebSocket-API;
+- ab `2.0.0-alpha.20`/Engine `2.0.17` ist Phase 4 implementiert: Alle 13 mitgelieferten Cards
+  einschließlich Sidebar, Header und Bottom-Bar liegen als validierte Card-Format-v2-Dateien
+  unter `custom_components/vue_panel/bundled_cards/vue-panel/`. SFC-Core-Registry,
+  Build-Time-Card-Discovery und verschachtelte Legacy-Bar-Slots sind entfernt;
+- gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
+  Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
+- jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
+  Speicherwarteschlange getrennt; alle Core-Card-Typen sind als
+  `vue-panel/<card-name>` qualifiziert;
+- der Produktionspfad erhält über den Loader ausschließlich serialisierbare Auth- und
+  Panel-Metadaten und öffnet im iframe eine eigene HA-WebSocket-Verbindung; Dashboard-`localStorage`
+  und `frontend/*_user_data` bleiben entfernt;
+- die bestehende Engine unter `src/` bleibt nur so lange erhalten, bis ihr jeweiliger neuer
+  Gegenpart funktioniert; es werden keine Legacy-Datenformate oder Migrationen gebaut;
+- Dashboard-Dateien liegen privat unter `<config>/vue-panel/dashboards/`; lokale und importierte
+  Cards liegen unter `<config>/vue-panel/cards/` und werden authentifiziert geladen;
+- Runtime und ausgelieferte Core-Cards liegen im Integrationspaket. Nur der gezielt registrierte
+  Frontend-Ordner ist unter `/vue-panel-static/` erreichbar;
+- der Loader läuft als HA-Custom-Element und hält die Engine in einem eigenen iframe-Dokument;
+  portable Cards laufen innerhalb der Engine zusätzlich in strikt isolierten Sandbox-iframes.
+
 ## 1. Was ist dieses Projekt?
 
 **vue-panel** ist eine Dashboard-Engine für Home Assistant (HA), die Lovelace **komplett ersetzt**:
-- Kein YAML — die gesamte Dashboard-Konfiguration wird **im Browser visuell bearbeitet** (wie Lovelace-Editor) und via HA-WebSocket in `.storage` gespeichert (pro User, geräteübergreifend).
+- Kein YAML — die Dashboard-Konfiguration wird **im Browser visuell bearbeitet** und über die
+  Integration in einer eigenen privaten JSON-Datei gespeichert.
 - Vue 3.5 (Composition API, `<script setup>`) + TypeScript + Vite + Pinia + vue-router (Hash) + vue-i18n v11.
 - Zielgeräte: Wand-Tablets und Desktops (SideNav links) sowie Smartphones (SideNav standardmäßig ausgeblendet). Die Gerätebereiche folgen der CSS-basierten Card-Sichtbarkeit.
 - Oberstes Designziel: **Neue Cards und Themes müssen extrem einfach zu erstellen sein** (1 Ordner, Auto-Discovery, keine zentrale Registrierung).
@@ -25,11 +109,15 @@
 
 ## 3. Deployment (HA-Integration)
 
-- Build-Output nach HA `config/www/vue-panel/` hochladen.
-- `configuration.yaml` (einmalig, Snippet in PLAN.md §8): `panel_custom` mit `module_url: /local/vue-panel/loader.js`, `embed_iframe: false`. **Noch nicht beim Nutzer eingerichtet!** (Sein HA: `home.local`, altes Panel läuft unter `url_path: home-panel`.)
-- `public/loader.js` = stabiler Einstiegspunkt: lädt `version.txt` mit `cache: 'no-store'`, erstellt iframe auf `index.html?ver=<version>`, sendet Auth+Sprache per `postMessage({type:'vue-panel:auth', hassUrl, access_token, expires, language})`. Message-Typ **niemals umbenennen**.
-- Update-Workflow: `version.txt` bumpen (aktuell **1.1.0**) → build → `dist/` hochladen. Kein HA-Neustart nötig.
-- `module_url` MUSS ein ES-Modul sein (HA macht `import()`), niemals eine HTML-Datei. `url_path: home` ist reserviert (war der ursprüngliche Bug des Nutzers).
+- Das installierbare Paket ist vollständig `custom_components/vue_panel/`; es gibt keinen
+  manuellen Upload nach `config/www` und keine YAML-Panel-Registrierung.
+- `frontend.py` registriert `custom_components/vue_panel/frontend` über
+  `hass.http.async_register_static_paths()` unter `/vue-panel-static/`.
+- Der Config-/Subentry-Flow registriert die Dashboards programmgesteuert über `panel_custom`.
+- `loader.js?v=<integrationVersion>` lädt `version.json` mit demselben Cache-Key und erzeugt danach
+  ein iframe auf `engine/index.html?ver=<engineVersion>`; Chunks, Styles und Fonts tragen Inhalts-Hashes.
+- Nach einem Integrationsupdate ist ein HA-Neustart erforderlich, damit Python-Code, statische
+  Route und Panel-Registrierungen sicher aus der neuen Version stammen.
 
 ## 4. Verzeichnisstruktur & Kernkonzepte
 
@@ -41,8 +129,8 @@ src/
 ├─ i18n/                      # vue-i18n v11 (legacy:false), locales/en.ts + de.ts
 ├─ core/
 │  ├─ ha/                     # connection.ts (WebSocket, Dual-Auth), useEntity, useService
-│  ├─ registry/cardRegistry.ts# Card-Auto-Discovery (import.meta.glob), defineCard, Schema-Typen
-│  ├─ config/                 # types.ts, dashboardStore.ts (Pinia), persistence.ts (HA user_data)
+│  ├─ registry/               # Ausschließlich WebSocket-basierter Runtime-Card-Katalog
+│  ├─ config/                 # types.ts, dashboardStore.ts, Integration-Persistenz
 │  ├─ editor/                 # EditFab, CardPicker, CardConfigDialog, SchemaForm, EntityPicker,
 │  │                          # ViewSettingsDialog, DashboardSettingsDialog
 │  ├─ ui/                     # DÜNNE WRAPPER: BaseCard/BaseDialog/BaseButton → themed('…'),
@@ -55,22 +143,27 @@ src/
 │                             # Sidebar-Sichtbarkeit folgt ausschließlich den Card-Regeln
 ├─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
 │                             # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
-├─ cards/                     # Anbieterordner; core-cards/ enthält eingebaute Cards
 └─ theme/                     # Theme-System (siehe §6)
 ```
 
 ### Datenmodell (`core/config/types.ts`)
-`DashboardConfig { version:1, customCards?, settings?, bars?, nav?, header?, bottom?, views[] }` → `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebar?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `section-title`) → `CardConfig { id, type, config, css?, size? }`.
-`customCards` enthält wiederverwendbare `CustomCardDefinition`-Objekte mit Metadaten, Standardgröße, Variablen-Schema sowie HTML/CSS/JavaScript. `CustomCardVariable` unterstützt `entity|string|number|boolean|icon`, einen JavaScript-sicheren `key`, Beschriftung, Pflichtstatus, Standardwert und bei Entities einen optionalen Domainfilter. Instanzen verwenden den eingebauten Typ `custom-html`, referenzieren die Definition über `config.definitionId` und speichern ihre Variablenwerte direkt in `CardConfig.config`, damit der Quellcode nicht je Instanz dupliziert wird.
-`bars` enthält global genau eine `CardConfig` je Position `sidebar|header|bottom`. Breite/Höhe und Slot-Ausrichtung liegen im `config`-Objekt der jeweiligen Default-Bar-Card und werden über deren Manifest-Schema editiert. Die Slot-Inhalte liegen aus Kompatibilitätsgründen weiterhin in `nav`, `header` und `bottom`; alte dort gespeicherte Größen/Ausrichtungen werden als Migrations-Fallback übernommen. Views steuern nur die Sichtbarkeit.
+`DashboardConfig { format, formatVersion, revision, settings?, bars?, views[] }` → `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebar?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `vue-panel/section-title`) → `CardConfig { id, type, config, css?, size? }`.
+Portable Card-Definitionen sind kein Teil des Dashboard-JSON. Eine Instanz referenziert direkt den
+unveränderlichen Runtime-Typ `<manufacturer>/<cardName>` und speichert nur Variablenwerte, CSS und
+Größe. Das Card-Dokument liegt separat als private HTML-Datei.
+`bars` enthält global genau eine `CardConfig` je Position `sidebar|header|bottom`. Breite, Höhe,
+Platzierung und Inhalte liegen vollständig im `config`-Objekt der jeweiligen portablen Bar-Card.
+Views steuern nur die Sichtbarkeit.
 `padding`/`margin` sind `BoxValue { top?, right?, bottom?, left?, unit?, linked? }` aus `core/ui/boxInput.ts` (`boxToCss()` → CSS-Shorthand, `normalizeBox()` verwirft leere Werte).
 `DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, screensaverMinutes, autoReturnSeconds }` (0 = aus).
 
 ### Persistenz (kein YAML!)
-- localStorage `vue-panel:dashboard` = sofortiger Cache; remote via WebSocket `frontend/set_user_data`/`get_user_data`, Key `vue-panel-dashboard`, debounced 800ms (`persistence.ts`).
-- Custom-Card-Definitionen liegen im selben benutzerspezifischen Dashboard-JSON; es ist keine HA-Custom-Integration nötig. Der Editor begrenzt eine Definition auf 256 KB und alle Definitionen zusammen auf 4 MB. Ist der Browser-Cache voll, wird der Fehler abgefangen und die Remote-Speicherung trotzdem versucht.
-- Beim Connect gewinnt die Remote-Config; gibt es keine, wird lokal/Default hochgeladen (`syncFromRemote`).
-- `migrateDashboardConfig()` aktualisiert lokale und remote geladene Altstände; derzeit wird der frühere Thermostat- und Wetter-Standard `size.cols: 2` einmalig auf `1` korrigiert.
+- Dashboards liegen unter `<config>/vue-panel/dashboards/<dashboard-name>.json`; Cards unter
+  `<config>/vue-panel/cards/<manufacturer>/<cardName>.html`.
+- Laden, Speichern, Import und Export laufen ausschließlich über authentifizierte
+  `vue_panel/*`-WebSocket-Befehle. Schreibzugriffe verwenden Revision beziehungsweise Content-Hash,
+  atomare Writes und maximal fünf Backups.
+- Es gibt weder Dashboard-`localStorage` noch `frontend/*_user_data`, `.storage` oder Legacy-Migrationen.
 - **Undo/Redo**: JSON-Snapshot-Stacks im Store (max 50). `save()` = mit History, `persist()` = ohne (für undo/redo/sync). Strg+Z/Y + Toolbar-Buttons im Edit-Modus.
 
 ### Auth (core/ha/connection.ts)
@@ -84,27 +177,39 @@ src/
 
 ## 5. Cards erstellen (Kern-Feature!)
 
-Jede Card liegt unter `src/cards/<provider>/<name>/` mit `manifest.ts` + Komponente — **fertig, keine Registrierung nötig** (rekursiver eager glob in `cardRegistry.ts`). Alle eingebauten Cards gehören nach `src/cards/core-cards/`; externe Entwickler legen einen eigenen Anbieterordner daneben an. Card-`type`-Werte müssen projektweit eindeutig bleiben.
+Alle Cards sind portable Card-Format-v2-HTML-Dateien. Die Integration leitet aus
+`manufacturer` und `cardName` den Typ und Pfad ab, validiert die Datei ohne Ausführung und liefert
+sie über den Runtime-Katalog aus. Core-Cards liegen schreibgeschützt im Integrationspaket, eigene
+Cards privat unter `<config>/vue-panel/cards/<manufacturer>/`.
 
-```ts
-// src/cards/my-cards/foo/manifest.ts
-export default defineCard({
-  type: 'foo', name: 'cards.foo.name', icon: 'mdi:star',
-  component: () => import('./FooCard.vue'),           // lazy!
-  schema: { entity: { type: 'entity', domain: 'light', label: 'cards.foo.entity' } },
-  defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
-})
-```
-- Schema-Feldtypen: `entity` (mit `domain`), `string`, `number` (optional `min/max/step`), `boolean`, `select` (`options`, optional übersetzte `optionLabels`), `view` (View-Auswahl, z.B. room-tile) → Editor-Formular wird auto-generiert (SchemaForm + Live-Preview).
-- Card-Komponente bekommt Prop `config`; nutzt `useEntity(() => props.config.entity)`, `useService('domain')` aus `@/core/ha`.
-- **Cards nutzen KEIN `BaseCard`** — jede Card trägt die komplette Kachel-Optik (background, border-radius, padding, box-shadow, active-Zustand, …) selbst in ihrem eigenen `<style scoped>`-Block. Grund: der CSS-Tab zeigt/kontrolliert so die GESAMTE Card inkl. Kachel. Normale Tile-Cards folgen der kompakten Designsprache: `padding: 14px 16px`, `min-height: 120px`, vertikaler Aufbau, 38px große runde Icon-Fläche oben und Name/Status unten; aktive Entity-Cards verwenden `#f6d36b`. Card-Namen werden mit `@/core/ui/OverflowMarquee.vue` einzeilig dargestellt und laufen nur bei tatsächlichem Überlauf; `prefers-reduced-motion` fällt auf Ellipsis zurück. Strukturelle Cards wie `section-title`, Menü- und Bar-Cards behalten ihre funktionsgerechte Darstellung.
-- **Regel: Cards importieren nur aus dem eigenen Ordner + `@/core/*`** — nie aus anderen Cards.
-- i18n-Keys der Card in `en.ts` UND `de.ts` ergänzen. Gemeinsame Keys: `cards.common.noEntity/notFound`.
-- Vorhandene Core-Cards unter `src/cards/core-cards/`: clock, light, sensor, thermostat, cover, weather, media, room-tile, menu, section-title, `custom-html` sowie die globalen Shell-Cards sidebar-bar, header-bar und bottom-bar (Referenz: `light`).
-- **Browser-erstellte Custom Cards**: Im Edit-Toolbar öffnet der Code-Button `core/custom-cards/CustomCardDialog.vue`. Der Dialog besitzt Einstellungen-, Variablen-, HTML-, CSS-, JS- und den rechts ausgerichteten „Full Code“-Tab mit CodeMirror und permanenter Vorschau. Zwischen Editor und Vorschau liegt ein zugänglicher vertikaler Splitter (Pointer, Touch, Pfeiltasten), der beide Spalten stufenlos skaliert; unter 760 px verschwindet er zugunsten der gestapelten Darstellung. Der Variablen-Tab ist ein Schema-Builder mit synchronisierten Ansichten „Visuell“ und „JSON“; gültiges JSON aktualisiert Variablen und Vorschau sofort, ungültiges JSON verhindert das Speichern. „Full Code“ bildet die gesamte portable Definition als HTML-Dokument ab: Metadaten, Standardgröße und Variablen stehen im versionierten JavaScript-Objekt `const vuePanelCard = { ... }` eines Konfigurations-`script`-Tags (`format: 'vue-panel-custom-card'`, `version: 1`), gefolgt von `template`, `style` und einem separaten Laufzeit-`script`. Import/Export verwendet `.vue-panel-card.html`; ältere reine JSON- sowie JSON-Metadaten-Exporte bleiben importierbar. Sein Vollbildschalter vergrößert dieselbe `CustomCardDialog`-Instanz auf 100 vw/dvh; es wird kein zweiter Dialog geöffnet, sodass Tabs und Vorschau erhalten bleiben. Beim Einfügen öffnet der normale `CardConfigDialog` und erzeugt daraus passende Entity-/Text-/Zahl-/Boolean-/Icon-Felder. Die Instanzwerte stehen im Sandbox-JavaScript als `vuePanel.config.<key>` bereit. Gespeicherte Definitionen erscheinen unter „Custom Cards“ im normalen CardPicker; der kleine Stift am Picker-Eintrag bearbeitet die globale Definition. Löschen entfernt Definition und alle Dashboard-Instanzen. `CustomCardSandbox.vue` rendert in einem `iframe sandbox="allow-scripts"` ohne Same-Origin-Recht und mit restriktiver CSP. Die kontrollierte globale API im iframe heißt `vuePanel`: `getEntity`, `getIcon`, `subscribeEntity`, `callService`, `config`. Alle Nachrichten vom Host zur Sandbox werden vor `postMessage` in reine serialisierbare Snapshots umgewandelt, da HA-Entities reaktive Vue-Proxies sein können. `getIcon(icon, { size, color })` wandelt einen `mdi:`-Wert außerhalb der Sandbox in eine transparente PNG-Data-URL um, damit frei gewählte Icon-Variablen ohne Font-Freigabe sicher im iframe dargestellt werden. Service-Aufrufe sind in der Vorschau gesperrt.
-- **Globale Bar-Cards**: `manifest.barPositions: ('sidebar'|'header'|'bottom')[]` kennzeichnet Cards, die in Dashboard-Einstellungen für eine Shell-Position auswählbar sind. Ohne zusätzliches `areas` erscheinen reine Bar-Cards nicht im normalen CardPicker. `ShellBarHost.vue` rendert die globale Auswahl; im Edit-Modus öffnet der Stift direkt den normalen `CardConfigDialog` inklusive Schema-, Vorschau- und CSS-Tab. Bar-spezifische Einstellungen gehören ins Manifest-Schema und in `CardConfig.config`; keine separaten Einstellungsdialoge anlegen. Für übersetzte Select-Werte unterstützt `CardSchemaField.optionLabels` eine Zuordnung Wert → i18n-Key. Header- und Bottom-Bar nutzen `config.placement: 'full'|'view'` (**Default: `view`**): `full` liegt außerhalb von `.shell-body` über die gesamte App-Breite, `view` innerhalb der `.view-column` und spart die Sidebar-Breite aus. Eigene Bar-Cards werden wie alle Cards automatisch entdeckt. Sidebar, Header und Bottom sind global, nicht pro View; pro View existieren nur `showSidebar/showHeader/showBottom`.
-- `manifest.fullRow: true` → die Card belegt immer eine ganze Zeile ihres Abschnitts (`grid-column: 1 / -1`, `flex-basis/width: 100%`, gesetzt in `LayoutSection.styleFor` — schlägt auch das `slotStyle` des Layouts) und ist im Flex-Layout **nicht** resizebar (`canResize()`). Nutzt `section-title`.
-- **Per-Card-CSS**: Jede Card hat im Konfigurationsdialog einen Tab „CSS“ (`CardConfigDialog.vue`), vorbefüllt mit dem Default-CSS der Card (`cardDefaultCss()` in `cardRegistry.ts` extrahiert die `<style>`-Blöcke der SFCs per `?raw`-Glob). Abweichungen werden als `CardConfig.css` gespeichert und zur Laufzeit über `core/ui/CardCss.vue` angewendet: injizierter `<style>` mit nativem CSS-Nesting `[data-vp-card="<id>"] { … }`; der Render-Wrapper (`.card-slot`/`.nav-card-slot`/`.panel-slot`) trägt das passende `data-vp-card`-Attribut. Entspricht das CSS dem Default oder ist leer, wird KEIN Override gespeichert.
+Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
+`docs/architecture/card-format-v2.md` und `examples/cards/vue-panel/`. Variablen unterstützen
+`entity`, `icon`, `view`, `select`, `string`, `number` und `boolean`; daraus erzeugt die Engine das
+Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
+ausschließlich die versionierte globale `vuePanel`-Sandbox-API.
+- Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
+  room-tile, menu, section-title sowie sidebar-bar, header-bar und bottom-bar.
+- **Portable Cards und Browser-Editor**: Der Code-Button öffnet `CustomCardDialog.vue`. Das
+  Card-Format besitzt `format: 'vue-panel-card'`, `formatVersion: 2`, `apiVersion: 1`, die
+  unveränderliche Identität `manufacturer/cardName`, Metadaten, Bereiche, deklarierte
+  Capabilities, Standardgröße/-Sichtbarkeit, Variablenschema sowie HTML/CSS/JavaScript. Der Editor
+  speichert direkt über `vue_panel/cards/create|update|import|delete`; verwaltete Cards können als
+  neue lokale Identität dupliziert werden. Änderungen werden nach einem Katalog-Rescan ohne
+  Engine-Neubuild im Picker sichtbar. Maximalgröße: 512 KB pro Datei.
+- `CustomCardSandbox.vue` rendert jede portable Card in `iframe sandbox="allow-scripts"` ohne
+  Same-Origin-Recht und mit restriktiver CSP. Sandbox API v1 gewährt ausschließlich deklarierte
+  Fähigkeiten für Entities, Icons, Services, Navigation, Dashboard-Kontext und Shell-Events;
+  Service-, Navigations- und Shell-Aktionen sind in der Vorschau gesperrt. Instanzwerte stehen
+  schreibgeschützt in `vuePanel.config`. Details: `docs/architecture/card-format-v2.md` und
+  `docs/architecture/sandbox-api-v1.md`.
+- **Globale Bar-Cards**: `areas` enthält `sidebar`, `header` und/oder `bottom`. Der Runtime-Katalog
+  bildet dies auf die vorhandenen Bar-Positionen ab. `ShellBarHost.vue` rendert die
+  globale Auswahl; pro View existieren nur `showSidebar/showHeader/showBottom`.
+- `fullRow: true` belegt eine ganze Abschnittszeile und ist im Flex-Layout nicht resizebar.
+- **Per-Card-CSS**: `cardDefaultCss()` lädt bei portablen Cards das Stylesheet aus dem privaten
+  Card-Dokument. Abweichungen liegen als `CardConfig.css` an der Instanz. Responsive-Regeln wirken
+  am äußeren Slot; das übrige Override wird über `CardCss` in die Sandbox gereicht und ersetzt dort
+  das Card-Stylesheet.
 - **Responsive Sichtbarkeit jeder Card**: `CardConfigDialog` besitzt immer den Tab „Sichtbarkeit“ → Collapsible „Responsive Design“. Smartphone, Tablet und Desktop lassen sich einzeln aktivieren; `mobileMax` (Default 767px) und `tabletMax` (Default 1023px) sind frei einstellbar. `core/ui/responsiveCss.ts` schreibt die Auswahl unmittelbar als markierten Block `vue-panel:responsive:start/end` mit verschachtelten Media Queries in `CardConfig.css`. Der Block ist im CSS-Tab sichtbar; beim erneuten Öffnen wird die UI aus seinen JSON-Metadaten rekonstruiert. Manifeste können über `defaultResponsive` abweichende Card-Defaults vorgeben; die Sidebar-Bar ist dadurch auf Smartphones standardmäßig aus. Keine separaten Visibility-Felder im Datenmodell anlegen.
 
 ## 6. Theme-System (`src/theme/`)
@@ -137,7 +242,12 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - **Section-Dialog** (`core/editor/SectionSettingsDialog.vue`): Tab „Allgemein" (Ausrichtung der Cards `auto|vertical|horizontal`; im Sections-Layout zusätzlich `cardsPerRow` = Auto oder 1–6, unabhängig von der Ausrichtung; dazu `contentAlign` = `left|center|right` als `justify-content` der Card-Zeile — nur sichtbar bei layout=flex oder horizontaler Ausrichtung, schlägt die View-Ausrichtung) + Tab „Erweitert" mit Collapsibles „Größe" (bei layout=sections: Breite in Spalten; bei layout=flex: Volle Breite (Default) oder eigene Breite in px → `SectionConfig.width`) und „Abstände" (Margin/Padding via `BaseBoxInput`). Wird von allen 4 Section-Layouts gerendert; `addSection` legt den Abschnitt sofort an und öffnet den Dialog. Ausrichtung/Spacing wertet `LayoutSection.vue` aus, `columnSpan` setzt `grid-column: span N` (in `dense`-Modus ignoriert). Eine feste `cardsPerRow`-Zahl erzeugt ein exaktes Abschnittsraster und ignoriert normale Card-Spans; `fullRow` bleibt davon unberührt.
 - **View-Tab „Erweitert"** (`ViewSettingsDialog`): zwei `BaseCollapsible`-Boxen — „Spezifische Einstellungen für die Abschnittsansicht" (nur bei layout=sections: maxColumns, dense, topMargin) und „Abstände & Ausrichtung" mit Margin, Padding, Breite (`default|full`), Ausrichtung (`left|center|right`). `ViewRenderer.vue` legt einen `.view-box`-Wrapper darum, setzt Padding/Margin inline, bei `full` die Variable `--view-max-width: none` und für die Ausrichtung `--view-align` (die Auto-Margins). Alle Layouts nutzen `max-width: var(--view-max-width, …)` und `margin: var(--view-align, 0 auto)` statt fester Werte. Damit die Ausrichtung überhaupt sichtbar wird, rechnet `SectionsLayout` seine `max-width` aus den **tatsächlich belegten** Spalten (`usedColumns`, inkl. Add-Tile im Edit-Modus), nicht aus `maxColumns`. Im Flex-Layout wirkt die Ausrichtung als `justify-content` auf die **Abschnitts-Reihe** (Default links); wie die Cards innerhalb eines Abschnitts stehen, regelt dessen eigenes `contentAlign`.
 - Edit-Modus: `store.editMode` (EditFab absolut im `.view-area`, rechts/unten je 24px; der Inhalt scrollt separat in `.view-scroll`). Toolbar: Undo/Redo, View-Einstellungen, Dashboard-Einstellungen. Im Edit-Modus erscheinen Subviews in der Nav.
-- **Globale Bars**: Dashboard-Einstellungen → Tab „Bars“ wählt und konfiguriert je eine Card für Sidebar, Header und Bottom. Die mitgelieferten Default-Cards verwalten ihre inneren Slots über `BarCards.vue`. Die Sidebar bleibt links stehen, hat rechts eine Trennlinie und wird nie durch einen festen Shell-Breakpoint ausgeblendet; ausschließlich ihre Card-Sichtbarkeit entscheidet. Ihr Manifest schaltet Smartphones standardmäßig aus, Tablets und Desktops bleiben sichtbar. Es erfolgt keine automatische Umordnung nach unten. Header und Bottom können pro View ein-/ausgeschaltet werden. Bottom ist standardmäßig sichtbar (`showBottom !== false`), Header standardmäßig ausgeblendet.
+- **Globale Bars**: Dashboard-Einstellungen → Tab „Bars“ wählt und konfiguriert je eine portable
+  Card für Sidebar, Header und Bottom. Die Standard-Bars beziehen Ansichten und aktive Route über
+  die reaktive Sandbox-Navigations-API. Die Sidebar bleibt links stehen, hat rechts eine Trennlinie
+  und wird nie durch einen festen Shell-Breakpoint ausgeblendet; ausschließlich ihre Card-
+  Sichtbarkeit entscheidet. Sie ist auf Smartphones standardmäßig aus. Alle drei Bars können pro
+  View ein-/ausgeschaltet werden und sind standardmäßig sichtbar.
 - **View-URLs**: Intern referenzieren Menü, room-tile & Co. immer die **View-`id`**; die URL nutzt `view.path` (Fallback: `id`) und darf hierarchisch sein, z. B. `uebersicht/wohnzimmer`. Helfer in `dashboardStore.ts`: `viewPath(view)`, `normalizeRoutePath(path)`, `slugify(title)`, `slugifyPath(path)`, Getter `viewByRoute(path)`. Der Catch-all-Hash-Router akzeptiert beliebig viele Segmente. Der View-Dialog slugifiziert jedes Segment einzeln, erhält `/` und macht den vollständigen Pfad beim Speichern eindeutig; danach emittiert er `navigate`, damit die Route dem neuen Pfad folgt. Die Menu-Card markiert neben dem exakten Ziel auch Pfad-Eltern aktiv (`uebersicht` bei `uebersicht/wohnzimmer`).
 - Subviews: `view.subview = true` → kein Nav-Eintrag, Header mit Zurück-Button in AppShell; room-tile-Card navigiert dorthin.
 - Kiosk: `useIdleSeconds` → Screensaver (Vollbild-Uhr) und Auto-Return zur ersten View; beides im Edit-Modus pausiert.
@@ -152,7 +262,8 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 
 ## 10. Offene / mögliche nächste Schritte
 
-- [ ] Panel in der `configuration.yaml` des Nutzers registrieren + `dist/` nach `config/www/vue-panel/` deployen (Snippet PLAN.md §8).
+- [x] Phase 3: privaten Card-Katalog, Card-Datei-CRUD, Runtime-Registry und Sandbox API v1 implementieren.
+- [x] Phase 4: alle Core-Cards in portable HTML-Dateien portieren und den SFC-Fallback entfernen.
 - [ ] Git-Repo für vue-panel initialisieren (bisher keins!).
 - [ ] Weitere Cards (z.B. Kamera, Verlaufs-Graph, Szenen/Buttons, Alarm).
 - [ ] Beispiel-Custom-Theme als Vorlage.

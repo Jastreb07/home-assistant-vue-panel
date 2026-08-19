@@ -2,12 +2,20 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, CustomCardDefinition } from '@/core/config/types'
-import { useDashboardStore } from '@/core/config/dashboardStore'
-import { cardRegistry, groupedCardsForArea, type CardArea } from '@/core/registry/cardRegistry'
+import {
+  cardDisplayName,
+  cardRegistry,
+  groupedCardsForArea,
+  type CardArea,
+  type CardManifest,
+} from '@/core/registry/cardRegistry'
+import { getPortableCard } from '@/core/ha'
 import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
+import { editorDefinitionFromDocument } from '@/core/custom-cards/cardEditorModel'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { readCardFromClipboard } from '@/core/ui/cardClipboard'
+import { alertDialog } from '@/core/ui/dialogService'
 
 const props = withDefaults(defineProps<{ area?: CardArea }>(), { area: 'dashboard' })
 const emit = defineEmits<{
@@ -20,7 +28,6 @@ const emit = defineEmits<{
 }>()
 
 const { t, locale } = useI18n()
-const store = useDashboardStore()
 const definitionTarget = ref<CustomCardDefinition | null>(null)
 
 // Native group first, everything else alphabetically
@@ -29,27 +36,17 @@ const clipboardCard = readCardFromClipboard()
 const clipboardManifest = computed(() => {
   if (!clipboardCard) return null
   const manifest = cardRegistry[clipboardCard.type]
-  if (clipboardCard.type === 'custom-html') {
-    return props.area === 'dashboard'
-      && store.customCardById(String(clipboardCard.config.definitionId ?? ''))
-      ? manifest
-      : null
-  }
   return manifest && (manifest.areas ?? ['dashboard']).includes(props.area) ? manifest : null
 })
-const customCards = computed(() => props.area === 'dashboard' ? store.customCards : [])
-const isEmpty = computed(() => groups.value.length === 0 && customCards.value.length === 0 && !clipboardManifest.value)
+const isEmpty = computed(() => groups.value.length === 0 && !clipboardManifest.value)
 
-function addCustomCard(definition: CustomCardDefinition) {
-  if (definition.variables.length > 0) {
-    emit('pick', 'custom-html', undefined, { definitionId: definition.id })
-    return
+async function editPortableCard(manifest: CardManifest) {
+  if (!manifest.portable) return
+  try {
+    definitionTarget.value = editorDefinitionFromDocument(await getPortableCard(manifest.type))
+  } catch (error) {
+    await alertDialog(String(error))
   }
-  emit('pick', 'custom-html', {
-    type: 'custom-html',
-    config: { definitionId: definition.id },
-    size: { ...definition.defaultSize },
-  })
 }
 </script>
 
@@ -68,41 +65,31 @@ function addCustomCard(definition: CustomCardDefinition) {
         </span>
         <span class="clipboard-copy">
           <strong>{{ t('editor.pasteCard') }}</strong>
-          <small>{{ t(clipboardManifest.name) }}</small>
+          <small>{{ cardDisplayName(clipboardManifest, t) }}</small>
         </span>
       </button>
     </section>
 
     <section v-for="group in groups" :key="group.id" class="group">
-      <h4 class="group-title">{{ t(group.label) }}</h4>
+      <h4 class="group-title">{{ group.literalLabel ? group.label : t(group.label) }}</h4>
       <div class="picker-grid">
-        <button
+        <div
           v-for="card in group.cards"
           :key="card.type"
-          class="pick"
-          @click="emit('pick', card.type)"
+          class="custom-pick-wrap"
         >
-          <MdiIcon :icon="card.icon" :size="32" />
-          <span>{{ t(card.name) }}</span>
-        </button>
-      </div>
-    </section>
-
-    <section v-if="customCards.length" class="group">
-      <h4 class="group-title">{{ t('cards.groups.custom') }}</h4>
-      <div class="picker-grid">
-        <div v-for="definition in customCards" :key="definition.id" class="custom-pick-wrap">
-          <button class="pick custom-pick" @click="addCustomCard(definition)">
-            <MdiIcon :icon="definition.icon" :size="32" />
-            <span>{{ definition.name }}</span>
-            <small v-if="definition.description">{{ definition.description }}</small>
+          <button class="pick custom-pick" @click="emit('pick', card.type)">
+            <MdiIcon :icon="card.icon" :size="32" />
+            <span>{{ cardDisplayName(card, t) }}</span>
+            <small v-if="card.portable?.description">{{ card.portable.description }}</small>
           </button>
           <button
+            v-if="card.portable"
             class="edit-definition"
             :title="t('editor.cardActions.edit')"
-            @click="definitionTarget = definition"
+            @click="editPortableCard(card)"
           >
-            <MdiIcon icon="mdi:pencil" :size="14" />
+            <MdiIcon :icon="card.portable.writable ? 'mdi:pencil' : 'mdi:content-copy'" :size="14" />
           </button>
         </div>
       </div>

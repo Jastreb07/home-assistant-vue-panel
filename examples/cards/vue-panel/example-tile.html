@@ -1,0 +1,151 @@
+<script data-vue-panel-config>
+const vuePanelCard = {
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "example-tile",
+  "name": "Example tile",
+  "description": "Reference implementation of a dashboard card",
+  "icon": "mdi:lightbulb-outline",
+  "group": "vue-panel",
+  "areas": ["dashboard"],
+  "capabilities": ["entity:read", "entity:subscribe", "icon:render", "service:call"],
+  "defaultSize": { "cols": 1, "rows": 1, "width": 140, "height": 120 },
+  "defaultResponsive": {
+    "mobile": true,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": false,
+  "variables": [
+    {
+      "key": "entity",
+      "label": "Light entity",
+      "type": "entity",
+      "required": true,
+      "domain": "light",
+      "default": ""
+    },
+    {
+      "key": "name",
+      "label": "Display name",
+      "type": "string",
+      "required": false,
+      "default": "Light"
+    },
+    {
+      "key": "icon",
+      "label": "Icon",
+      "type": "icon",
+      "required": true,
+      "default": "mdi:lightbulb-outline"
+    }
+  ]
+};
+</script>
+
+<template data-vue-panel-html>
+  <button class="example-tile" id="card" type="button">
+    <img class="example-tile__icon" id="icon" alt="">
+    <span class="example-tile__info">
+      <span class="example-tile__name" id="name"></span>
+      <span class="example-tile__state" id="state"></span>
+    </span>
+  </button>
+</template>
+
+<style data-vue-panel-css>
+.example-tile {
+  width: 100%;
+  height: 100%;
+  min-height: 120px;
+  padding: 14px 16px;
+  border: 0;
+  border-radius: var(--card-radius);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.example-tile__icon {
+  width: 38px;
+  height: 38px;
+  padding: 7px;
+  border-radius: 50%;
+  background: rgb(215 215 215 / 35%);
+}
+
+.example-tile__info {
+  min-width: 0;
+  margin-top: auto;
+  display: block;
+  text-align: left;
+}
+
+.example-tile__name,
+.example-tile__state {
+  overflow: hidden;
+  display: block;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.example-tile__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.example-tile__state {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.example-tile.is-on {
+  background: #f6d36b;
+  color: #111111;
+}
+</style>
+
+<script data-vue-panel-javascript>
+const config = vuePanel.config;
+const card = document.getElementById('card');
+const nameElement = document.getElementById('name');
+const stateElement = document.getElementById('state');
+const iconElement = document.getElementById('icon');
+
+async function render(entity) {
+  const isOn = entity?.state === 'on';
+  card.classList.toggle('is-on', isOn);
+  nameElement.textContent = String(config.name || entity?.attributes?.friendly_name || 'Light');
+  stateElement.textContent = entity?.state || 'Unavailable';
+  iconElement.src = await vuePanel.getIcon(String(config.icon || 'mdi:lightbulb-outline'), {
+    size: 72,
+    color: isOn ? '#111111' : '#737373',
+  });
+}
+
+card.addEventListener('click', async () => {
+  const entityId = String(config.entity || '');
+  const entity = await vuePanel.getEntity(entityId);
+  await vuePanel.callService('light', entity?.state === 'on' ? 'turn_off' : 'turn_on', {}, {
+    entity_id: entityId,
+  });
+});
+
+const entityId = String(config.entity || '');
+if (entityId) {
+  await render(await vuePanel.getEntity(entityId));
+  vuePanel.subscribeEntity(entityId, render);
+} else {
+  await render(null);
+}
+</script>
+

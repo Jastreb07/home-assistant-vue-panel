@@ -1,4 +1,54 @@
-# vue-panel — Dashboard-Engine für Home Assistant
+# vue-panel — bisheriger Frontend-Stand
+
+> **Umbau aktiv:** Die verbindliche Greenfield-Zielarchitektur und der aktuelle Umsetzungsplan
+> stehen in [`INTEGRATION_RESTRUCTURE_PLAN.md`](INTEGRATION_RESTRUCTURE_PLAN.md). Dieses Dokument
+> beschreibt ausschließlich den bisherigen Frontend-Stand und dient während der Portierung als
+> fachliche Referenz. Neue Architekturentscheidungen werden nicht mehr hier ergänzt. Nach dem
+> Cutover wird dieser Altplan entfernt.
+
+Stand des Umbaus: Die Phasen 0 bis 4 sind abgeschlossen. Phase 1 brachte das HA-Integrations-Skelett,
+Config-/Subentry-Flow, loader-erzeugtem Engine-iframe, Engine-Build mit Query-Versionierung und
+direkter statischer Auslieferung aus dem Integrationspaket weit fortgeschritten. Phase 2 ist lokal implementiert:
+mehrere Panel-Subentries, private Dashboard-Dateien, Revisionskonflikte, Backups,
+Export/Import und getrennte Speicherwarteschlangen pro Panel. Der echte HA-Laufzeittest steht
+noch aus; ein beim ersten Test erkannter gecachter 1.x-Loader wird ab Integration
+`2.0.0-alpha.2` durch eine versionierte `module_url` sicher umgangen. Ab `2.0.0-alpha.3` werden
+außerdem vor dem Web-Component-Upgrade gesetzte HA-Properties korrekt übernommen. Ab
+`2.0.0-alpha.4` bleiben Preload- und Chunk-URLs trotz automatischer Bereinigung des Engine-Ordners
+korrekt relativ. Ab `2.0.0-alpha.5` liegt die Engine unter einem festen `engine/`-Pfad; ihr
+Cache-Key ist `panel.js?ver=<engineVersion>`, und die Integration ersetzt den Engine-Ordner bei
+einer Versionsänderung vollständig. Ab `2.0.0-alpha.6` verwendet die Menu-Card die abgesicherte
+reaktive Router-Route, sodass sie auch während des ersten Dashboard-Ladens rendern kann. Ab
+`2.0.0-alpha.7` wird zusätzlich das Versionsmanifest über den Loader-Cache-Key geladen und die
+tatsächlich importierte Engine-Version in der Browser-Konsole protokolliert. Ab
+`2.0.0-alpha.8` werden die Frontend-Dateien direkt aus `custom_components/vue_panel/frontend`
+unter `/vue-panel-static/` ausgeliefert; eine Kopie nach `www` entfällt. Der alte Frontend-Stand
+unterhalb dieses Hinweises bleibt nur Portierungsreferenz. Ab `2.0.0-alpha.9` nutzt die Engine
+eine eigene reaktive Hash-Navigation, sodass lazy geladene Cards keinen injizierten Vue Router
+mehr benötigen. Ab
+`2.0.0-alpha.14` verwendet die Sandbox einen auch über unverschlüsseltes lokales HTTP verfügbaren
+Runtime-ID-Generator, damit Card- und Dashboard-Dialoge nicht an `crypto.randomUUID()` scheitern.
+Ab `2.0.0-alpha.16` lädt das HA-Custom-Element die Engine wieder als eigenständige SPA in einem
+eigenen iframe. Authentifizierung, Sprache und Dashboard-Name werden wie im bewährten Master-Loader
+per `vue-panel:auth` übertragen; das Shadow-Root-Mount und dessen Portal entfallen wieder.
+Ab `2.0.0-alpha.17` sind die dafür nicht mehr benötigten Dialog- und Bar-Workarounds entfernt;
+Dialoge, Card-Menüs und lazy Bar-Komponenten verwenden wieder ihre ursprüngliche iframe-Logik.
+
+Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
+die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
+HA-Panel nur Administratoren zur Verfügung.
+
+Ab `2.0.0-alpha.19`/Engine `2.0.16` ist Phase 3 des Greenfield-Plans umgesetzt. Portable
+Card-Format-v2-Dateien liegen privat unter
+`<config>/vue-panel/cards/<manufacturer>/<cardName>.html`, werden serverseitig validiert und über
+authentifizierte WebSocket-Befehle verwaltet. Der Runtime-Katalog speist Picker, Instanzdialog und
+Sandbox ohne Engine-Neubuild. Der Browser-Editor arbeitet direkt mit diesen Dateien; Content-Hashes,
+atomare Writes, fünf Backups und Admin-Rechte schützen Änderungen. Sandbox API v1 erzwingt die pro
+Card deklarierten Capabilities. Der frühere Dashboard-`customCards`-/`custom-html`-Pfad ist entfernt.
+Seit `2.0.0-alpha.20`/Engine `2.0.17` werden alle mitgelieferten Core- und Bar-Cards
+ausschließlich als portable, schreibgeschützte HTML-Dateien aus dem Integrationspaket geladen.
+`src/cards/core-cards`, die SFC-Fallback-Registry und die verschachtelten Legacy-Bar-Slots sind
+entfernt. Als Nächstes folgt Phase 5 mit Release-, Installations- und Recovery-Dokumentation.
 
 Ein vollständiger Lovelace-Ersatz als Vue 3 (Composition API + TypeScript) SPA.
 Kein YAML, alles visuell im Browser editierbar, Cards als einfache Vue-Komponenten.

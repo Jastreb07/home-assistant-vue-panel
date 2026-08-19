@@ -2,23 +2,22 @@ import { defineStore } from 'pinia'
 import type {
   BarConfig,
   BarPosition,
-  BottomConfig,
-  BottomSlot,
   CardConfig,
-  CustomCardDefinition,
   DashboardConfig,
   DashboardSettings,
-  HeaderConfig,
-  HeaderSlot,
-  NavConfig,
-  NavSlot,
   SectionConfig,
   ViewConfig,
 } from './types'
-import { loadRemote, saveRemote } from './persistence'
+import {
+  exportRemote,
+  importRemote,
+  isRevisionConflict,
+  loadRemote,
+  saveRemote,
+} from './persistence'
 import { t } from '@/i18n'
+import { choiceDialog } from '@/core/ui/dialogService'
 
-const STORAGE_KEY = 'vue-panel:dashboard'
 const HISTORY_LIMIT = 50
 
 export const defaultSettings: DashboardSettings = {
@@ -28,75 +27,22 @@ export const defaultSettings: DashboardSettings = {
   autoReturnSeconds: 0,
 }
 
-export const defaultNav: NavConfig = {
-  // The view navigation itself is a card — replaceable like any other
-  slots: {
-    top: [{ id: 'navcard-clock', type: 'clock', config: {} }],
-    center: [{ id: 'navcard-menu', type: 'menu', config: {} }],
-    bottom: [],
-  },
-  width: 280,
-  centerAlign: { vertical: 'start', horizontal: 'stretch' },
-}
-
-/** Config written before the sidebar had slots kept a flat `cards` array. */
-interface LegacyNav {
-  cards?: CardConfig[]
-  cardsPosition?: 'top' | 'bottom'
-}
-
-function resolveSlots(raw: Partial<NavConfig> & LegacyNav): Record<NavSlot, CardConfig[]> {
-  if (raw.slots) {
-    const slots = raw.slots
-    return { top: slots.top ?? [], center: slots.center ?? [], bottom: slots.bottom ?? [] }
-  }
-  if (raw.cards?.length) {
-    const target: NavSlot = raw.cardsPosition === 'top' ? 'top' : 'bottom'
-    return { ...defaultNav.slots, [target]: raw.cards }
-  }
-  return defaultNav.slots
-}
-
-export const defaultHeader: HeaderConfig = {
-  slots: { left: [{ id: 'hdrcard-clock', type: 'clock', config: {} }], center: [], right: [] },
-  height: 64,
-  centerAlign: { vertical: 'center', horizontal: 'center' },
-}
-
-function resolveHeaderSlots(raw: Partial<HeaderConfig>): Record<HeaderSlot, CardConfig[]> {
-  const slots = raw.slots
-  if (!slots) return defaultHeader.slots
-  return { left: slots.left ?? [], center: slots.center ?? [], right: slots.right ?? [] }
-}
-
-export const defaultBottom: BottomConfig = {
-  slots: { left: [], center: [], right: [] },
-  height: 64,
-  centerAlign: { vertical: 'center', horizontal: 'center' },
-}
-
 export const defaultBars: BarConfig = {
   sidebar: {
     id: 'bar-sidebar',
-    type: 'sidebar-bar',
-    config: { width: 280, verticalAlign: 'start', horizontalAlign: 'stretch' },
+    type: 'vue-panel/sidebar-bar',
+    config: { width: 280, showClock: true, showDate: true, showTitles: true, showIcons: true },
   },
   header: {
     id: 'bar-header',
-    type: 'header-bar',
-    config: { placement: 'view', height: 64, verticalAlign: 'center', horizontalAlign: 'center' },
+    type: 'vue-panel/header-bar',
+    config: { placement: 'view', height: 64, showTitle: true, showNavigation: true, showIcons: true },
   },
   bottom: {
     id: 'bar-bottom',
-    type: 'bottom-bar',
-    config: { placement: 'view', height: 64, verticalAlign: 'center', horizontalAlign: 'center' },
+    type: 'vue-panel/bottom-bar',
+    config: { placement: 'view', height: 64, showTitles: true, showIcons: true },
   },
-}
-
-function resolveBottomSlots(raw: Partial<BottomConfig>): Record<BottomSlot, CardConfig[]> {
-  const slots = raw.slots
-  if (!slots) return defaultBottom.slots
-  return { left: slots.left ?? [], center: slots.center ?? [], right: slots.right ?? [] }
 }
 
 let idCounter = 0
@@ -146,79 +92,40 @@ export function slugifyPath(value: string): string {
 
 function defaultConfig(): DashboardConfig {
   return {
-    version: 1,
+    format: 'vue-panel-dashboard',
+    formatVersion: 1,
+    revision: 1,
+    settings: { ...defaultSettings },
+    bars: JSON.parse(JSON.stringify(defaultBars)) as BarConfig,
     views: [
       {
-        id: 'home',
+        id: 'overview',
         title: t('defaults.overview'),
         icon: 'mdi:home',
+        path: 'overview',
         layout: 'sections',
-        sections: [
-          {
-            id: 'sec-start',
-            cards: [
-              { id: 'card-title', type: 'section-title', config: { title: t('defaults.start') } },
-              { id: 'card-clock', type: 'clock', config: {} },
-              { id: 'card-light-demo', type: 'light', config: { entity: '' } },
-            ],
-          },
-        ],
+        showSidebar: true,
+        showHeader: true,
+        showBottom: true,
+        sections: [],
       },
     ],
   }
 }
 
-/** Apply one-time compatibility updates to persisted dashboard data. */
-function migrateDashboardConfig(config: DashboardConfig): { config: DashboardConfig; changed: boolean } {
-  let changed = false
-  for (const definition of config.customCards ?? []) {
-    if (!Array.isArray(definition.variables)) {
-      definition.variables = []
-      changed = true
-    }
-  }
-  for (const view of config.views) {
-    for (const section of view.sections) {
-      for (const card of section.cards) {
-        // These cards used to ship with a two-column default. They now match compact tiles.
-        if (['thermostat', 'weather'].includes(card.type) && card.size?.cols === 2) {
-          card.size = { ...card.size, cols: 1 }
-          changed = true
-        }
-      }
-    }
-  }
-  return { config, changed }
+function downloadDashboard(dashboard: DashboardConfig, filename: string): void {
+  const blob = new Blob([JSON.stringify(dashboard, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  link.click()
+  URL.revokeObjectURL(url)
 }
-
-function loadLocal(): DashboardConfig {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) {
-      const migrated = migrateDashboardConfig(JSON.parse(raw) as DashboardConfig)
-      if (migrated.changed) saveLocal(migrated.config)
-      return migrated.config
-    }
-  } catch (err) {
-    console.warn('[vue-panel] Could not load stored config:', err)
-  }
-  return defaultConfig()
-}
-
-function saveLocal(config: DashboardConfig): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config))
-  } catch (err) {
-    // Remote HA user data remains the source of truth when the browser cache is full.
-    console.warn('[vue-panel] Could not update the local config cache:', err)
-  }
-}
-
-let remoteSaveTimer: ReturnType<typeof setTimeout> | null = null
 
 export const useDashboardStore = defineStore('dashboard', {
   state: () => {
-    const config = loadLocal()
+    const config = defaultConfig()
     return {
       config,
       editMode: false,
@@ -226,6 +133,10 @@ export const useDashboardStore = defineStore('dashboard', {
       undoStack: [] as string[],
       redoStack: [] as string[],
       lastSnapshot: JSON.stringify(config),
+      dashboardName: '',
+      remoteSaveTimer: null as number | null,
+      remoteSaveInFlight: false,
+      remoteSavePending: false,
     }
   },
   getters: {
@@ -240,82 +151,15 @@ export const useDashboardStore = defineStore('dashboard', {
         return state.config.views.find((v) => viewPath(v) === normalized)
       }
     },
-    customCards(state): CustomCardDefinition[] {
-      return state.config.customCards ?? []
-    },
-    customCardById(state) {
-      return (id: string): CustomCardDefinition | undefined =>
-        state.config.customCards?.find((card) => card.id === id)
-    },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
     },
-    nav(state): NavConfig {
-      const raw = state.config.nav ?? {}
-      return {
-        ...defaultNav,
-        ...raw,
-        slots: resolveSlots(raw),
-        centerAlign: { ...defaultNav.centerAlign, ...raw.centerAlign },
-      }
-    },
-    header(state): HeaderConfig {
-      const raw = state.config.header ?? {}
-      return {
-        ...defaultHeader,
-        ...raw,
-        slots: resolveHeaderSlots(raw),
-        centerAlign: { ...defaultHeader.centerAlign, ...raw.centerAlign },
-      }
-    },
-    bottom(state): BottomConfig {
-      const raw = state.config.bottom ?? {}
-      return {
-        ...defaultBottom,
-        ...raw,
-        slots: resolveBottomSlots(raw),
-        centerAlign: { ...defaultBottom.centerAlign, ...raw.centerAlign },
-      }
-    },
     bars(state): BarConfig {
       const selected = { ...defaultBars, ...state.config.bars }
-      const sidebar = selected.sidebar
-      const header = selected.header
-      const bottom = selected.bottom
-      const savedSidebar = state.config.bars?.sidebar
-      const savedHeader = state.config.bars?.header
-      const savedBottom = state.config.bars?.bottom
       return {
-        sidebar: sidebar.type === 'sidebar-bar' ? {
-          ...sidebar,
-          config: {
-            ...defaultBars.sidebar.config,
-            width: state.config.nav?.width ?? defaultNav.width,
-            verticalAlign: state.config.nav?.centerAlign?.vertical ?? defaultNav.centerAlign.vertical,
-            horizontalAlign: state.config.nav?.centerAlign?.horizontal ?? defaultNav.centerAlign.horizontal,
-            ...savedSidebar?.config,
-          },
-        } : sidebar,
-        header: header.type === 'header-bar' ? {
-          ...header,
-          config: {
-            ...defaultBars.header.config,
-            height: state.config.header?.height ?? defaultHeader.height,
-            verticalAlign: state.config.header?.centerAlign?.vertical ?? defaultHeader.centerAlign.vertical,
-            horizontalAlign: state.config.header?.centerAlign?.horizontal ?? defaultHeader.centerAlign.horizontal,
-            ...savedHeader?.config,
-          },
-        } : header,
-        bottom: bottom.type === 'bottom-bar' ? {
-          ...bottom,
-          config: {
-            ...defaultBars.bottom.config,
-            height: state.config.bottom?.height ?? defaultBottom.height,
-            verticalAlign: state.config.bottom?.centerAlign?.vertical ?? defaultBottom.centerAlign.vertical,
-            horizontalAlign: state.config.bottom?.centerAlign?.horizontal ?? defaultBottom.centerAlign.horizontal,
-            ...savedBottom?.config,
-          },
-        } : bottom,
+        sidebar: { ...selected.sidebar, config: { ...defaultBars.sidebar.config, ...selected.sidebar.config } },
+        header: { ...selected.header, config: { ...defaultBars.header.config, ...selected.header.config } },
+        bottom: { ...selected.bottom, config: { ...defaultBars.bottom.config, ...selected.bottom.config } },
       }
     },
     canUndo(state): boolean {
@@ -326,17 +170,69 @@ export const useDashboardStore = defineStore('dashboard', {
     },
   },
   actions: {
+    async resolveRevisionConflict() {
+      const choice = await choiceDialog(t('persistence.conflictMessage'), [
+        {
+          value: 'copy',
+          label: t('persistence.saveCopy'),
+        },
+        {
+          value: 'reload',
+          label: t('persistence.reload'),
+          variant: 'primary',
+        },
+      ])
+      if (choice === 'copy') {
+        downloadDashboard(
+          this.config,
+          `vue-panel-unsaved-${new Date().toISOString().replace(/[:.]/g, '-')}.json`,
+        )
+      }
+      if (choice === 'copy' || choice === 'reload') await this.syncFromRemote()
+    },
     /** Persist without touching the undo history (used by undo/redo/sync). */
     persist() {
-      saveLocal(this.config)
-      if (remoteSaveTimer) clearTimeout(remoteSaveTimer)
-      remoteSaveTimer = setTimeout(() => {
-        saveRemote(this.config).catch((err) =>
-          console.warn('[vue-panel] Remote save failed:', err),
-        )
+      if (!this.dashboardName) return
+      if (this.remoteSaveTimer !== null) window.clearTimeout(this.remoteSaveTimer)
+      this.remoteSaveTimer = window.setTimeout(() => {
+        this.remoteSaveTimer = null
+        this.flushRemote().catch((err) => console.warn('[vue-panel] Remote save failed:', err))
       }, 800)
     },
-    /** localStorage immediately, remote (HA .storage) debounced. Records undo history. */
+    /** Queue a revision-safe remote save without allowing requests to overlap. */
+    async flushRemote() {
+      if (!this.dashboardName) throw new Error('Dashboard persistence is not initialized.')
+      if (this.remoteSaveInFlight) {
+        this.remoteSavePending = true
+        return
+      }
+      this.remoteSaveInFlight = true
+      try {
+        do {
+          this.remoteSavePending = false
+          const snapshot = JSON.parse(JSON.stringify(this.config)) as DashboardConfig
+          const saved = await saveRemote(this.dashboardName, snapshot)
+          const currentWithoutRevision = { ...this.config, revision: snapshot.revision }
+          if (JSON.stringify(currentWithoutRevision) === JSON.stringify(snapshot)) {
+            this.config = saved
+          } else {
+            this.config.revision = saved.revision
+            this.remoteSavePending = true
+          }
+          this.lastSnapshot = JSON.stringify(this.config)
+        } while (this.remoteSavePending)
+      } catch (error) {
+        this.remoteSavePending = false
+        if (isRevisionConflict(error)) {
+          await this.resolveRevisionConflict()
+          return
+        }
+        throw error
+      } finally {
+        this.remoteSaveInFlight = false
+      }
+    },
+    /** Record undo history and debounce persistence through the integration API. */
     save() {
       const json = JSON.stringify(this.config)
       if (json !== this.lastSnapshot) {
@@ -351,40 +247,64 @@ export const useDashboardStore = defineStore('dashboard', {
       const prev = this.undoStack.pop()
       if (!prev) return
       this.redoStack.push(JSON.stringify(this.config))
-      this.config = JSON.parse(prev) as DashboardConfig
-      this.lastSnapshot = prev
+      const restored = JSON.parse(prev) as DashboardConfig
+      restored.revision = this.config.revision
+      this.config = restored
+      this.lastSnapshot = JSON.stringify(restored)
       this.persist()
     },
     redo() {
       const next = this.redoStack.pop()
       if (!next) return
       this.undoStack.push(JSON.stringify(this.config))
-      this.config = JSON.parse(next) as DashboardConfig
-      this.lastSnapshot = next
+      const restored = JSON.parse(next) as DashboardConfig
+      restored.revision = this.config.revision
+      this.config = restored
+      this.lastSnapshot = JSON.stringify(restored)
       this.persist()
     },
-    /** After connecting: the server-side config takes precedence over localStorage. */
-    async syncFromRemote() {
+    /** Load the current dashboard file after Home Assistant supplies its connection. */
+    async syncFromRemote(dashboardName?: string) {
+      if (dashboardName) this.dashboardName = dashboardName
+      if (!this.dashboardName) throw new Error('Dashboard name is not initialized.')
+      const remote = await loadRemote(this.dashboardName)
+      this.config = remote
+      this.undoStack = []
+      this.redoStack = []
+      this.lastSnapshot = JSON.stringify(remote)
+    },
+    async exportDashboard() {
+      if (!this.dashboardName) throw new Error('Dashboard name is not initialized.')
+      return exportRemote(this.dashboardName)
+    },
+    async importDashboard(document: DashboardConfig) {
+      if (!this.dashboardName) throw new Error('Dashboard name is not initialized.')
       try {
-        const remote = await loadRemote()
-        if (remote && Array.isArray(remote.views)) {
-          const migrated = migrateDashboardConfig(remote)
-          this.config = migrated.config
-          this.undoStack = []
-          this.redoStack = []
-          this.lastSnapshot = JSON.stringify(migrated.config)
-          saveLocal(migrated.config)
-          if (migrated.changed) await saveRemote(migrated.config)
-        } else {
-          // First device: upload the local/default config as the starting point
-          await saveRemote(this.config)
+        const imported = await importRemote(
+          this.dashboardName,
+          document,
+          this.config.revision,
+        )
+        this.config = imported
+        this.undoStack = []
+        this.redoStack = []
+        this.lastSnapshot = JSON.stringify(imported)
+      } catch (error) {
+        if (isRevisionConflict(error)) {
+          await this.resolveRevisionConflict()
+          return
         }
-      } catch (err) {
-        console.warn('[vue-panel] Remote sync failed:', err)
+        throw error
       }
     },
+    disposePersistence() {
+      if (this.remoteSaveTimer !== null) window.clearTimeout(this.remoteSaveTimer)
+      this.remoteSaveTimer = null
+      this.remoteSavePending = false
+      this.dashboardName = ''
+    },
     resetToDefault() {
-      this.config = defaultConfig()
+      this.config = { ...defaultConfig(), revision: this.config.revision }
       this.save()
     },
 
@@ -401,199 +321,6 @@ export const useDashboardStore = defineStore('dashboard', {
     setBar(position: BarPosition, card: CardConfig) {
       this.config.bars = { ...this.bars, [position]: card }
       this.save()
-    },
-
-    // â”€â”€ Reusable custom cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    upsertCustomCard(definition: CustomCardDefinition) {
-      const cards = [...(this.config.customCards ?? [])]
-      const index = cards.findIndex((card) => card.id === definition.id)
-      const saved = JSON.parse(JSON.stringify(definition)) as CustomCardDefinition
-      if (index >= 0) cards[index] = saved
-      else cards.push(saved)
-      this.config.customCards = cards
-      this.save()
-    },
-    removeCustomCard(definitionId: string) {
-      this.config.customCards = (this.config.customCards ?? []).filter(
-        (card) => card.id !== definitionId,
-      )
-      for (const view of this.config.views) {
-        for (const section of view.sections) {
-          section.cards = section.cards.filter(
-            (card) => card.type !== 'custom-html' || card.config.definitionId !== definitionId,
-          )
-        }
-      }
-      this.save()
-    },
-
-    // ── Navigation ───────────────────────────────────────────
-    /** Write a full nav object — the getter merges defaults and migrates. */
-    setNav(patch: Partial<NavConfig>) {
-      this.config.nav = { ...this.nav, ...patch }
-      this.save()
-    },
-    updateNav(patch: Partial<Omit<NavConfig, 'slots'>>) {
-      this.setNav(patch)
-    },
-    addNavCard(slot: NavSlot, card: Omit<CardConfig, 'id'>) {
-      const slots = { ...this.nav.slots }
-      slots[slot] = [...slots[slot], { ...card, id: newId('navcard') }]
-      this.setNav({ slots })
-    },
-    duplicateNavCard(slot: NavSlot, cardId: string) {
-      const slots = { ...this.nav.slots }
-      const cards = [...slots[slot]]
-      const index = cards.findIndex((card) => card.id === cardId)
-      if (index < 0) return
-      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'navcard'))
-      slots[slot] = cards
-      this.setNav({ slots })
-    },
-    removeNavCard(slot: NavSlot, cardId: string) {
-      const slots = { ...this.nav.slots }
-      slots[slot] = slots[slot].filter((c) => c.id !== cardId)
-      this.setNav({ slots })
-    },
-    updateNavCardConfig(slot: NavSlot, cardId: string, config: Record<string, unknown>, css?: string) {
-      const slots = { ...this.nav.slots }
-      slots[slot] = slots[slot].map((c) => (c.id === cardId ? { ...c, config, css } : c))
-      this.setNav({ slots })
-    },
-    /** Move a nav card within or between slots (drag & drop). */
-    moveNavCard(cardId: string, toSlot: NavSlot, toIndex: number) {
-      const slots: Record<NavSlot, CardConfig[]> = {
-        top: [...this.nav.slots.top],
-        center: [...this.nav.slots.center],
-        bottom: [...this.nav.slots.bottom],
-      }
-      let card: CardConfig | undefined
-      for (const key of Object.keys(slots) as NavSlot[]) {
-        const idx = slots[key].findIndex((c) => c.id === cardId)
-        if (idx < 0) continue
-        // Adjust the target when moving backwards within the same slot
-        if (key === toSlot && idx < toIndex) toIndex--
-        card = slots[key].splice(idx, 1)[0]
-        break
-      }
-      if (!card) return
-      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
-      this.setNav({ slots })
-    },
-
-    // ── Header bar ───────────────────────────────────────────
-    /** Write a full header object — the getter merges defaults. */
-    setHeader(patch: Partial<HeaderConfig>) {
-      this.config.header = { ...this.header, ...patch }
-      this.save()
-    },
-    updateHeader(patch: Partial<Omit<HeaderConfig, 'slots'>>) {
-      this.setHeader(patch)
-    },
-    addHeaderCard(slot: HeaderSlot, card: Omit<CardConfig, 'id'>) {
-      const slots = { ...this.header.slots }
-      slots[slot] = [...slots[slot], { ...card, id: newId('hdrcard') }]
-      this.setHeader({ slots })
-    },
-    duplicateHeaderCard(slot: HeaderSlot, cardId: string) {
-      const slots = { ...this.header.slots }
-      const cards = [...slots[slot]]
-      const index = cards.findIndex((card) => card.id === cardId)
-      if (index < 0) return
-      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'hdrcard'))
-      slots[slot] = cards
-      this.setHeader({ slots })
-    },
-    removeHeaderCard(slot: HeaderSlot, cardId: string) {
-      const slots = { ...this.header.slots }
-      slots[slot] = slots[slot].filter((c) => c.id !== cardId)
-      this.setHeader({ slots })
-    },
-    updateHeaderCardConfig(
-      slot: HeaderSlot,
-      cardId: string,
-      config: Record<string, unknown>,
-      css?: string,
-    ) {
-      const slots = { ...this.header.slots }
-      slots[slot] = slots[slot].map((c) => (c.id === cardId ? { ...c, config, css } : c))
-      this.setHeader({ slots })
-    },
-    /** Move a header card within or between slots (drag & drop). */
-    moveHeaderCard(cardId: string, toSlot: HeaderSlot, toIndex: number) {
-      const slots: Record<HeaderSlot, CardConfig[]> = {
-        left: [...this.header.slots.left],
-        center: [...this.header.slots.center],
-        right: [...this.header.slots.right],
-      }
-      let card: CardConfig | undefined
-      for (const key of Object.keys(slots) as HeaderSlot[]) {
-        const idx = slots[key].findIndex((c) => c.id === cardId)
-        if (idx < 0) continue
-        // Adjust the target when moving backwards within the same slot
-        if (key === toSlot && idx < toIndex) toIndex--
-        card = slots[key].splice(idx, 1)[0]
-        break
-      }
-      if (!card) return
-      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
-      this.setHeader({ slots })
-    },
-
-    // ── Bottom bar ───────────────────────────────────────────
-    setBottom(patch: Partial<BottomConfig>) {
-      this.config.bottom = { ...this.bottom, ...patch }
-      this.save()
-    },
-    updateBottom(patch: Partial<Omit<BottomConfig, 'slots'>>) {
-      this.setBottom(patch)
-    },
-    addBottomCard(slot: BottomSlot, card: Omit<CardConfig, 'id'>) {
-      const slots = { ...this.bottom.slots }
-      slots[slot] = [...slots[slot], { ...card, id: newId('btmcard') }]
-      this.setBottom({ slots })
-    },
-    duplicateBottomCard(slot: BottomSlot, cardId: string) {
-      const slots = { ...this.bottom.slots }
-      const cards = [...slots[slot]]
-      const index = cards.findIndex((card) => card.id === cardId)
-      if (index < 0) return
-      cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'btmcard'))
-      slots[slot] = cards
-      this.setBottom({ slots })
-    },
-    removeBottomCard(slot: BottomSlot, cardId: string) {
-      const slots = { ...this.bottom.slots }
-      slots[slot] = slots[slot].filter((card) => card.id !== cardId)
-      this.setBottom({ slots })
-    },
-    updateBottomCardConfig(
-      slot: BottomSlot,
-      cardId: string,
-      config: Record<string, unknown>,
-      css?: string,
-    ) {
-      const slots = { ...this.bottom.slots }
-      slots[slot] = slots[slot].map((card) => card.id === cardId ? { ...card, config, css } : card)
-      this.setBottom({ slots })
-    },
-    moveBottomCard(cardId: string, toSlot: BottomSlot, toIndex: number) {
-      const slots: Record<BottomSlot, CardConfig[]> = {
-        left: [...this.bottom.slots.left],
-        center: [...this.bottom.slots.center],
-        right: [...this.bottom.slots.right],
-      }
-      let card: CardConfig | undefined
-      for (const key of Object.keys(slots) as BottomSlot[]) {
-        const index = slots[key].findIndex((entry) => entry.id === cardId)
-        if (index < 0) continue
-        if (key === toSlot && index < toIndex) toIndex--
-        card = slots[key].splice(index, 1)[0]
-        break
-      }
-      if (!card) return
-      slots[toSlot].splice(Math.max(0, Math.min(toIndex, slots[toSlot].length)), 0, card)
-      this.setBottom({ slots })
     },
 
     // ── Views ────────────────────────────────────────────────

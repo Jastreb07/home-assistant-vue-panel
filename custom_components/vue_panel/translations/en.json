@@ -1,0 +1,55 @@
+{
+  "title": "Vue Panel",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Vue Panel",
+        "description": "Install the Vue Panel engine. Dashboard panels are managed as entries of this integration."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Vue Panel is already configured."
+    }
+  },
+  "config_subentries": {
+    "dashboard": {
+      "title": "Dashboard",
+      "step": {
+        "user": {
+          "title": "Add dashboard",
+          "description": "The unique name becomes the permanent Home Assistant URL path.",
+          "data": {
+            "name": "Unique name",
+            "title": "Title",
+            "icon": "Icon",
+            "require_admin": "Require administrator"
+          },
+          "data_description": {
+            "name": "Lowercase URL-safe name, for example wohnung or wandtablet.",
+            "title": "Name shown in the Home Assistant sidebar.",
+            "icon": "Icon shown in the Home Assistant sidebar.",
+            "require_admin": "Only administrators can open this dashboard."
+          }
+        },
+        "reconfigure": {
+          "title": "Edit dashboard",
+          "description": "The unique dashboard name and URL remain unchanged.",
+          "data": {
+            "title": "Title",
+            "icon": "Icon",
+            "require_admin": "Require administrator"
+          }
+        }
+      },
+      "error": {
+        "invalid_dashboard_title": "Enter a dashboard title.",
+        "invalid_dashboard_name": "Enter a valid dashboard name.",
+        "dashboard_name_exists": "A Vue Panel dashboard already uses this name.",
+        "panel_path_exists": "Another Home Assistant panel already uses this URL path."
+      },
+      "abort": {
+        "reconfigure_successful": "Dashboard settings updated."
+      }
+    }
+  }
+}

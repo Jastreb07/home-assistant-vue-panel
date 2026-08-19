@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import { useRoute, useRouter } from 'vue-router'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { useTheme } from '@/core/composables/useTheme'
+import { useHaAdministrator } from '@/core/ha'
+import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
 import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
@@ -16,20 +17,18 @@ import DevSidebar from '@/core/dev/DevSidebar.vue'
 import ShellBarHost from './ShellBarHost.vue'
 import ViewRenderer from './ViewRenderer.vue'
 
-// Dev sidebar only in dev mode — production follows the HA language
-const isDev = import.meta.env.DEV
-
 const { t } = useI18n()
 const store = useDashboardStore()
-const route = useRoute()
-const router = useRouter()
+const routePath = usePanelRoutePath()
+const isHaAdministrator = useHaAdministrator()
+const showDevSidebar = computed(() => import.meta.env.DEV || isHaAdministrator.value)
 
 useTheme()
 
 const views = computed(() => store.config.views)
 
 const activeView = computed(() => {
-  const path = route.path.replace(/^\/+|\/+$/g, '')
+  const path = routePath.value
   return path ? store.viewByRoute(path) : views.value[0]
 })
 
@@ -38,9 +37,9 @@ const viewOptions = computed(() =>
   views.value.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
 )
 
-// Per-view bar visibility — sidebar on by default, header off
+// Per-view bar visibility — all global bars are on unless explicitly disabled.
 const showSidebar = computed(() => activeView.value?.showSidebar !== false)
-const showHeader = computed(() => activeView.value?.showHeader === true)
+const showHeader = computed(() => activeView.value?.showHeader !== false)
 const showBottom = computed(() => activeView.value?.showBottom !== false)
 const headerInViewArea = computed(() => store.bars.header.config.placement === 'view')
 const bottomInViewArea = computed(() => store.bars.bottom.config.placement === 'view')
@@ -48,7 +47,7 @@ const bottomInViewArea = computed(() => store.bars.bottom.config.placement === '
 /** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {
   const view = store.viewById(viewId)
-  if (view) router.push({ path: `/${viewPath(view)}` })
+  if (view) navigatePanel(viewPath(view))
 }
 
 // ── Kiosk: screensaver + auto-return to the first view ───────
@@ -174,7 +173,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <ShellBarHost v-if="showBottom && !bottomInViewArea" position="bottom" />
 
-    <DevSidebar v-if="isDev" />
+    <DevSidebar v-if="showDevSidebar" />
     <Screensaver v-if="screensaverActive" />
 
     <ViewSettingsDialog

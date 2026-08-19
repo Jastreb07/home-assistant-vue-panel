@@ -17,6 +17,14 @@ const component = computed(() => resolveCardComponent(card.value.type))
 const cssArea = computed(() => `bar_${props.position}` as CardCssArea)
 const css = computed(() => card.value.css ?? cardAreaCss(card.value.type, cssArea.value))
 const configOpen = ref(false)
+const hostStyle = computed(() => {
+  if (props.position === 'sidebar') {
+    const width = Math.min(560, Math.max(160, Number(card.value.config.width) || 280))
+    return { width: `${width}px` }
+  }
+  const height = Math.min(240, Math.max(40, Number(card.value.config.height) || 64))
+  return { height: `${height}px` }
+})
 
 function save(config: Record<string, unknown>, css?: string) {
   store.setBar(props.position, { ...card.value, config, css })
@@ -29,10 +37,12 @@ function save(config: Record<string, unknown>, css?: string) {
     class="shell-bar-host"
     :class="`shell-bar-host--${position}`"
     :data-vp-card="css ? card.id : undefined"
+    :style="hostStyle"
   >
-    <CardCss v-if="css" :card-id="card.id" :css="css" />
-    <component :is="component" v-if="component" :config="card.config" />
-    <div v-else class="unknown-bar">{{ t('editor.unknownCard', { type: card.type }) }}</div>
+    <CardCss :card-id="card.id" :css="css">
+      <component :is="component" v-if="component" :config="card.config" />
+      <div v-else class="unknown-bar">{{ t('editor.unknownCard', { type: card.type }) }}</div>
+    </CardCss>
     <button
       v-if="store.editMode"
       type="button"
@@ -98,6 +108,13 @@ function save(config: Record<string, unknown>, css?: string) {
 .shell-bar-host--sidebar {
   display: flex;
   height: 100%;
+}
+.shell-bar-host--header,
+.shell-bar-host--bottom {
+  width: 100%;
+}
+.shell-bar-host > :deep(.custom-card-sandbox) {
+  min-height: 0;
 }
 .shell-bar-host--sidebar > :deep(*) {
   min-height: 0;

@@ -6,6 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc -b && vite build",
+    "prebuild:panel": "node scripts/clean-integration-engine.mjs",
+    "build:panel": "vue-tsc -b && vite build --config vite.panel.config.ts",
+    "postbuild:panel": "node scripts/verify-integration-engine.mjs",
+    "build:integration": "npm.cmd run build:panel",
+    "test:python": "python -m unittest discover -s tests -p test_*.py",
     "preview": "vite preview"
   },
   "dependencies": {

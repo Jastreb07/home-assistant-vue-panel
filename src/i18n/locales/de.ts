@@ -21,8 +21,14 @@ export default {
   app: {
     connecting: 'Verbinde mit Home Assistant…',
     authRequired:
-      'Keine Anmeldung möglich. Im Dev-Modus .env.example nach .env.local kopieren und Token eintragen — in Produktion läuft das Panel im HA-iframe über loader.js.',
+      'Keine Anmeldung möglich. Im Dev-Modus .env.example nach .env.local kopieren und Token eintragen — in Produktion wird die Anmeldung direkt von Home Assistant bereitgestellt.',
     connectionError: 'Verbindungsfehler: {message}',
+  },
+  persistence: {
+    conflictMessage:
+      'Dieses Dashboard wurde zwischenzeitlich an anderer Stelle geändert. Du kannst deine lokale Version als JSON-Kopie sichern oder die aktuelle Serverversion neu laden.',
+    saveCopy: 'Als Kopie speichern',
+    reload: 'Neu laden',
   },
   shell: {
     noView: 'Keine View konfiguriert.',
@@ -235,7 +241,8 @@ export default {
   customCards: {
     newTitle: 'Neue Custom Card',
     editTitle: '{name} bearbeiten',
-    deleteConfirm: 'Custom Card „{name}“ und alle verwendeten Instanzen wirklich löschen?',
+    deleteConfirm: 'Custom Card „{name}“ wirklich löschen? Bereits verwendete Instanzen können danach nicht mehr geladen werden.',
+    duplicate: 'Als lokale Card duplizieren',
     resizePreview: 'Breite von Editor und Vorschau anpassen',
     variables: {
       tab: 'Variablen',
@@ -252,10 +259,11 @@ export default {
       add: 'Variable hinzufügen',
       entityLabel: 'Entity',
       key: 'Variablenname',
-      keyError: 'Der Name muss eindeutig und JavaScript-sicher sein; definitionId ist reserviert.',
+      keyError: 'Der Name muss eindeutig und JavaScript-sicher sein.',
       label: 'Beschriftung',
       type: 'Typ',
       domain: 'Entity-Domain',
+      options: 'Optionen (kommagetrennt)',
       defaultValue: 'Standardwert',
       required: 'Pflichtfeld',
       requiredError: 'Bitte alle Pflichtfelder ausfüllen.',
@@ -269,6 +277,8 @@ export default {
         number: 'Zahl',
         boolean: 'An/Aus',
         icon: 'Icon',
+        view: 'View',
+        select: 'Auswahlliste',
       },
     },
     fullCode: {
@@ -285,15 +295,27 @@ export default {
       fileTooLarge: 'Die Importdatei darf höchstens 512 KB groß sein.',
     },
     fields: {
+      manufacturer: 'Hersteller',
+      cardName: 'Technischer Card-Name',
       name: 'Name',
       description: 'Beschreibung',
       icon: 'Icon (mdi)',
+      group: 'Picker-Gruppe',
+      areas: 'Unterstützte Bereiche',
+      capabilities: 'Sandbox-Berechtigungen',
+      fullRow: 'Immer eine vollständige Zeile belegen',
       defaultSize: 'Standardgröße',
       defaultSizeHint: 'Diese Größe wird beim Einfügen in ein Dashboard verwendet.',
       width: 'Breite (px)',
       height: 'Höhe (px)',
       columns: 'Spalten',
       rows: 'Zeilen',
+    },
+    areas: {
+      dashboard: 'Dashboard',
+      sidebar: 'Seitenleiste',
+      header: 'Header-Leiste',
+      bottom: 'Bottom-Leiste',
     },
     hints: {
       html: 'Der Inhalt der Card. JavaScript gehört ausschließlich in den JS-Tab.',
@@ -302,9 +324,13 @@ export default {
     },
     errors: {
       nameRequired: 'Bitte einen Namen eingeben.',
-      duplicateName: 'Dieser Name wird bereits von einer Custom Card verwendet.',
-      cardTooLarge: 'Eine Custom Card darf höchstens 256 KB Quellcode enthalten.',
-      collectionTooLarge: 'Alle Custom Cards dürfen zusammen höchstens 4 MB belegen.',
+      identityInvalid: 'Hersteller und Card-Name müssen aus Kleinbuchstaben, Zahlen und einzelnen Bindestrichen bestehen. „vue-panel“ ist reserviert.',
+      duplicateIdentity: 'Diese Kombination aus Hersteller und Card-Name ist bereits vorhanden.',
+      metadataInvalid: 'Icon, Gruppe, Bereiche oder responsive Standardwerte sind ungültig.',
+      cardTooLarge: 'Eine Custom Card darf höchstens 512 KB groß sein.',
+      revisionConflict: 'Diese Card wurde zwischenzeitlich geändert. Du kannst deinen Stand exportieren oder die aktuelle Serverversion neu laden.',
+      saveFailed: 'Die Card konnte nicht gespeichert werden: {message}',
+      deleteFailed: 'Die Card konnte nicht gelöscht werden: {message}',
     },
   },
   settings: {
@@ -343,10 +369,8 @@ export default {
     bottomBar: { name: 'Standard-Bottom-Leiste' },
     groups: {
       native: 'Nativ',
-      custom: 'Custom Cards',
       other: 'Sonstige',
     },
-    customHtml: { name: 'Custom HTML' },
     common: {
       noEntity: '⚠ Keine Entity konfiguriert',
       notFound: 'Entity nicht gefunden',

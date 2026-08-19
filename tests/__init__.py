@@ -1,0 +1,1 @@
+"""Vue Panel test suite."""

@@ -4,12 +4,11 @@ import { useI18n } from 'vue-i18n'
 import {
   cardRegistry,
   cardDefaultCss,
+  cardDisplayName,
   resolveCardComponent,
-  resolveCardEditor,
   type CardSchemaField,
   type CardCssArea,
 } from '@/core/registry/cardRegistry'
-import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
@@ -47,35 +46,17 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
-const store = useDashboardStore()
 const manifest = cardRegistry[props.cardType]
 const previewComponent = resolveCardComponent(props.cardType)
-const editorComponent = resolveCardEditor(props.cardType)
 
-const customDefinition = computed(() => props.cardType === 'custom-html'
-  ? store.customCardById(String(props.initialConfig.definitionId ?? ''))
-  : undefined)
-const effectiveDefaultSize = computed(() => customDefinition.value?.defaultSize ?? manifest?.defaultSize)
+const effectiveDefaultSize = computed(() => manifest?.defaultSize)
 
 const effectiveSchema = computed<Record<string, CardSchemaField>>(() => {
-  if (!customDefinition.value) return manifest?.schema ?? {}
-  return Object.fromEntries(customDefinition.value.variables.map((variable) => [
-    variable.key,
-    {
-      type: variable.type,
-      label: variable.label || variable.key,
-      literalLabel: true,
-      domain: variable.type === 'entity' ? variable.domain : undefined,
-      optional: !variable.required,
-      required: variable.required,
-      default: variable.default,
-    } satisfies CardSchemaField,
-  ]))
+  return manifest?.schema ?? {}
 })
 
 const hasSchema = computed(() => Object.keys(effectiveSchema.value).length > 0)
-const dialogName = computed(() => customDefinition.value?.name
-  ?? (manifest ? t(manifest.name) : props.cardType))
+const dialogName = computed(() => manifest ? cardDisplayName(manifest, t) : props.cardType)
 
 function applyDefaults(config: Record<string, unknown>): Record<string, unknown> {
   const result = { ...config }
@@ -219,12 +200,11 @@ const isBarArea = computed(() => props.area !== 'default')
 
     <div class="config-layout">
       <div v-show="tab === 'settings'" class="form-col">
-        <component :is="editorComponent" v-if="editorComponent" v-model="draft" />
         <SchemaForm v-if="hasSchema" v-model="draft" :schema="effectiveSchema" />
         <p v-if="saveAttempted && missingRequiredVariables" class="validation-error">
           {{ t('customCards.variables.requiredError') }}
         </p>
-        <p v-if="!hasSchema && !editorComponent" class="no-options">
+        <p v-if="!hasSchema" class="no-options">
           {{ t('editor.noOptions') }}
         </p>
       </div>

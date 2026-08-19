@@ -74,7 +74,7 @@ const layout = ref<ViewLayout>(
 )
 const background = ref(props.view?.background ?? '')
 const showSidebar = ref(props.view?.showSidebar !== false)
-const showHeader = ref(props.view?.showHeader === true)
+const showHeader = ref(props.view?.showHeader !== false)
 const showBottom = ref(props.view?.showBottom !== false)
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
 // Sections view specific options

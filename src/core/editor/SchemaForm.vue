@@ -45,7 +45,9 @@ const viewOptions = computed<SelectOption[]>(() => [
 function selectOptions(field: CardSchemaField): SelectOption[] {
   return (field.options ?? []).map((opt) => ({
     value: opt,
-    label: field.optionLabels?.[opt] ? t(field.optionLabels[opt]) : opt,
+    label: field.optionLabels?.[opt]
+      ? field.literalOptionLabels ? field.optionLabels[opt] : t(field.optionLabels[opt])
+      : opt,
   }))
 }
 

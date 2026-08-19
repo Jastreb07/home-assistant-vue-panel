@@ -1,0 +1,621 @@
+"""Validation and revision-safe storage for portable Vue Panel cards."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+from datetime import UTC, datetime
+import hashlib
+import json
+import os
+from pathlib import Path
+import re
+import tempfile
+from typing import Any
+
+CARD_FORMAT = "vue-panel-card"
+CARD_FORMAT_VERSION = 2
+SANDBOX_API_VERSION = 1
+CARD_BACKUP_LIMIT = 5
+MAX_CARD_BYTES = 512 * 1024
+
+_IDENTIFIER_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+_VARIABLE_KEY_PATTERN = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
+_ICON_PATTERN = re.compile(r"^mdi:[a-z0-9]+(?:-[a-z0-9]+)*$")
+_DOMAIN_PATTERN = re.compile(r"^[a-z0-9_]+$")
+_DOCUMENT_PATTERN = re.compile(
+    r"^\s*<script\s+data-vue-panel-config>\s*"
+    r"(?P<config>[\s\S]*?)\s*</script>\s*"
+    r"<template\s+data-vue-panel-html>(?P<html>[\s\S]*?)</template>\s*"
+    r"<style\s+data-vue-panel-css>(?P<css>[\s\S]*?)</style>\s*"
+    r"<script\s+data-vue-panel-javascript>(?P<javascript>[\s\S]*?)</script>\s*$"
+)
+_CONFIG_PATTERN = re.compile(
+    r"^\s*const\s+vuePanelCard\s*=\s*(?P<json>\{[\s\S]*\})\s*;\s*$"
+)
+_AREAS = {"dashboard", "sidebar", "header", "bottom"}
+_CAPABILITIES = {
+    "entity:read",
+    "entity:subscribe",
+    "icon:render",
+    "service:call",
+    "navigation:read",
+    "navigation:write",
+    "dashboard:context",
+    "shell:events",
+}
+_VARIABLE_TYPES = {
+    "entity",
+    "icon",
+    "view",
+    "select",
+    "string",
+    "number",
+    "boolean",
+}
+_FORBIDDEN_VARIABLE_KEYS = {"__proto__", "prototype", "constructor"}
+_METADATA_FIELDS = {
+    "format",
+    "formatVersion",
+    "apiVersion",
+    "manufacturer",
+    "cardName",
+    "name",
+    "description",
+    "icon",
+    "group",
+    "areas",
+    "capabilities",
+    "defaultSize",
+    "defaultResponsive",
+    "fullRow",
+    "variables",
+}
+_VARIABLE_FIELDS = {
+    "key",
+    "label",
+    "type",
+    "required",
+    "default",
+    "domain",
+    "options",
+    "optionLabels",
+    "min",
+    "max",
+    "step",
+}
+
+
+class CardFileError(Exception):
+    """Raised when a card file is unsafe, unreadable, or invalid."""
+
+
+class CardRevisionConflict(CardFileError):
+    """Raised when a card changed after the client loaded it."""
+
+    def __init__(self, current_hash: str) -> None:
+        super().__init__("Card revision conflict")
+        self.current_hash = current_hash
+
+
+class CardAlreadyExists(CardFileError):
+    """Raised when a create operation targets an existing card."""
+
+
+class CardNotFound(CardFileError):
+    """Raised when a requested card does not exist."""
+
+
+class CardReadOnly(CardFileError):
+    """Raised when a managed card is targeted by a write operation."""
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"Unsupported JSON constant: {value}")
+
+
+def _validate_identifier(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not _IDENTIFIER_PATTERN.fullmatch(value):
+        raise CardFileError(f"{label} must be a URL-safe identifier")
+    return value
+
+
+def _positive_number(value: Any, label: str) -> float | int:
+    _finite_number(value, label)
+    if value <= 0:
+        raise CardFileError(f"{label} must be a positive number")
+    return value
+
+
+def _finite_number(value: Any, label: str) -> float | int:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise CardFileError(f"{label} must be a number")
+    if value != value or value in (float("inf"), float("-inf")):
+        raise CardFileError(f"{label} must be finite")
+    return value
+
+
+def _validate_default(variable: dict[str, Any], index: int) -> None:
+    if "default" not in variable:
+        return
+    value = variable["default"]
+    variable_type = variable["type"]
+    valid = (
+        isinstance(value, bool)
+        if variable_type == "boolean"
+        else isinstance(value, (int, float)) and not isinstance(value, bool)
+        if variable_type == "number"
+        else isinstance(value, str)
+    )
+    if not valid:
+        raise CardFileError(f"Variable {index} has an invalid default value")
+    if variable_type == "number":
+        _finite_number(value, f"Variable {index} default")
+    if variable_type == "icon" and not _ICON_PATTERN.fullmatch(value):
+        raise CardFileError(f"Variable {index} has an invalid icon default")
+
+
+def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
+    if not isinstance(value, dict):
+        raise CardFileError(f"Variable {index} must be an object")
+    if set(value) - _VARIABLE_FIELDS:
+        raise CardFileError(f"Variable {index} contains unsupported fields")
+    key = value.get("key")
+    if (
+        not isinstance(key, str)
+        or not _VARIABLE_KEY_PATTERN.fullmatch(key)
+        or key in _FORBIDDEN_VARIABLE_KEYS
+        or key in keys
+    ):
+        raise CardFileError(f"Variable {index} has an invalid or duplicate key")
+    keys.add(key)
+    if not isinstance(value.get("label"), str) or not value["label"].strip():
+        raise CardFileError(f"Variable {index} requires a label")
+    variable_type = value.get("type")
+    if variable_type not in _VARIABLE_TYPES:
+        raise CardFileError(f"Variable {index} has an unsupported type")
+    if not isinstance(value.get("required"), bool):
+        raise CardFileError(f"Variable {index} requires an explicit required flag")
+    _validate_default(value, index)
+
+    if variable_type == "entity" and "domain" in value:
+        domain = value["domain"]
+        if not isinstance(domain, str) or not _DOMAIN_PATTERN.fullmatch(domain):
+            raise CardFileError(f"Variable {index} has an invalid entity domain")
+    if variable_type == "select":
+        options = value.get("options")
+        if (
+            not isinstance(options, list)
+            or not options
+            or any(not isinstance(option, str) or not option for option in options)
+            or len(set(options)) != len(options)
+        ):
+            raise CardFileError(f"Variable {index} requires unique select options")
+        labels = value.get("optionLabels")
+        if labels is not None and (
+            not isinstance(labels, dict)
+            or any(
+                key not in options or not isinstance(label, str)
+                for key, label in labels.items()
+            )
+        ):
+            raise CardFileError(f"Variable {index} has invalid option labels")
+        if "default" in value and value["default"] not in options:
+            raise CardFileError(f"Variable {index} default is not a select option")
+    if variable_type == "number":
+        for constraint in ("min", "max", "step"):
+            if constraint in value:
+                _finite_number(value[constraint], f"Variable {index} {constraint}")
+        if "step" in value and value["step"] <= 0:
+            raise CardFileError(f"Variable {index} step must be positive")
+        if "min" in value and "max" in value and value["min"] > value["max"]:
+            raise CardFileError(f"Variable {index} min must not exceed max")
+
+
+def validate_card_metadata(value: Any) -> dict[str, Any]:
+    """Validate and return Card Format v2 metadata."""
+
+    if not isinstance(value, dict):
+        raise CardFileError("Card metadata must be an object")
+    if set(value) != _METADATA_FIELDS:
+        raise CardFileError("Card metadata fields are incomplete or unsupported")
+    if value.get("format") != CARD_FORMAT:
+        raise CardFileError("Unsupported card format")
+    if value.get("formatVersion") != CARD_FORMAT_VERSION:
+        raise CardFileError("Unsupported card format version")
+    api_version = value.get("apiVersion")
+    if api_version != SANDBOX_API_VERSION:
+        raise CardFileError("Unsupported sandbox API version")
+    _validate_identifier(value.get("manufacturer"), "Card manufacturer")
+    _validate_identifier(value.get("cardName"), "Card name")
+    for field in ("name", "description", "group"):
+        if not isinstance(value.get(field), str):
+            raise CardFileError(f"Card {field} must be a string")
+    if not value["name"].strip() or not value["group"].strip():
+        raise CardFileError("Card name and group must not be empty")
+    if not isinstance(value.get("icon"), str) or not _ICON_PATTERN.fullmatch(value["icon"]):
+        raise CardFileError("Card icon must be an MDI icon")
+
+    areas = value.get("areas")
+    if (
+        not isinstance(areas, list)
+        or not areas
+        or any(area not in _AREAS for area in areas)
+        or len(set(areas)) != len(areas)
+    ):
+        raise CardFileError("Card areas are invalid")
+    capabilities = value.get("capabilities")
+    if (
+        not isinstance(capabilities, list)
+        or any(capability not in _CAPABILITIES for capability in capabilities)
+        or len(set(capabilities)) != len(capabilities)
+    ):
+        raise CardFileError("Card capabilities are invalid")
+
+    size = value.get("defaultSize")
+    if not isinstance(size, dict) or set(size) != {"cols", "rows", "width", "height"}:
+        raise CardFileError("Card defaultSize must be an object")
+    for field in ("cols", "rows", "width", "height"):
+        _positive_number(size.get(field), f"Card defaultSize.{field}")
+
+    responsive = value.get("defaultResponsive")
+    if not isinstance(responsive, dict) or set(responsive) != {
+        "mobile", "tablet", "desktop", "mobileMax", "tabletMax"
+    }:
+        raise CardFileError("Card defaultResponsive must be an object")
+    for field in ("mobile", "tablet", "desktop"):
+        if not isinstance(responsive.get(field), bool):
+            raise CardFileError(f"Card defaultResponsive.{field} must be boolean")
+    mobile_max = responsive.get("mobileMax")
+    tablet_max = responsive.get("tabletMax")
+    if (
+        isinstance(mobile_max, bool)
+        or not isinstance(mobile_max, int)
+        or isinstance(tablet_max, bool)
+        or not isinstance(tablet_max, int)
+        or mobile_max < 1
+        or tablet_max <= mobile_max
+    ):
+        raise CardFileError("Card responsive breakpoints are invalid")
+    if not isinstance(value.get("fullRow"), bool):
+        raise CardFileError("Card fullRow must be boolean")
+
+    variables = value.get("variables")
+    if not isinstance(variables, list):
+        raise CardFileError("Card variables must be an array")
+    keys: set[str] = set()
+    for index, variable in enumerate(variables, start=1):
+        _validate_variable(variable, index, keys)
+    return deepcopy(value)
+
+
+def parse_card_document(document: str) -> dict[str, Any]:
+    """Parse one portable HTML document without executing its JavaScript."""
+
+    if not isinstance(document, str):
+        raise CardFileError("Card document must be text")
+    if len(document.encode("utf-8")) > MAX_CARD_BYTES:
+        raise CardFileError("Card document exceeds the size limit")
+    match = _DOCUMENT_PATTERN.fullmatch(document)
+    if match is None:
+        raise CardFileError("Card document has an invalid structure")
+    config_match = _CONFIG_PATTERN.fullmatch(match.group("config"))
+    if config_match is None:
+        raise CardFileError("Card configuration must only assign JSON to vuePanelCard")
+    try:
+        metadata = json.loads(
+            config_match.group("json"),
+            parse_constant=_reject_json_constant,
+        )
+    except (json.JSONDecodeError, ValueError) as error:
+        raise CardFileError("Card configuration is not valid JSON") from error
+    return {
+        "metadata": validate_card_metadata(metadata),
+        "html": match.group("html").removeprefix("\n").removesuffix("\n"),
+        "css": match.group("css").removeprefix("\n").removesuffix("\n"),
+        "javascript": match.group("javascript").removeprefix("\n").removesuffix("\n"),
+    }
+
+
+def serialize_card_document(parsed: dict[str, Any]) -> str:
+    """Serialize a parsed card into the canonical portable HTML structure."""
+
+    metadata = validate_card_metadata(parsed["metadata"])
+    config = json.dumps(metadata, ensure_ascii=False, indent=2)
+    return (
+        "<script data-vue-panel-config>\n"
+        f"const vuePanelCard = {config};\n"
+        "</script>\n\n"
+        "<template data-vue-panel-html>\n"
+        f"{parsed['html']}\n"
+        "</template>\n\n"
+        "<style data-vue-panel-css>\n"
+        f"{parsed['css']}\n"
+        "</style>\n\n"
+        "<script data-vue-panel-javascript>\n"
+        f"{parsed['javascript']}\n"
+        "</script>\n"
+    )
+
+
+def card_content_hash(document: str) -> str:
+    """Return the immutable revision token for one card document."""
+
+    return hashlib.sha256(document.encode("utf-8")).hexdigest()
+
+
+def _safe_directory(path: Path, label: str) -> None:
+    if path.is_symlink():
+        raise CardFileError(f"{label} must not be a symbolic link")
+    path.mkdir(parents=True, exist_ok=True)
+    if not path.is_dir():
+        raise CardFileError(f"{label} is not a directory")
+
+
+def _card_path(root: Path, manufacturer: str, card_name: str, create: bool) -> Path:
+    _validate_identifier(manufacturer, "Card manufacturer")
+    _validate_identifier(card_name, "Card name")
+    if create:
+        _safe_directory(root, "Card directory")
+    elif not root.is_dir() or root.is_symlink():
+        raise CardNotFound("Card directory does not exist")
+    manufacturer_root = root / manufacturer
+    if create:
+        _safe_directory(manufacturer_root, "Card manufacturer directory")
+    elif not manufacturer_root.is_dir() or manufacturer_root.is_symlink():
+        raise CardNotFound("Card manufacturer does not exist")
+    path = manufacturer_root / f"{card_name}.html"
+    if path.is_symlink() or path.parent != manufacturer_root:
+        raise CardFileError("Card path is unsafe")
+    return path
+
+
+def _atomic_write_text(path: Path, document: str) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(
+        dir=path.parent,
+        prefix=f".{path.name}.",
+        suffix=".tmp",
+    )
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as file:
+            file.write(document)
+            file.flush()
+            os.fsync(file.fileno())
+        os.replace(temporary_path, path)
+    finally:
+        if temporary_path.exists():
+            temporary_path.unlink()
+
+
+def _read_card(path: Path) -> tuple[str, dict[str, Any]]:
+    if path.is_symlink() or not path.is_file():
+        raise CardNotFound("Card file does not exist")
+    try:
+        document = path.read_text(encoding="utf-8")
+    except OSError as error:
+        raise CardFileError("Unable to read card file") from error
+    return document, parse_card_document(document)
+
+
+def _catalog_entry(
+    document: str,
+    parsed: dict[str, Any],
+    source: str,
+    writable: bool,
+) -> dict[str, Any]:
+    metadata = deepcopy(parsed["metadata"])
+    manufacturer = metadata["manufacturer"]
+    card_name = metadata["cardName"]
+    return {
+        **metadata,
+        "type": f"{manufacturer}/{card_name}",
+        "source": source,
+        "writable": writable,
+        "contentHash": card_content_hash(document),
+        "resourceUrl": f"vue-panel-card://{manufacturer}/{card_name}",
+        "sizeBytes": len(document.encode("utf-8")),
+    }
+
+
+def _scan_root(root: Path, source: str, writable: bool) -> list[dict[str, Any]]:
+    if not root.exists():
+        return []
+    if root.is_symlink() or not root.is_dir():
+        raise CardFileError("Card catalog root is unsafe")
+    entries: list[dict[str, Any]] = []
+    for manufacturer_root in sorted(root.iterdir(), key=lambda item: item.name):
+        if manufacturer_root.is_symlink() or not manufacturer_root.is_dir():
+            raise CardFileError("Card catalog contains an unsafe manufacturer entry")
+        _validate_identifier(manufacturer_root.name, "Card manufacturer")
+        for path in sorted(manufacturer_root.iterdir(), key=lambda item: item.name):
+            if path.is_symlink() or not path.is_file() or path.suffix != ".html":
+                raise CardFileError("Card catalog contains an unsupported entry")
+            card_name = path.stem
+            _validate_identifier(card_name, "Card name")
+            document, parsed = _read_card(path)
+            metadata = parsed["metadata"]
+            if metadata["manufacturer"] != manufacturer_root.name or metadata["cardName"] != card_name:
+                raise CardFileError("Card metadata does not match its file location")
+            entries.append(_catalog_entry(document, parsed, source, writable))
+    return entries
+
+
+def list_cards(private_root: Path, bundled_root: Path) -> list[dict[str, Any]]:
+    """Return a validated catalog from managed and editable card roots."""
+
+    cards = _scan_root(bundled_root, "bundled", False)
+    cards.extend(_scan_root(private_root / "cards", "local", True))
+    types: set[str] = set()
+    for card in cards:
+        if card["type"] in types:
+            raise CardFileError("Card catalog contains a duplicate identity")
+        types.add(card["type"])
+    return cards
+
+
+def read_card(
+    private_root: Path,
+    bundled_root: Path,
+    manufacturer: str,
+    card_name: str,
+) -> dict[str, Any]:
+    """Read one managed or editable card by immutable identity."""
+
+    writable = manufacturer != "vue-panel"
+    root = private_root / "cards" if writable else bundled_root
+    path = _card_path(root, manufacturer, card_name, False)
+    document, parsed = _read_card(path)
+    metadata = parsed["metadata"]
+    if metadata["manufacturer"] != manufacturer or metadata["cardName"] != card_name:
+        raise CardFileError("Card metadata does not match its file location")
+    return {
+        **_catalog_entry(document, parsed, "local" if writable else "bundled", writable),
+        "document": document,
+        "html": parsed["html"],
+        "css": parsed["css"],
+        "javascript": parsed["javascript"],
+    }
+
+
+def _validated_editable_document(document: str) -> tuple[dict[str, Any], str, str]:
+    parsed = parse_card_document(document)
+    manufacturer = parsed["metadata"]["manufacturer"]
+    card_name = parsed["metadata"]["cardName"]
+    if manufacturer == "vue-panel":
+        raise CardReadOnly("The vue-panel manufacturer is reserved")
+    return parsed, manufacturer, card_name
+
+
+def create_card(private_root: Path, document: str) -> dict[str, Any]:
+    """Create a new editable card without overwriting an existing identity."""
+
+    parsed, manufacturer, card_name = _validated_editable_document(document)
+    path = _card_path(private_root / "cards", manufacturer, card_name, True)
+    if path.exists():
+        raise CardAlreadyExists("Card already exists")
+    _atomic_write_text(path, document)
+    return read_card(private_root, Path(), manufacturer, card_name)
+
+
+def _backup_card(
+    private_root: Path,
+    manufacturer: str,
+    card_name: str,
+    document: str,
+) -> None:
+    backup_root = private_root / "backups" / "cards" / manufacturer / card_name
+    _safe_directory(backup_root, "Card backup directory")
+    timestamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
+    digest = card_content_hash(document)[:12]
+    _atomic_write_text(backup_root / f"{timestamp}-{digest}.html", document)
+    backups = sorted(backup_root.glob("*.html"), key=lambda item: item.name, reverse=True)
+    for expired in backups[CARD_BACKUP_LIMIT:]:
+        if expired.is_symlink() or not expired.is_file():
+            raise CardFileError("Unsafe card backup entry")
+        expired.unlink()
+
+
+def update_card(
+    private_root: Path,
+    manufacturer: str,
+    card_name: str,
+    document: str,
+    expected_hash: str,
+) -> dict[str, Any]:
+    """Update one editable card after an optimistic hash check."""
+
+    if manufacturer == "vue-panel":
+        raise CardReadOnly("Managed cards cannot be updated")
+    parsed, document_manufacturer, document_card_name = _validated_editable_document(document)
+    if document_manufacturer != manufacturer or document_card_name != card_name:
+        raise CardFileError("Card identity cannot be changed during update")
+    path = _card_path(private_root / "cards", manufacturer, card_name, False)
+    current, _ = _read_card(path)
+    current_hash = card_content_hash(current)
+    if expected_hash != current_hash:
+        raise CardRevisionConflict(current_hash)
+    _backup_card(private_root, manufacturer, card_name, current)
+    _atomic_write_text(path, document)
+    return {
+        **_catalog_entry(document, parsed, "local", True),
+        "document": document,
+        "html": parsed["html"],
+        "css": parsed["css"],
+        "javascript": parsed["javascript"],
+    }
+
+
+def delete_card(
+    private_root: Path,
+    manufacturer: str,
+    card_name: str,
+    expected_hash: str,
+) -> bool:
+    """Back up and delete one editable card after an optimistic hash check."""
+
+    if manufacturer == "vue-panel":
+        raise CardReadOnly("Managed cards cannot be deleted")
+    path = _card_path(private_root / "cards", manufacturer, card_name, False)
+    current, _ = _read_card(path)
+    current_hash = card_content_hash(current)
+    if expected_hash != current_hash:
+        raise CardRevisionConflict(current_hash)
+    _backup_card(private_root, manufacturer, card_name, current)
+    path.unlink()
+    if not any(path.parent.iterdir()):
+        path.parent.rmdir()
+    return True
+
+
+def duplicate_card(
+    private_root: Path,
+    bundled_root: Path,
+    source_manufacturer: str,
+    source_card_name: str,
+    manufacturer: str,
+    card_name: str,
+    display_name: str | None = None,
+) -> dict[str, Any]:
+    """Duplicate any card into a new editable identity."""
+
+    source = read_card(
+        private_root,
+        bundled_root,
+        source_manufacturer,
+        source_card_name,
+    )
+    parsed = {
+        "metadata": {
+            key: deepcopy(value)
+            for key, value in source.items()
+            if key
+            in {
+                "format",
+                "formatVersion",
+                "apiVersion",
+                "manufacturer",
+                "cardName",
+                "name",
+                "description",
+                "icon",
+                "group",
+                "areas",
+                "capabilities",
+                "defaultSize",
+                "defaultResponsive",
+                "fullRow",
+                "variables",
+            }
+        },
+        "html": source["html"],
+        "css": source["css"],
+        "javascript": source["javascript"],
+    }
+    parsed["metadata"]["manufacturer"] = manufacturer
+    parsed["metadata"]["cardName"] = card_name
+    parsed["metadata"]["group"] = manufacturer
+    if display_name is not None:
+        if not isinstance(display_name, str) or not display_name.strip():
+            raise CardFileError("Duplicated card requires a display name")
+        parsed["metadata"]["name"] = display_name.strip()
+    return create_card(private_root, serialize_card_document(parsed))

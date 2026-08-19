@@ -44,13 +44,14 @@ const panelCss = computed(() =>
   <div class="panel-layout">
     <template v-if="panelCard">
       <div class="panel-slot" :data-vp-card="panelCss ? panelCard.id : undefined">
-        <CardCss v-if="panelCss" :card-id="panelCard.id" :css="panelCss" />
-        <component
-          :is="resolveCardComponent(panelCard.type)"
-          v-if="resolveCardComponent(panelCard.type)"
-          :config="panelCard.config"
-        />
-        <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: panelCard.type }) }}</div>
+        <CardCss :card-id="panelCard.id" :css="panelCss">
+          <component
+            :is="resolveCardComponent(panelCard.type)"
+            v-if="resolveCardComponent(panelCard.type)"
+            :config="panelCard.config"
+          />
+          <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: panelCard.type }) }}</div>
+        </CardCss>
 
         <BaseCardEditOverlay
           v-if="store.editMode"

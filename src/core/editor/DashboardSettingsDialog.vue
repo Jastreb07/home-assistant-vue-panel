@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
 import { newId, useDashboardStore } from '@/core/config/dashboardStore'
-import { cardsForBar, type CardCssArea } from '@/core/registry/cardRegistry'
+import { cardDisplayName, cardsForBar, type CardCssArea } from '@/core/registry/cardRegistry'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -38,7 +38,7 @@ const barCssArea = computed<CardCssArea>(() => `bar_${barConfigTarget.value ?? '
 function barOptions(position: BarPosition) {
   return cardsForBar(position).map((manifest) => ({
     value: manifest.type,
-    label: t(manifest.name),
+    label: cardDisplayName(manifest, t),
     icon: manifest.icon,
   }))
 }

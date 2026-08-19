@@ -21,8 +21,14 @@ export default {
   app: {
     connecting: 'Connecting to Home Assistant…',
     authRequired:
-      'Sign-in not possible. In dev mode copy .env.example to .env.local and set your token — in production the panel runs inside the HA iframe via loader.js.',
+      'Sign-in is unavailable. In development, copy .env.example to .env.local and set a token — in production authentication is supplied directly by Home Assistant.',
     connectionError: 'Connection error: {message}',
+  },
+  persistence: {
+    conflictMessage:
+      'This dashboard was changed elsewhere. Save your local version as a JSON copy or reload the current server version.',
+    saveCopy: 'Save as copy',
+    reload: 'Reload',
   },
   shell: {
     noView: 'No view configured.',
@@ -234,7 +240,8 @@ export default {
   customCards: {
     newTitle: 'New custom card',
     editTitle: 'Edit {name}',
-    deleteConfirm: 'Delete custom card “{name}” and every placed instance?',
+    deleteConfirm: 'Delete custom card “{name}”? Existing instances will no longer be able to load it.',
+    duplicate: 'Duplicate as local card',
     resizePreview: 'Resize the editor and preview',
     variables: {
       tab: 'Variables',
@@ -251,10 +258,11 @@ export default {
       add: 'Add variable',
       entityLabel: 'Entity',
       key: 'Variable name',
-      keyError: 'The name must be unique and JavaScript-safe; definitionId is reserved.',
+      keyError: 'The name must be unique and JavaScript-safe.',
       label: 'Label',
       type: 'Type',
       domain: 'Entity domain',
+      options: 'Options (comma-separated)',
       defaultValue: 'Default value',
       required: 'Required field',
       requiredError: 'Complete all required fields.',
@@ -268,6 +276,8 @@ export default {
         number: 'Number',
         boolean: 'On/off',
         icon: 'Icon',
+        view: 'View',
+        select: 'Select',
       },
     },
     fullCode: {
@@ -284,15 +294,27 @@ export default {
       fileTooLarge: 'The import file must not be larger than 512 KB.',
     },
     fields: {
+      manufacturer: 'Manufacturer',
+      cardName: 'Technical card name',
       name: 'Name',
       description: 'Description',
       icon: 'Icon (mdi)',
+      group: 'Picker group',
+      areas: 'Supported areas',
+      capabilities: 'Sandbox capabilities',
+      fullRow: 'Always occupy a full row',
       defaultSize: 'Default size',
       defaultSizeHint: 'This size is used when the card is added to a dashboard.',
       width: 'Width (px)',
       height: 'Height (px)',
       columns: 'Columns',
       rows: 'Rows',
+    },
+    areas: {
+      dashboard: 'Dashboard',
+      sidebar: 'Sidebar',
+      header: 'Header bar',
+      bottom: 'Bottom bar',
     },
     hints: {
       html: 'The card content. JavaScript belongs exclusively in the JS tab.',
@@ -301,9 +323,13 @@ export default {
     },
     errors: {
       nameRequired: 'Enter a name.',
-      duplicateName: 'That name is already used by another custom card.',
-      cardTooLarge: 'A custom card can contain at most 256 KB of source code.',
-      collectionTooLarge: 'All custom cards together can use at most 4 MB.',
+      identityInvalid: 'Manufacturer and card name must use lowercase letters, numbers, and single hyphens. “vue-panel” is reserved.',
+      duplicateIdentity: 'That manufacturer and card name combination already exists.',
+      metadataInvalid: 'The icon, group, areas, or responsive defaults are invalid.',
+      cardTooLarge: 'A custom card must not exceed 512 KB.',
+      revisionConflict: 'This card was changed elsewhere. Export your version or reload the current server version.',
+      saveFailed: 'The card could not be saved: {message}',
+      deleteFailed: 'The card could not be deleted: {message}',
     },
   },
   settings: {
@@ -342,10 +368,8 @@ export default {
     bottomBar: { name: 'Default bottom bar' },
     groups: {
       native: 'Built-in',
-      custom: 'Custom cards',
       other: 'Other',
     },
-    customHtml: { name: 'Custom HTML' },
     common: {
       noEntity: '⚠ No entity configured',
       notFound: 'Entity not found',

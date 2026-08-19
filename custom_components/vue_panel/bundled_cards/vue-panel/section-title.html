@@ -1,0 +1,12 @@
+<script data-vue-panel-config>
+const vuePanelCard={"format":"vue-panel-card","formatVersion":2,"apiVersion":1,"manufacturer":"vue-panel","cardName":"section-title","name":"Abschnittsüberschrift","description":"Überschrift mit optionalem Icon und Trennlinie","icon":"mdi:format-title","group":"Vue Panel","areas":["dashboard"],"capabilities":["icon:render"],"defaultSize":{"cols":1,"rows":1,"width":280,"height":40},"defaultResponsive":{"mobile":true,"tablet":true,"desktop":true,"mobileMax":767,"tabletMax":1023},"fullRow":true,"variables":[{"key":"title","label":"Titel","type":"string","required":true,"default":"Titel"},{"key":"icon","label":"Icon","type":"icon","required":false,"default":"mdi:format-title"},{"key":"align","label":"Ausrichtung","type":"select","required":false,"options":["left","center","right"],"optionLabels":{"left":"Links","center":"Mitte","right":"Rechts"},"default":"left"},{"key":"rule","label":"Trennlinie anzeigen","type":"boolean","required":false,"default":true}]};
+</script>
+<template data-vue-panel-html>
+<div class="section-title-card" id="card"><span class="rule before" id="before"></span><img id="icon" alt=""><h2 id="title"></h2><span class="rule after" id="after"></span></div>
+</template>
+<style data-vue-panel-css>
+.section-title-card{width:100%;height:100%;display:flex;align-items:center;gap:10px;min-height:0;color:var(--text-secondary)}.section-title-card img{width:20px;height:20px}.section-title-card h2{margin:0;font-size:16px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;white-space:nowrap}.rule{flex:1;height:2px;background:var(--divider);border-radius:1px}
+</style>
+<script data-vue-panel-javascript>
+const config=vuePanel.config;const align=String(config.align||'left');document.getElementById('title').textContent=String(config.title||'Titel');document.getElementById('before').hidden=config.rule===false||align==='left';document.getElementById('after').hidden=config.rule===false||align==='right';const icon=document.getElementById('icon');if(config.icon)icon.src=await vuePanel.getIcon(String(config.icon),{size:48,color:getComputedStyle(document.documentElement).getPropertyValue('--text-secondary')||'#737373'});else icon.hidden=true;
+</script>

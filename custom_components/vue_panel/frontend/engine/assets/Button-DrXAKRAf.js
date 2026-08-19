@@ -1,0 +1,1 @@
+import{Zn as e,b as t,k as n,mt as r,xt as i}from"./runtime-core.esm-bundler-B4b-2GOK.js";var a=[`disabled`],o=n({__name:`index`,props:{variant:{},disabled:{type:Boolean},size:{default:`md`}},setup(n){return(o,s)=>(r(),t(`button`,{class:e([`vp-btn`,[n.variant,`vp-size-${n.size}`]]),disabled:n.disabled},[i(o.$slots,`default`)],10,a))}});export{o as default};

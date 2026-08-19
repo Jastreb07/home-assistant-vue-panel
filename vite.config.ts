@@ -10,8 +10,8 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
-  // The build is uploaded to Home Assistant under config/www/vue-panel
-  // and is then reachable at http://<ha-host>/local/vue-panel/
+  // This base is only used by the standalone development build.
+  // The integration build uses vite.panel.config.ts and /vue-panel-static/.
   base: '/local/vue-panel/',
   build: {
     outDir: 'dist',

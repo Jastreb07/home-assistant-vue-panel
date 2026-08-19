@@ -12,7 +12,7 @@ import { boxToCss } from '@/core/ui/boxInput'
 /**
  * Renders one section (cards grid + edit overlays). Shared by the
  * sections / flex / grid / sidebar layouts — the grid itself is styled by
- * the parent via `gridStyle`. Headings are cards ('section-title').
+ * the parent via `gridStyle`. Headings are cards (`vue-panel/section-title`).
  */
 const props = defineProps<{
   section: SectionConfig
@@ -197,13 +197,14 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
           @dragover="editMode && emit('dragover-card', $event, section.id, index)"
           @dragend="emit('dragend')"
         >
-          <CardCss v-if="cssFor(card)" :card-id="card.id" :css="cssFor(card)" />
-          <component
-            :is="resolveCardComponent(card.type)"
-            v-if="resolveCardComponent(card.type)"
-            :config="card.config"
-          />
-          <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
+          <CardCss :card-id="card.id" :css="cssFor(card)">
+            <component
+              :is="resolveCardComponent(card.type)"
+              v-if="resolveCardComponent(card.type)"
+              :config="card.config"
+            />
+            <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
+          </CardCss>
 
           <BaseCardEditOverlay
             v-if="editMode"

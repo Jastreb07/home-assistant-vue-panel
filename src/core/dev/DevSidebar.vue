@@ -4,10 +4,11 @@ import { useI18n } from 'vue-i18n'
 import { SUPPORTED_LOCALES, setLocale, type AppLocale } from '@/i18n'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import { useEntities, useHaStatus } from '@/core/ha'
+import { syncPortableCardCatalog } from '@/core/registry/cardRegistry'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { alertDialog, confirmDialog } from '@/core/ui/dialogService'
 
-// Dev-only floating sidebar. Not rendered in production builds.
+// Development tools for local development and Home Assistant administrators.
 const open = ref(false)
 
 const { locale } = useI18n()
@@ -23,44 +24,48 @@ function pickLocale(l: AppLocale) {
 }
 
 // ── Dashboard config tools ───────────────────────────────────
-function exportConfig() {
-  const blob = new Blob([JSON.stringify(store.config, null, 2)], { type: 'application/json' })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(blob)
-  a.download = 'vue-panel-dashboard.json'
-  a.click()
-  URL.revokeObjectURL(a.href)
+async function exportConfig() {
+  try {
+    const exported = await store.exportDashboard()
+    const blob = new Blob([JSON.stringify(exported.document, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = exported.filename
+    link.click()
+    URL.revokeObjectURL(url)
+  } catch (error) {
+    await alertDialog(`Dashboard export failed: ${String(error)}`)
+  }
 }
 
 const fileInput = ref<HTMLInputElement>()
 
-function importConfig(ev: Event) {
+async function importConfig(ev: Event) {
   const file = (ev.target as HTMLInputElement).files?.[0]
   if (!file) return
-  file.text().then((text) => {
-    try {
-      const parsed = JSON.parse(text)
-      if (!Array.isArray(parsed.views)) throw new Error('missing views[]')
-      store.config = parsed
-      store.save()
-    } catch (err) {
-      alertDialog('Invalid config file: ' + err)
-    }
-  })
-  ;(ev.target as HTMLInputElement).value = ''
+  try {
+    const parsed = JSON.parse(await file.text())
+    await store.importDashboard(parsed)
+  } catch (error) {
+    await alertDialog(`Dashboard import failed: ${String(error)}`)
+  } finally {
+    ;(ev.target as HTMLInputElement).value = ''
+  }
 }
 
 async function resetConfig() {
   if (await confirmDialog('Reset dashboard config to defaults?')) store.resetToDefault()
 }
 
-async function clearLocalStorage() {
-  if (!(await confirmDialog('Clear all vue-panel localStorage keys and reload?'))) return
-  Object.keys(localStorage)
-    .filter((k) => k.startsWith('vue-panel:'))
-    .forEach((k) => localStorage.removeItem(k))
-  location.reload()
+async function reloadCardCatalog() {
+  try {
+    await syncPortableCardCatalog()
+  } catch (error) {
+    await alertDialog(`Card catalog reload failed: ${String(error)}`)
+  }
 }
+
 </script>
 
 <template>
@@ -120,11 +125,16 @@ async function clearLocalStorage() {
             <MdiIcon icon="mdi:restore" :size="16" />
             Reset to defaults
           </button>
-          <button class="tool-btn danger" @click="clearLocalStorage">
-            <MdiIcon icon="mdi:delete-sweep" :size="16" />
-            Clear localStorage
-          </button>
         </div>
+      </section>
+
+      <section>
+        <h4>Cards</h4>
+        <p class="hint">Rescan files changed outside the browser editor.</p>
+        <button class="tool-btn" @click="reloadCardCatalog">
+          <MdiIcon icon="mdi:refresh" :size="16" />
+          Reload card catalog
+        </button>
       </section>
     </aside>
   </div>

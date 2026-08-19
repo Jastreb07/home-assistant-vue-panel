@@ -1,29 +1,66 @@
-/**
- * Server-side persistence of the dashboard config via the HA WebSocket API
- * (frontend/set_user_data). Stored per HA user in .storage —
- * no YAML, no custom integration, available on all devices.
- */
-import { getConnection } from '../ha'
+/** Dashboard persistence through the authenticated Vue Panel integration API. */
+import { getConnection } from '@/core/ha'
 import type { DashboardConfig } from './types'
 
-const USER_DATA_KEY = 'vue-panel-dashboard'
-
-export async function loadRemote(): Promise<DashboardConfig | null> {
-  const conn = getConnection()
-  if (!conn) return null
-  const res = await conn.sendMessagePromise<{ value: DashboardConfig | null }>({
-    type: 'frontend/get_user_data',
-    key: USER_DATA_KEY,
-  })
-  return res?.value ?? null
+interface HomeAssistantCommandError {
+  code?: string
+  message?: string
 }
 
-export async function saveRemote(config: DashboardConfig): Promise<void> {
-  const conn = getConnection()
-  if (!conn) return
-  await conn.sendMessagePromise({
-    type: 'frontend/set_user_data',
-    key: USER_DATA_KEY,
-    value: JSON.parse(JSON.stringify(config)),
+export interface DashboardExport {
+  filename: string
+  document: DashboardConfig
+}
+
+export function isRevisionConflict(error: unknown): error is HomeAssistantCommandError {
+  return typeof error === 'object' && error !== null && 'code' in error
+    && (error as HomeAssistantCommandError).code === 'revision_conflict'
+}
+
+export async function loadRemote(dashboardName: string): Promise<DashboardConfig> {
+  const connection = getConnection()
+  if (!connection) throw new Error('No Home Assistant connection is available.')
+  return connection.sendMessagePromise<DashboardConfig>({
+    type: 'vue_panel/dashboard/get',
+    dashboard_name: dashboardName,
+  })
+}
+
+export async function saveRemote(
+  dashboardName: string,
+  config: DashboardConfig,
+): Promise<DashboardConfig> {
+  const connection = getConnection()
+  if (!connection) throw new Error('No Home Assistant connection is available.')
+  const document = JSON.parse(JSON.stringify(config)) as DashboardConfig
+  return connection.sendMessagePromise<DashboardConfig>({
+    type: 'vue_panel/dashboard/save',
+    dashboard_name: dashboardName,
+    expected_revision: config.revision,
+    document,
+  })
+}
+
+export async function exportRemote(dashboardName: string): Promise<DashboardExport> {
+  const connection = getConnection()
+  if (!connection) throw new Error('No Home Assistant connection is available.')
+  return connection.sendMessagePromise<DashboardExport>({
+    type: 'vue_panel/dashboard/export',
+    dashboard_name: dashboardName,
+  })
+}
+
+export async function importRemote(
+  dashboardName: string,
+  document: DashboardConfig,
+  expectedRevision: number,
+): Promise<DashboardConfig> {
+  const connection = getConnection()
+  if (!connection) throw new Error('No Home Assistant connection is available.')
+  return connection.sendMessagePromise<DashboardConfig>({
+    type: 'vue_panel/dashboard/import',
+    dashboard_name: dashboardName,
+    expected_revision: expectedRevision,
+    document: JSON.parse(JSON.stringify(document)) as DashboardConfig,
   })
 }

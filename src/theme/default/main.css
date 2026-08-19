@@ -6,7 +6,8 @@
    ───────────────────────────────────────────────────────────── */
 
 /* Theme variables — dark is the default theme */
-:root {
+:root,
+:host {
   --bg: #14161a;
   --nav-bg: #1b1e24;
   --card-bg: #23272f;
@@ -34,7 +35,9 @@
   --code-invalid: #e0706f;
 }
 
-[data-theme='light'] {
+[data-theme='light'],
+:host([data-theme='light']),
+:host-context([data-theme='light']) {
   --bg: #f2f4f8;
   --nav-bg: #ffffff;
   --card-bg: #ffffff;
@@ -111,7 +114,8 @@ body,
   margin: 0;
 }
 
-body {
+body,
+:host {
   background: var(--bg);
   color: var(--text-primary);
   font-family:

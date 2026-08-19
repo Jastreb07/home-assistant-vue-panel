@@ -1,0 +1,98 @@
+<script data-vue-panel-config>
+const vuePanelCard = {
+  "format": "vue-panel-card",
+  "formatVersion": 2,
+  "apiVersion": 1,
+  "manufacturer": "vue-panel",
+  "cardName": "example-sidebar-bar",
+  "name": "Example sidebar",
+  "description": "Reference implementation of a global sidebar bar",
+  "icon": "mdi:dock-left",
+  "group": "vue-panel",
+  "areas": ["sidebar"],
+  "capabilities": ["navigation:read", "navigation:write"],
+  "defaultSize": { "cols": 1, "rows": 1, "width": 240, "height": 600 },
+  "defaultResponsive": {
+    "mobile": false,
+    "tablet": true,
+    "desktop": true,
+    "mobileMax": 767,
+    "tabletMax": 1023
+  },
+  "fullRow": true,
+  "variables": [
+    {
+      "key": "title",
+      "label": "Title",
+      "type": "string",
+      "required": false,
+      "default": "Vue Panel"
+    }
+  ]
+};
+</script>
+
+<template data-vue-panel-html>
+  <aside class="example-sidebar">
+    <strong class="example-sidebar__title" id="title"></strong>
+    <nav class="example-sidebar__nav" id="navigation" aria-label="Dashboard views"></nav>
+  </aside>
+</template>
+
+<style data-vue-panel-css>
+.example-sidebar {
+  width: 100%;
+  height: 100%;
+  padding: 24px 16px;
+  border-right: 1px solid var(--divider);
+  background: var(--nav-bg);
+  color: var(--text-primary);
+}
+
+.example-sidebar__title {
+  display: block;
+  margin-bottom: 24px;
+  font-size: 18px;
+}
+
+.example-sidebar__nav {
+  display: grid;
+  gap: 6px;
+}
+
+.example-sidebar__link {
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.example-sidebar__link.is-active {
+  background: var(--nav-item-active);
+}
+</style>
+
+<script data-vue-panel-javascript>
+const titleElement = document.getElementById('title');
+const navigationElement = document.getElementById('navigation');
+
+titleElement.textContent = String(vuePanel.config.title || 'Vue Panel');
+
+const [views, currentView] = await Promise.all([
+  vuePanel.listViews(),
+  vuePanel.currentView(),
+]);
+
+for (const view of views) {
+  const button = document.createElement('button');
+  button.className = 'example-sidebar__link';
+  button.classList.toggle('is-active', view.id === currentView?.id);
+  button.type = 'button';
+  button.textContent = view.title;
+  button.addEventListener('click', () => vuePanel.navigate(view.id));
+  navigationElement.append(button);
+}
+</script>

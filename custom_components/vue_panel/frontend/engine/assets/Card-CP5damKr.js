@@ -1,0 +1,1 @@
+import{Zn as e,b as t,k as n,mt as r,xt as i}from"./runtime-core.esm-bundler-B4b-2GOK.js";var a=n({__name:`index`,props:{active:{type:Boolean},clickable:{type:Boolean}},setup(n){return(a,o)=>(r(),t(`div`,{class:e([`vp-card`,{active:n.active,clickable:n.clickable}])},[i(a.$slots,`default`)],2))}});export{a as default};

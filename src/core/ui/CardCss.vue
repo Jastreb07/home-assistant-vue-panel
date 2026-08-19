@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { onUnmounted, watchEffect } from 'vue'
+import { computed, onUnmounted, provide, watchEffect } from 'vue'
+import { cardCssContextKey } from './cardCssContext'
 
 /**
  * Renderless helper that applies per-card custom CSS.
@@ -18,6 +19,8 @@ const props = defineProps<{
   cardId: string
   css: string
 }>()
+
+provide(cardCssContextKey, computed(() => props.css))
 
 const el = document.createElement('style')
 el.setAttribute('data-vp-card-css', props.cardId)

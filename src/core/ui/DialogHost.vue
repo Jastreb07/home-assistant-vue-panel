@@ -29,6 +29,7 @@ watch(activeDialog, async (dialog) => {
 function title(): string {
   switch (activeDialog.value?.kind) {
     case 'confirm':
+    case 'choice':
       return t('dialog.confirmTitle')
     case 'prompt':
       return t('dialog.promptTitle')
@@ -37,12 +38,13 @@ function title(): string {
   }
 }
 
-function finish(result?: boolean) {
+function finish(result?: boolean | string) {
   const dialog = activeDialog.value
   if (!dialog) return
   if (dialog.kind === 'alert') dialog.resolve()
   else if (dialog.kind === 'confirm') dialog.resolve(result === true)
-  else dialog.resolve(result === true ? promptValue.value : null)
+  else if (dialog.kind === 'prompt') dialog.resolve(result === true ? promptValue.value : null)
+  else dialog.resolve(typeof result === 'string' ? result : null)
   advanceQueue()
 }
 </script>
@@ -65,6 +67,17 @@ function finish(result?: boolean) {
     <template #footer>
       <template v-if="activeDialog.kind === 'alert'">
         <BaseButton variant="primary" @click="finish()">{{ t('common.ok') }}</BaseButton>
+      </template>
+      <template v-else-if="activeDialog.kind === 'choice'">
+        <BaseButton @click="finish()">{{ t('common.cancel') }}</BaseButton>
+        <BaseButton
+          v-for="choice in activeDialog.choices"
+          :key="choice.value"
+          :variant="choice.variant"
+          @click="finish(choice.value)"
+        >
+          {{ choice.label }}
+        </BaseButton>
       </template>
       <template v-else>
         <BaseButton @click="finish(false)">{{ t('common.cancel') }}</BaseButton>

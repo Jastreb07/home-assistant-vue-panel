@@ -7,6 +7,15 @@ import type {
   CustomCardVariableType,
 } from '@/core/config/types'
 import { newId, useDashboardStore } from '@/core/config/dashboardStore'
+import {
+  createPortableCard,
+  deletePortableCard,
+  getPortableCard,
+  importPortableCard,
+  isCardRevisionConflict,
+  updatePortableCard,
+} from '@/core/ha'
+import { cardRegistry, syncPortableCardCatalog } from '@/core/registry/cardRegistry'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
@@ -19,9 +28,10 @@ import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import type { TabItem } from '@/core/ui/tabs'
-import { confirmDialog } from '@/core/ui/dialogService'
+import { alertDialog, choiceDialog, confirmDialog } from '@/core/ui/dialogService'
 import EntityPicker from '@/core/editor/EntityPicker.vue'
 import CustomCardSandbox from './CustomCardSandbox.vue'
+import { editorDefinitionFromDocument } from './cardEditorModel'
 
 const props = defineProps<{ definition?: CustomCardDefinition }>()
 const emit = defineEmits<{ close: []; saved: [definition: CustomCardDefinition] }>()
@@ -71,26 +81,53 @@ const DEFAULT_JAVASCRIPT = `// The sandbox exposes a controlled Home Assistant A
 // await vuePanel.callService('light', 'toggle', {}, { entity_id: 'light.example' });`
 
 interface FullCodeMetadata {
-  format: 'vue-panel-custom-card'
-  version: 1
+  format: 'vue-panel-card'
+  formatVersion: 2
+  apiVersion: 1
+  manufacturer: string
+  cardName: string
   name: string
   description: string
   icon: string
+  group: string
+  areas: CustomCardDefinition['areas']
+  capabilities: CustomCardDefinition['capabilities']
   defaultSize: CustomCardDefinition['defaultSize']
+  defaultResponsive: CustomCardDefinition['defaultResponsive']
+  fullRow: boolean
   variables: Array<Omit<CustomCardVariable, 'id'>>
 }
 
 function freshDefinition(): CustomCardDefinition {
+  const cardName = `custom-card-${Date.now().toString(36)}`
   return {
-    id: newId('custom'),
+    id: `local/${cardName}`,
+    format: 'vue-panel-card',
+    formatVersion: 2,
+    apiVersion: 1,
+    manufacturer: 'local',
+    cardName,
     name: '',
     description: '',
     icon: 'mdi:code-tags',
+    group: 'local',
+    areas: ['dashboard'],
+    capabilities: ['entity:read', 'entity:subscribe', 'icon:render', 'service:call'],
     html: DEFAULT_HTML,
     css: DEFAULT_CSS,
     javascript: DEFAULT_JAVASCRIPT,
     variables: [],
     defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
+    defaultResponsive: {
+      mobile: true,
+      tablet: true,
+      desktop: true,
+      mobileMax: 767,
+      tabletMax: 1023,
+    },
+    fullRow: false,
+    writable: true,
+    source: 'local',
   }
 }
 
@@ -115,6 +152,8 @@ const importInput = ref<HTMLInputElement | null>(null)
 const editorLayout = ref<HTMLElement | null>(null)
 const editorShare = ref(57)
 const splitterDragging = ref(false)
+const importMode = ref(false)
+const duplicating = ref(false)
 
 const editorLayoutStyle = computed(() => ({
   '--custom-editor-share': `${editorShare.value}%`,
@@ -140,7 +179,33 @@ const variableTypeOptions = computed<SelectOption[]>(() => [
   { value: 'number', label: t('customCards.variables.types.number') },
   { value: 'boolean', label: t('customCards.variables.types.boolean') },
   { value: 'icon', label: t('customCards.variables.types.icon') },
+  { value: 'view', label: t('customCards.variables.types.view') },
+  { value: 'select', label: t('customCards.variables.types.select') },
 ])
+
+const areaOptions = computed(() => [
+  { value: 'dashboard' as const, label: t('customCards.areas.dashboard') },
+  { value: 'sidebar' as const, label: t('customCards.areas.sidebar') },
+  { value: 'header' as const, label: t('customCards.areas.header') },
+  { value: 'bottom' as const, label: t('customCards.areas.bottom') },
+])
+
+const capabilityOptions = computed(() => [
+  'entity:read',
+  'entity:subscribe',
+  'icon:render',
+  'service:call',
+  'navigation:read',
+  'navigation:write',
+  'dashboard:context',
+  'shell:events',
+] as const)
+
+function toggleArrayValue<T>(values: T[], value: T, enabled: boolean): T[] {
+  return enabled
+    ? [...new Set([...values, value])]
+    : values.filter((candidate) => candidate !== value)
+}
 
 function setEditorShare(value: number) {
   const width = editorLayout.value?.getBoundingClientRect().width ?? 1000
@@ -183,6 +248,11 @@ function resizeWithKeyboard(event: KeyboardEvent) {
 const iconOptions = computed<SelectOption[]>(() =>
   draft.value.variables.some((variable) => variable.type === 'icon') ? mdiIconOptions() : [],
 )
+const viewOptions = computed<SelectOption[]>(() => store.config.views.map((view) => ({
+  value: view.id,
+  label: view.title,
+  icon: view.icon,
+})))
 
 function nextVariableKey(): string {
   const existing = new Set(draft.value.variables.map((variable) => variable.key))
@@ -212,7 +282,20 @@ function removeVariable(id: string) {
 function changeVariableType(variable: CustomCardVariable, type: string) {
   variable.type = type as CustomCardVariableType
   variable.domain = type === 'entity' ? (variable.domain ?? '') : undefined
+  variable.options = type === 'select' ? (variable.options?.length ? variable.options : ['option']) : undefined
+  variable.optionLabels = undefined
   variable.default = type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
+}
+
+function selectOptionsText(variable: CustomCardVariable): string {
+  return (variable.options ?? []).join(', ')
+}
+
+function updateSelectOptions(variable: CustomCardVariable, value: string | number) {
+  variable.options = String(value).split(',').map((option) => option.trim()).filter(Boolean)
+  if (!variable.options.includes(String(variable.default ?? ''))) {
+    variable.default = variable.options[0] ?? ''
+  }
 }
 
 function serializeVariables(): string {
@@ -234,7 +317,9 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
   const parsed: unknown = JSON.parse(source)
   if (!Array.isArray(parsed)) throw new Error(t('customCards.variables.jsonArrayError'))
 
-  const allowedTypes: CustomCardVariableType[] = ['entity', 'string', 'number', 'boolean', 'icon']
+  const allowedTypes: CustomCardVariableType[] = [
+    'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select',
+  ]
   const existingIds = new Map(draft.value.variables.map((variable) => [variable.key, variable.id]))
   const keys = new Set<string>()
 
@@ -246,7 +331,9 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
     const key = typeof value.key === 'string' ? value.key.trim() : ''
     const label = typeof value.label === 'string' ? value.label.trim() : ''
     const type = value.type as CustomCardVariableType
-    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) || keys.has(key) || key === 'definitionId') {
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
+      || keys.has(key)
+      || ['__proto__', 'prototype', 'constructor'].includes(key)) {
       throw new Error(t('customCards.variables.jsonKeyError', { index: index + 1 }))
     }
     if (!label || !allowedTypes.includes(type)) {
@@ -261,6 +348,12 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string')) {
       throw new Error(t('customCards.variables.jsonDefaultError', { index: index + 1 }))
     }
+    const options = type === 'select' && Array.isArray(value.options)
+      ? value.options.filter((option): option is string => typeof option === 'string' && option !== '')
+      : undefined
+    if (type === 'select' && !options?.length) {
+      throw new Error(t('customCards.variables.jsonEntryError', { index: index + 1 }))
+    }
     keys.add(key)
     return {
       id: existingIds.get(key) ?? newId('variable'),
@@ -270,6 +363,13 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       required: value.required === true,
       domain: type === 'entity' && typeof value.domain === 'string' ? value.domain : undefined,
       default: defaultValue,
+      options,
+      optionLabels: type === 'select' && value.optionLabels && typeof value.optionLabels === 'object'
+        ? value.optionLabels as Record<string, string>
+        : undefined,
+      min: type === 'number' && typeof value.min === 'number' ? value.min : undefined,
+      max: type === 'number' && typeof value.max === 'number' ? value.max : undefined,
+      step: type === 'number' && typeof value.step === 'number' ? value.step : undefined,
     }
   })
 }
@@ -294,12 +394,20 @@ function changeVariableEditorMode(value: string) {
 
 function fullCodeMetadata(): FullCodeMetadata {
   return {
-    format: 'vue-panel-custom-card',
-    version: 1,
+    format: 'vue-panel-card',
+    formatVersion: 2,
+    apiVersion: 1,
+    manufacturer: draft.value.manufacturer,
+    cardName: draft.value.cardName,
     name: draft.value.name,
     description: draft.value.description,
     icon: draft.value.icon,
+    group: draft.value.group,
+    areas: [...draft.value.areas],
+    capabilities: [...draft.value.capabilities],
     defaultSize: { ...draft.value.defaultSize },
+    defaultResponsive: { ...draft.value.defaultResponsive },
+    fullRow: draft.value.fullRow,
     variables: portableVariables(),
   }
 }
@@ -335,38 +443,67 @@ function definitionFromFullCode(
     throw new Error(t('customCards.fullCode.documentError'))
   }
   const value = parsed as Record<string, unknown>
-  if (value.format !== 'vue-panel-custom-card' || value.version !== 1) {
+  if (value.format !== 'vue-panel-card' || value.formatVersion !== 2 || value.apiVersion !== 1) {
     throw new Error(t('customCards.fullCode.formatError'))
   }
-  if (typeof value.name !== 'string'
+  if (typeof value.manufacturer !== 'string'
+    || typeof value.cardName !== 'string'
+    || typeof value.name !== 'string'
     || typeof value.description !== 'string'
     || typeof value.icon !== 'string'
+    || typeof value.group !== 'string'
     || typeof html !== 'string'
     || typeof css !== 'string'
     || typeof javascript !== 'string'
+    || !Array.isArray(value.areas)
+    || !Array.isArray(value.capabilities)
     || !Array.isArray(value.variables)
     || !value.defaultSize
     || typeof value.defaultSize !== 'object'
-    || Array.isArray(value.defaultSize)) {
+    || Array.isArray(value.defaultSize)
+    || !value.defaultResponsive
+    || typeof value.defaultResponsive !== 'object'
+    || Array.isArray(value.defaultResponsive)
+    || typeof value.fullRow !== 'boolean') {
     throw new Error(t('customCards.fullCode.documentError'))
   }
   const size = value.defaultSize as Record<string, unknown>
+  const responsive = value.defaultResponsive as Record<string, unknown>
   const variables = parseVariablesJson(JSON.stringify(value.variables))
   return {
-    id: draft.value.id,
+    id: `${value.manufacturer}/${value.cardName}`,
+    format: 'vue-panel-card',
+    formatVersion: 2,
+    apiVersion: 1,
+    manufacturer: value.manufacturer,
+    cardName: value.cardName,
     name: value.name,
     description: value.description,
     icon: value.icon,
+    group: value.group,
+    areas: value.areas as CustomCardDefinition['areas'],
+    capabilities: value.capabilities as CustomCardDefinition['capabilities'],
     defaultSize: {
       cols: positiveInteger(Number(size.cols), 1),
       rows: positiveInteger(Number(size.rows), 1),
       width: positiveInteger(Number(size.width), 140),
       height: positiveInteger(Number(size.height), 120),
     },
+    defaultResponsive: {
+      mobile: responsive.mobile === true,
+      tablet: responsive.tablet === true,
+      desktop: responsive.desktop === true,
+      mobileMax: positiveInteger(Number(responsive.mobileMax), 767),
+      tabletMax: positiveInteger(Number(responsive.tabletMax), 1023),
+    },
+    fullRow: value.fullRow,
     variables,
     html,
     css,
     javascript,
+    contentHash: draft.value.contentHash,
+    writable: draft.value.writable,
+    source: draft.value.source,
   }
 }
 
@@ -385,27 +522,12 @@ function parseJavaScriptMetadata(source: string): unknown {
 }
 
 function parseFullCode(source: string): CustomCardDefinition {
-  const trimmed = source.trimStart()
-  if (trimmed.startsWith('{')) {
-    const legacy: unknown = JSON.parse(source)
-    if (!legacy || typeof legacy !== 'object' || Array.isArray(legacy)) {
-      throw new Error(t('customCards.fullCode.documentError'))
-    }
-    const value = legacy as Record<string, unknown>
-    return definitionFromFullCode(legacy, value.html, value.css, value.javascript)
-  }
-
   const currentMetadata = source.match(
     /<script\s+data-vue-panel-config>([\s\S]*?)<\/script>/i,
   )
-  const legacyMetadata = source.match(
-    /<script\s+type="application\/json"\s+data-vue-panel-config>([\s\S]*?)<\/script>/i,
-  )
   const metadata = currentMetadata?.[1] !== undefined
     ? parseJavaScriptMetadata(currentMetadata[1])
-    : legacyMetadata?.[1] !== undefined
-      ? JSON.parse(legacyMetadata[1])
-      : undefined
+    : undefined
   if (!metadata) throw new Error(t('customCards.fullCode.documentError'))
   const html = sectionContent(source, /<template\s+data-vue-panel-html>([\s\S]*?)<\/template>/i)
   const css = sectionContent(source, /<style\s+data-vue-panel-css>([\s\S]*?)<\/style>/i)
@@ -468,6 +590,12 @@ async function importFullCode(event: Event) {
   }
   tab.value = 'fullCode'
   updateFullCode(await file.text())
+  if (!fullCodeError.value) {
+    draft.value.contentHash = undefined
+    draft.value.writable = true
+    draft.value.source = 'local'
+    importMode.value = true
+  }
 }
 
 variableJsonText.value = serializeVariables()
@@ -485,55 +613,61 @@ watch(draft, () => {
 
 function variableKeyInvalid(variable: CustomCardVariable): boolean {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(variable.key)) return true
-  if (['definitionId', '__proto__', 'prototype', 'constructor'].includes(variable.key)) return true
+  if (['__proto__', 'prototype', 'constructor'].includes(variable.key)) return true
   return draft.value.variables.some(
     (candidate) => candidate.id !== variable.id && candidate.key === variable.key,
   )
 }
 
 const variablesInvalid = computed(() => draft.value.variables.some(
-  (variable) => variableKeyInvalid(variable) || !variable.label.trim(),
+  (variable) => variableKeyInvalid(variable)
+    || !variable.label.trim()
+    || (variable.type === 'select' && !variable.options?.length),
 ) || Boolean(variableJsonError.value))
 
 const previewConfig = computed<Record<string, unknown>>(() => Object.fromEntries([
-  ['definitionId', draft.value.id],
   ...draft.value.variables.map((variable) => [variable.key, variable.default]),
 ]))
 
-const duplicateName = computed(() => {
-  const name = draft.value.name.trim().toLocaleLowerCase()
-  return name !== '' && store.customCards.some(
-    (definition) => definition.id !== draft.value.id
-      && definition.name.trim().toLocaleLowerCase() === name,
-  )
-})
-const nameInvalid = computed(() => validationAttempted.value && !draft.value.name.trim() || duplicateName.value)
+const identityPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const identityType = computed(() => `${draft.value.manufacturer}/${draft.value.cardName}`)
+const duplicateIdentity = computed(() => Boolean(
+  cardRegistry[identityType.value]?.portable
+    && identityType.value !== props.definition?.id,
+))
+const identityInvalid = computed(() => !identityPattern.test(draft.value.manufacturer)
+  || draft.value.manufacturer === 'vue-panel'
+  || !identityPattern.test(draft.value.cardName)
+  || duplicateIdentity.value)
+const nameInvalid = computed(() => validationAttempted.value && !draft.value.name.trim())
+const metadataInvalid = computed(() => draft.value.areas.length === 0
+  || !/^mdi:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(draft.value.icon)
+  || !draft.value.group.trim()
+  || draft.value.defaultResponsive.tabletMax <= draft.value.defaultResponsive.mobileMax)
+const readOnly = computed(() => Boolean(props.definition && !props.definition.writable && !duplicating.value))
 
-function sourceBytes(definition: CustomCardDefinition): number {
-  return new TextEncoder().encode(
-    definition.html + definition.css + definition.javascript,
-  ).byteLength
+function sourceBytes(): number {
+  return new TextEncoder().encode(serializeFullCode()).byteLength
 }
 
-const definitionTooLarge = computed(() => sourceBytes(draft.value) > 256 * 1024)
-const collectionTooLarge = computed(() => {
-  const others = store.customCards
-    .filter((definition) => definition.id !== draft.value.id)
-    .reduce((total, definition) => total + sourceBytes(definition), 0)
-  return others + sourceBytes(draft.value) > 4 * 1024 * 1024
-})
-const sourceSize = computed(() => `${(sourceBytes(draft.value) / 1024).toFixed(1)} KB`)
+const definitionTooLarge = computed(() => sourceBytes() > 512 * 1024)
+const sourceSize = computed(() => `${(sourceBytes() / 1024).toFixed(1)} KB`)
 
 function positiveInteger(value: number | string, fallback: number): number {
   const number = Number(value)
   return Number.isFinite(number) && number > 0 ? Math.round(number) : fallback
 }
 
-function save() {
+async function save() {
   validationAttempted.value = true
-  if (nameInvalid.value || variablesInvalid.value || fullCodeError.value || definitionTooLarge.value || collectionTooLarge.value) return
+  if (readOnly.value || nameInvalid.value || identityInvalid.value || metadataInvalid.value
+    || variablesInvalid.value || fullCodeError.value || definitionTooLarge.value) return
+  draft.value.manufacturer = draft.value.manufacturer.trim()
+  draft.value.cardName = draft.value.cardName.trim()
+  draft.value.id = `${draft.value.manufacturer}/${draft.value.cardName}`
   draft.value.name = draft.value.name.trim()
   draft.value.icon = draft.value.icon.trim() || 'mdi:code-tags'
+  draft.value.group = draft.value.group.trim() || draft.value.manufacturer
   draft.value.variables = draft.value.variables.map((variable) => ({
     ...variable,
     key: variable.key.trim(),
@@ -546,16 +680,59 @@ function save() {
     width: positiveInteger(draft.value.defaultSize.width, 140),
     height: positiveInteger(draft.value.defaultSize.height, 120),
   }
-  store.upsertCustomCard(draft.value)
-  emit('saved', draft.value)
-  emit('close')
+  const document = serializeFullCode()
+  try {
+    const saved = props.definition && props.definition.writable && !duplicating.value
+      ? await updatePortableCard(props.definition.id, document, props.definition.contentHash ?? '')
+      : importMode.value
+        ? await importPortableCard(document)
+        : await createPortableCard(document)
+    draft.value.contentHash = saved.contentHash
+    draft.value.writable = saved.writable
+    draft.value.source = saved.source
+    await syncPortableCardCatalog()
+    emit('saved', draft.value)
+    emit('close')
+  } catch (error) {
+    if (isCardRevisionConflict(error) && props.definition) {
+      const choice = await choiceDialog(t('customCards.errors.revisionConflict'), [
+        { value: 'copy', label: t('persistence.saveCopy') },
+        { value: 'reload', label: t('persistence.reload'), variant: 'primary' },
+      ])
+      if (choice === 'copy') exportFullCode()
+      if (choice === 'reload') {
+        draft.value = editorDefinitionFromDocument(await getPortableCard(props.definition.id))
+        fullCodeText.value = serializeFullCode()
+      }
+      return
+    }
+    await alertDialog(t('customCards.errors.saveFailed', { message: String(error) }))
+  }
 }
 
 async function remove() {
-  if (!props.definition) return
+  if (!props.definition?.writable || !props.definition.contentHash) return
   if (!(await confirmDialog(t('customCards.deleteConfirm', { name: props.definition.name })))) return
-  store.removeCustomCard(props.definition.id)
-  emit('close')
+  try {
+    await deletePortableCard(props.definition.id, props.definition.contentHash)
+    await syncPortableCardCatalog()
+    emit('close')
+  } catch (error) {
+    await alertDialog(t('customCards.errors.deleteFailed', { message: String(error) }))
+  }
+}
+
+function beginDuplicate() {
+  const suffix = draft.value.cardName.endsWith('-copy') ? '2' : 'copy'
+  draft.value.manufacturer = 'local'
+  draft.value.cardName = `${draft.value.cardName}-${suffix}`
+  draft.value.group = 'local'
+  draft.value.id = `local/${draft.value.cardName}`
+  draft.value.contentHash = undefined
+  draft.value.writable = true
+  draft.value.source = 'local'
+  duplicating.value = true
+  fullCodeText.value = serializeFullCode()
 }
 
 const previewStyle = computed(() => ({
@@ -580,11 +757,35 @@ const previewStyle = computed(() => ({
     >
       <div class="editor-pane">
         <div v-show="tab === 'settings'" class="settings-form">
+          <div class="identity-grid">
+            <label class="field">
+              <span>{{ t('customCards.fields.manufacturer') }} *</span>
+              <BaseInput
+                v-model="draft.manufacturer"
+                :disabled="Boolean(definition && !duplicating)"
+                :invalid="validationAttempted && identityInvalid"
+                placeholder="local"
+                :spellcheck="false"
+              />
+            </label>
+            <label class="field">
+              <span>{{ t('customCards.fields.cardName') }} *</span>
+              <BaseInput
+                v-model="draft.cardName"
+                :disabled="Boolean(definition && !duplicating)"
+                :invalid="validationAttempted && identityInvalid"
+                placeholder="my-card"
+                :spellcheck="false"
+              />
+            </label>
+          </div>
+          <small v-if="validationAttempted && identityInvalid" class="field-error">
+            {{ duplicateIdentity ? t('customCards.errors.duplicateIdentity') : t('customCards.errors.identityInvalid') }}
+          </small>
           <label class="field">
             <span>{{ t('customCards.fields.name') }} *</span>
             <BaseInput v-model="draft.name" :invalid="nameInvalid" />
-            <small v-if="duplicateName" class="field-error">{{ t('customCards.errors.duplicateName') }}</small>
-            <small v-else-if="validationAttempted && !draft.name.trim()" class="field-error">
+            <small v-if="validationAttempted && !draft.name.trim()" class="field-error">
               {{ t('customCards.errors.nameRequired') }}
             </small>
           </label>
@@ -599,6 +800,37 @@ const previewStyle = computed(() => ({
               <BaseInput v-model="draft.icon" placeholder="mdi:code-tags" />
             </div>
           </label>
+          <label class="field">
+            <span>{{ t('customCards.fields.group') }}</span>
+            <BaseInput v-model="draft.group" placeholder="local" />
+          </label>
+          <div class="metadata-group">
+            <strong>{{ t('customCards.fields.areas') }}</strong>
+            <label v-for="option in areaOptions" :key="option.value" class="check-row">
+              <span>{{ option.label }}</span>
+              <BaseCheckbox
+                :model-value="draft.areas.includes(option.value)"
+                @update:model-value="draft.areas = toggleArrayValue(draft.areas, option.value, $event)"
+              />
+            </label>
+          </div>
+          <div class="metadata-group">
+            <strong>{{ t('customCards.fields.capabilities') }}</strong>
+            <label v-for="capability in capabilityOptions" :key="capability" class="check-row">
+              <code>{{ capability }}</code>
+              <BaseCheckbox
+                :model-value="draft.capabilities.includes(capability)"
+                @update:model-value="draft.capabilities = toggleArrayValue(draft.capabilities, capability, $event)"
+              />
+            </label>
+          </div>
+          <label class="check-row">
+            <span>{{ t('customCards.fields.fullRow') }}</span>
+            <BaseCheckbox v-model="draft.fullRow" />
+          </label>
+          <small v-if="validationAttempted && metadataInvalid" class="field-error">
+            {{ t('customCards.errors.metadataInvalid') }}
+          </small>
           <div class="size-group">
             <div class="size-heading">
               <strong>{{ t('customCards.fields.defaultSize') }}</strong>
@@ -682,6 +914,14 @@ const previewStyle = computed(() => ({
                       @update:model-value="variable.domain = String($event)"
                     />
                   </label>
+                  <label v-if="variable.type === 'select'" class="field">
+                    <span>{{ t('customCards.variables.options') }}</span>
+                    <BaseInput
+                      :model-value="selectOptionsText(variable)"
+                      placeholder="option-one, option-two"
+                      @update:model-value="updateSelectOptions(variable, $event)"
+                    />
+                  </label>
                   <div class="field default-field">
                     <span>{{ t('customCards.variables.defaultValue') }}</span>
                     <EntityPicker
@@ -698,6 +938,19 @@ const previewStyle = computed(() => ({
                       allow-custom
                       custom-prefix="mdi:"
                       clearable
+                      @update:model-value="variable.default = $event"
+                    />
+                    <BaseSelectMenu
+                      v-else-if="variable.type === 'view'"
+                      :model-value="String(variable.default ?? '')"
+                      :options="viewOptions"
+                      clearable
+                      @update:model-value="variable.default = $event"
+                    />
+                    <BaseSelectMenu
+                      v-else-if="variable.type === 'select'"
+                      :model-value="String(variable.default ?? '')"
+                      :options="(variable.options ?? []).map((option) => ({ value: option, label: variable.optionLabels?.[option] ?? option }))"
                       @update:model-value="variable.default = $event"
                     />
                     <BaseCheckbox
@@ -797,8 +1050,8 @@ const previewStyle = computed(() => ({
           <small v-if="fullCodeError" class="field-error full-code-error">{{ fullCodeError }}</small>
         </div>
 
-        <div v-if="definitionTooLarge || collectionTooLarge" class="source-error">
-          {{ definitionTooLarge ? t('customCards.errors.cardTooLarge') : t('customCards.errors.collectionTooLarge') }}
+        <div v-if="definitionTooLarge" class="source-error">
+          {{ t('customCards.errors.cardTooLarge') }}
         </div>
       </div>
 
@@ -838,11 +1091,14 @@ const previewStyle = computed(() => ({
     </div>
 
     <template #footer>
-      <BaseButton v-if="definition" variant="danger" class="delete-button" @click="remove">
+      <BaseButton v-if="definition?.writable" variant="danger" class="delete-button" @click="remove">
         {{ t('common.delete') }}
       </BaseButton>
+      <BaseButton v-if="readOnly" class="delete-button" @click="beginDuplicate">
+        {{ t('customCards.duplicate') }}
+      </BaseButton>
       <BaseButton @click="emit('close')">{{ t('common.cancel') }}</BaseButton>
-      <BaseButton variant="primary" @click="save">{{ t('common.save') }}</BaseButton>
+      <BaseButton v-if="!readOnly" variant="primary" @click="save">{{ t('common.save') }}</BaseButton>
     </template>
   </BaseDialog>
 
@@ -850,7 +1106,7 @@ const previewStyle = computed(() => ({
     ref="importInput"
     class="visually-hidden"
     type="file"
-    accept=".html,.vue-panel-card.html,.json,.vue-panel-card.json,text/html,application/json"
+    accept=".html,.vue-panel-card.html,text/html"
     @change="importFullCode"
   >
 </template>
@@ -871,6 +1127,35 @@ const previewStyle = computed(() => ({
   align-items: start;
 }
 .editor-pane { min-width: 0; }
+.identity-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.metadata-group {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+}
+.metadata-group > strong {
+  margin-bottom: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.check-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 34px;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+@media (max-width: 620px) {
+  .identity-grid { grid-template-columns: 1fr; }
+}
 .editor-preview-splitter {
   position: sticky;
   top: 62px;

@@ -9,10 +9,17 @@ import { ref } from 'vue'
  *   const name = await promptDialog('Title:', 'Default')  // null on cancel
  */
 
+export interface DialogChoice {
+  value: string
+  label: string
+  variant?: 'default' | 'primary' | 'danger'
+}
+
 export type DialogRequest =
   | { kind: 'alert'; message: string; resolve: () => void }
   | { kind: 'confirm'; message: string; resolve: (ok: boolean) => void }
   | { kind: 'prompt'; message: string; defaultValue: string; resolve: (value: string | null) => void }
+  | { kind: 'choice'; message: string; choices: DialogChoice[]; resolve: (value: string | null) => void }
 
 export const activeDialog = ref<DialogRequest | null>(null)
 const queue: DialogRequest[] = []
@@ -37,4 +44,8 @@ export function confirmDialog(message: string): Promise<boolean> {
 
 export function promptDialog(message: string, defaultValue = ''): Promise<string | null> {
   return new Promise((resolve) => enqueue({ kind: 'prompt', message, defaultValue, resolve }))
+}
+
+export function choiceDialog(message: string, choices: DialogChoice[]): Promise<string | null> {
+  return new Promise((resolve) => enqueue({ kind: 'choice', message, choices, resolve }))
 }

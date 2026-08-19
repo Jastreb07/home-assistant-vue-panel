@@ -13,6 +13,8 @@ export interface CardGroup {
   id: string
   /** Shown to the user: an i18n key, or plain text */
   label: string
+  /** Runtime catalogs may provide a user-facing label directly. */
+  literalLabel?: boolean
 }
 
 /** Cards shipped with vue-panel — always listed first in the picker. */
@@ -20,6 +22,3 @@ export const NATIVE_GROUP: CardGroup = { id: 'native', label: 'cards.groups.nati
 
 /** Used for every card whose manifest declares no group. */
 export const OTHER_GROUP: CardGroup = { id: 'other', label: 'cards.groups.other' }
-
-/** Browser-authored HTML/CSS/JS definitions. */
-export const CUSTOM_GROUP: CardGroup = { id: 'custom', label: 'cards.groups.custom' }
