@@ -1,0 +1,1 @@
+import{Zn as e,b as t,k as n,mt as r,xt as i}from"./runtime-core.esm-bundler-B4b-2GOK.js";var a=n({__name:`index`,props:{variant:{default:`default`}},setup(n){return(a,o)=>(r(),t(`button`,{type:`button`,class:e([`vp-editable-area-btn`,`vp-editable-area-btn--${n.variant}`])},[i(a.$slots,`default`)],2))}});export{a as default};

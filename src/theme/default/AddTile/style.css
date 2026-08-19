@@ -35,6 +35,7 @@
 .vp-add-tile--pill {
   align-self: center;
   padding: 0 calc(var(--vp-control-pad-x) * 2);
+  margin: 5px;
   height: calc(var(--vp-control-height) + 8px);
   border-radius: 999px;
 }

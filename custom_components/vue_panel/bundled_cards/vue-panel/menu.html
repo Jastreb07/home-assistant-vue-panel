@@ -11,36 +11,55 @@
     "group": "Vue Panel",
     "areas": ["dashboard", "sidebar", "header", "bottom"],
     "capabilities": ["navigation:read", "navigation:write", "icon:render"],
-    "defaultSize": {"cols": 1, "rows": 1, "width": 280, "height": 120},
-    "defaultResponsive": {"mobile": true, "tablet": true, "desktop": true, "mobileMax": 767, "tabletMax": 1023},
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 280,
+      "height": 120
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
     "fullRow": false,
-    "variables": [{
-      "key": "orientation",
-      "label": "Ausrichtung",
-      "type": "select",
-      "required": false,
-      "options": ["vertical", "horizontal"],
-      "optionLabels": {"vertical": "Vertikal", "horizontal": "Horizontal"},
-      "default": "vertical"
-    }, {
-      "key": "showTitles",
-      "label": "Titel anzeigen",
-      "type": "boolean",
-      "required": false,
-      "default": true
-    }, {
-      "key": "showIcons",
-      "label": "Icons anzeigen",
-      "type": "boolean",
-      "required": false,
-      "default": true
-    }, {
-      "key": "showSubviews",
-      "label": "Unteransichten anzeigen",
-      "type": "boolean",
-      "required": false,
-      "default": false
-    }]
+    "variables": [
+      {
+        "key": "orientation",
+        "label": "Ausrichtung",
+        "type": "select",
+        "required": false,
+        "options": ["vertical", "horizontal"],
+        "optionLabels": {
+          "vertical": "Vertikal",
+          "horizontal": "Horizontal"
+        },
+        "default": "vertical"
+      },
+      {
+        "key": "showTitles",
+        "label": "Titel anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showIcons",
+        "label": "Icons anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showSubviews",
+        "label": "Unteransichten anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      }
+    ]
   };
 </script>
 
@@ -55,105 +74,247 @@
         display: flex;
         gap: 8px;
         min-width: 0;
-        overflow: auto
+        min-height: 0;
     }
+
+    /* =========================
+       VERTIKALES MENÜ
+       ========================= */
 
     .menu-card.vertical {
-        flex-direction: column
+        flex-direction: column;
+        align-items: stretch;
+
+        overflow-y: auto;
+        overflow-x: hidden;
     }
 
-    .menu-card.horizontal {
-        flex-flow: row wrap;
-        align-content: flex-start
+    /* Vertikal: volle Breite */
+    .menu-card.vertical .item {
+        width: 100%;
+        flex: 0 0 auto;
     }
+
+
+    /* =========================
+       HORIZONTALES MENÜ
+       ========================= */
+
+    .menu-card.horizontal {
+        flex-direction: row;
+
+        /* Wichtig: keine zweite Zeile */
+        flex-wrap: nowrap;
+
+        align-items: center;
+        justify-content: flex-start;
+
+        /* Keine Scrollbars */
+        overflow: visible;
+    }
+
+    /* Horizontal: Buttonbreite nach Inhalt */
+    .menu-card.horizontal .item {
+        width: auto;
+        flex: 0 0 auto;
+
+        /*
+         * Horizontal etwas kompakter,
+         * damit mehrere Einträge nebeneinander passen.
+         */
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+
+    /* =========================
+       MENÜPUNKTE
+       ========================= */
 
     .item {
         display: flex;
         align-items: center;
         justify-content: space-between;
+
         gap: 12px;
+
         padding: 14px 18px;
+
         border: 0;
         border-radius: 28px;
+
         background: transparent;
         color: var(--text-primary);
+
         font: 600 16px/1.2 inherit;
         text-align: left;
-        cursor: pointer
+
+        cursor: pointer;
+
+        min-width: 0;
     }
 
-    .vertical .item {
-        width: 100%
-    }
+
+    /* =========================
+       NUR ICON
+       ========================= */
 
     .item.icon-only {
         justify-content: center;
-        padding: 14px
+        padding: 14px;
     }
 
+
+    /* =========================
+       STATUS
+       ========================= */
+
     .item:hover {
-        background: var(--nav-item-hover)
+        background: var(--nav-item-hover);
     }
 
     .item.active {
-        background: var(--nav-item-active)
+        background: var(--nav-item-active);
     }
 
     .item.active-parent {
-        box-shadow: inset 3px 0 var(--accent)
+        box-shadow: inset 3px 0 var(--accent);
     }
 
+
+    /* =========================
+       TEXT
+       ========================= */
+
+    /* Standard / vertikal */
     .item span {
+        min-width: 0;
+
         overflow: hidden;
         white-space: nowrap;
-        text-overflow: ellipsis
+        text-overflow: ellipsis;
     }
+
+    /*
+     * Horizontal:
+     * Text niemals kürzen
+     */
+    .menu-card.horizontal .item span {
+        min-width: max-content;
+
+        overflow: visible;
+        white-space: nowrap;
+        text-overflow: clip;
+    }
+
+
+    /* =========================
+       ICONS
+       ========================= */
 
     .item img {
         width: 22px;
         height: 22px;
-        flex: none
+
+        flex: 0 0 auto;
     }
 </style>
 
 <script data-vue-panel-javascript>
-  const config = vuePanel.config;
   const menu = document.getElementById('menu');
-  const views = (await vuePanel.listViews()).filter(view => config.showSubviews === true || !view.subview);
+
   let active = await vuePanel.currentView();
-  menu.classList.add(config.orientation === 'horizontal' ? 'horizontal' : 'vertical');
 
   async function render() {
+    /*
+     * Config immer neu lesen.
+     * Dadurch werden Änderungen an der Karten-Konfiguration
+     * beim erneuten Rendern berücksichtigt.
+     */
+    const config = vuePanel.config;
+
+    /*
+     * Alte Ausrichtung entfernen und aktuelle setzen.
+     * So können niemals gleichzeitig vertical und horizontal
+     * auf dem Element vorhanden sein.
+     */
+    menu.classList.remove('vertical', 'horizontal');
+
+    menu.classList.add(
+      config.orientation === 'horizontal'
+        ? 'horizontal'
+        : 'vertical'
+    );
+
+    /*
+     * Views ebenfalls neu laden, damit auch showSubviews
+     * bei einer Konfigurationsänderung korrekt berücksichtigt wird.
+     */
+    const views = (await vuePanel.listViews()).filter(
+      view => config.showSubviews === true || !view.subview
+    );
+
     menu.replaceChildren();
+
     for (const view of views) {
       const button = document.createElement('button');
+
       button.type = 'button';
       button.className = 'item';
+
       const isActive = active?.path === view.path;
-      const isParent = !isActive && active?.path?.startsWith(`${view.path}/`);
+
+      const isParent =
+        !isActive &&
+        active?.path?.startsWith(`${view.path}/`);
+
       button.classList.toggle('active', isActive);
       button.classList.toggle('active-parent', Boolean(isParent));
       button.classList.toggle('icon-only', config.showTitles === false);
+
+      /*
+       * Titel
+       */
       if (config.showTitles !== false) {
         const label = document.createElement('span');
+
         label.textContent = view.title;
+
         button.append(label);
       }
+
+      /*
+       * Icon
+       */
       if (config.showIcons !== false && view.icon) {
         const icon = document.createElement('img');
+
         icon.alt = '';
+
         icon.src = await vuePanel.getIcon(view.icon, {
           size: 56,
-          color: getComputedStyle(document.documentElement).getPropertyValue('--text-primary') || '#ffffff'
+          color:
+            getComputedStyle(document.documentElement)
+              .getPropertyValue('--text-primary')
+              .trim() || '#ffffff'
         });
+
         button.append(icon);
       }
-      button.addEventListener('click', () => vuePanel.navigate(view.id));
+
+      /*
+       * Navigation
+       */
+      button.addEventListener('click', () => {
+        vuePanel.navigate(view.id);
+      });
+
       menu.append(button);
     }
   }
 
   await render();
+
   vuePanel.subscribeNavigation(view => {
     active = view;
     render();

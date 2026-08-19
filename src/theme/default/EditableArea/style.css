@@ -1,0 +1,28 @@
+.vp-editable-area {
+  position: relative;
+}
+.vp-editable-area.editing {
+  border: 2px dashed color-mix(in srgb, var(--text-secondary) 40%, transparent);
+  border-radius: var(--card-radius);
+}
+.vp-editable-area.dragging {
+  opacity: 0.4;
+}
+.vp-editable-area.drop-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+/* Floating pill anchored to the top-right corner of the box */
+.vp-editable-area-toolbar {
+  position: absolute;
+  top: -16px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}

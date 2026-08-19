@@ -6,6 +6,8 @@ import { boxToCss } from '@/core/ui/boxInput'
 import BarColumnCards from '@/core/editor/BarColumnCards.vue'
 import BarColumnSettingsDialog from '@/core/editor/BarColumnSettingsDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
+import BaseEditableArea from '@/core/ui/BaseEditableArea.vue'
+import BaseEditableAreaButton from '@/core/ui/BaseEditableAreaButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { useI18n } from 'vue-i18n'
@@ -72,46 +74,39 @@ function columnStyle(column: BarColumn): Record<string, string> {
     :style="hostStyle"
   >
     <CardCss :card-id="bar.id" :css="bar.css ?? ''">
-      <div
+      <BaseEditableArea
         v-for="column in bar.columns"
         :key="column.id"
         class="bar-column"
-        :class="{ editing: store.editMode }"
+        :editing="store.editMode"
         :style="columnStyle(column)"
       >
-        <div v-if="store.editMode" class="column-toolbar">
-          <button
-            class="column-btn"
+        <template v-if="store.editMode" #toolbar>
+          <BaseEditableAreaButton
             :title="t('editor.barColumn.moveBack')"
             @click="store.moveBarColumn(position, column.id, -1)"
           >
             <MdiIcon :icon="vertical ? 'mdi:chevron-up' : 'mdi:chevron-left'" :size="15" />
-          </button>
-          <button
-            class="column-btn"
+          </BaseEditableAreaButton>
+          <BaseEditableAreaButton
             :title="t('editor.barColumn.moveForward')"
             @click="store.moveBarColumn(position, column.id, 1)"
           >
             <MdiIcon :icon="vertical ? 'mdi:chevron-down' : 'mdi:chevron-right'" :size="15" />
-          </button>
-          <button
-            class="column-btn"
-            :title="t('editor.barColumn.settings')"
-            @click="columnTarget = column.id"
-          >
+          </BaseEditableAreaButton>
+          <BaseEditableAreaButton :title="t('editor.barColumn.settings')" @click="columnTarget = column.id">
             <MdiIcon icon="mdi:cog" :size="15" />
-          </button>
-          <button
+          </BaseEditableAreaButton>
+          <BaseEditableAreaButton
             v-if="bar.columns.length > 1"
-            class="column-btn"
             :title="t('editor.barColumn.delete')"
             @click="store.removeBarColumn(position, column.id)"
           >
             <MdiIcon icon="mdi:delete-outline" :size="15" />
-          </button>
-        </div>
+          </BaseEditableAreaButton>
+        </template>
         <BarColumnCards :bar="position" :column="column" :direction="direction" />
-      </div>
+      </BaseEditableArea>
 
       <BaseAddTile
         v-if="store.editMode"
@@ -172,45 +167,16 @@ function columnStyle(column: BarColumn): Record<string, string> {
 .shell-bar-host--bottom {
   border-top: 1px solid var(--divider);
 }
+/* The box/toolbar chrome comes from the shared editable-area theme component */
 .bar-column {
-  position: relative;
   display: flex;
   gap: 10px;
   min-width: 0;
   min-height: 0;
 }
 .bar-column.editing {
-  outline: 1px dashed color-mix(in srgb, var(--text-secondary) 35%, transparent);
-  outline-offset: 2px;
-  border-radius: 8px;
   min-width: 44px;
   min-height: 44px;
-}
-.column-toolbar {
-  position: absolute;
-  top: -12px;
-  right: 4px;
-  z-index: 6;
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--divider);
-  border-radius: 8px;
-  background: var(--card-bg);
-}
-.column-btn {
-  display: grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-}
-.column-btn:hover {
-  color: var(--accent);
 }
 .add-column {
   align-self: center;

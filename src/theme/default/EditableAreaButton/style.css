@@ -1,0 +1,24 @@
+/* Same dashed-border language as .vp-editable-area and .vp-add-tile */
+.vp-editable-area-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px dashed var(--divider);
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.vp-editable-area-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.vp-editable-area-btn--drag {
+  cursor: grab;
+}
+.vp-editable-area-btn--drag:active {
+  cursor: grabbing;
+}

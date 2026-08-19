@@ -6,6 +6,8 @@ import { cardAreaCss, cardRegistry, resolveCardComponent } from '@/core/registry
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
+import BaseEditableArea from '@/core/ui/BaseEditableArea.vue'
+import BaseEditableAreaButton from '@/core/ui/BaseEditableAreaButton.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { boxToCss } from '@/core/ui/boxInput'
 
@@ -151,33 +153,32 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
 </script>
 
 <template>
-  <section
+  <BaseEditableArea
+    tag="section"
     class="layout-section"
-    :class="{
-      editing: editMode,
-      'section-dragging': sectionDragging,
-      'section-drop': sectionDropTarget,
-    }"
+    :editing="editMode"
+    :dragging="sectionDragging"
+    :drop-target="sectionDropTarget"
     :style="sectionStyle"
     @dragover="editMode && emit('dragover-section', $event, section)"
     @drop="editMode && emit('drop', $event)"
   >
-    <div v-if="editMode" class="section-toolbar">
-      <button
-        class="icon-btn drag-handle"
+    <template v-if="editMode" #toolbar>
+      <BaseEditableAreaButton
+        variant="drag"
         draggable="true"
         :title="t('editor.moveSection')"
         @dragstart="emit('section-dragstart', $event, section.id)"
       >
         <MdiIcon icon="mdi:drag-horizontal-variant" :size="18" />
-      </button>
-      <button class="icon-btn" :title="t('editor.section.title')" @click="emit('edit-section', section)">
+      </BaseEditableAreaButton>
+      <BaseEditableAreaButton :title="t('editor.section.title')" @click="emit('edit-section', section)">
         <MdiIcon icon="mdi:pencil" :size="16" />
-      </button>
-      <button class="icon-btn" :title="t('editor.deleteSection')" @click="emit('remove-section', section)">
+      </BaseEditableAreaButton>
+      <BaseEditableAreaButton :title="t('editor.deleteSection')" @click="emit('remove-section', section)">
         <MdiIcon icon="mdi:delete-outline" :size="16" />
-      </button>
-    </div>
+      </BaseEditableAreaButton>
+    </template>
 
     <div class="cards-grid" :class="`orient-${orientation}`" :style="cardsStyle">
       <template v-for="(card, index) in section.cards" :key="card.id">
@@ -224,43 +225,14 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
         @click="emit('pick', section.id)"
       />
     </div>
-  </section>
+  </BaseEditableArea>
 </template>
 
 <style scoped>
-/* Edit mode: the section becomes a real visible box with a floating toolbar */
+/* Edit mode: the shared editable-area box gets extra room for the cards grid */
 .layout-section.editing {
-  position: relative;
-  border: 2px dashed color-mix(in srgb, var(--text-secondary) 40%, transparent);
-  border-radius: var(--card-radius);
   padding: 16px;
   padding-top: 22px;
-}
-.layout-section.section-dragging {
-  opacity: 0.4;
-}
-.layout-section.section-drop {
-  border-color: var(--accent);
-  border-style: solid;
-}
-.section-toolbar {
-  position: absolute;
-  top: -16px;
-  right: 12px;
-  display: flex;
-  gap: 2px;
-  background: var(--card-bg);
-  border: 1px solid var(--divider);
-  border-radius: 10px;
-  padding: 3px;
-  box-shadow: var(--card-shadow);
-  z-index: 3;
-}
-.section-toolbar .drag-handle {
-  cursor: grab;
-}
-.section-toolbar .drag-handle:active {
-  cursor: grabbing;
 }
 .cards-grid {
   display: grid;
@@ -291,19 +263,6 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
   outline: 2px dashed var(--accent);
   outline-offset: 4px;
   border-radius: var(--card-radius);
-}
-.icon-btn {
-  border: none;
-  background: transparent;
-  color: var(--text-primary);
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 6px;
-  display: grid;
-  place-items: center;
-}
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.12);
 }
 .unknown-card {
   border: 2px dashed var(--divider);
