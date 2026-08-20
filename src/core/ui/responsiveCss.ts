@@ -14,6 +14,24 @@ export const defaultResponsiveVisibility: ResponsiveVisibility = {
   tabletMax: 1023,
 }
 
+/** Which of the three device classes a viewport width falls into. */
+export function deviceForWidth(
+  width: number,
+  value: ResponsiveVisibility = defaultResponsiveVisibility,
+): 'mobile' | 'tablet' | 'desktop' {
+  if (width <= value.mobileMax) return 'mobile'
+  return width <= value.tabletMax ? 'tablet' : 'desktop'
+}
+
+/** True when a bar/card with this visibility is shown at the given width. */
+export function matchesViewport(
+  value: ResponsiveVisibility | undefined,
+  width: number,
+): boolean {
+  const visibility = normalized({ ...defaultResponsiveVisibility, ...value })
+  return visibility[deviceForWidth(width, visibility)]
+}
+
 const START = '/* vue-panel:responsive:start'
 const END = '/* vue-panel:responsive:end */'
 const BLOCK_RE = /\/\* vue-panel:responsive:start\s*\n([\s\S]*?)\n\*\/[\s\S]*?\/\* vue-panel:responsive:end \*\//g

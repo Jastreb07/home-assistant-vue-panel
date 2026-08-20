@@ -1,4 +1,5 @@
 import type { BoxValue } from '@/core/ui/boxInput'
+import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 
 export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
 export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
@@ -157,6 +158,11 @@ export interface BarEntry {
   placement?: 'view' | 'full'
   /** Custom CSS for the bar container, scoped via [data-vp-card] */
   css?: string
+  /**
+   * Screen sizes this bar is rendered on, with the breakpoints that separate
+   * them. Both sidebars are desktop-only by default.
+   */
+  visibility?: ResponsiveVisibility
   columns: BarColumn[]
 }
 

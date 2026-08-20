@@ -1,0 +1,504 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "entities",
+    "name": "Entitäten",
+    "description": "Liste beliebig vieler Entitäten mit Status und Schaltern",
+    "icon": "mdi:format-list-bulleted-type",
+    "group": "Vue Panel",
+    "areas": [
+      "dashboard",
+      "sidebar"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 2,
+      "rows": 2,
+      "width": 320,
+      "height": 260
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "title",
+        "label": "Überschrift",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "titleIcon",
+        "label": "Icon der Überschrift",
+        "type": "icon",
+        "required": false
+      },
+      {
+        "key": "entities",
+        "label": "Entitäten",
+        "type": "list",
+        "required": false,
+        "itemFields": [
+          {
+            "key": "entity",
+            "label": "Entity",
+            "type": "entity",
+            "required": false
+          },
+          {
+            "key": "name",
+            "label": "Anzeigename",
+            "type": "string",
+            "required": false
+          },
+          {
+            "key": "icon",
+            "label": "Icon",
+            "type": "icon",
+            "required": false
+          }
+        ]
+      },
+      {
+        "key": "showIcons",
+        "label": "Icons anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showStates",
+        "label": "Status anzeigen",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showToggles",
+        "label": "Schalter für schaltbare Entitäten",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showSecondary",
+        "label": "Zweite Zeile mit Entity-ID",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      }
+    ]
+  };
+</script>
+
+<template data-vue-panel-html>
+  <div class="entities-card">
+    <div class="entities-card__header" id="header" hidden>
+      <img class="entities-card__header-icon" id="header-icon" alt="" hidden>
+      <span class="entities-card__title" id="title"></span>
+    </div>
+    <div class="entities-card__list" id="list"></div>
+    <p class="entities-card__empty" id="empty" hidden>Keine Entitäten ausgewählt</p>
+  </div>
+</template>
+
+<style data-vue-panel-css>
+    .entities-card {
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: 12px 4px 12px 12px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        border-radius: var(--card-radius);
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        overflow: hidden;
+    }
+
+    .entities-card__header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding-right: 12px;
+    }
+
+    .entities-card__header-icon {
+        width: 20px;
+        height: 20px;
+        flex: none;
+    }
+
+    .entities-card__title {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .entities-card__list {
+        min-height: 0;
+        flex: 1;
+        overflow: hidden auto;
+        padding-right: 8px;
+    }
+
+    .entities-card__empty {
+        margin: 0;
+        padding-right: 12px;
+        color: #888;
+        font-size: 12px;
+    }
+
+    /* =========================
+       ZEILE
+       ========================= */
+
+    .row {
+        width: 100%;
+        min-height: 40px;
+        padding: 6px 0;
+        border: 0;
+        border-bottom: 1px solid var(--divider, rgb(128 128 128 / 20%));
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+    }
+
+    .row:last-child {
+        border-bottom: 0;
+    }
+
+    .row.clickable {
+        cursor: pointer;
+    }
+
+    .row.clickable:active {
+        opacity: .7;
+    }
+
+    .row__icon {
+        width: 24px;
+        height: 24px;
+        flex: none;
+    }
+
+    .row__label {
+        min-width: 0;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .row__name, .row__secondary {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .row__name {
+        font-size: 14px;
+        line-height: 1.25;
+    }
+
+    .row__secondary {
+        color: #888;
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .row__state {
+        flex: none;
+        max-width: 45%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: #888;
+        font-size: 13px;
+    }
+
+    /* =========================
+       SCHALTER
+       ========================= */
+
+    .row__toggle {
+        width: 40px;
+        height: 22px;
+        flex: none;
+        padding: 0;
+        border: 0;
+        border-radius: 11px;
+        background: rgb(128 128 128 / 40%);
+        cursor: pointer;
+        transition: background .2s;
+    }
+
+    .row__toggle.on {
+        background: var(--accent, #f6d36b);
+    }
+
+    .row__toggle span {
+        width: 18px;
+        height: 18px;
+        margin: 2px;
+        display: block;
+        border-radius: 50%;
+        background: #fff;
+        transition: transform .2s;
+    }
+
+    .row__toggle.on span {
+        transform: translateX(18px);
+    }
+
+    .row__toggle[disabled] {
+        opacity: .5;
+        cursor: default;
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+
+  const list = document.getElementById('list');
+  const empty = document.getElementById('empty');
+  const header = document.getElementById('header');
+  const headerIcon = document.getElementById('header-icon');
+  const title = document.getElementById('title');
+
+  /*
+   * Domains, die sich direkt über homeassistant.turn_on/turn_off
+   * schalten lassen und deshalb einen Schalter bekommen.
+   */
+  const TOGGLE_DOMAINS = new Set([
+    'automation',
+    'fan',
+    'humidifier',
+    'input_boolean',
+    'light',
+    'remote',
+    'siren',
+    'switch'
+  ]);
+
+  /*
+   * Standard-Icons je Domain, falls die Entity selbst
+   * kein Icon liefert und keins konfiguriert wurde.
+   */
+  const DOMAIN_ICONS = {
+    automation: 'mdi:robot',
+    binary_sensor: 'mdi:radiobox-marked',
+    climate: 'mdi:thermostat',
+    cover: 'mdi:window-shutter',
+    fan: 'mdi:fan',
+    input_boolean: 'mdi:toggle-switch-outline',
+    light: 'mdi:lightbulb',
+    lock: 'mdi:lock',
+    media_player: 'mdi:play-circle-outline',
+    person: 'mdi:account',
+    scene: 'mdi:palette',
+    script: 'mdi:script-text-outline',
+    sensor: 'mdi:gauge',
+    switch: 'mdi:toggle-switch',
+    vacuum: 'mdi:robot-vacuum',
+    weather: 'mdi:weather-partly-cloudy'
+  };
+
+  const STATE_LABELS = {
+    on: 'An',
+    off: 'Aus',
+    open: 'Offen',
+    closed: 'Geschlossen',
+    home: 'Zuhause',
+    not_home: 'Abwesend',
+    locked: 'Verriegelt',
+    unlocked: 'Entriegelt',
+    unavailable: 'Nicht verfügbar',
+    unknown: 'Unbekannt',
+    idle: 'Bereit',
+    playing: 'Läuft',
+    paused: 'Pausiert'
+  };
+
+  function domainOf(entityId) {
+    return String(entityId || '').split('.')[0];
+  }
+
+  function stateText(entity) {
+    if (!entity) return 'Nicht gefunden';
+    const unit = entity.attributes?.unit_of_measurement;
+    const label = STATE_LABELS[entity.state] || entity.state;
+    return unit ? `${entity.state} ${unit}` : label;
+  }
+
+  /*
+   * Konfigurierte Einträge gewinnen; ein Eintrag ohne Entity
+   * wird übersprungen, damit leere Zeilen nicht stören.
+   */
+  const items = (Array.isArray(config.entities) ? config.entities : [])
+    .map(item => ({
+      entity: item && typeof item.entity === 'string' ? item.entity : '',
+      name: item && typeof item.name === 'string' ? item.name : '',
+      icon: item && typeof item.icon === 'string' ? item.icon : ''
+    }))
+    .filter(item => item.entity);
+
+  /*
+   * Überschrift
+   */
+  const headline = String(config.title || '');
+
+  if (headline) {
+    header.hidden = false;
+    title.textContent = headline;
+
+    if (config.titleIcon) {
+      headerIcon.hidden = false;
+      headerIcon.src = await vuePanel.getIcon(String(config.titleIcon), {
+        size: 60,
+        color: '#888888'
+      });
+    }
+  }
+
+  empty.hidden = items.length > 0;
+
+  for (const item of items) {
+    const entityId = item.entity;
+    const domain = domainOf(entityId);
+    const toggleable = config.showToggles !== false && TOGGLE_DOMAINS.has(domain);
+
+    const row = document.createElement('div');
+
+    row.className = 'row';
+
+    /*
+     * Icon
+     */
+    let iconElement = null;
+
+    if (config.showIcons !== false) {
+      iconElement = document.createElement('img');
+      iconElement.className = 'row__icon';
+      iconElement.alt = '';
+      row.append(iconElement);
+    }
+
+    /*
+     * Beschriftung
+     */
+    const label = document.createElement('div');
+
+    label.className = 'row__label';
+
+    const name = document.createElement('span');
+
+    name.className = 'row__name';
+
+    label.append(name);
+
+    if (config.showSecondary === true) {
+      const secondary = document.createElement('span');
+
+      secondary.className = 'row__secondary';
+      secondary.textContent = entityId;
+
+      label.append(secondary);
+    }
+
+    row.append(label);
+
+    /*
+     * Status bzw. Schalter
+     */
+    const state = document.createElement('span');
+
+    state.className = 'row__state';
+
+    if (config.showStates !== false && !toggleable) row.append(state);
+
+    let toggle = null;
+
+    if (toggleable) {
+      toggle = document.createElement('button');
+      toggle.className = 'row__toggle';
+      toggle.type = 'button';
+      toggle.append(document.createElement('span'));
+      row.append(toggle);
+    }
+
+    list.append(row);
+
+    const render = entity => {
+      const isOn = entity?.state === 'on';
+      const unavailable = !entity || entity.state === 'unavailable';
+
+      name.textContent = item.name || entity?.attributes?.friendly_name || entityId;
+      state.textContent = stateText(entity);
+
+      if (toggle) {
+        toggle.classList.toggle('on', isOn);
+        toggle.disabled = unavailable;
+        toggle.setAttribute('aria-pressed', String(isOn));
+        toggle.setAttribute('aria-label', name.textContent);
+      }
+
+      if (iconElement) {
+        const icon = item.icon
+          || entity?.attributes?.icon
+          || DOMAIN_ICONS[domain]
+          || 'mdi:card-bulleted-outline';
+
+        vuePanel
+          .getIcon(String(icon), {size: 72, color: isOn ? '#f6d36b' : '#888888'})
+          .then(source => {
+            iconElement.src = source;
+          });
+      }
+    };
+
+    if (toggle) {
+      toggle.addEventListener('click', async event => {
+        event.stopPropagation();
+
+        const entity = await vuePanel.getEntity(entityId);
+
+        await vuePanel.callService(
+          'homeassistant',
+          entity?.state === 'on' ? 'turn_off' : 'turn_on',
+          {},
+          {entity_id: entityId}
+        );
+      });
+    }
+
+    render(await vuePanel.getEntity(entityId));
+
+    vuePanel.subscribeEntity(entityId, render);
+  }
+</script>

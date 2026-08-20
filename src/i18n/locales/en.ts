@@ -403,6 +403,8 @@ export default {
       header: 'Header bar',
       bottom: 'Bottom bar',
     },
+    barVisibilityHint:
+      'Choose the devices this bar is shown on and the width at which each device class starts. Both sidebars are desktop-only by default.',
     barPositionHints: {
       'sidebar-left': 'Left of the view area',
       'sidebar-right': 'Right of the view area',

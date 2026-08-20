@@ -10,6 +10,9 @@ import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
+import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
+import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import { defaultResponsiveVisibility, type ResponsiveVisibility } from '@/core/ui/responsiveCss'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -37,6 +40,60 @@ const placementOptions = computed(() => (['view', 'full'] as const).map((value) 
 function setSize(position: BarPosition, value: number) {
   const limits = barSizeLimits[position]
   barDrafts.value[position].size = Math.min(limits.max, Math.max(limits.min, value || limits.min))
+}
+
+// ── Per-bar device visibility ────────────────────────────────
+const barIcons: Record<BarPosition, string> = {
+  'sidebar-left': 'mdi:dock-left',
+  'sidebar-right': 'mdi:dock-right',
+  header: 'mdi:dock-top',
+  bottom: 'mdi:dock-bottom',
+}
+
+/** Older dashboards were saved without the visibility block — fill it in. */
+for (const position of barPositions) {
+  barDrafts.value[position].visibility = {
+    ...defaultResponsiveVisibility,
+    ...barDrafts.value[position].visibility,
+  }
+}
+
+function visibility(position: BarPosition): ResponsiveVisibility {
+  return barDrafts.value[position].visibility as ResponsiveVisibility
+}
+
+/** Typed breakpoints are only clamped on blur so intermediate input stays editable. */
+const breakpointDrafts = ref(
+  Object.fromEntries(
+    barPositions.map((position) => [position, {
+      mobile: String(visibility(position).mobileMax),
+      tablet: String(visibility(position).tabletMax),
+    }]),
+  ) as Record<BarPosition, { mobile: string; tablet: string }>,
+)
+
+function commitMobileBreakpoint(position: BarPosition) {
+  const current = visibility(position)
+  const parsed = Number(breakpointDrafts.value[position].mobile)
+  const value = Number.isFinite(parsed) && breakpointDrafts.value[position].mobile !== ''
+    ? Math.min(Math.max(Math.round(parsed), 320), 2000)
+    : current.mobileMax
+  current.mobileMax = value
+  breakpointDrafts.value[position].mobile = String(value)
+  if (current.tabletMax <= value) {
+    current.tabletMax = value + 1
+    breakpointDrafts.value[position].tablet = String(value + 1)
+  }
+}
+
+function commitTabletBreakpoint(position: BarPosition) {
+  const current = visibility(position)
+  const parsed = Number(breakpointDrafts.value[position].tablet)
+  const value = Number.isFinite(parsed) && breakpointDrafts.value[position].tablet !== ''
+    ? Math.min(Math.max(Math.round(parsed), current.mobileMax + 1), 4000)
+    : current.tabletMax
+  current.tabletMax = value
+  breakpointDrafts.value[position].tablet = String(value)
 }
 
 // ── Tabs ─────────────────────────────────────────────────────
@@ -125,32 +182,89 @@ function save() {
 
     <div v-show="tab === 'bars'" class="bars-form">
       <p class="bars-hint">{{ t('settings.barsHint') }}</p>
-      <div v-for="position in barPositions" :key="position" class="bar-field">
-        <div class="bar-field-heading">
-          <span>{{ t(`settings.barPositions.${position}`) }}</span>
-          <small>{{ t(`settings.barPositionHints.${position}`) }}</small>
+      <BaseCollapsible
+        v-for="(position, index) in barPositions"
+        :key="position"
+        :title="t(`settings.barPositions.${position}`)"
+        :icon="barIcons[position]"
+        :default-open="index === 0"
+      >
+        <div class="bar-field">
+          <small class="bar-field-hint">{{ t(`settings.barPositionHints.${position}`) }}</small>
+          <div class="bar-controls">
+            <label>
+              <span>{{ isSidebar(position) ? t('editor.nav.width') : t('editor.header.height') }}</span>
+              <BaseInput
+                type="number"
+                :model-value="barDrafts[position].size"
+                :min="barSizeLimits[position].min"
+                :max="barSizeLimits[position].max"
+                @update:model-value="setSize(position, Number($event))"
+              />
+            </label>
+            <label v-if="!isSidebar(position)">
+              <span>{{ t('editor.barPlacement.label') }}</span>
+              <BaseSelectMenu
+                :model-value="barDrafts[position].placement ?? 'view'"
+                :options="placementOptions"
+                @update:model-value="barDrafts[position].placement = $event as 'view' | 'full'"
+              />
+            </label>
+          </div>
+
+          <h4>{{ t('editor.visibility.responsiveDesign') }}</h4>
+          <p class="bar-field-hint">{{ t('settings.barVisibilityHint') }}</p>
+          <div class="device-list">
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.mobile') }}</span>
+                <small>{{ t('editor.visibility.mobileRange', { max: visibility(position).mobileMax }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility(position).mobile" />
+            </div>
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.tablet') }}</span>
+                <small>{{ t('editor.visibility.tabletRange', { min: visibility(position).mobileMax + 1, max: visibility(position).tabletMax }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility(position).tablet" />
+            </div>
+            <div class="device-row">
+              <div class="device-label">
+                <span>{{ t('editor.visibility.desktop') }}</span>
+                <small>{{ t('editor.visibility.desktopRange', { min: visibility(position).tabletMax + 1 }) }}</small>
+              </div>
+              <BaseCheckbox v-model="visibility(position).desktop" />
+            </div>
+          </div>
+          <div class="bar-controls">
+            <label>
+              <span>{{ t('editor.visibility.mobileBreakpoint') }}</span>
+              <BaseInput
+                :model-value="breakpointDrafts[position].mobile"
+                type="number"
+                :min="320"
+                :max="2000"
+                :step="1"
+                @update:model-value="breakpointDrafts[position].mobile = String($event)"
+                @blur="commitMobileBreakpoint(position)"
+              />
+            </label>
+            <label>
+              <span>{{ t('editor.visibility.tabletBreakpoint') }}</span>
+              <BaseInput
+                :model-value="breakpointDrafts[position].tablet"
+                type="number"
+                :min="visibility(position).mobileMax + 1"
+                :max="4000"
+                :step="1"
+                @update:model-value="breakpointDrafts[position].tablet = String($event)"
+                @blur="commitTabletBreakpoint(position)"
+              />
+            </label>
+          </div>
         </div>
-        <div class="bar-controls">
-          <label>
-            <span>{{ isSidebar(position) ? t('editor.nav.width') : t('editor.header.height') }}</span>
-            <BaseInput
-              type="number"
-              :model-value="barDrafts[position].size"
-              :min="barSizeLimits[position].min"
-              :max="barSizeLimits[position].max"
-              @update:model-value="setSize(position, Number($event))"
-            />
-          </label>
-          <label v-if="!isSidebar(position)">
-            <span>{{ t('editor.barPlacement.label') }}</span>
-            <BaseSelectMenu
-              :model-value="barDrafts[position].placement ?? 'view'"
-              :options="placementOptions"
-              @update:model-value="barDrafts[position].placement = $event as 'view' | 'full'"
-            />
-          </label>
-        </div>
-      </div>
+      </BaseCollapsible>
     </div>
 
     <div v-show="tab === 'css'" class="css-tab">
@@ -177,7 +291,7 @@ function save() {
 .bars-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 8px;
 }
 .bars-hint {
   margin: 0;
@@ -188,25 +302,48 @@ function save() {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--divider);
-  border-radius: 10px;
 }
 .bar-controls {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 12px;
 }
-.bar-field-heading {
+.bar-field-hint {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.bar-field h4 {
+  margin: 6px 0 0;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+}
+.device-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
-.bar-field-heading > span {
+.device-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 44px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--divider);
+}
+.device-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.device-label > span {
   color: var(--text-primary);
-  font-size: 14px;
+  font-size: 13px;
 }
-.bar-field-heading > small {
+.device-label > small {
   color: var(--text-secondary);
   font-size: 11px;
 }

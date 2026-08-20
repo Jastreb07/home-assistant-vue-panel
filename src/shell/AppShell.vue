@@ -6,6 +6,9 @@ import { useTheme } from '@/core/composables/useTheme'
 import { useHaAdministrator } from '@/core/ha'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
+import { useViewportWidth } from '@/core/composables/useViewportWidth'
+import { matchesViewport } from '@/core/ui/responsiveCss'
+import type { BarPosition } from '@/core/config/types'
 import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
 import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
@@ -75,11 +78,21 @@ function reorderView(viewId: string, toIndex: number) {
   store.moveViewTo(viewId, toIndex)
 }
 
+// Per-bar device visibility — configured in the dashboard settings.
+const viewportWidth = useViewportWidth()
+function fitsViewport(position: BarPosition): boolean {
+  return matchesViewport(store.bars[position].visibility, viewportWidth.value)
+}
+
 // Per-view bar visibility — every bar but the right sidebar is on by default.
-const showSidebarLeft = computed(() => activeView.value?.showSidebarLeft !== false)
-const showSidebarRight = computed(() => activeView.value?.showSidebarRight === true)
-const showHeader = computed(() => activeView.value?.showHeader !== false)
-const showBottom = computed(() => activeView.value?.showBottom !== false)
+const showSidebarLeft = computed(
+  () => activeView.value?.showSidebarLeft !== false && fitsViewport('sidebar-left'),
+)
+const showSidebarRight = computed(
+  () => activeView.value?.showSidebarRight === true && fitsViewport('sidebar-right'),
+)
+const showHeader = computed(() => activeView.value?.showHeader !== false && fitsViewport('header'))
+const showBottom = computed(() => activeView.value?.showBottom !== false && fitsViewport('bottom'))
 const headerInViewArea = computed(() => store.bars.header.placement === 'view')
 const bottomInViewArea = computed(() => store.bars.bottom.placement === 'view')
 

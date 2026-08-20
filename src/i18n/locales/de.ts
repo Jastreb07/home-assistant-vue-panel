@@ -404,6 +404,8 @@ export default {
       header: 'Header-Leiste',
       bottom: 'Bottom-Leiste',
     },
+    barVisibilityHint:
+      'Lege fest, auf welchen Geräten diese Leiste angezeigt wird und ab welcher Breite ein Gerät beginnt. Die Seitenleisten sind standardmäßig nur auf dem Desktop aktiv.',
     barPositionHints: {
       'sidebar-left': 'Links neben dem View-Bereich',
       'sidebar-right': 'Rechts neben dem View-Bereich',

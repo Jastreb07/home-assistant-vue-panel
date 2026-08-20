@@ -18,6 +18,10 @@ import {
   loadRemote,
   saveRemote,
 } from './persistence'
+import {
+  defaultResponsiveVisibility,
+  type ResponsiveVisibility,
+} from '@/core/ui/responsiveCss'
 import { t } from '@/i18n'
 import { choiceDialog } from '@/core/ui/dialogService'
 
@@ -54,10 +58,18 @@ export const barSizeLimits: Record<BarPosition, { min: number; max: number }> = 
   bottom: { min: 40, max: 240 },
 }
 
+/** Sidebars take too much room on small screens — desktop only by default. */
+const desktopOnlyVisibility: ResponsiveVisibility = {
+  ...defaultResponsiveVisibility,
+  mobile: false,
+  tablet: false,
+}
+
 export const defaultBars: BarConfig = {
   'sidebar-left': {
     id: 'bar-sidebar-left',
     size: 280,
+    visibility: { ...desktopOnlyVisibility },
     // The navigation itself is a card — replaceable like any other
     columns: [{
       id: 'bar-sidebar-left-col',
@@ -72,18 +84,21 @@ export const defaultBars: BarConfig = {
   'sidebar-right': {
     id: 'bar-sidebar-right',
     size: 280,
+    visibility: { ...desktopOnlyVisibility },
     columns: [{ id: 'bar-sidebar-right-col', align: 'start', crossAlign: 'stretch', cards: [] }],
   },
   header: {
     id: 'bar-header',
     size: 64,
     placement: 'view',
+    visibility: { ...defaultResponsiveVisibility },
     columns: [{ id: 'bar-header-col', align: 'center', crossAlign: 'center', cards: [] }],
   },
   bottom: {
     id: 'bar-bottom',
     size: 64,
     placement: 'view',
+    visibility: { ...defaultResponsiveVisibility },
     columns: [{ id: 'bar-bottom-col', align: 'center', crossAlign: 'center', cards: [] }],
   },
 }
