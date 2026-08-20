@@ -205,6 +205,17 @@ Aktueller Stand:
   besitzt dadurch die Variable `items`; ohne konfigurierte Einträge listet sie weiterhin alle
   Ansichten automatisch. Der Card-Editor bietet den Typ in der Auswahl an, die Feinkonfiguration
   der `itemFields` erfolgt im JSON-Tab;
+- ab `2.0.0-alpha.44`/Engine `2.1.44` gibt es die Core-Card `vue-panel/entity`: eine generische
+  Kachel für genau eine beliebige Entität im gewohnten Tile-Stil (Icon-Kreis oben, Name und Status
+  unten). Icon-Auflösung: konfiguriertes Icon → Entity-Icon → Domain-Standardicon; der Status zeigt
+  Einheit beziehungsweise einen übersetzten Zustand. Schaltbare Domains toggeln beim Klick über
+  `homeassistant.turn_on/turn_off`, alle anderen bleiben reine Anzeige. Der Listen-Editor bietet für
+  Listen mit `entity`-Feld jetzt einen Entity-Picker zum Schnellanlegen und nutzt die Entity-ID als
+  Zeilentitel-Fallback;
+- ab `2.0.0-alpha.45`/Engine `2.1.45` ersetzt die Menu-Card die Schalter „Titel anzeigen“ und
+  „Icons anzeigen“ durch die Auswahl `display` mit „Icon und Text“, „Nur Icon“ und „Nur Text“.
+  Ältere Instanzen fallen weiterhin auf `showTitles`/`showIcons` zurück. Ohne Text bekommt jeder
+  Eintrag ein Ersatzicon plus Tooltip, und Überschriften ohne darstellbaren Inhalt entfallen;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
@@ -328,7 +339,8 @@ Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
 Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
 ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
-  room-tile, menu und section-title. Die Bars sind Engine-Komponenten und keine Cards mehr.
+  room-tile, menu, entity und section-title. Die Bars sind Engine-Komponenten und keine Cards
+  mehr.
 - **Portable Cards und Browser-Editor**: Der Code-Button öffnet `CustomCardDialog.vue`. Das
   Card-Format besitzt `format: 'vue-panel-card'`, `formatVersion: 2`, `apiVersion: 1`, die
   unveränderliche Identität `manufacturer/cardName`, Metadaten, Bereiche, deklarierte

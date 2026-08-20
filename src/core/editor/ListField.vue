@@ -5,6 +5,7 @@ import type { CardSchemaField, CardSchemaListItemField } from '@/core/registry/c
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
+import EntityPicker from './EntityPicker.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import {
@@ -48,12 +49,15 @@ const itemSchema = computed<Record<string, CardSchemaField>>(() =>
 const labelKey = computed(() => itemFields.value.find((f) => f.type === 'string')?.key)
 const iconKey = computed(() => itemFields.value.find((f) => f.type === 'icon')?.key)
 const viewKey = computed(() => itemFields.value.find((f) => f.type === 'view')?.key)
+const entityKey = computed(() => itemFields.value.find((f) => f.type === 'entity')?.key)
+const entityDomain = computed(() => itemFields.value.find((f) => f.type === 'entity')?.domain)
 
 const viewOptions = computed<SelectOption[]>(() =>
   store.config.views.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
 )
 
 const pendingView = ref('')
+const pendingEntity = ref('')
 const expandedId = ref<string | null>(null)
 
 function setItems(next: ListEntry[]) {
@@ -94,6 +98,15 @@ function addEntry() {
   expandedId.value = entry.id
 }
 
+/** Quick add for entity based lists, mirroring the view picker. */
+function addEntity(entityId: string) {
+  pendingEntity.value = ''
+  if (!entityId || !entityKey.value) return
+  const entry = blankEntry()
+  entry[entityKey.value] = entityId
+  setItems([...items.value, entry])
+}
+
 function patch(index: number, value: Record<string, unknown>) {
   setItems(items.value.map((item, i) => (i === index ? { ...item, ...value } : item)))
 }
@@ -103,6 +116,8 @@ function titleOf(entry: ListEntry): string {
   if (typeof label === 'string' && label.trim()) return label
   const view = viewKey.value ? entry[viewKey.value] : undefined
   if (typeof view === 'string' && view) return store.viewById(view)?.title ?? view
+  const entity = entityKey.value ? entry[entityKey.value] : undefined
+  if (typeof entity === 'string' && entity) return entity
   return t('editor.list.entry')
 }
 
@@ -130,6 +145,12 @@ function isHeading(entry: ListEntry): boolean {
         size="sm"
         :placeholder="t('editor.list.addView')"
         @update:model-value="addView($event)"
+      />
+      <EntityPicker
+        v-else-if="entityKey"
+        :model-value="pendingEntity"
+        :domain="entityDomain || undefined"
+        @update:model-value="addEntity($event)"
       />
       <BaseButton size="sm" @click="addEntry">{{ t('editor.list.addEntry') }}</BaseButton>
       <BaseButton v-if="viewKey && items.length === 0" size="sm" @click="addAllViews">

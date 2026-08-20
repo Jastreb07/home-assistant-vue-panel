@@ -1,0 +1,319 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "entity",
+    "name": "Entität",
+    "description": "Zeigt eine beliebige Entität mit Icon, Name und Status",
+    "icon": "mdi:card-bulleted-outline",
+    "group": "Vue Panel",
+    "areas": [
+      "dashboard",
+      "sidebar",
+      "header",
+      "bottom"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 140,
+      "height": 120
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "Entity",
+        "type": "entity",
+        "required": true,
+        "default": ""
+      },
+      {
+        "key": "name",
+        "label": "Anzeigename",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "icon",
+        "label": "Icon",
+        "type": "icon",
+        "required": false
+      },
+      {
+        "key": "toggle",
+        "label": "Bei Klick schalten",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "highlightActive",
+        "label": "Aktiven Zustand hervorheben",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      }
+    ]
+  };
+</script>
+
+<template data-vue-panel-html>
+  <button class="tile entity-card" id="card" type="button">
+    <span class="tile__icon"><img id="icon" alt=""></span>
+    <span class="tile__info">
+      <span class="tile__name" id="name"></span>
+      <span class="tile__state" id="state"></span>
+    </span>
+  </button>
+</template>
+
+<style data-vue-panel-css>
+    .tile {
+        width: 100%;
+        height: 100%;
+        min-height: 120px;
+        padding: 14px 16px;
+        border: 0;
+        border-radius: var(--card-radius);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+        user-select: none;
+        transition: background .2s, transform .1s;
+        overflow: hidden;
+    }
+
+    .tile:active {
+        transform: scale(.98);
+    }
+
+    .tile.readonly {
+        cursor: default;
+    }
+
+    .tile.readonly:active {
+        transform: none;
+    }
+
+    .tile.active {
+        background: #f6d36b;
+        color: #111;
+    }
+
+    .tile__icon {
+        width: 38px;
+        height: 38px;
+        flex: none;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: rgb(215 215 215 / 35%);
+    }
+
+    .tile.active .tile__icon {
+        background: rgb(255 255 255 / 40%);
+    }
+
+    .tile__icon img {
+        width: 24px;
+        height: 24px;
+    }
+
+    .tile__info {
+        width: 100%;
+        min-width: 0;
+        margin-top: auto;
+        display: block;
+    }
+
+    .tile__name, .tile__state {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .tile__name {
+        font-size: 14px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .tile__state {
+        margin-top: 3px;
+        color: #666;
+        font-size: 11px;
+        line-height: 1.2;
+    }
+
+    .tile.active .tile__state {
+        color: rgb(17 17 17 / 70%);
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+  const entityId = String(config.entity || '');
+  const domain = entityId.split('.')[0];
+
+  const card = document.getElementById('card');
+  const icon = document.getElementById('icon');
+  const name = document.getElementById('name');
+  const state = document.getElementById('state');
+
+  /*
+   * Domains, die sich direkt über homeassistant.turn_on/turn_off
+   * schalten lassen. Alles andere bleibt reine Anzeige.
+   */
+  const TOGGLE_DOMAINS = new Set([
+    'automation',
+    'fan',
+    'humidifier',
+    'input_boolean',
+    'light',
+    'remote',
+    'siren',
+    'switch'
+  ]);
+
+  /*
+   * Standard-Icons je Domain, falls weder ein Icon konfiguriert
+   * wurde noch die Entity selbst eines mitbringt.
+   */
+  const DOMAIN_ICONS = {
+    automation: 'mdi:robot',
+    binary_sensor: 'mdi:radiobox-marked',
+    button: 'mdi:gesture-tap-button',
+    climate: 'mdi:thermostat',
+    cover: 'mdi:window-shutter',
+    device_tracker: 'mdi:account',
+    fan: 'mdi:fan',
+    humidifier: 'mdi:air-humidifier',
+    input_boolean: 'mdi:toggle-switch-outline',
+    input_number: 'mdi:ray-vertex',
+    light: 'mdi:lightbulb',
+    lock: 'mdi:lock',
+    media_player: 'mdi:play-circle-outline',
+    number: 'mdi:ray-vertex',
+    person: 'mdi:account',
+    remote: 'mdi:remote',
+    scene: 'mdi:palette',
+    script: 'mdi:script-text-outline',
+    sensor: 'mdi:gauge',
+    siren: 'mdi:bullhorn',
+    sun: 'mdi:white-balance-sunny',
+    switch: 'mdi:toggle-switch',
+    update: 'mdi:package-up',
+    vacuum: 'mdi:robot-vacuum',
+    weather: 'mdi:weather-partly-cloudy',
+    zone: 'mdi:map-marker-radius'
+  };
+
+  const STATE_LABELS = {
+    on: 'An',
+    off: 'Aus',
+    open: 'Offen',
+    opening: 'Öffnet',
+    closed: 'Geschlossen',
+    closing: 'Schließt',
+    home: 'Zuhause',
+    not_home: 'Abwesend',
+    locked: 'Verriegelt',
+    unlocked: 'Entriegelt',
+    unavailable: 'Nicht verfügbar',
+    unknown: 'Unbekannt',
+    idle: 'Bereit',
+    playing: 'Läuft',
+    paused: 'Pausiert',
+    standby: 'Standby',
+    above_horizon: 'Über dem Horizont',
+    below_horizon: 'Unter dem Horizont'
+  };
+
+  const toggleable = config.toggle !== false && TOGGLE_DOMAINS.has(domain);
+
+  card.classList.toggle('readonly', !toggleable);
+
+  function stateText(entity) {
+    if (!entityId) return 'Keine Entity ausgewählt';
+    if (!entity) return 'Entity nicht gefunden';
+
+    const unit = entity.attributes?.unit_of_measurement;
+
+    if (unit) return `${entity.state} ${unit}`;
+
+    return STATE_LABELS[entity.state] || entity.state;
+  }
+
+  async function render(entity) {
+    /*
+     * "Aktiv" ist alles, was weder aus, unbekannt
+     * noch nicht verfügbar ist.
+     */
+    const isActive =
+      config.highlightActive !== false &&
+      Boolean(entity) &&
+      !['off', 'unavailable', 'unknown', 'closed', 'not_home', 'idle'].includes(entity.state);
+
+    card.classList.toggle('active', isActive);
+
+    name.textContent = String(
+      config.name || entity?.attributes?.friendly_name || entityId || 'Entität'
+    );
+
+    state.textContent = stateText(entity);
+
+    const iconName =
+      config.icon ||
+      entity?.attributes?.icon ||
+      DOMAIN_ICONS[domain] ||
+      'mdi:card-bulleted-outline';
+
+    icon.src = await vuePanel.getIcon(String(iconName), {
+      size: 72,
+      color: isActive ? '#111111' : '#737373'
+    });
+  }
+
+  card.addEventListener('click', async () => {
+    if (!toggleable || !entityId) return;
+
+    const entity = await vuePanel.getEntity(entityId);
+
+    await vuePanel.callService(
+      'homeassistant',
+      entity?.state === 'on' ? 'turn_off' : 'turn_on',
+      {},
+      {entity_id: entityId}
+    );
+  });
+
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+
+    vuePanel.subscribeEntity(entityId, render);
+  } else await render(null);
+</script>

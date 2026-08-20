@@ -39,18 +39,17 @@
         "default": "vertical"
       },
       {
-        "key": "showTitles",
-        "label": "Titel anzeigen",
-        "type": "boolean",
+        "key": "display",
+        "label": "Darstellung",
+        "type": "select",
         "required": false,
-        "default": true
-      },
-      {
-        "key": "showIcons",
-        "label": "Icons anzeigen",
-        "type": "boolean",
-        "required": false,
-        "default": true
+        "options": ["icon_text", "icon", "text"],
+        "optionLabels": {
+          "icon_text": "Icon und Text",
+          "icon": "Nur Icon",
+          "text": "Nur Text"
+        },
+        "default": "icon_text"
       },
       {
         "key": "showSubviews",
@@ -317,6 +316,27 @@
     );
 
     /*
+     * Darstellung: Icon und Text, nur Icon oder nur Text.
+     * Ältere Instanzen speichern stattdessen noch die beiden
+     * Schalter showTitles/showIcons; die gelten als Rückfallebene.
+     */
+    const display = String(config.display || '');
+
+    const showText =
+      display === 'icon'
+        ? false
+        : display === 'text' || display === 'icon_text'
+          ? true
+          : config.showTitles !== false;
+
+    const showIcon =
+      display === 'text'
+        ? false
+        : display === 'icon' || display === 'icon_text'
+          ? true
+          : config.showIcons !== false;
+
+    /*
      * Views ebenfalls neu laden, damit auch showSubviews
      * bei einer Konfigurationsänderung korrekt berücksichtigt wird.
      */
@@ -365,6 +385,12 @@
       const view = entry.view;
 
       /*
+       * Überschriften ohne darstellbaren Inhalt würden nur
+       * eine leere Fläche erzeugen und entfallen deshalb.
+       */
+      if (!view && !showText && !(showIcon && entry.icon)) continue;
+
+      /*
        * Ein Eintrag ohne Ziel ist eine reine Überschrift
        * und darf deshalb nicht klickbar sein.
        */
@@ -406,12 +432,17 @@
       element.classList.toggle('active-parent', isActiveParent);
       element.classList.toggle('parent', isParent);
       element.classList.toggle('child', isChild);
-      element.classList.toggle('icon-only', config.showTitles === false);
+      element.classList.toggle('icon-only', !showText);
+
+      /*
+       * Ohne Text erklärt ein Tooltip den Eintrag.
+       */
+      if (!showText && entry.label) element.title = entry.label;
 
       /*
        * Titel
        */
-      if (config.showTitles !== false) {
+      if (showText) {
         const label = document.createElement('span');
 
         label.textContent = entry.label;
@@ -420,14 +451,17 @@
       }
 
       /*
-       * Icon
+       * Icon. Ohne Text braucht jeder Eintrag ein Icon,
+       * sonst bliebe die Schaltfläche leer.
        */
-      if (config.showIcons !== false && entry.icon) {
+      const iconName = entry.icon || (showText ? '' : 'mdi:circle-outline');
+
+      if (showIcon && iconName) {
         const icon = document.createElement('img');
 
         icon.alt = '';
 
-        icon.src = await vuePanel.getIcon(entry.icon, {
+        icon.src = await vuePanel.getIcon(iconName, {
           size: 56,
           color:
             getComputedStyle(document.documentElement)
