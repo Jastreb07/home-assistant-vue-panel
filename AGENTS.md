@@ -195,6 +195,16 @@ Aktueller Stand:
   und dieses explizite `false` überschrieb den Default der Theme-Komponente — dadurch fehlten
   Pfeile, Ziehgriff und Hinweistext im Dropdown. Merke: Thin Wrapper müssen Boolean-Defaults
   spiegeln;
+- ab `2.0.0-alpha.42`/Engine `2.1.42` kennt das Card-Format v2 den Variablentyp `list`
+  (`itemFields` mit skalaren Feldern, optional `nestable`, kein `default`, keine verschachtelten
+  Listen). `ListField.vue` rendert dafür einen Menü-Builder im WordPress-Stil: Einträge einzeln
+  oder alle Ansichten auf einmal hinzufügen, hoch/runter schieben, ein- und ausrücken (max. Tiefe
+  2) und je Eintrag die Felder über die wiederverwendete `SchemaForm` bearbeiten. Konvention: das
+  erste `string`-Feld ist der Zeilentitel, das erste `icon`-Feld das Zeilenicon und das erste
+  `view`-Feld das Navigationsziel; ein Eintrag ohne Ziel wird zur Überschrift. Die Menu-Card
+  besitzt dadurch die Variable `items`; ohne konfigurierte Einträge listet sie weiterhin alle
+  Ansichten automatisch. Der Card-Editor bietet den Typ in der Auswahl an, die Feinkonfiguration
+  der `itemFields` erfolgt im JSON-Tab;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte

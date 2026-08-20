@@ -9,6 +9,7 @@ import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import EntityPicker from './EntityPicker.vue'
+import ListField from './ListField.vue'
 
 const props = defineProps<{
   schema: Record<string, CardSchemaField>
@@ -56,7 +57,7 @@ function selectOptions(field: CardSchemaField): SelectOption[] {
  * wrapping either in a <label> would forward (and double) clicks.
  */
 function needsPlainWrapper(field: CardSchemaField): boolean {
-  return ['icon', 'select', 'view', 'boolean'].includes(field.type)
+  return ['icon', 'select', 'view', 'boolean', 'list'].includes(field.type)
 }
 </script>
 
@@ -125,6 +126,13 @@ function needsPlainWrapper(field: CardSchemaField): boolean {
         :model-value="str(key)"
         :options="viewOptions"
         :placeholder="t('editor.noViewTarget')"
+        @update:model-value="set(key, $event)"
+      />
+
+      <ListField
+        v-else-if="field.type === 'list'"
+        :field="field"
+        :model-value="modelValue[key]"
         @update:model-value="set(key, $event)"
       />
     </component>

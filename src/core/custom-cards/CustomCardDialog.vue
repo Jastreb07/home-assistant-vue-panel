@@ -181,6 +181,7 @@ const variableTypeOptions = computed<SelectOption[]>(() => [
   { value: 'icon', label: t('customCards.variables.types.icon') },
   { value: 'view', label: t('customCards.variables.types.view') },
   { value: 'select', label: t('customCards.variables.types.select') },
+  { value: 'list', label: t('customCards.variables.types.list') },
 ])
 
 const areaOptions = computed(() => [
@@ -284,7 +285,23 @@ function changeVariableType(variable: CustomCardVariable, type: string) {
   variable.domain = type === 'entity' ? (variable.domain ?? '') : undefined
   variable.options = type === 'select' ? (variable.options?.length ? variable.options : ['option']) : undefined
   variable.optionLabels = undefined
-  variable.default = type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
+  // A list repeats item fields instead of holding a single scalar default
+  variable.itemFields = type === 'list'
+    ? (variable.itemFields?.length ? variable.itemFields : defaultItemFields())
+    : undefined
+  variable.nestable = type === 'list' ? variable.nestable === true : undefined
+  variable.default = type === 'list'
+    ? undefined
+    : type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
+}
+
+/** Starting point for a new list: a labelled entry pointing at a view. */
+function defaultItemFields(): Array<Omit<CustomCardVariable, 'id'>> {
+  return [
+    { key: 'label', label: t('customCards.variables.itemLabel'), type: 'string', required: false },
+    { key: 'icon', label: t('customCards.variables.itemIcon'), type: 'icon', required: false },
+    { key: 'view', label: t('customCards.variables.itemView'), type: 'view', required: false },
+  ]
 }
 
 function selectOptionsText(variable: CustomCardVariable): string {
@@ -318,7 +335,7 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
   if (!Array.isArray(parsed)) throw new Error(t('customCards.variables.jsonArrayError'))
 
   const allowedTypes: CustomCardVariableType[] = [
-    'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select',
+    'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select', 'list',
   ]
   const existingIds = new Map(draft.value.variables.map((variable) => [variable.key, variable.id]))
   const keys = new Set<string>()
@@ -343,9 +360,9 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
     const defaultValue: string | number | boolean = rawDefault === undefined || rawDefault === null
       ? defaultVariableValue(type)
       : rawDefault as string | number | boolean
-    if ((type === 'number' && typeof defaultValue !== 'number')
+    if (type !== 'list' && ((type === 'number' && typeof defaultValue !== 'number')
       || (type === 'boolean' && typeof defaultValue !== 'boolean')
-      || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string')) {
+      || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string'))) {
       throw new Error(t('customCards.variables.jsonDefaultError', { index: index + 1 }))
     }
     const options = type === 'select' && Array.isArray(value.options)
@@ -354,6 +371,7 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
     if (type === 'select' && !options?.length) {
       throw new Error(t('customCards.variables.jsonEntryError', { index: index + 1 }))
     }
+    const itemFields = type === 'list' ? parseItemFields(value.itemFields, index) : undefined
     keys.add(key)
     return {
       id: existingIds.get(key) ?? newId('variable'),
@@ -362,7 +380,7 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       type,
       required: value.required === true,
       domain: type === 'entity' && typeof value.domain === 'string' ? value.domain : undefined,
-      default: defaultValue,
+      default: type === 'list' ? undefined : defaultValue,
       options,
       optionLabels: type === 'select' && value.optionLabels && typeof value.optionLabels === 'object'
         ? value.optionLabels as Record<string, string>
@@ -370,6 +388,36 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       min: type === 'number' && typeof value.min === 'number' ? value.min : undefined,
       max: type === 'number' && typeof value.max === 'number' ? value.max : undefined,
       step: type === 'number' && typeof value.step === 'number' ? value.step : undefined,
+      itemFields,
+      nestable: type === 'list' ? value.nestable === true : undefined,
+    }
+  })
+}
+
+/** Item fields repeat scalar variables — nested lists are rejected. */
+function parseItemFields(value: unknown, index: number): Array<Omit<CustomCardVariable, 'id'>> {
+  if (!Array.isArray(value) || value.length === 0) {
+    throw new Error(t('customCards.variables.jsonItemFieldsError', { index: index + 1 }))
+  }
+  return value.map((entry) => {
+    const field = entry as Record<string, unknown> | null
+    const key = field && typeof field.key === 'string' ? field.key.trim() : ''
+    const label = field && typeof field.label === 'string' ? field.label.trim() : ''
+    const type = field?.type as CustomCardVariableType
+    const scalarTypes: CustomCardVariableType[] = [
+      'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select',
+    ]
+    if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) || !label || !scalarTypes.includes(type)) {
+      throw new Error(t('customCards.variables.jsonItemFieldsError', { index: index + 1 }))
+    }
+    return {
+      key,
+      label,
+      type,
+      required: field?.required === true,
+      options: type === 'select' && Array.isArray(field?.options)
+        ? (field.options as unknown[]).filter((o): o is string => typeof o === 'string' && o !== '')
+        : undefined,
     }
   })
 }
@@ -622,7 +670,8 @@ function variableKeyInvalid(variable: CustomCardVariable): boolean {
 const variablesInvalid = computed(() => draft.value.variables.some(
   (variable) => variableKeyInvalid(variable)
     || !variable.label.trim()
-    || (variable.type === 'select' && !variable.options?.length),
+    || (variable.type === 'select' && !variable.options?.length)
+    || (variable.type === 'list' && !variable.itemFields?.length),
 ) || Boolean(variableJsonError.value))
 
 const previewConfig = computed<Record<string, unknown>>(() => Object.fromEntries([
@@ -922,7 +971,15 @@ const previewStyle = computed(() => ({
                       @update:model-value="updateSelectOptions(variable, $event)"
                     />
                   </label>
-                  <div class="field default-field">
+                  <div v-if="variable.type === 'list'" class="field">
+                    <span>{{ t('customCards.variables.itemFields') }}</span>
+                    <small class="field-hint">
+                      {{ t('customCards.variables.itemFieldsHint', {
+                        fields: (variable.itemFields ?? []).map((f) => f.key).join(', '),
+                      }) }}
+                    </small>
+                  </div>
+                  <div v-else class="field default-field">
                     <span>{{ t('customCards.variables.defaultValue') }}</span>
                     <EntityPicker
                       v-if="variable.type === 'entity'"
@@ -1250,6 +1307,7 @@ const previewStyle = computed(() => ({
 .settings-form > .field:nth-child(2),
 .size-group { grid-column: 1 / -1; }
 .field-error, .source-error { color: var(--danger, #ef4444); font-size: 11px; }
+.field-hint { color: var(--text-muted, #94a3b8); font-size: 11px; }
 .icon-field { display: flex; gap: 8px; }
 .icon-preview {
   display: grid;

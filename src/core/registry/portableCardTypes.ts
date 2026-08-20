@@ -19,6 +19,7 @@ export type PortableCardVariableType =
   | 'string'
   | 'number'
   | 'boolean'
+  | 'list'
 
 export interface PortableCardVariable {
   key: string
@@ -32,6 +33,10 @@ export interface PortableCardVariable {
   min?: number
   max?: number
   step?: number
+  /** `list` only: the scalar fields repeated for every entry */
+  itemFields?: PortableCardVariable[]
+  /** `list` only: entries can be indented to build a hierarchy */
+  nestable?: boolean
 }
 
 export interface PortableCardMetadata {

@@ -51,6 +51,7 @@ _VARIABLE_TYPES = {
     "string",
     "number",
     "boolean",
+    "list",
 }
 _FORBIDDEN_VARIABLE_KEYS = {"__proto__", "prototype", "constructor"}
 _METADATA_FIELDS = {
@@ -82,7 +83,12 @@ _VARIABLE_FIELDS = {
     "min",
     "max",
     "step",
+    "itemFields",
+    "nestable",
 }
+# A list holds repeated objects, so it never carries a scalar default itself.
+_LIST_ONLY_FIELDS = {"itemFields", "nestable"}
+_MAX_LIST_ITEM_FIELDS = 12
 
 
 class CardFileError(Exception):
@@ -139,6 +145,8 @@ def _validate_default(variable: dict[str, Any], index: int) -> None:
         return
     value = variable["default"]
     variable_type = variable["type"]
+    if variable_type == "list":
+        raise CardFileError(f"Variable {index} must not define a default")
     valid = (
         isinstance(value, bool)
         if variable_type == "boolean"
@@ -152,6 +160,25 @@ def _validate_default(variable: dict[str, Any], index: int) -> None:
         _finite_number(value, f"Variable {index} default")
     if variable_type == "icon" and not _ICON_PATTERN.fullmatch(value):
         raise CardFileError(f"Variable {index} has an invalid icon default")
+
+
+def _validate_list_variable(variable: dict[str, Any], index: int) -> None:
+    """A list variable repeats a small set of scalar fields per entry."""
+
+    item_fields = variable.get("itemFields")
+    if (
+        not isinstance(item_fields, list)
+        or not item_fields
+        or len(item_fields) > _MAX_LIST_ITEM_FIELDS
+    ):
+        raise CardFileError(f"Variable {index} requires item fields")
+    if "nestable" in variable and not isinstance(variable["nestable"], bool):
+        raise CardFileError(f"Variable {index} has an invalid nestable flag")
+    item_keys: set[str] = set()
+    for item in item_fields:
+        if not isinstance(item, dict) or item.get("type") == "list":
+            raise CardFileError(f"Variable {index} has an invalid item field")
+        _validate_variable(item, index, item_keys)
 
 
 def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
@@ -175,8 +202,12 @@ def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
         raise CardFileError(f"Variable {index} has an unsupported type")
     if not isinstance(value.get("required"), bool):
         raise CardFileError(f"Variable {index} requires an explicit required flag")
+    if variable_type != "list" and set(value) & _LIST_ONLY_FIELDS:
+        raise CardFileError(f"Variable {index} contains unsupported fields")
     _validate_default(value, index)
 
+    if variable_type == "list":
+        _validate_list_variable(value, index)
     if variable_type == "entity" and "domain" in value:
         domain = value["domain"]
         if not isinstance(domain, str) or not _DOMAIN_PATTERN.fullmatch(domain):

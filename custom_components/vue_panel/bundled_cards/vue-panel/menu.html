@@ -58,6 +58,33 @@
         "type": "boolean",
         "required": false,
         "default": false
+      },
+      {
+        "key": "items",
+        "label": "Menüeinträge",
+        "type": "list",
+        "required": false,
+        "nestable": true,
+        "itemFields": [
+          {
+            "key": "label",
+            "label": "Beschriftung",
+            "type": "string",
+            "required": false
+          },
+          {
+            "key": "icon",
+            "label": "Icon",
+            "type": "icon",
+            "required": false
+          },
+          {
+            "key": "view",
+            "label": "Ziel-Ansicht",
+            "type": "view",
+            "required": false
+          }
+        ]
       }
     ]
   };
@@ -196,6 +223,36 @@
 
 
     /* =========================
+       ÜBERSCHRIFTEN & EBENEN
+       ========================= */
+
+    /* Ein Eintrag ohne Ziel gliedert das Menü nur */
+    .item.heading {
+        cursor: default;
+        background: transparent;
+        color: var(--text-secondary);
+        font: 600 12px/1.2 inherit;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .item.heading:hover {
+        background: transparent;
+    }
+
+    /* Eingerückte Einträge im vertikalen Menü */
+    .menu-card.vertical .item[data-depth='1'] {
+        margin-inline-start: 16px;
+        width: calc(100% - 16px);
+    }
+
+    .menu-card.vertical .item[data-depth='2'] {
+        margin-inline-start: 32px;
+        width: calc(100% - 32px);
+    }
+
+
+    /* =========================
        TEXT
        ========================= */
 
@@ -265,26 +322,68 @@
      */
     const allViews = await vuePanel.listViews();
 
-    const views = allViews.filter(
-      view => config.showSubviews === true || !view.subview
-    );
+    /*
+     * Eigene Menüeinträge gewinnen. Ohne konfigurierte Einträge
+     * listet die Card automatisch alle Ansichten auf.
+     */
+    const configured = Array.isArray(config.items) ? config.items : [];
+
+    const entries = configured.length
+      ? configured.map(item => {
+          const target =
+            item && typeof item.view === 'string'
+              ? allViews.find(view => view.id === item.view)
+              : undefined;
+
+          return {
+            label:
+              (item && typeof item.label === 'string' && item.label) ||
+              target?.title ||
+              '',
+            icon:
+              (item && typeof item.icon === 'string' && item.icon) ||
+              target?.icon,
+            view: target,
+            depth:
+              item && Number(item.depth) > 0
+                ? Math.min(Math.floor(Number(item.depth)), 2)
+                : 0
+          };
+        })
+      : allViews
+          .filter(view => config.showSubviews === true || !view.subview)
+          .map(view => ({
+            label: view.title,
+            icon: view.icon,
+            view,
+            depth: 0
+          }));
 
     menu.replaceChildren();
 
-    for (const view of views) {
-      const button = document.createElement('button');
+    for (const entry of entries) {
+      const view = entry.view;
 
-      button.type = 'button';
-      button.className = 'item';
+      /*
+       * Ein Eintrag ohne Ziel ist eine reine Überschrift
+       * und darf deshalb nicht klickbar sein.
+       */
+      const element = document.createElement(view ? 'button' : 'div');
+
+      if (view) element.type = 'button';
+
+      element.className = 'item';
+      element.dataset.depth = String(entry.depth);
 
       /*
        * Aktiv ist die View mit exakt passendem Pfad.
        * Liegt der aktive Pfad unterhalb dieser View,
        * ist sie der Parent der aktiven Unteransicht.
        */
-      const isActive = active?.path === view.path;
+      const isActive = Boolean(view) && active?.path === view.path;
 
       const isActiveParent =
+        Boolean(view) &&
         !isActive &&
         Boolean(active?.path?.startsWith(`${view.path}/`));
 
@@ -292,19 +391,22 @@
        * Struktur: hat die View Kinder (parent)
        * bzw. liegt sie selbst unterhalb einer anderen View (child)?
        */
-      const isParent = allViews.some(
-        other =>
-          other.path !== view.path &&
-          other.path.startsWith(`${view.path}/`)
-      );
+      const isParent =
+        Boolean(view) &&
+        allViews.some(
+          other =>
+            other.path !== view.path &&
+            other.path.startsWith(`${view.path}/`)
+        );
 
-      const isChild = view.path.includes('/');
+      const isChild = Boolean(view) && view.path.includes('/');
 
-      button.classList.toggle('active', isActive);
-      button.classList.toggle('active-parent', isActiveParent);
-      button.classList.toggle('parent', isParent);
-      button.classList.toggle('child', isChild);
-      button.classList.toggle('icon-only', config.showTitles === false);
+      element.classList.toggle('heading', !view);
+      element.classList.toggle('active', isActive);
+      element.classList.toggle('active-parent', isActiveParent);
+      element.classList.toggle('parent', isParent);
+      element.classList.toggle('child', isChild);
+      element.classList.toggle('icon-only', config.showTitles === false);
 
       /*
        * Titel
@@ -312,20 +414,20 @@
       if (config.showTitles !== false) {
         const label = document.createElement('span');
 
-        label.textContent = view.title;
+        label.textContent = entry.label;
 
-        button.append(label);
+        element.append(label);
       }
 
       /*
        * Icon
        */
-      if (config.showIcons !== false && view.icon) {
+      if (config.showIcons !== false && entry.icon) {
         const icon = document.createElement('img');
 
         icon.alt = '';
 
-        icon.src = await vuePanel.getIcon(view.icon, {
+        icon.src = await vuePanel.getIcon(entry.icon, {
           size: 56,
           color:
             getComputedStyle(document.documentElement)
@@ -333,17 +435,19 @@
               .trim() || '#ffffff'
         });
 
-        button.append(icon);
+        element.append(icon);
       }
 
       /*
        * Navigation
        */
-      button.addEventListener('click', () => {
-        vuePanel.navigate(view.id);
-      });
+      if (view) {
+        element.addEventListener('click', () => {
+          vuePanel.navigate(view.id);
+        });
+      }
 
-      menu.append(button);
+      menu.append(element);
     }
   }
 

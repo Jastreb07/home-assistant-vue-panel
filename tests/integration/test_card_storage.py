@@ -220,6 +220,67 @@ class CardStorageTests(unittest.TestCase):
         with self.assertRaises(card_storage.CardFileError):
             card_document(metadata)
 
+    def test_list_variables_require_valid_item_fields(self) -> None:
+        metadata = card_metadata()
+        metadata["variables"] = [
+            {
+                "key": "items",
+                "label": "Entries",
+                "type": "list",
+                "required": False,
+                "nestable": True,
+                "itemFields": [
+                    {"key": "label", "label": "Label", "type": "string", "required": False},
+                    {"key": "view", "label": "Target", "type": "view", "required": False},
+                ],
+            }
+        ]
+        parsed = card_storage.parse_card_document(card_document(metadata))
+        self.assertEqual(parsed["metadata"]["variables"][0]["type"], "list")
+
+        without_fields = card_metadata()
+        without_fields["variables"] = [
+            {"key": "items", "label": "Entries", "type": "list", "required": False}
+        ]
+        with self.assertRaises(card_storage.CardFileError):
+            card_document(without_fields)
+
+        nested = card_metadata()
+        nested["variables"] = [
+            {
+                "key": "items",
+                "label": "Entries",
+                "type": "list",
+                "required": False,
+                "itemFields": [
+                    {
+                        "key": "inner",
+                        "label": "Inner",
+                        "type": "list",
+                        "required": False,
+                        "itemFields": [
+                            {"key": "x", "label": "X", "type": "string", "required": False}
+                        ],
+                    }
+                ],
+            }
+        ]
+        with self.assertRaises(card_storage.CardFileError):
+            card_document(nested)
+
+        scalar_with_item_fields = card_metadata()
+        scalar_with_item_fields["variables"] = [
+            {
+                "key": "title",
+                "label": "Title",
+                "type": "string",
+                "required": False,
+                "nestable": True,
+            }
+        ]
+        with self.assertRaises(card_storage.CardFileError):
+            card_document(scalar_with_item_fields)
+
     def test_reference_card_documents_follow_format_v2(self) -> None:
         examples = Path(__file__).parents[2] / "examples" / "cards" / "vue-panel"
         documents = sorted(examples.glob("*.html"))

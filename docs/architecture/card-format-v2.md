@@ -103,12 +103,38 @@ Rules:
 
 - `key` must match `^[A-Za-z_$][A-Za-z0-9_$]*$` and be unique within the card;
 - `label` is user-facing text;
-- `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`;
+- `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`, `list`;
 - `required` is always explicit;
-- `default` must match the variable type when present;
+- `default` must match the variable type when present and is rejected for `list`;
 - `entity` may define a lowercase `domain`;
 - `select` must define a non-empty `options` array and may define `optionLabels`;
-- `number` may define finite `min`, `max`, and `step` values.
+- `number` may define finite `min`, `max`, and `step` values;
+- `list` must define a non-empty `itemFields` array (at most 12 scalar variables, no nested
+  lists) and may set `nestable` to allow indented entries.
+
+A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used
+when `nestable` is true) and one value per item field:
+
+```json
+{
+  "key": "items",
+  "label": "Menu entries",
+  "type": "list",
+  "required": false,
+  "nestable": true,
+  "itemFields": [
+    { "key": "label", "label": "Label", "type": "string", "required": false },
+    { "key": "icon", "label": "Icon", "type": "icon", "required": false },
+    { "key": "view", "label": "Target view", "type": "view", "required": false }
+  ]
+}
+```
+
+The generated editor is a WordPress-style builder: add, reorder, indent, edit and delete entries.
+It reads three conventions from the item fields — the first `string` field is the row label, the
+first `icon` field the row icon, and the first `view` field the navigation target. With a `view`
+field present the editor also offers "add view" and "add all views" shortcuts, and entries without
+a target are marked as headings.
 
 Instance values are exposed read-only through `vuePanel.config`. Card source code is never copied
 into an individual dashboard card instance.

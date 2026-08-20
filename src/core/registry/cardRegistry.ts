@@ -27,7 +27,7 @@ export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'
 
 export interface CardSchemaField {
-  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon'
+  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon' | 'list'
   label: string
   literalLabel?: boolean
   domain?: string
@@ -40,6 +40,15 @@ export interface CardSchemaField {
   optional?: boolean
   required?: boolean
   default?: unknown
+  /** `list` only: the fields repeated for every entry, in display order */
+  itemFields?: CardSchemaListItemField[]
+  /** `list` only: entries can be indented to build a hierarchy */
+  nestable?: boolean
+}
+
+/** One field of a list entry — same as a schema field plus its storage key. */
+export interface CardSchemaListItemField extends CardSchemaField {
+  key: string
 }
 
 export interface CardManifest {
@@ -63,22 +72,31 @@ export const cardRegistry = shallowReactive<Record<string, CardManifest>>({})
 function portableSchema(variables: PortableCardVariable[]): Record<string, CardSchemaField> {
   return Object.fromEntries(variables.map((variable) => [
     variable.key,
-    {
-      type: variable.type,
-      label: variable.label,
-      literalLabel: true,
-      domain: variable.domain,
-      options: variable.options,
-      optionLabels: variable.optionLabels,
-      literalOptionLabels: true,
-      min: variable.min,
-      max: variable.max,
-      step: variable.step,
-      optional: !variable.required,
-      required: variable.required,
-      default: variable.default,
-    },
+    portableField(variable),
   ]))
+}
+
+function portableField(variable: PortableCardVariable): CardSchemaField {
+  return {
+    type: variable.type,
+    label: variable.label,
+    literalLabel: true,
+    domain: variable.domain,
+    options: variable.options,
+    optionLabels: variable.optionLabels,
+    literalOptionLabels: true,
+    min: variable.min,
+    max: variable.max,
+    step: variable.step,
+    optional: !variable.required,
+    required: variable.required,
+    default: variable.default,
+    itemFields: variable.itemFields?.map((item) => ({
+      ...portableField(item),
+      key: item.key,
+    })),
+    nestable: variable.nestable,
+  }
 }
 
 function portableComponent(type: string): Component {

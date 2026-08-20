@@ -54,6 +54,7 @@ export type CustomCardVariableType =
   | 'icon'
   | 'view'
   | 'select'
+  | 'list'
 
 export interface CustomCardVariable {
   id: string
@@ -68,6 +69,10 @@ export interface CustomCardVariable {
   min?: number
   max?: number
   step?: number
+  /** `list` only: the scalar fields repeated for every entry */
+  itemFields?: Array<Omit<CustomCardVariable, 'id'>>
+  /** `list` only: entries can be indented to build a hierarchy */
+  nestable?: boolean
 }
 
 export interface CustomCardDefinition {
