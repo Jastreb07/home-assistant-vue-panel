@@ -519,6 +519,17 @@ export const useDashboardStore = defineStore('dashboard', {
       views.splice(target, 0, v!)
       this.save()
     },
+    /** Drop a dragged view at an absolute position (view order = default view). */
+    moveViewTo(viewId: string, toIndex: number) {
+      const views = this.config.views
+      const idx = views.findIndex((v) => v.id === viewId)
+      if (idx < 0) return
+      const target = Math.max(0, Math.min(toIndex, views.length - 1))
+      if (idx === target) return
+      const [v] = views.splice(idx, 1)
+      views.splice(target, 0, v!)
+      this.save()
+    },
 
     // ── Sections ─────────────────────────────────────────────
     addSection(viewId: string): SectionConfig | undefined {

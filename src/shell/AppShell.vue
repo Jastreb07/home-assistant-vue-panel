@@ -70,6 +70,11 @@ function moveView(viewId: string, direction: ViewMoveDirection) {
   store.moveView(viewId, direction)
 }
 
+/** Drag & drop in the view dropdown drops a view at an absolute position. */
+function reorderView(viewId: string, toIndex: number) {
+  store.moveViewTo(viewId, toIndex)
+}
+
 // Per-view bar visibility — every bar but the right sidebar is on by default.
 const showSidebarLeft = computed(() => activeView.value?.showSidebarLeft !== false)
 const showSidebarRight = computed(() => activeView.value?.showSidebarRight === true)
@@ -147,6 +152,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                   searchable
                   @update:model-value="navigate($event)"
                   @move="moveView"
+                  @reorder="reorderView"
                 />
               </div>
               <button
@@ -274,7 +280,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   align-items: center;
   gap: 10px;
   max-width: 1200px;
-  margin: 0 auto 20px;
+  margin: 0 auto 50px;
   padding: 10px 16px;
   border-radius: 12px;
   background: var(--card-bg);

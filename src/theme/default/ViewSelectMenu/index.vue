@@ -36,6 +36,7 @@ const props = withDefaults(
 const emit = defineEmits<{
   'update:modelValue': [viewId: string]
   move: [viewId: string, direction: ViewMoveDirection]
+  reorder: [viewId: string, toIndex: number]
 }>()
 
 const iconSize = computed(() => ICON_SIZE[props.size])
@@ -110,6 +111,36 @@ function move(row: ViewRow, direction: ViewMoveDirection) {
   emit('move', row.id, direction)
   activeIndex.value = target
   scrollActiveIntoView()
+}
+
+// ── Drag & drop reordering ───────────────────────────────────
+const draggingId = ref<string | null>(null)
+const dropIndex = ref<number | null>(null)
+
+function onDragStart(e: DragEvent, row: ViewRow) {
+  draggingId.value = row.id
+  dropIndex.value = row.index
+  e.dataTransfer!.setData('text/plain', row.id)
+  e.dataTransfer!.effectAllowed = 'move'
+}
+
+function onDragOver(e: DragEvent, row: ViewRow) {
+  if (!draggingId.value) return
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'move'
+  dropIndex.value = row.index
+}
+
+function onDrop(e: DragEvent) {
+  if (!draggingId.value) return
+  e.preventDefault()
+  if (dropIndex.value !== null) emit('reorder', draggingId.value, dropIndex.value)
+  onDragEnd()
+}
+
+function onDragEnd() {
+  draggingId.value = null
+  dropIndex.value = null
 }
 
 function onKeydown(e: KeyboardEvent) {
@@ -208,9 +239,24 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
           'is-parent': row.parent,
           'is-child': row.child,
           'is-default': row.isDefault,
+          dragging: draggingId === row.id,
+          'drop-target': draggingId !== null && draggingId !== row.id && dropIndex === row.index,
         }"
         :style="{ '--vp-view-depth': row.depth }"
+        @dragover="onDragOver($event, row)"
+        @drop="onDrop"
       >
+        <button
+          v-if="showMoveButtons"
+          type="button"
+          class="vp-view-option-drag"
+          draggable="true"
+          :title="$t('common.viewSelect.dragHint')"
+          @dragstart="onDragStart($event, row)"
+          @dragend="onDragEnd"
+        >
+          <MdiIcon icon="mdi:drag-horizontal-variant" :size="iconSize - 2" />
+        </button>
         <button type="button" class="vp-view-option-main" @click="select(row)">
           <MdiIcon v-if="row.icon" :icon="row.icon" :size="iconSize - 2" />
           <span class="vp-view-option-label">{{ row.title }}</span>

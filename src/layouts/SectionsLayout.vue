@@ -85,6 +85,8 @@ const usedColumns = computed(() => {
 
 const containerStyle = computed(() => {
   const columns = usedColumns.value
+  // Room for the section toolbars anchored at `top: -40px` above each row
+  const rowGap = store.editMode ? 45 : GAP
   const base: Record<string, string> = {
     // The view's "full width" setting overrides the column-based maximum
     maxWidth: `var(--view-max-width, ${columns * SECTION_MIN + (columns - 1) * GAP}px)`,
@@ -98,14 +100,14 @@ const containerStyle = computed(() => {
     ...base,
     display: 'grid',
     gridTemplateColumns: `repeat(auto-fill, minmax(min(100%, ${SECTION_MIN}px), 1fr))`,
-    gap: `${GAP}px`,
+    gap: `${rowGap}px ${GAP}px`,
     alignItems: 'start',
   }
 })
 </script>
 
 <template>
-  <div class="sections-layout" :class="{ dense }" :style="containerStyle">
+  <div class="sections-layout" :class="{ dense, 'is-editing': store.editMode }" :style="containerStyle">
     <LayoutSection
       v-for="section in view.sections"
       :key="section.id"
@@ -179,6 +181,11 @@ const containerStyle = computed(() => {
   break-inside: avoid;
   margin-bottom: 24px;
   width: 100%;
+}
+/* Room for the section toolbars anchored at `top: -40px` above each section */
+.sections-layout.dense.is-editing .layout-section,
+.sections-layout.dense.is-editing .add-section {
+  margin-bottom: 45px;
 }
 .add-section {
   min-height: 120px;

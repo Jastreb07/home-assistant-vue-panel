@@ -179,6 +179,22 @@ Aktueller Stand:
   System-Clipboard, `copySectionToClipboard` in `cardClipboard.ts`); liegt ein kopierter
   Abschnitt vor, zeigt jedes Section-Layout neben „+ Abschnitt“ eine Kachel „Kopierten
   Abschnitt einfügen“ (`store.pasteSection`, hängt ihn mit neuen IDs an die View an);
+- ab `2.0.0-alpha.38`/Engine `2.1.35` haben beide Sidebar-Hosts normal `gap: 20px` zwischen den
+  Spalten und nur im Edit-Modus 45px (Klasse `is-editing` auf dem Host); das Flex-Layout erhält
+  im Edit-Modus `row-gap: 45px`, damit die bei `top: -40px` verankerten Abschnitts-Toolbars
+  zwischen den Zeilen sichtbar bleiben;
+- ab `2.0.0-alpha.39`/Engine `2.1.36` erhöht auch das Sections-Layout im Edit-Modus seinen
+  vertikalen Abstand: der Grid-`row-gap` (bzw. `margin-bottom` im dense-Modus) wächst von 24px
+  auf 45px, horizontal bleiben 24px;
+- ab `2.0.0-alpha.40`/Engine `2.1.40` lassen sich die Views im Dropdown zusätzlich per Drag & Drop
+  sortieren: jede Zeile hat links einen Ziehgriff, die Zielzeile wird gestrichelt markiert und der
+  Drop landet über `store.moveViewTo()` an der absoluten Position. Die Pfeile hoch/runter bleiben
+  erhalten, die oberste View ist weiterhin die Standard-View (Stern);
+- ab `2.0.0-alpha.41`/Engine `2.1.41` bekommt `BaseViewSelectMenu` selbst den Default
+  `reorderable: true`. Ohne ihn castete Vue das ausgelassene Boolean-Prop im Wrapper zu `false`,
+  und dieses explizite `false` überschrieb den Default der Theme-Komponente — dadurch fehlten
+  Pfeile, Ziehgriff und Hinweistext im Dropdown. Merke: Thin Wrapper müssen Boolean-Defaults
+  spiegeln;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte

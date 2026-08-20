@@ -19,7 +19,8 @@ export default {
       defaultView: 'Default view — opened by the dashboard URL',
       moveUp: 'Move view up',
       moveDown: 'Move view down',
-      defaultHint: 'The topmost view is the default view.',
+      dragHint: 'Drag to reorder',
+      defaultHint: 'The topmost view is the default view. Drag or use the arrows to reorder.',
     },
   },
   dialog: {

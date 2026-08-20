@@ -19,7 +19,8 @@ export default {
       defaultView: 'Standard-View — wird über die Dashboard-URL geöffnet',
       moveUp: 'View nach oben schieben',
       moveDown: 'View nach unten schieben',
-      defaultHint: 'Die oberste View ist die Standard-View.',
+      dragHint: 'Zum Sortieren ziehen',
+      defaultHint: 'Die oberste View ist die Standard-View. Zum Sortieren ziehen oder Pfeile nutzen.',
     },
   },
   dialog: {

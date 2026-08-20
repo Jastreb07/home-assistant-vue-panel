@@ -89,8 +89,7 @@ function onResizeCard(cardId: string, width: number, height: number) {
 </script>
 
 <template>
-  <div class="flex-layout" :style="containerStyle">
-    <p v-if="store.editMode" class="resize-hint">{{ t('editor.flexResizeHint') }}</p>
+  <div class="flex-layout" :class="{ 'is-editing': store.editMode }" :style="containerStyle">
 
     <LayoutSection
       v-for="section in view.sections"
@@ -172,14 +171,13 @@ function onResizeCard(cardId: string, width: number, height: number) {
   /* --view-align holds the auto margins of the view's alignment setting */
   margin: var(--view-align, 0 auto);
 }
+/* Room for the section toolbars anchored at `top: -40px` above each row. */
+.flex-layout.is-editing {
+  row-gap: 45px;
+}
 /* Default for every child; sections with a fixed width override it inline */
 .flex-layout > * {
   flex: 1 1 100%;
   min-width: 0;
-}
-.resize-hint {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-secondary);
 }
 </style>

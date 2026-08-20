@@ -93,7 +93,7 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
   <component
     :is="vertical ? 'nav' : position === 'header' ? 'header' : 'footer'"
     class="shell-bar-host"
-    :class="`shell-bar-host--${position}`"
+    :class="[`shell-bar-host--${position}`, { 'is-editing': store.editMode }]"
     :data-vp-card="bar.css ? bar.id : undefined"
     :style="hostStyle"
   >
@@ -169,9 +169,14 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
 .shell-bar-host--sidebar-right {
   height: 100%;
   flex-direction: column;
-  gap: 45px;
+  gap: 20px;
   padding: 45px 16px;
   overflow: hidden;
+}
+/* Room for the column toolbars anchored at `top: -40px` between columns. */
+.shell-bar-host--sidebar-left.is-editing,
+.shell-bar-host--sidebar-right.is-editing {
+  gap: 45px;
 }
 .shell-bar-host--sidebar-left {
   border-right: 1px solid var(--divider);
