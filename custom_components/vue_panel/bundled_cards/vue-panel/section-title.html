@@ -9,32 +9,70 @@
     "description": "Überschrift mit optionalem Icon und Trennlinie",
     "icon": "mdi:format-title",
     "group": "Vue Panel",
-    "areas": ["dashboard"],
-    "capabilities": ["icon:render"],
-    "defaultSize": {"cols": 1, "rows": 1, "width": 280, "height": 40},
-    "defaultResponsive": {"mobile": true, "tablet": true, "desktop": true, "mobileMax": 767, "tabletMax": 1023},
+    "areas": [
+      "dashboard"
+    ],
+    "capabilities": [
+      "icon:render"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 280,
+      "height": 40
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
     "fullRow": true,
-    "variables": [{
-      "key": "title",
-      "label": "Titel",
-      "type": "string",
-      "required": true,
-      "default": "Titel"
-    }, {
-      "key": "icon",
-      "label": "Icon",
-      "type": "icon",
-      "required": false,
-      "default": "mdi:format-title"
-    }, {
-      "key": "align",
-      "label": "Ausrichtung",
-      "type": "select",
-      "required": false,
-      "options": ["left", "center", "right"],
-      "optionLabels": {"left": "Links", "center": "Mitte", "right": "Rechts"},
-      "default": "left"
-    }, {"key": "rule", "label": "Trennlinie anzeigen", "type": "boolean", "required": false, "default": true}]
+    "variables": [
+      {
+        "key": "title",
+        "label": "Titel",
+        "group": "Darstellung",
+        "type": "string",
+        "required": true,
+        "default": "Titel"
+      },
+      {
+        "key": "icon",
+        "label": "Icon",
+        "group": "Darstellung",
+        "type": "icon",
+        "required": false,
+        "default": "mdi:format-title"
+      },
+      {
+        "key": "align",
+        "label": "Ausrichtung",
+        "group": "Darstellung",
+        "type": "select",
+        "required": false,
+        "options": [
+          "left",
+          "center",
+          "right"
+        ],
+        "optionLabels": {
+          "left": "Links",
+          "center": "Mitte",
+          "right": "Rechts"
+        },
+        "default": "left"
+      },
+      {
+        "key": "rule",
+        "label": "Trennlinie anzeigen",
+        "group": "Anzeige",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      }
+    ]
   };
 </script>
 

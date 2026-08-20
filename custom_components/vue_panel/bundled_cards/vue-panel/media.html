@@ -9,25 +9,55 @@
     "description": "Steuert einen Media Player",
     "icon": "mdi:speaker",
     "group": "Vue Panel",
-    "areas": ["dashboard"],
-    "capabilities": ["entity:read", "entity:subscribe", "icon:render", "service:call"],
-    "defaultSize": {"cols": 2, "rows": 1, "width": 140, "height": 120},
-    "defaultResponsive": {"mobile": true, "tablet": true, "desktop": true, "mobileMax": 767, "tabletMax": 1023},
+    "areas": [
+      "dashboard"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 2,
+      "rows": 1,
+      "width": 140,
+      "height": 120
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
     "fullRow": false,
-    "variables": [{
-      "key": "entity",
-      "label": "Media-Player-Entity",
-      "type": "entity",
-      "required": true,
-      "domain": "media_player",
-      "default": ""
-    }, {
-      "key": "name",
-      "label": "Anzeigename",
-      "type": "string",
-      "required": false,
-      "default": ""
-    }, {"key": "showVolume", "label": "Lautstärke anzeigen", "type": "boolean", "required": false, "default": true}]
+    "variables": [
+      {
+        "key": "entity",
+        "label": "Media-Player-Entity",
+        "type": "entity",
+        "required": true,
+        "domain": "media_player",
+        "default": ""
+      },
+      {
+        "key": "name",
+        "label": "Anzeigename",
+        "group": "Darstellung",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "showVolume",
+        "label": "Lautstärke anzeigen",
+        "group": "Anzeige",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      }
+    ]
   };
 </script>
 

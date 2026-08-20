@@ -111,6 +111,7 @@ export default {
     sidebarHint: 'The last section is shown in the right sidebar column.',
     panelEmpty: 'No card configured for this panel view.',
     noViewTarget: '— no target —',
+    fieldGroupOther: 'More settings',
     list: {
       addView: 'Add view…',
       addEntry: 'Add entry',
@@ -307,6 +308,8 @@ export default {
       key: 'Variable name',
       keyError: 'The name must be unique and JavaScript-safe.',
       label: 'Label',
+      group: 'Group',
+      groupHint: 'Title of the settings box this variable appears in inside the card dialog.',
       type: 'Type',
       domain: 'Entity domain',
       options: 'Options (comma-separated)',

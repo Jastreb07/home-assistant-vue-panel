@@ -283,6 +283,8 @@ function removeVariable(id: string) {
 function changeVariableType(variable: CustomCardVariable, type: string) {
   variable.type = type as CustomCardVariableType
   variable.domain = type === 'entity' ? (variable.domain ?? '') : undefined
+  // Entity fields sit above the collapsed boxes, so they never carry a group
+  if (type === 'entity') variable.group = undefined
   variable.options = type === 'select' ? (variable.options?.length ? variable.options : ['option']) : undefined
   variable.optionLabels = undefined
   // A list repeats item fields instead of holding a single scalar default
@@ -373,10 +375,14 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
     }
     const itemFields = type === 'list' ? parseItemFields(value.itemFields, index) : undefined
     keys.add(key)
+    const group = typeof value.group === 'string' && value.group.trim()
+      ? value.group.trim()
+      : undefined
     return {
       id: existingIds.get(key) ?? newId('variable'),
       key,
       label,
+      group,
       type,
       required: value.required === true,
       domain: type === 'entity' && typeof value.domain === 'string' ? value.domain : undefined,
@@ -945,6 +951,15 @@ const previewStyle = computed(() => ({
                   <label class="field">
                     <span>{{ t('customCards.variables.label') }} *</span>
                     <BaseInput v-model="variable.label" :invalid="validationAttempted && !variable.label.trim()" />
+                  </label>
+                  <label v-if="variable.type !== 'entity'" class="field">
+                    <span>{{ t('customCards.variables.group') }}</span>
+                    <BaseInput
+                      :model-value="variable.group ?? ''"
+                      :placeholder="t('editor.fieldGroupOther')"
+                      @update:model-value="variable.group = String($event).trim() || undefined"
+                    />
+                    <small class="field-hint">{{ t('customCards.variables.groupHint') }}</small>
                   </label>
                   <div class="field">
                     <span>{{ t('customCards.variables.type') }}</span>

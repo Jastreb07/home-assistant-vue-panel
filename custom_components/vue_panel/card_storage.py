@@ -74,6 +74,7 @@ _METADATA_FIELDS = {
 _VARIABLE_FIELDS = {
     "key",
     "label",
+    "group",
     "type",
     "required",
     "default",
@@ -197,6 +198,11 @@ def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
     keys.add(key)
     if not isinstance(value.get("label"), str) or not value["label"].strip():
         raise CardFileError(f"Variable {index} requires a label")
+    # Optional: the settings dialog puts variables of one group into one box
+    if "group" in value and (
+        not isinstance(value["group"], str) or not value["group"].strip()
+    ):
+        raise CardFileError(f"Variable {index} has an invalid group")
     variable_type = value.get("type")
     if variable_type not in _VARIABLE_TYPES:
         raise CardFileError(f"Variable {index} has an unsupported type")

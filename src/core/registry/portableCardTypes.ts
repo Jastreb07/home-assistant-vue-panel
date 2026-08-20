@@ -24,6 +24,8 @@ export type PortableCardVariableType =
 export interface PortableCardVariable {
   key: string
   label: string
+  /** Settings box this variable is shown in — ungrouped variables share one box */
+  group?: string
   type: PortableCardVariableType
   required: boolean
   default?: string | number | boolean

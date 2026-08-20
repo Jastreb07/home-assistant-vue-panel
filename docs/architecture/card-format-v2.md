@@ -103,6 +103,9 @@ Rules:
 
 - `key` must match `^[A-Za-z_$][A-Za-z0-9_$]*$` and be unique within the card;
 - `label` is user-facing text;
+- `group` is optional user-facing text: the settings dialog puts all variables of one group into
+  one collapsed box, ungrouped variables share a fallback box, and `entity` variables are always
+  shown above the boxes;
 - `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`, `list`;
 - `required` is always explicit;
 - `default` must match the variable type when present and is rejected for `list`;

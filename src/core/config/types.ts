@@ -61,6 +61,8 @@ export interface CustomCardVariable {
   id: string
   key: string
   label: string
+  /** Settings box this variable is shown in — ungrouped variables share one box */
+  group?: string
   type: CustomCardVariableType
   required: boolean
   domain?: string

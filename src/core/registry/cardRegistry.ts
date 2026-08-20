@@ -30,6 +30,8 @@ export interface CardSchemaField {
   type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon' | 'list'
   label: string
   literalLabel?: boolean
+  /** Collapsible box this field is shown in — entity fields are never grouped */
+  group?: string
   domain?: string
   options?: string[]
   optionLabels?: Record<string, string>
@@ -81,6 +83,7 @@ function portableField(variable: PortableCardVariable): CardSchemaField {
     type: variable.type,
     label: variable.label,
     literalLabel: true,
+    group: variable.group,
     domain: variable.domain,
     options: variable.options,
     optionLabels: variable.optionLabels,

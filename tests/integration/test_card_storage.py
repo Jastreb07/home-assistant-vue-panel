@@ -295,6 +295,7 @@ class CardStorageTests(unittest.TestCase):
         expected = {
             "vue-panel/clock",
             "vue-panel/cover",
+            "vue-panel/entities",
             "vue-panel/entity",
             "vue-panel/light",
             "vue-panel/media",

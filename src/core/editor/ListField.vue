@@ -230,6 +230,7 @@ function isHeading(entry: ListEntry): boolean {
         <div v-if="expandedId === entry.id" class="entry-body">
           <SchemaForm
             :schema="itemSchema"
+            :grouped="false"
             :model-value="entry"
             @update:model-value="patch(index, $event)"
           />

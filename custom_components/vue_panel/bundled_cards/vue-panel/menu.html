@@ -9,8 +9,17 @@
     "description": "Dynamische Navigation durch die Dashboard-Ansichten",
     "icon": "mdi:format-list-bulleted",
     "group": "Vue Panel",
-    "areas": ["dashboard", "sidebar", "header", "bottom"],
-    "capabilities": ["navigation:read", "navigation:write", "icon:render"],
+    "areas": [
+      "dashboard",
+      "sidebar",
+      "header",
+      "bottom"
+    ],
+    "capabilities": [
+      "navigation:read",
+      "navigation:write",
+      "icon:render"
+    ],
     "defaultSize": {
       "cols": 1,
       "rows": 1,
@@ -29,9 +38,13 @@
       {
         "key": "orientation",
         "label": "Ausrichtung",
+        "group": "Darstellung",
         "type": "select",
         "required": false,
-        "options": ["vertical", "horizontal"],
+        "options": [
+          "vertical",
+          "horizontal"
+        ],
         "optionLabels": {
           "vertical": "Vertikal",
           "horizontal": "Horizontal"
@@ -41,9 +54,14 @@
       {
         "key": "display",
         "label": "Darstellung",
+        "group": "Darstellung",
         "type": "select",
         "required": false,
-        "options": ["icon_text", "icon", "text"],
+        "options": [
+          "icon_text",
+          "icon",
+          "text"
+        ],
         "optionLabels": {
           "icon_text": "Icon und Text",
           "icon": "Nur Icon",
@@ -54,6 +72,7 @@
       {
         "key": "showSubviews",
         "label": "Unteransichten anzeigen",
+        "group": "Anzeige",
         "type": "boolean",
         "required": false,
         "default": false
@@ -61,6 +80,7 @@
       {
         "key": "items",
         "label": "Menüeinträge",
+        "group": "Inhalt",
         "type": "list",
         "required": false,
         "nestable": true,

@@ -111,6 +111,7 @@ export default {
     sidebarHint: 'Der letzte Abschnitt wird in der rechten Seitenleiste angezeigt.',
     panelEmpty: 'Keine Card für diese Panel-View konfiguriert.',
     noViewTarget: '— kein Ziel —',
+    fieldGroupOther: 'Weitere Einstellungen',
     list: {
       addView: 'Ansicht hinzufügen…',
       addEntry: 'Eintrag hinzufügen',
@@ -308,6 +309,8 @@ export default {
       key: 'Variablenname',
       keyError: 'Der Name muss eindeutig und JavaScript-sicher sein.',
       label: 'Beschriftung',
+      group: 'Gruppe',
+      groupHint: 'Titel des Einstellungs-Blocks, in dem diese Variable im Card-Dialog erscheint.',
       type: 'Typ',
       domain: 'Entity-Domain',
       options: 'Optionen (kommagetrennt)',
