@@ -266,6 +266,10 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   color: var(--text-secondary);
 }
 .edit-toolbar {
+  /* Own stacking context above the cards so the view dropdown can never be
+     overpainted by card edit overlays, whatever z-index they use. */
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 10px;

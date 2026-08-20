@@ -246,6 +246,9 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
 }
 .card-slot {
   position: relative;
+  /* Contain the edit overlay's z-index inside the card's own stacking
+     context so it can never paint above unrelated elements. */
+  isolation: isolate;
 }
 .card-slot.resizable {
   resize: both;

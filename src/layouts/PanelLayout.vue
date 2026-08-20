@@ -94,6 +94,9 @@ const panelCss = computed(() =>
 }
 .panel-slot {
   position: relative;
+  /* Contain the edit overlay's z-index inside the card's own stacking
+     context so it can never paint above unrelated elements. */
+  isolation: isolate;
   flex: 1;
   display: flex;
   flex-direction: column;

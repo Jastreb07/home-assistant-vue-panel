@@ -33,28 +33,35 @@ const vertical = computed(() => isSidebar(props.position))
 const direction = computed<'column' | 'row'>(() => (vertical.value ? 'column' : 'row'))
 const columnTarget = ref<string | null>(null)
 
+/**
+ * Extra room reserved above a horizontal bar in edit mode so the floating
+ * column toolbar (anchored at `top: -40px` inside the bar) stays visible
+ * instead of poking out of the bar — and, for the header, out of the
+ * viewport. The bar grows by the same amount so the cards keep their space.
+ */
+const EDIT_TOOLBAR_SPACE = 45
+
 const hostStyle = computed(() => {
   const limits = barSizeLimits[props.position]
   const size = Math.min(limits.max, Math.max(limits.min, Number(bar.value.size) || limits.min))
-  return vertical.value ? { width: `${size}px` } : { height: `${size}px` }
+  if (vertical.value) return { width: `${size}px` }
+  return store.editMode
+    ? { height: `${size + EDIT_TOOLBAR_SPACE}px`, paddingTop: `${EDIT_TOOLBAR_SPACE}px` }
+    : { height: `${size}px` }
 })
 
 /**
- * 'fit' shrinks to the column's cards, 'full' shares the remaining space
- * evenly with other 'full' columns, 'fixed' uses the explicit size. Along
- * the bar the cards follow `align`, across it they follow `crossAlign` —
- * 'stretch' spreads or fills.
+ * 'fit' shrinks to the column's cards but can also shrink below that when
+ * the bar runs out of room — the column then scrolls its own overflow
+ * internally (see BarColumnCards' `.bar-cards-track`) instead of
+ * stretching the whole bar: horizontally in header/bottom, vertically in
+ * the sidebars. 'full' shares the remaining space evenly with other 'full'
+ * columns, 'fixed' uses the explicit size and never shrinks.
  */
-function columnStyle(column: BarColumn): Record<string, string> {
-  const align = column.align ?? 'start'
-  const cross = column.crossAlign ?? 'stretch'
+function columnOuterStyle(column: BarColumn): Record<string, string> {
   const mode = barColumnSizeMode(column)
   const style: Record<string, string> = {
-    flexDirection: direction.value,
-    justifyContent: align === 'stretch' ? 'space-between' : FLEX_ALIGN[align],
-    alignItems: FLEX_ALIGN[cross],
-    '--bar-card-cross': cross === 'stretch' ? '100%' : 'initial',
-    flex: mode === 'full' ? '1 1 0' : '0 0 auto',
+    flex: mode === 'full' ? '1 1 0' : mode === 'fixed' ? '0 0 auto' : '0 1 auto',
   }
   if (mode === 'fixed') style[vertical.value ? 'height' : 'width'] = `${column.size}px`
   const padding = boxToCss(column.padding)
@@ -62,6 +69,23 @@ function columnStyle(column: BarColumn): Record<string, string> {
   if (padding) style.padding = padding
   if (margin) style.margin = margin
   return style
+}
+
+/**
+ * The `.bar-column-scroll` wrapper only aligns the column's two flex
+ * siblings — the cards' scrolling track and the "+ Card" tile — along the
+ * cross axis and keeps them separate from the outer, non-scrolling
+ * `BaseEditableArea` box (so its edit-mode toolbar isn't clipped by
+ * `overflow`). Main-axis alignment, the `safe` overflow handling and the
+ * scrolling itself belong to the cards only and live in
+ * `BarColumnCards.vue`'s own `.bar-cards-track`.
+ */
+function columnScrollStyle(column: BarColumn): Record<string, string> {
+  const cross = column.crossAlign ?? 'stretch'
+  return {
+    flexDirection: direction.value,
+    alignItems: FLEX_ALIGN[cross],
+  }
 }
 </script>
 
@@ -79,7 +103,7 @@ function columnStyle(column: BarColumn): Record<string, string> {
         :key="column.id"
         class="bar-column"
         :editing="store.editMode"
-        :style="columnStyle(column)"
+        :style="columnOuterStyle(column)"
       >
         <template v-if="store.editMode" #toolbar>
           <BaseEditableAreaButton
@@ -105,7 +129,9 @@ function columnStyle(column: BarColumn): Record<string, string> {
             <MdiIcon icon="mdi:delete-outline" :size="15" />
           </BaseEditableAreaButton>
         </template>
-        <BarColumnCards :bar="position" :column="column" :direction="direction" />
+        <div class="bar-column-scroll" :style="columnScrollStyle(column)">
+          <BarColumnCards :bar="position" :column="column" :direction="direction" />
+        </div>
       </BaseEditableArea>
 
       <BaseAddTile
@@ -143,9 +169,9 @@ function columnStyle(column: BarColumn): Record<string, string> {
 .shell-bar-host--sidebar-right {
   height: 100%;
   flex-direction: column;
-  gap: 24px;
-  padding: 24px 16px;
-  overflow: hidden auto;
+  gap: 45px;
+  padding: 45px 16px;
+  overflow: hidden;
 }
 .shell-bar-host--sidebar-left {
   border-right: 1px solid var(--divider);
@@ -159,7 +185,6 @@ function columnStyle(column: BarColumn): Record<string, string> {
   align-items: stretch;
   gap: 16px;
   padding: 8px 16px;
-  overflow: auto hidden;
 }
 .shell-bar-host--header {
   border-bottom: 1px solid var(--divider);
@@ -170,13 +195,45 @@ function columnStyle(column: BarColumn): Record<string, string> {
 /* The box/toolbar chrome comes from the shared editable-area theme component */
 .bar-column {
   display: flex;
-  gap: 10px;
   min-width: 0;
   min-height: 0;
 }
 .bar-column.editing {
   min-width: 44px;
   min-height: 44px;
+}
+/*
+ * The actual card layout lives in this inner wrapper, separate from the
+ * outer editable-area box, so a column can scroll its own overflow without
+ * clipping the edit-mode toolbar (which is positioned relative to the
+ * outer box and would otherwise be cut off by `overflow`). It only aligns
+ * its two children (the cards' track and the "+ Card" tile) across the
+ * cross axis — scrolling itself happens one level deeper, in
+ * BarColumnCards.vue's `.bar-cards-track`.
+ */
+.bar-column-scroll {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+}
+/*
+ * Relying only on `align-items: stretch` to pass the bar's height down
+ * through column -> scroll wrapper -> cards track was not reliable once the
+ * track became its own nested scroll container: without an explicit,
+ * percentage-based height at each level the track fell back to its
+ * unclipped content height (all cards at full natural width, stacked as if
+ * not scrolling) and stretched the whole column open. Pinning the height
+ * (header/bottom) or width (sidebars) to 100% here removes the ambiguity.
+ */
+.shell-bar-host--header .bar-column-scroll,
+.shell-bar-host--bottom .bar-column-scroll {
+  height: 100%;
+}
+.shell-bar-host--sidebar-left .bar-column-scroll,
+.shell-bar-host--sidebar-right .bar-column-scroll {
+  width: 100%;
 }
 .add-column {
   align-self: center;

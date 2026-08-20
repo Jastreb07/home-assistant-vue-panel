@@ -13,7 +13,7 @@
   place-items: center;
   width: 100%;
   border: 0;
-  border-radius: inherit;
+  border-radius: var(--card-radius);
   padding: 0;
   z-index: 1;
   background: color-mix(in srgb, var(--card-bg) 58%, transparent);
@@ -26,8 +26,18 @@
   transition: background 140ms ease, opacity 140ms ease;
 }
 
+/* Full-size surface even on resizable cards — only the bottom-right corner
+   is cut out (clip-path also excludes it from hit-testing) so the native
+   resize handle of the card slot stays grabbable. */
 .vp-card-edit-overlay--resize .vp-card-edit-surface {
-  bottom: 24px;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 26px),
+    calc(100% - 26px) calc(100% - 26px),
+    calc(100% - 26px) 100%,
+    0 100%
+  );
 }
 
 .vp-card-edit-pencil {

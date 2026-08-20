@@ -102,6 +102,77 @@ Aktueller Stand:
   kompliziert und wurde wieder entfernt, weil praktisch jede Card ihr Wurzelelement ohnehin auf
   `width: 100%; height: 100%` ihres Slots stylt (siehe `menu.html`) — ein Slot ohne eigene feste
   Box lässt solche Cards einfach auf ihre natürliche Inhaltsgröße schrumpfen;
+- ab `2.0.0-alpha.27`/Engine `2.1.24` scrollt bei Header und Bottom-Bar jede Spalte für sich,
+  statt die ganze Leiste horizontal zu verschieben: `ShellBarHost.vue` trennt die äußere,
+  nicht scrollende Editier-Box (`columnOuterStyle()`, Toolbar-Chrome, Padding/Margin) von einem
+  inneren `.bar-column-scroll`-Wrapper (`columnInnerStyle()`), der die eigentliche Card-Ausrichtung
+  trägt und bei Header/Bottom `overflow-x: auto` bekommt. `fit`-Spalten dürfen jetzt zusätzlich
+  schrumpfen (`flex: 0 1 auto` statt `0 0 auto`), damit der verfügbare Platz zuerst unter den
+  Spalten aufgeteilt wird und erst die überschüssige Spalte selbst scrollt. So bleiben z. B. eine
+  fixe Uhr-Spalte links und eine lange Navigation rechts unabhängig voneinander sichtbar, statt
+  dass ein Scrollen der ganzen Leiste auch die Uhr wegschiebt;
+- ab `2.0.0-alpha.28`/Engine `2.1.25` funktioniert dieses Spalten-Scrolling tatsächlich in jedem
+  Größenmodus: `BarColumnCards.styleFor()` gibt Bar-Cards `flex: 0 0 auto` statt `0 1 auto`. Mit
+  `flex-shrink: 1` hatte der Flexbox-Algorithmus jede Card innerhalb einer engen Spalte einfach
+  bis auf 0 zusammengedrückt, statt echten Overflow zu erzeugen — `overflow-x: auto` am
+  `.bar-column-scroll`-Wrapper hat dadurch nie eine Scrollbar gezeigt, außer zufällig bei
+  `full`-Spalten, wo vorher noch die alte, inzwischen entfernte Ganze-Leiste-Scrollbar griff.
+  `flex-shrink: 0` lässt Cards auf ihrer natürlichen Inhaltsgröße bestehen; passt der Inhalt nicht
+  in die Spalte, entsteht echter Overflow, den `.bar-column-scroll` jetzt in jedem Größenmodus
+  (`fit`/`full`/`fixed`) korrekt scrollbar macht;
+- ab `2.0.0-alpha.29`/Engine `2.1.26` sind zwei Regressionen aus alpha.27/28 behoben:
+  `columnOuterStyle()` lässt `fit`-Spalten nur noch in Header/Bottom schrumpfen — Sidebars stapeln
+  ihre Spalten stattdessen weiterhin mit `flex: 0 0 auto` (natürliche Höhe), sonst würden Cards wie
+  die Uhr zusammengequetscht statt dass die ganze Sidebar (bereits vorhandenes
+  `overflow-y: auto` am Host) als Liste scrollt. Zweitens verwendet `columnInnerStyle()` für jedes
+  `align` außer `start` jetzt `justify-content: safe <align>` statt nur `<align>`: Ohne `safe`
+  macht Zentrieren/Endausrichten eines überlaufenden Flex-Containers den Überlauf auf der
+  Anfangsseite unerreichbar — die Bottom-Bar-Spalte (per Default `align: center`) ließ sich zwar
+  scrollen, zeigte aber nie das erste Menüelement, weil die Browser-Startposition schon mittig in
+  den Overflow hinein lag;
+- ab `2.0.0-alpha.30`/Engine `2.1.27` bleibt die „+ Card“-Kachel einer Bar-Spalte im Edit-Modus
+  über `position: sticky` am Ende des scrollenden Bereichs stehen (`right: 0` in Header/Bottom,
+  `bottom: 0` in Sidebars), statt mit den übrigen Cards aus dem sichtbaren Bereich zu scrollen;
+  `sticky` löst dabei gegen den nächsten scrollenden Vorfahren auf (`.bar-column-scroll` bzw. den
+  Sidebar-Host), obwohl `BarColumnCards` selbst `display: contents` nutzt;
+- ab `2.0.0-alpha.31`/Engine `2.1.28` ersetzt ein echter innerer Scroll-Wrapper den `sticky`-Ansatz
+  aus alpha.30: `BarColumnCards.vue` legt die Cards jetzt in eine eigene `.bar-cards-track`, die als
+  Flex-Geschwister neben der „+ Card“-Kachel liegt (beide sind über das weiterhin `display:
+  contents` nutzende `.bar-column-cards` in ShellBarHosts `.bar-column-scroll` eingehängt). Nur
+  diese Track scrollt (Header/Bottom horizontal), die Kachel bleibt außerhalb davon und ist dadurch
+  immer sichtbar, ohne über `position: sticky` gegen einen fremden Scroll-Container aufgelöst
+  werden zu müssen. Haupt-Achsen-Ausrichtung (`align`, inkl. `safe`-Fallback) und `--bar-card-cross`
+  ziehen dafür von ShellBarHosts `columnInnerStyle()` in `BarColumnCards.vue`s neue `trackStyle()`
+  um; `ShellBarHost.columnScrollStyle()` richtet nur noch Track und Kachel gemeinsam über die
+  Querachse aus;
+- ab `2.0.0-alpha.32`/Engine `2.1.29` bekommt die neue `.bar-cards-track` (und ihr Elternwrapper
+  `.bar-column-scroll`) in Header/Bottom eine explizite `height: 100%` statt sich nur auf
+  `align-items: stretch` über mehrere verschachtelte Flex-Ebenen zu verlassen (Host → Spalte →
+  Scroll-Wrapper → Track). Sobald ein Zwischenelement selbst zum Scroll-Container wird, ist diese
+  Stretch-Vererbung nicht zuverlässig — die Track fiel auf ihre ungeklemmte Inhaltshöhe zurück und
+  streckte die ganze Spalte über die Bar-Höhe hinaus auf; Sidebars bekommen dasselbe mit
+  `width: 100%`;
+- ab `2.0.0-alpha.33`/Engine `2.1.30` scrollen auch Sidebar-Spalten intern: `.bar-cards-track`
+  erhält in Spaltenrichtung `overflow-y: auto` (analog zum horizontalen Scrollen in
+  Header/Bottom), `fit`-Spalten dürfen wieder in beiden Richtungen schrumpfen
+  (`columnOuterStyle()` ohne Richtungs-Sonderfall) und der Sidebar-Host scrollt nicht mehr selbst
+  (`overflow: hidden` statt `hidden auto`) — dadurch bleibt die „+ Card“-Kachel auch in Sidebars
+  immer sichtbar statt ans Ende der Card-Liste zu wandern;
+- ab `2.0.0-alpha.34`/Engine `2.1.31` reservieren Header und Bottom-Bar im Edit-Modus 45px
+  zusätzlichen Platz oben (`padding-top`, Host-Höhe wächst um denselben Betrag), damit die auf
+  `top: -40px` verschobene `vp-editable-area-toolbar` der Spalten innerhalb der Bar sichtbar
+  bleibt statt aus dem Viewport zu ragen;
+- ab `2.0.0-alpha.35`/Engine `2.1.32` bleibt das Card-Edit-Overlay (`vp-card-edit-surface`)
+  strikt innerhalb seiner Card: Die drei Card-Wrapper `.card-slot` (LayoutSection), `.panel-slot`
+  (PanelLayout) und `.bar-card` (BarColumnCards) erzeugen per `isolation: isolate` einen eigenen
+  Stacking-Context, sodass das `z-index: 4` des Overlays nicht mehr in die Seiten-Stapelreihenfolge
+  entweicht und über fremden Elementen malt;
+- ab `2.0.0-alpha.36`/Engine `2.1.33` bekommt die Edit-Toolbar der View (`.edit-toolbar` in
+  AppShell) `position: relative; z-index: 10`, sodass ihr View-Dropdown garantiert über allen
+  Card-Edit-Overlays liegt; außerdem deckt die `vp-card-edit-surface` auch bei resizebaren Cards
+  die volle Card-Fläche ab — statt eines 24px-Streifens unten wird nur noch die Resize-Ecke per
+  `clip-path` ausgespart (die Aussparung nimmt auch Pointer-Events aus, der native Resize-Griff
+  bleibt greifbar);
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
