@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import type { PortableCardCapability } from '@/core/registry/portableCardTypes'
+import type { CardTranslations, PortableCardCapability } from '@/core/registry/portableCardTypes'
+import { cardTranslation } from '@/core/registry/cardTranslations'
 import { callService, useEntities } from '@/core/ha'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
@@ -33,6 +34,8 @@ interface CardDefinition {
   css: string
   javascript: string
   capabilities: PortableCardCapability[]
+  /** Catalogs behind `vuePanel.t()` — a card without them shows its keys */
+  translations?: CardTranslations
 }
 
 /** Sizing the card can rely on; everything else comes from the theme. */
@@ -119,6 +122,18 @@ function buildApi(capabilities: PortableCardCapability[]) {
   return Object.freeze({
     apiVersion: CARD_API_VERSION,
     config: deepFreeze(snapshot(props.config ?? {})),
+
+    /** Language the panel currently runs in — cards render text for it. */
+    language: locale.value,
+
+    /**
+     * Text from the card's own translation block. Missing texts fall back to
+     * the card's fallback language, then English, then the key itself — no
+     * capability is needed because nothing but card-authored text is read.
+     */
+    t(key: string) {
+      return cardTranslation(props.definition.translations, String(key), locale.value)
+    },
 
     async getEntity(entityId: string) {
       guard('getEntity')
@@ -398,6 +413,9 @@ watch(() => props.definition, () => {
 }, { deep: true })
 
 watch(() => props.config, render, { deep: true })
+
+/** Cards build their text once per render, so a language switch re-runs them. */
+watch(locale, render)
 
 watch(entities, (value) => {
   for (const { entityId, callback } of entitySubscriptions.values()) {

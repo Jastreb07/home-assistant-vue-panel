@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "thermostat",
-    "name": "Thermostat",
-    "description": "Zeigt Raum- und Zieltemperatur und ändert den Sollwert",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:thermostat",
     "group": "Vue Panel",
     "areas": [
@@ -35,7 +35,7 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Thermostat-Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "domain": "climate",
@@ -43,16 +43,16 @@
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "step",
-        "label": "Schrittweite",
-        "group": "Verhalten",
+        "label": "translation.variables.step.label",
+        "group": "translation.groups.behavior",
         "type": "number",
         "required": false,
         "default": 0.5,
@@ -61,6 +61,42 @@
         "step": 0.1
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Thermostat",
+        "translation.description": "Shows room and target temperature and changes the setpoint",
+        "translation.variables.entity.label": "Thermostat entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.step.label": "Step size",
+        "translation.groups.behavior": "Behavior",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Thermostat",
+        "translation.states.off": "Off",
+        "translation.heating": "Heating"
+      },
+      "de": {
+        "translation.name": "Thermostat",
+        "translation.description": "Zeigt Raum- und Zieltemperatur und ändert den Sollwert",
+        "translation.variables.entity.label": "Thermostat-Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.step.label": "Schrittweite",
+        "translation.groups.behavior": "Verhalten",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Thermostat",
+        "translation.states.off": "Aus",
+        "translation.heating": "Heizen"
+      }
+    }
   };
 </script>
 
@@ -202,9 +238,9 @@
     entity = value;
     const heating = value?.attributes?.hvac_action === 'heating';
     card.classList.toggle('active', heating);
-    name.textContent = String(config.name || value?.attributes?.friendly_name || entityId || 'Thermostat');
+    name.textContent = String(config.name || value?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
     const current = Number(value?.attributes?.current_temperature);
-    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !value ? 'Entity nicht gefunden' : `${Number.isFinite(current) ? `${current} °` : '–'}${value.state === 'off' ? ' · Aus' : heating ? ' · Heizen' : ''}`;
+    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !value ? vuePanel.t('translation.entityNotFound') : `${Number.isFinite(current) ? `${current} °` : '–'}${value.state === 'off' ? ` · ${vuePanel.t('translation.states.off')}` : heating ? ` · ${vuePanel.t('translation.heating')}` : ''}`;
     const desired = Number(value?.attributes?.temperature);
     target.hidden = !Number.isFinite(desired);
     targetValue.textContent = Number.isFinite(desired) ? `${desired} °` : '';

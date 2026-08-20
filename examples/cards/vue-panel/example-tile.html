@@ -5,13 +5,25 @@ const vuePanelCard = {
   "apiVersion": 1,
   "manufacturer": "vue-panel",
   "cardName": "example-tile",
-  "name": "Example tile",
-  "description": "Reference implementation of a dashboard card",
+  "name": "translation.name",
+  "description": "translation.description",
   "icon": "mdi:lightbulb-outline",
   "group": "vue-panel",
-  "areas": ["dashboard"],
-  "capabilities": ["entity:read", "entity:subscribe", "icon:render", "service:call"],
-  "defaultSize": { "cols": 1, "rows": 1, "width": 140, "height": 120 },
+  "areas": [
+    "dashboard"
+  ],
+  "capabilities": [
+    "entity:read",
+    "entity:subscribe",
+    "icon:render",
+    "service:call"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 140,
+    "height": 120
+  },
   "defaultResponsive": {
     "mobile": true,
     "tablet": true,
@@ -23,7 +35,7 @@ const vuePanelCard = {
   "variables": [
     {
       "key": "entity",
-      "label": "Light entity",
+      "label": "translation.variables.entity.label",
       "type": "entity",
       "required": true,
       "domain": "light",
@@ -31,19 +43,45 @@ const vuePanelCard = {
     },
     {
       "key": "name",
-      "label": "Display name",
+      "label": "translation.variables.name.label",
       "type": "string",
       "required": false,
       "default": "Light"
     },
     {
       "key": "icon",
-      "label": "Icon",
+      "label": "translation.variables.icon.label",
       "type": "icon",
       "required": true,
       "default": "mdi:lightbulb-outline"
     }
   ]
+};
+</script>
+
+<script data-vue-panel-translation>
+const vuePanelTranslations = {
+  "fallback": "en",
+  "languages": {
+    "en": {
+      "translation.name": "Example tile",
+      "translation.description": "Reference implementation of a dashboard card",
+      "translation.variables.entity.label": "Light entity",
+      "translation.variables.name.label": "Display name",
+      "translation.variables.icon.label": "Icon",
+      "translation.defaultName": "Light",
+      "translation.unavailable": "Unavailable"
+    },
+    "de": {
+      "translation.name": "Beispiel-Kachel",
+      "translation.description": "Referenz-Implementierung einer Dashboard-Card",
+      "translation.variables.entity.label": "Licht-Entity",
+      "translation.variables.name.label": "Anzeigename",
+      "translation.variables.icon.label": "Icon",
+      "translation.defaultName": "Licht",
+      "translation.unavailable": "Nicht verfügbar"
+    }
+  }
 };
 </script>
 
@@ -124,8 +162,8 @@ const iconElement = document.getElementById('icon');
 async function render(entity) {
   const isOn = entity?.state === 'on';
   card.classList.toggle('is-on', isOn);
-  nameElement.textContent = String(config.name || entity?.attributes?.friendly_name || 'Light');
-  stateElement.textContent = entity?.state || 'Unavailable';
+  nameElement.textContent = String(config.name || entity?.attributes?.friendly_name || vuePanel.t('translation.defaultName'));
+  stateElement.textContent = entity?.state || vuePanel.t('translation.unavailable');
   iconElement.src = await vuePanel.getIcon(String(config.icon || 'mdi:lightbulb-outline'), {
     size: 72,
     color: isOn ? '#111111' : '#737373',

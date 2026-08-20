@@ -23,6 +23,8 @@ The engine passes one frozen object into the card script as `vuePanel`:
 interface VuePanelCardApiV1 {
   readonly apiVersion: 1
   readonly config: Readonly<Record<string, unknown>>
+  readonly language: string
+  t(key: string): string
   getEntity(entityId: string): Promise<EntitySnapshot | null>
   subscribeEntity(
     entityId: string,
@@ -63,7 +65,11 @@ Calls are denied unless the card declares the matching capability:
 | `shell:events` | `emitAction` |
 
 Configuration access does not require a capability because only the current instance values are
-provided. Unknown actions and capabilities fail closed.
+provided. The same holds for `language` and `t()`: they only expose the card's own translation
+block (see `card-format-v2.md`). `t()` resolves a `translation.*` key against the active language,
+then the card's fallback language, then English, and returns the key itself when the text is
+missing everywhere. Cards are re-rendered when the panel language changes, so `t()` may be called
+during rendering. Unknown actions and capabilities fail closed.
 
 ## Preview mode
 

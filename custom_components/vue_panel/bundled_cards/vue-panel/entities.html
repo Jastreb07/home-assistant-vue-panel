@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "entities",
-    "name": "Entitäten",
-    "description": "Liste beliebig vieler Entitäten mit Status und Schaltern",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:format-list-bulleted-type",
     "group": "Vue Panel",
     "areas": [
@@ -36,41 +36,41 @@
     "variables": [
       {
         "key": "title",
-        "label": "Überschrift",
-        "group": "Darstellung",
+        "label": "translation.variables.title.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "titleIcon",
-        "label": "Icon der Überschrift",
-        "group": "Darstellung",
+        "label": "translation.variables.titleIcon.label",
+        "group": "translation.groups.appearance",
         "type": "icon",
         "required": false
       },
       {
         "key": "entities",
-        "label": "Entitäten",
-        "group": "Inhalt",
+        "label": "translation.variables.entities.label",
+        "group": "translation.groups.content",
         "type": "list",
         "required": false,
         "itemFields": [
           {
             "key": "entity",
-            "label": "Entity",
+            "label": "translation.variables.entities.items.entity",
             "type": "entity",
             "required": false
           },
           {
             "key": "name",
-            "label": "Anzeigename",
+            "label": "translation.variables.entities.items.name",
             "type": "string",
             "required": false
           },
           {
             "key": "icon",
-            "label": "Icon",
+            "label": "translation.variables.entities.items.icon",
             "type": "icon",
             "required": false
           }
@@ -78,37 +78,109 @@
       },
       {
         "key": "showIcons",
-        "label": "Icons anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.showIcons.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "showStates",
-        "label": "Status anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.showStates.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "showToggles",
-        "label": "Schalter für schaltbare Entitäten",
-        "group": "Anzeige",
+        "label": "translation.variables.showToggles.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "showSecondary",
-        "label": "Zweite Zeile mit Entity-ID",
-        "group": "Anzeige",
+        "label": "translation.variables.showSecondary.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": false
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Entities",
+        "translation.description": "Lists any number of entities with state and toggles",
+        "translation.variables.title.label": "Heading",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.titleIcon.label": "Heading icon",
+        "translation.variables.entities.label": "Entities",
+        "translation.groups.content": "Content",
+        "translation.variables.entities.items.entity": "Entity",
+        "translation.variables.entities.items.name": "Display name",
+        "translation.variables.entities.items.icon": "Icon",
+        "translation.variables.showIcons.label": "Show icons",
+        "translation.groups.display": "Display",
+        "translation.variables.showStates.label": "Show state",
+        "translation.variables.showToggles.label": "Toggles for switchable entities",
+        "translation.variables.showSecondary.label": "Second line with the entity ID",
+        "translation.notFound": "Not found",
+        "translation.states.on": "On",
+        "translation.states.off": "Off",
+        "translation.states.open": "Open",
+        "translation.states.closed": "Closed",
+        "translation.states.home": "Home",
+        "translation.states.notHome": "Away",
+        "translation.states.locked": "Locked",
+        "translation.states.unlocked": "Unlocked",
+        "translation.states.unavailable": "Unavailable",
+        "translation.states.unknown": "Unknown",
+        "translation.states.idle": "Idle",
+        "translation.states.playing": "Playing",
+        "translation.states.paused": "Paused",
+        "translation.empty": "No entities selected"
+      },
+      "de": {
+        "translation.name": "Entitäten",
+        "translation.description": "Liste beliebig vieler Entitäten mit Status und Schaltern",
+        "translation.variables.title.label": "Überschrift",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.titleIcon.label": "Icon der Überschrift",
+        "translation.variables.entities.label": "Entitäten",
+        "translation.groups.content": "Inhalt",
+        "translation.variables.entities.items.entity": "Entity",
+        "translation.variables.entities.items.name": "Anzeigename",
+        "translation.variables.entities.items.icon": "Icon",
+        "translation.variables.showIcons.label": "Icons anzeigen",
+        "translation.groups.display": "Anzeige",
+        "translation.variables.showStates.label": "Status anzeigen",
+        "translation.variables.showToggles.label": "Schalter für schaltbare Entitäten",
+        "translation.variables.showSecondary.label": "Zweite Zeile mit Entity-ID",
+        "translation.notFound": "Nicht gefunden",
+        "translation.states.on": "An",
+        "translation.states.off": "Aus",
+        "translation.states.open": "Offen",
+        "translation.states.closed": "Geschlossen",
+        "translation.states.home": "Zuhause",
+        "translation.states.notHome": "Abwesend",
+        "translation.states.locked": "Verriegelt",
+        "translation.states.unlocked": "Entriegelt",
+        "translation.states.unavailable": "Nicht verfügbar",
+        "translation.states.unknown": "Unbekannt",
+        "translation.states.idle": "Bereit",
+        "translation.states.playing": "Läuft",
+        "translation.states.paused": "Pausiert",
+        "translation.empty": "Keine Entitäten ausgewählt"
+      }
+    }
   };
 </script>
 
@@ -119,7 +191,7 @@
       <span class="entities-card__title" id="title"></span>
     </div>
     <div class="entities-card__list" id="list"></div>
-    <p class="entities-card__empty" id="empty" hidden>Keine Entitäten ausgewählt</p>
+    <p class="entities-card__empty" id="empty" hidden></p>
   </div>
 </template>
 
@@ -294,6 +366,7 @@
 
   const list = document.getElementById('list');
   const empty = document.getElementById('empty');
+  empty.textContent = vuePanel.t('translation.empty');
   const header = document.getElementById('header');
   const headerIcon = document.getElementById('header-icon');
   const title = document.getElementById('title');
@@ -337,19 +410,19 @@
   };
 
   const STATE_LABELS = {
-    on: 'An',
-    off: 'Aus',
-    open: 'Offen',
-    closed: 'Geschlossen',
-    home: 'Zuhause',
-    not_home: 'Abwesend',
-    locked: 'Verriegelt',
-    unlocked: 'Entriegelt',
-    unavailable: 'Nicht verfügbar',
-    unknown: 'Unbekannt',
-    idle: 'Bereit',
-    playing: 'Läuft',
-    paused: 'Pausiert'
+    on: vuePanel.t('translation.states.on'),
+    off: vuePanel.t('translation.states.off'),
+    open: vuePanel.t('translation.states.open'),
+    closed: vuePanel.t('translation.states.closed'),
+    home: vuePanel.t('translation.states.home'),
+    not_home: vuePanel.t('translation.states.notHome'),
+    locked: vuePanel.t('translation.states.locked'),
+    unlocked: vuePanel.t('translation.states.unlocked'),
+    unavailable: vuePanel.t('translation.states.unavailable'),
+    unknown: vuePanel.t('translation.states.unknown'),
+    idle: vuePanel.t('translation.states.idle'),
+    playing: vuePanel.t('translation.states.playing'),
+    paused: vuePanel.t('translation.states.paused')
   };
 
   function domainOf(entityId) {
@@ -357,7 +430,7 @@
   }
 
   function stateText(entity) {
-    if (!entity) return 'Nicht gefunden';
+    if (!entity) return vuePanel.t('translation.notFound');
     const unit = entity.attributes?.unit_of_measurement;
     const label = STATE_LABELS[entity.state] || entity.state;
     return unit ? `${entity.state} ${unit}` : label;

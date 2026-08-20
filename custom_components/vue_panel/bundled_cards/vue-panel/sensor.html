@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "sensor",
-    "name": "Sensor",
-    "description": "Zeigt den aktuellen Zustand eines Sensors an",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:gauge",
     "group": "Vue Panel",
     "areas": [
@@ -37,28 +37,58 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "default": ""
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "icon",
-        "label": "Icon",
-        "group": "Darstellung",
+        "label": "translation.variables.icon.label",
+        "group": "translation.groups.appearance",
         "type": "icon",
         "required": false,
         "default": "mdi:gauge"
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Sensor",
+        "translation.description": "Shows the current state of a sensor",
+        "translation.variables.entity.label": "Entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.icon.label": "Icon",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Sensor"
+      },
+      "de": {
+        "translation.name": "Sensor",
+        "translation.description": "Zeigt den aktuellen Zustand eines Sensors an",
+        "translation.variables.entity.label": "Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.icon.label": "Icon",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Sensor"
+      }
+    }
   };
 </script>
 
@@ -136,8 +166,8 @@
   const state = document.getElementById('state');
 
   async function render(entity) {
-    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Sensor');
-    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' : `${entity.state}${entity.attributes?.unit_of_measurement ? ` ${entity.attributes.unit_of_measurement}` : ''}`;
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
+    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : `${entity.state}${entity.attributes?.unit_of_measurement ? ` ${entity.attributes.unit_of_measurement}` : ''}`;
     icon.src = await vuePanel.getIcon(String(config.icon || entity?.attributes?.icon || 'mdi:gauge'), {
       size: 72,
       color: '#737373'

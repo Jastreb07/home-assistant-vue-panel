@@ -1,5 +1,6 @@
 import type { BoxValue } from '@/core/ui/boxInput'
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
+import type { CardTranslations } from '@/core/registry/portableCardTypes'
 
 export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
 export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
@@ -80,6 +81,8 @@ export interface CustomCardVariable {
 
 export interface CustomCardDefinition {
   id: string
+  /** Contents of the card's `<script data-vue-panel-translation>` block */
+  translations: CardTranslations
   format: 'vue-panel-card'
   formatVersion: 2
   apiVersion: 1

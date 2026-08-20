@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
+import type { CardTranslations } from '@/core/registry/portableCardTypes'
+import { cardText } from '@/core/registry/cardTranslations'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
@@ -15,11 +17,20 @@ import ListField from './ListField.vue'
 const props = defineProps<{
   field: CardSchemaField
   value: unknown
+  /** Catalogs of the card this field belongs to */
+  translations?: CardTranslations
 }>()
 const emit = defineEmits<{ 'update:value': [value: unknown] }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useDashboardStore()
+
+/** Card-authored text is translated by the card, engine text by the panel. */
+const label = computed(() =>
+  props.field.literalLabel
+    ? cardText(props.translations, props.field.label, locale.value)
+    : t(props.field.label),
+)
 
 const text = computed(() => (props.value as string | undefined) ?? '')
 
@@ -42,7 +53,7 @@ const selectOptions = computed<SelectOption[]>(() =>
     value: opt,
     label: props.field.optionLabels?.[opt]
       ? props.field.literalOptionLabels
-        ? props.field.optionLabels[opt]
+        ? cardText(props.translations, props.field.optionLabels[opt], locale.value)
         : t(props.field.optionLabels[opt])
       : opt,
   })),
@@ -64,7 +75,7 @@ const plainWrapper = computed(() =>
     :class="'type-' + field.type"
   >
     <span class="label">
-      {{ field.literalLabel ? field.label : t(field.label) }}<span v-if="field.required || (!field.optional && field.type === 'entity')"> *</span>
+      {{ label }}<span v-if="field.required || (!field.optional && field.type === 'entity')"> *</span>
     </span>
 
     <EntityPicker
@@ -125,6 +136,7 @@ const plainWrapper = computed(() =>
     <ListField
       v-else-if="field.type === 'list'"
       :field="field"
+      :translations="translations"
       :model-value="value"
       @update:model-value="emit('update:value', $event)"
     />

@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "light",
-    "name": "Licht",
-    "description": "Steuert ein Licht und zeigt Status sowie Helligkeit an",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:lightbulb",
     "group": "Vue Panel",
     "areas": [
@@ -38,7 +38,7 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Licht-Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "domain": "light",
@@ -46,29 +46,67 @@
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "icon",
-        "label": "Icon",
-        "group": "Darstellung",
+        "label": "translation.variables.icon.label",
+        "group": "translation.groups.appearance",
         "type": "icon",
         "required": false,
         "default": "mdi:lightbulb-outline"
       },
       {
         "key": "showBrightness",
-        "label": "Helligkeit anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.showBrightness.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Light",
+        "translation.description": "Controls a light and shows its state and brightness",
+        "translation.variables.entity.label": "Light entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.showBrightness.label": "Show brightness",
+        "translation.groups.display": "Display",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Light",
+        "translation.states.on": "On",
+        "translation.states.off": "Off"
+      },
+      "de": {
+        "translation.name": "Licht",
+        "translation.description": "Steuert ein Licht und zeigt Status sowie Helligkeit an",
+        "translation.variables.entity.label": "Licht-Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.showBrightness.label": "Helligkeit anzeigen",
+        "translation.groups.display": "Anzeige",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Licht",
+        "translation.states.on": "An",
+        "translation.states.off": "Aus"
+      }
+    }
   };
 </script>
 
@@ -172,9 +210,9 @@
     const isOn = entity?.state === 'on';
     const brightness = Number(entity?.attributes?.brightness);
     card.classList.toggle('active', isOn);
-    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Licht');
-    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' :
-      `${isOn ? 'An' : 'Aus'}${isOn && config.showBrightness !== false && Number.isFinite(brightness) ? ` · ${Math.round(brightness / 255 * 100)} %` : ''}`;
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
+    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') :
+      `${isOn ? vuePanel.t('translation.states.on') : vuePanel.t('translation.states.off')}${isOn && config.showBrightness !== false && Number.isFinite(brightness) ? ` · ${Math.round(brightness / 255 * 100)} %` : ''}`;
     icon.src = await vuePanel.getIcon(String(config.icon || (isOn ? 'mdi:lightbulb' : 'mdi:lightbulb-outline')), {
       size: 72,
       color: isOn ? '#111111' : '#737373'

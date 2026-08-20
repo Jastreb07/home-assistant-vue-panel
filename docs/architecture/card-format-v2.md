@@ -48,6 +48,16 @@ const vuePanelCard = {
 };
 </script>
 
+<script data-vue-panel-translation>
+const vuePanelTranslations = {
+  "fallback": "en",
+  "languages": {
+    "en": { "translation.name": "Example tile" },
+    "de": { "translation.name": "Beispiel-Kachel" }
+  }
+};
+</script>
+
 <template data-vue-panel-html>
   <article class="example-tile"></article>
 </template>
@@ -64,7 +74,29 @@ const config = vuePanel.config;
 The configuration block has JavaScript syntax for editor readability, but its value must be a
 JSON-compatible object literal assigned to the single top-level constant `vuePanelCard`. It must
 not contain expressions, functions, comments inside values, computed keys, references, or other
-statements. Import validation parses this restricted form without executing it.
+statements. Import validation parses this restricted form without executing it. The translation
+block follows the same restricted form for its own constant, `vuePanelTranslations`.
+
+## Translations
+
+The optional `<script data-vue-panel-translation>` block holds every user-facing text of a card:
+
+- `languages`: one flat catalog per language. Any BCP-47-style tag is allowed (`en`, `de`, `fr`,
+  `pt-BR`, …) — a card may ship languages the panel UI itself does not speak, up to 40 of them;
+- every catalog key must match `translation.<segment>[.<segment>…]`;
+- `fallback`: the language single missing texts fall back to. It must be one of the card's own
+  languages; a card without a `fallback` always falls back to English.
+
+Resolution order for one key is: the language the panel currently runs in, then a regional variant
+of it the card ships (`pt-BR` answers a panel running in `pt`), then the card's `fallback`
+language, then English. A key that is missing — or translated to an empty string —
+everywhere in that chain is rendered as the technical key itself (for example `translation.name`),
+so untranslated text is visible instead of silently blank.
+
+Any metadata or variable string may be a `translation.*` key instead of literal text: `name`,
+`description`, variable `label`, variable `group`, `optionLabels` values, and the `label` of a
+list item field. Strings that do not start with `translation.` stay literal. Card code reads its
+own texts through `vuePanel.t('translation.…')` (see `sandbox-api-v1.md`).
 
 ## Metadata
 

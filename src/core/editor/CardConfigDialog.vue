@@ -45,7 +45,7 @@ const emit = defineEmits<{
   save: [config: Record<string, unknown>, css?: string, size?: { width?: number; height?: number }]
 }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const manifest = cardRegistry[props.cardType]
 const previewComponent = resolveCardComponent(props.cardType)
 
@@ -56,7 +56,9 @@ const effectiveSchema = computed<Record<string, CardSchemaField>>(() => {
 })
 
 const hasSchema = computed(() => Object.keys(effectiveSchema.value).length > 0)
-const dialogName = computed(() => manifest ? cardDisplayName(manifest, t) : props.cardType)
+const dialogName = computed(() =>
+  manifest ? cardDisplayName(manifest, t, locale.value) : props.cardType,
+)
 
 function applyDefaults(config: Record<string, unknown>): Record<string, unknown> {
   const result = { ...config }
@@ -200,7 +202,12 @@ const isBarArea = computed(() => props.area !== 'default')
 
     <div class="config-layout">
       <div v-show="tab === 'settings'" class="form-col">
-        <SchemaForm v-if="hasSchema" v-model="draft" :schema="effectiveSchema" />
+        <SchemaForm
+          v-if="hasSchema"
+          v-model="draft"
+          :schema="effectiveSchema"
+          :translations="manifest?.translations"
+        />
         <p v-if="saveAttempted && missingRequiredVariables" class="validation-error">
           {{ t('customCards.variables.requiredError') }}
         </p>

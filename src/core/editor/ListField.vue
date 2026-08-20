@@ -2,6 +2,7 @@
 import { computed, defineAsyncComponent, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardSchemaField, CardSchemaListItemField } from '@/core/registry/cardRegistry'
+import type { CardTranslations } from '@/core/registry/portableCardTypes'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -30,6 +31,8 @@ const SchemaForm = defineAsyncComponent(() => import('./SchemaForm.vue'))
 const props = defineProps<{
   field: CardSchemaField
   modelValue: unknown
+  /** Catalogs of the card this list belongs to — its item labels use them */
+  translations?: CardTranslations
 }>()
 const emit = defineEmits<{ 'update:modelValue': [value: ListEntry[]] }>()
 
@@ -230,6 +233,7 @@ function isHeading(entry: ListEntry): boolean {
         <div v-if="expandedId === entry.id" class="entry-body">
           <SchemaForm
             :schema="itemSchema"
+            :translations="translations"
             :grouped="false"
             :model-value="entry"
             @update:model-value="patch(index, $event)"

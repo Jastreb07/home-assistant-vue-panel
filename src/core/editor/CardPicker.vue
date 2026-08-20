@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, CustomCardDefinition } from '@/core/config/types'
 import {
+  cardDescription,
   cardDisplayName,
   cardRegistry,
   groupedCardsForArea,
@@ -65,7 +66,7 @@ async function editPortableCard(manifest: CardManifest) {
         </span>
         <span class="clipboard-copy">
           <strong>{{ t('editor.pasteCard') }}</strong>
-          <small>{{ cardDisplayName(clipboardManifest, t) }}</small>
+          <small>{{ cardDisplayName(clipboardManifest, t, locale) }}</small>
         </span>
       </button>
     </section>
@@ -80,8 +81,8 @@ async function editPortableCard(manifest: CardManifest) {
         >
           <button class="pick custom-pick" @click="emit('pick', card.type)">
             <MdiIcon :icon="card.icon" :size="32" />
-            <span>{{ cardDisplayName(card, t) }}</span>
-            <small v-if="card.portable?.description">{{ card.portable.description }}</small>
+            <span>{{ cardDisplayName(card, t, locale) }}</span>
+            <small v-if="card.portable?.description">{{ cardDescription(card, locale) }}</small>
           </button>
           <button
             v-if="card.portable"

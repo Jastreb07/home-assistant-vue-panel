@@ -16,6 +16,13 @@ export function editorDefinitionFromDocument(
     description: document.description,
     icon: document.icon,
     group: document.group,
+    translations: {
+      fallback: document.translations?.fallback ?? 'en',
+      languages: Object.fromEntries(
+        Object.entries(document.translations?.languages ?? { en: {} })
+          .map(([language, catalog]) => [language, { ...catalog }]),
+      ),
+    },
     areas: [...document.areas],
     capabilities: [...document.capabilities],
     html: document.html,

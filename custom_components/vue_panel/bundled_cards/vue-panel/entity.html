@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "entity",
-    "name": "Entität",
-    "description": "Zeigt eine beliebige Entität mit Icon, Name und Status",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:card-bulleted-outline",
     "group": "Vue Panel",
     "areas": [
@@ -38,43 +38,115 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "default": ""
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "icon",
-        "label": "Icon",
-        "group": "Darstellung",
+        "label": "translation.variables.icon.label",
+        "group": "translation.groups.appearance",
         "type": "icon",
         "required": false
       },
       {
         "key": "toggle",
-        "label": "Bei Klick schalten",
-        "group": "Verhalten",
+        "label": "translation.variables.toggle.label",
+        "group": "translation.groups.behavior",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "highlightActive",
-        "label": "Aktiven Zustand hervorheben",
-        "group": "Verhalten",
+        "label": "translation.variables.highlightActive.label",
+        "group": "translation.groups.behavior",
         "type": "boolean",
         "required": false,
         "default": true
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Entity",
+        "translation.description": "Shows any entity with icon, name and state",
+        "translation.variables.entity.label": "Entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.toggle.label": "Toggle on click",
+        "translation.groups.behavior": "Behavior",
+        "translation.variables.highlightActive.label": "Highlight the active state",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Entity",
+        "translation.states.on": "On",
+        "translation.states.off": "Off",
+        "translation.states.open": "Open",
+        "translation.states.closed": "Closed",
+        "translation.states.opening": "Opening",
+        "translation.states.closing": "Closing",
+        "translation.states.home": "Home",
+        "translation.states.notHome": "Away",
+        "translation.states.locked": "Locked",
+        "translation.states.unlocked": "Unlocked",
+        "translation.states.unavailable": "Unavailable",
+        "translation.states.unknown": "Unknown",
+        "translation.states.idle": "Idle",
+        "translation.states.playing": "Playing",
+        "translation.states.paused": "Paused",
+        "translation.states.standby": "Standby",
+        "translation.states.aboveHorizon": "Above the horizon",
+        "translation.states.belowHorizon": "Below the horizon"
+      },
+      "de": {
+        "translation.name": "Entität",
+        "translation.description": "Zeigt eine beliebige Entität mit Icon, Name und Status",
+        "translation.variables.entity.label": "Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.toggle.label": "Bei Klick schalten",
+        "translation.groups.behavior": "Verhalten",
+        "translation.variables.highlightActive.label": "Aktiven Zustand hervorheben",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Entität",
+        "translation.states.on": "An",
+        "translation.states.off": "Aus",
+        "translation.states.open": "Offen",
+        "translation.states.closed": "Geschlossen",
+        "translation.states.opening": "Öffnet",
+        "translation.states.closing": "Schließt",
+        "translation.states.home": "Zuhause",
+        "translation.states.notHome": "Abwesend",
+        "translation.states.locked": "Verriegelt",
+        "translation.states.unlocked": "Entriegelt",
+        "translation.states.unavailable": "Nicht verfügbar",
+        "translation.states.unknown": "Unbekannt",
+        "translation.states.idle": "Bereit",
+        "translation.states.playing": "Läuft",
+        "translation.states.paused": "Pausiert",
+        "translation.states.standby": "Standby",
+        "translation.states.aboveHorizon": "Über dem Horizont",
+        "translation.states.belowHorizon": "Unter dem Horizont"
+      }
+    }
   };
 </script>
 
@@ -237,24 +309,24 @@
   };
 
   const STATE_LABELS = {
-    on: 'An',
-    off: 'Aus',
-    open: 'Offen',
-    opening: 'Öffnet',
-    closed: 'Geschlossen',
-    closing: 'Schließt',
-    home: 'Zuhause',
-    not_home: 'Abwesend',
-    locked: 'Verriegelt',
-    unlocked: 'Entriegelt',
-    unavailable: 'Nicht verfügbar',
-    unknown: 'Unbekannt',
-    idle: 'Bereit',
-    playing: 'Läuft',
-    paused: 'Pausiert',
-    standby: 'Standby',
-    above_horizon: 'Über dem Horizont',
-    below_horizon: 'Unter dem Horizont'
+    on: vuePanel.t('translation.states.on'),
+    off: vuePanel.t('translation.states.off'),
+    open: vuePanel.t('translation.states.open'),
+    opening: vuePanel.t('translation.states.opening'),
+    closed: vuePanel.t('translation.states.closed'),
+    closing: vuePanel.t('translation.states.closing'),
+    home: vuePanel.t('translation.states.home'),
+    not_home: vuePanel.t('translation.states.notHome'),
+    locked: vuePanel.t('translation.states.locked'),
+    unlocked: vuePanel.t('translation.states.unlocked'),
+    unavailable: vuePanel.t('translation.states.unavailable'),
+    unknown: vuePanel.t('translation.states.unknown'),
+    idle: vuePanel.t('translation.states.idle'),
+    playing: vuePanel.t('translation.states.playing'),
+    paused: vuePanel.t('translation.states.paused'),
+    standby: vuePanel.t('translation.states.standby'),
+    above_horizon: vuePanel.t('translation.states.aboveHorizon'),
+    below_horizon: vuePanel.t('translation.states.belowHorizon')
   };
 
   const toggleable = config.toggle !== false && TOGGLE_DOMAINS.has(domain);
@@ -262,8 +334,8 @@
   card.classList.toggle('readonly', !toggleable);
 
   function stateText(entity) {
-    if (!entityId) return 'Keine Entity ausgewählt';
-    if (!entity) return 'Entity nicht gefunden';
+    if (!entityId) return vuePanel.t('translation.noEntity');
+    if (!entity) return vuePanel.t('translation.entityNotFound');
 
     const unit = entity.attributes?.unit_of_measurement;
 
@@ -285,7 +357,7 @@
     card.classList.toggle('active', isActive);
 
     name.textContent = String(
-      config.name || entity?.attributes?.friendly_name || entityId || 'Entität'
+      config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName')
     );
 
     state.textContent = stateText(entity);

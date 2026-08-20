@@ -5,6 +5,7 @@ from __future__ import annotations
 from copy import deepcopy
 import importlib.util
 from pathlib import Path
+import re
 import tempfile
 import unittest
 
@@ -61,12 +62,29 @@ def card_metadata(
     }
 
 
-def card_document(metadata: dict | None = None, html: str = "<article>Card</article>") -> str:
+def card_translations() -> dict:
+    """Return a valid translation block with both supported languages."""
+
+    return {
+        "fallback": "de",
+        "languages": {
+            "en": {"translation.name": "Example card"},
+            "de": {"translation.name": "Beispiel-Card"},
+        },
+    }
+
+
+def card_document(
+    metadata: dict | None = None,
+    html: str = "<article>Card</article>",
+    translations: dict | None = None,
+) -> str:
     """Serialize a valid portable test card."""
 
     return card_storage.serialize_card_document(
         {
             "metadata": metadata or card_metadata(),
+            "translations": translations,
             "html": html,
             "css": "article { color: red; }",
             "javascript": "const config = vuePanel.config;",
@@ -90,6 +108,66 @@ class CardStorageTests(unittest.TestCase):
         document = card_document().replace(
             "const vuePanelCard = {",
             "alert('no'); const vuePanelCard = {",
+            1,
+        )
+        with self.assertRaises(card_storage.CardFileError):
+            card_storage.parse_card_document(document)
+
+    def test_translation_block_round_trips_through_the_catalog(self) -> None:
+        document = card_document(translations=card_translations())
+        created = card_storage.create_card(self.private_root, document)
+        catalog = card_storage.list_cards(self.private_root, self.bundled_root)
+
+        self.assertEqual(created["translations"], card_translations())
+        self.assertEqual(catalog[0]["translations"]["fallback"], "de")
+        self.assertEqual(
+            catalog[0]["translations"]["languages"]["en"]["translation.name"],
+            "Example card",
+        )
+
+    def test_card_without_translation_block_falls_back_to_english(self) -> None:
+        # A document written before the block existed still parses
+        legacy = re.sub(
+            r"<script data-vue-panel-translation>[\s\S]*?</script>\s*",
+            "",
+            card_document(),
+        )
+        self.assertNotIn("data-vue-panel-translation", legacy)
+        self.assertEqual(
+            card_storage.parse_card_document(legacy)["translations"],
+            {"fallback": "en", "languages": {}},
+        )
+
+    def test_translation_block_accepts_any_language(self) -> None:
+        translations = {
+            "fallback": "pt-BR",
+            "languages": {
+                "en": {"translation.name": "Example card"},
+                "fr": {"translation.name": "Carte d'exemple"},
+                "pt-BR": {"translation.name": "Cartão de exemplo"},
+            },
+        }
+        parsed = card_storage.parse_card_document(
+            card_document(translations=translations)
+        )
+        self.assertEqual(parsed["translations"], translations)
+
+    def test_translation_block_rejects_invalid_content(self) -> None:
+        for translations in (
+            # A fallback that the card does not translate
+            {"fallback": "fr", "languages": {"en": {}}},
+            {"languages": {"english": {"translation.name": "Card"}}},
+            {"languages": {"en": {"name": "Card"}}},
+            {"languages": {"en": {"translation.name": 5}}},
+            {"unexpected": True},
+        ):
+            with self.assertRaises(card_storage.CardFileError):
+                card_storage.validate_card_translations(translations)
+
+    def test_translation_block_must_only_assign_json(self) -> None:
+        document = card_document(translations=card_translations()).replace(
+            "const vuePanelTranslations = {",
+            "alert('no'); const vuePanelTranslations = {",
             1,
         )
         with self.assertRaises(card_storage.CardFileError):

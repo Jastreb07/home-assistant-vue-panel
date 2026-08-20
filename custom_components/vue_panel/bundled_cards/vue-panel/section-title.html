@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "section-title",
-    "name": "Abschnittsüberschrift",
-    "description": "Überschrift mit optionalem Icon und Trennlinie",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:format-title",
     "group": "Vue Panel",
     "areas": [
@@ -32,24 +32,24 @@
     "variables": [
       {
         "key": "title",
-        "label": "Titel",
-        "group": "Darstellung",
+        "label": "translation.variables.title.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": true,
         "default": "Titel"
       },
       {
         "key": "icon",
-        "label": "Icon",
-        "group": "Darstellung",
+        "label": "translation.variables.icon.label",
+        "group": "translation.groups.appearance",
         "type": "icon",
         "required": false,
         "default": "mdi:format-title"
       },
       {
         "key": "align",
-        "label": "Ausrichtung",
-        "group": "Darstellung",
+        "label": "translation.variables.align.label",
+        "group": "translation.groups.appearance",
         "type": "select",
         "required": false,
         "options": [
@@ -58,21 +58,57 @@
           "right"
         ],
         "optionLabels": {
-          "left": "Links",
-          "center": "Mitte",
-          "right": "Rechts"
+          "left": "translation.variables.align.options.left",
+          "center": "translation.variables.align.options.center",
+          "right": "translation.variables.align.options.right"
         },
         "default": "left"
       },
       {
         "key": "rule",
-        "label": "Trennlinie anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.rule.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Section heading",
+        "translation.description": "Heading with an optional icon and divider",
+        "translation.variables.title.label": "Title",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.align.label": "Alignment",
+        "translation.variables.align.options.left": "Left",
+        "translation.variables.align.options.center": "Center",
+        "translation.variables.align.options.right": "Right",
+        "translation.variables.rule.label": "Show divider",
+        "translation.groups.display": "Display",
+        "translation.defaultName": "Title"
+      },
+      "de": {
+        "translation.name": "Abschnittsüberschrift",
+        "translation.description": "Überschrift mit optionalem Icon und Trennlinie",
+        "translation.variables.title.label": "Titel",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.align.label": "Ausrichtung",
+        "translation.variables.align.options.left": "Links",
+        "translation.variables.align.options.center": "Mitte",
+        "translation.variables.align.options.right": "Rechts",
+        "translation.variables.rule.label": "Trennlinie anzeigen",
+        "translation.groups.display": "Anzeige",
+        "translation.defaultName": "Titel"
+      }
+    }
   };
 </script>
 
@@ -117,7 +153,7 @@
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
   const align = String(config.align || 'left');
-  document.getElementById('title').textContent = String(config.title || 'Titel');
+  document.getElementById('title').textContent = String(config.title || vuePanel.t('translation.defaultName'));
   document.getElementById('before').hidden = config.rule === false || align === 'left';
   document.getElementById('after').hidden = config.rule === false || align === 'right';
   const icon = document.getElementById('icon');

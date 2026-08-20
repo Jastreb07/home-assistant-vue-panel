@@ -25,6 +25,8 @@ _DOMAIN_PATTERN = re.compile(r"^[a-z0-9_]+$")
 _DOCUMENT_PATTERN = re.compile(
     r"^\s*<script\s+data-vue-panel-config>\s*"
     r"(?P<config>[\s\S]*?)\s*</script>\s*"
+    r"(?:<script\s+data-vue-panel-translation>\s*"
+    r"(?P<translation>[\s\S]*?)\s*</script>\s*)?"
     r"<template\s+data-vue-panel-html>(?P<html>[\s\S]*?)</template>\s*"
     r"<style\s+data-vue-panel-css>(?P<css>[\s\S]*?)</style>\s*"
     r"<script\s+data-vue-panel-javascript>(?P<javascript>[\s\S]*?)</script>\s*$"
@@ -32,6 +34,17 @@ _DOCUMENT_PATTERN = re.compile(
 _CONFIG_PATTERN = re.compile(
     r"^\s*const\s+vuePanelCard\s*=\s*(?P<json>\{[\s\S]*\})\s*;\s*$"
 )
+_TRANSLATION_PATTERN = re.compile(
+    r"^\s*const\s+vuePanelTranslations\s*=\s*(?P<json>\{[\s\S]*\})\s*;\s*$"
+)
+# A card may ship any BCP-47-style language tag, for example "en", "pt-BR"
+_TRANSLATION_LANGUAGE_PATTERN = re.compile(r"^[a-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$")
+_TRANSLATION_FALLBACK = "en"
+_TRANSLATION_KEY_PATTERN = re.compile(
+    r"^translation\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)*$"
+)
+_MAX_TRANSLATION_LANGUAGES = 40
+_MAX_TRANSLATION_ENTRIES = 4000
 _AREAS = {"dashboard", "sidebar", "header", "bottom"}
 _CAPABILITIES = {
     "entity:read",
@@ -248,6 +261,43 @@ def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
             raise CardFileError(f"Variable {index} min must not exceed max")
 
 
+def validate_card_translations(value: Any) -> dict[str, Any]:
+    """Validate the translation block: a fallback language and its catalogs."""
+
+    if value is None:
+        return {"fallback": _TRANSLATION_FALLBACK, "languages": {}}
+    if not isinstance(value, dict) or set(value) - {"fallback", "languages"}:
+        raise CardFileError("Card translations must be an object")
+
+    languages = value.get("languages", {})
+    if not isinstance(languages, dict):
+        raise CardFileError("Card translations require a languages object")
+    if len(languages) > _MAX_TRANSLATION_LANGUAGES:
+        raise CardFileError("Card translations exceed the language limit")
+    entries = 0
+    for language, catalog in languages.items():
+        if not isinstance(language, str) or not _TRANSLATION_LANGUAGE_PATTERN.fullmatch(
+            language
+        ):
+            raise CardFileError(f"Unsupported card translation language: {language}")
+        if not isinstance(catalog, dict):
+            raise CardFileError(f"Card translations for {language} must be an object")
+        for key, text in catalog.items():
+            if not isinstance(key, str) or not _TRANSLATION_KEY_PATTERN.fullmatch(key):
+                raise CardFileError(f"Invalid card translation key: {key}")
+            if not isinstance(text, str):
+                raise CardFileError(f"Card translation {key} must be text")
+            entries += 1
+    if entries > _MAX_TRANSLATION_ENTRIES:
+        raise CardFileError("Card translations exceed the entry limit")
+
+    # Without an explicit fallback a card always falls back to English
+    fallback = value.get("fallback", _TRANSLATION_FALLBACK)
+    if fallback != _TRANSLATION_FALLBACK and fallback not in languages:
+        raise CardFileError("Card translation fallback must be a translated language")
+    return {"fallback": fallback, "languages": deepcopy(languages)}
+
+
 def validate_card_metadata(value: Any) -> dict[str, Any]:
     """Validate and return Card Format v2 metadata."""
 
@@ -347,10 +397,31 @@ def parse_card_document(document: str) -> dict[str, Any]:
         raise CardFileError("Card configuration is not valid JSON") from error
     return {
         "metadata": validate_card_metadata(metadata),
+        "translations": _parse_translation_block(match.group("translation")),
         "html": match.group("html").removeprefix("\n").removesuffix("\n"),
         "css": match.group("css").removeprefix("\n").removesuffix("\n"),
         "javascript": match.group("javascript").removeprefix("\n").removesuffix("\n"),
     }
+
+
+def _parse_translation_block(block: str | None) -> dict[str, Any]:
+    """A card without the block simply ships no translations."""
+
+    if block is None:
+        return validate_card_translations(None)
+    translation_match = _TRANSLATION_PATTERN.fullmatch(block)
+    if translation_match is None:
+        raise CardFileError(
+            "Card translations must only assign JSON to vuePanelTranslations"
+        )
+    try:
+        translations = json.loads(
+            translation_match.group("json"),
+            parse_constant=_reject_json_constant,
+        )
+    except (json.JSONDecodeError, ValueError) as error:
+        raise CardFileError("Card translations are not valid JSON") from error
+    return validate_card_translations(translations)
 
 
 def serialize_card_document(parsed: dict[str, Any]) -> str:
@@ -358,9 +429,17 @@ def serialize_card_document(parsed: dict[str, Any]) -> str:
 
     metadata = validate_card_metadata(parsed["metadata"])
     config = json.dumps(metadata, ensure_ascii=False, indent=2)
+    translations = json.dumps(
+        validate_card_translations(parsed.get("translations")),
+        ensure_ascii=False,
+        indent=2,
+    )
     return (
         "<script data-vue-panel-config>\n"
         f"const vuePanelCard = {config};\n"
+        "</script>\n\n"
+        "<script data-vue-panel-translation>\n"
+        f"const vuePanelTranslations = {translations};\n"
         "</script>\n\n"
         "<template data-vue-panel-html>\n"
         f"{parsed['html']}\n"
@@ -445,6 +524,8 @@ def _catalog_entry(
     card_name = metadata["cardName"]
     return {
         **metadata,
+        # The picker and the settings dialog translate labels without the document
+        "translations": deepcopy(parsed["translations"]),
         "type": f"{manufacturer}/{card_name}",
         "source": source,
         "writable": writable,
@@ -622,6 +703,7 @@ def duplicate_card(
         source_card_name,
     )
     parsed = {
+        "translations": deepcopy(source["translations"]),
         "metadata": {
             key: deepcopy(value)
             for key, value in source.items()

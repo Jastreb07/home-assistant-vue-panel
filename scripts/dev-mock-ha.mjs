@@ -25,8 +25,9 @@ const MIME = {
   '.json': 'application/json', '.woff2': 'font/woff2', '.ttf': 'font/ttf',
   '.svg': 'image/svg+xml', '.png': 'image/png',
 }
-const CARD_PATTERN = /^\s*<script\s+data-vue-panel-config>\s*([\s\S]*?)\s*<\/script>\s*<template\s+data-vue-panel-html>([\s\S]*?)<\/template>\s*<style\s+data-vue-panel-css>([\s\S]*?)<\/style>\s*<script\s+data-vue-panel-javascript>([\s\S]*?)<\/script>\s*$/
+const CARD_PATTERN = /^\s*<script\s+data-vue-panel-config>\s*([\s\S]*?)\s*<\/script>\s*(?:<script\s+data-vue-panel-translation>\s*([\s\S]*?)\s*<\/script>\s*)?<template\s+data-vue-panel-html>([\s\S]*?)<\/template>\s*<style\s+data-vue-panel-css>([\s\S]*?)<\/style>\s*<script\s+data-vue-panel-javascript>([\s\S]*?)<\/script>\s*$/
 const CONFIG_PATTERN = /^\s*const\s+vuePanelCard\s*=\s*(\{[\s\S]*\})\s*;\s*$/
+const TRANSLATION_PATTERN = /^\s*const\s+vuePanelTranslations\s*=\s*(\{[\s\S]*\})\s*;\s*$/
 
 function readCards() {
   const catalog = []
@@ -36,8 +37,13 @@ function readCards() {
       const parts = CARD_PATTERN.exec(document)
       if (!parts) throw new Error(`Card ${manufacturer}/${file} has an invalid structure`)
       const metadata = JSON.parse(CONFIG_PATTERN.exec(parts[1])[1])
+      // The translation block is optional — a card without it ships no texts
+      const translations = parts[2]
+        ? JSON.parse(TRANSLATION_PATTERN.exec(parts[2])[1])
+        : { fallback: 'en', languages: {} }
       catalog.push({
         ...metadata,
+        translations,
         type: `${metadata.manufacturer}/${metadata.cardName}`,
         source: 'bundled',
         writable: false,
@@ -45,9 +51,9 @@ function readCards() {
         resourceUrl: `vue-panel-card://${metadata.manufacturer}/${metadata.cardName}`,
         sizeBytes: Buffer.byteLength(document),
         document,
-        html: parts[2].replace(/^\n/, '').replace(/\n$/, ''),
-        css: parts[3].replace(/^\n/, '').replace(/\n$/, ''),
-        javascript: parts[4].replace(/^\n/, '').replace(/\n$/, ''),
+        html: parts[3].replace(/^\n/, '').replace(/\n$/, ''),
+        css: parts[4].replace(/^\n/, '').replace(/\n$/, ''),
+        javascript: parts[5].replace(/^\n/, '').replace(/\n$/, ''),
       })
     }
   }

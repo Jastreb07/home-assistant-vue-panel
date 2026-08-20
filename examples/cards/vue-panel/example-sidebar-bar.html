@@ -5,13 +5,23 @@ const vuePanelCard = {
   "apiVersion": 1,
   "manufacturer": "vue-panel",
   "cardName": "example-sidebar-bar",
-  "name": "Example sidebar",
-  "description": "Reference implementation of a global sidebar bar",
+  "name": "translation.name",
+  "description": "translation.description",
   "icon": "mdi:dock-left",
   "group": "vue-panel",
-  "areas": ["sidebar"],
-  "capabilities": ["navigation:read", "navigation:write"],
-  "defaultSize": { "cols": 1, "rows": 1, "width": 240, "height": 600 },
+  "areas": [
+    "sidebar"
+  ],
+  "capabilities": [
+    "navigation:read",
+    "navigation:write"
+  ],
+  "defaultSize": {
+    "cols": 1,
+    "rows": 1,
+    "width": 240,
+    "height": 600
+  },
   "defaultResponsive": {
     "mobile": false,
     "tablet": true,
@@ -23,12 +33,30 @@ const vuePanelCard = {
   "variables": [
     {
       "key": "title",
-      "label": "Title",
+      "label": "translation.variables.title.label",
       "type": "string",
       "required": false,
       "default": "Vue Panel"
     }
   ]
+};
+</script>
+
+<script data-vue-panel-translation>
+const vuePanelTranslations = {
+  "fallback": "en",
+  "languages": {
+    "en": {
+      "translation.name": "Example sidebar",
+      "translation.description": "Reference implementation of a global sidebar bar",
+      "translation.variables.title.label": "Title"
+    },
+    "de": {
+      "translation.name": "Beispiel-Seitenleiste",
+      "translation.description": "Referenz-Implementierung einer globalen Seitenleiste",
+      "translation.variables.title.label": "Titel"
+    }
+  }
 };
 </script>
 

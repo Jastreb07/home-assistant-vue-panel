@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "weather",
-    "name": "Wetter",
-    "description": "Zeigt Wetterzustand, Temperatur, Feuchtigkeit und Wind an",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:weather-partly-cloudy",
     "group": "Vue Panel",
     "areas": [
@@ -35,7 +35,7 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Wetter-Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "domain": "weather",
@@ -43,37 +43,99 @@
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "showDetails",
-        "label": "Luftfeuchte und Wind anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.showDetails.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "roundTemperature",
-        "label": "Temperatur runden",
-        "group": "Anzeige",
+        "label": "translation.variables.roundTemperature.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       },
       {
         "key": "animation",
-        "label": "Animierter Hintergrund",
-        "group": "Anzeige",
+        "label": "translation.variables.animation.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": false
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Weather",
+        "translation.description": "Shows weather state, temperature, humidity and wind",
+        "translation.variables.entity.label": "Weather entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.showDetails.label": "Show humidity and wind",
+        "translation.groups.display": "Display",
+        "translation.variables.roundTemperature.label": "Round temperature",
+        "translation.variables.animation.label": "Animated background",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Weather",
+        "translation.conditions.clearNight": "Clear night",
+        "translation.conditions.cloudy": "Cloudy",
+        "translation.conditions.fog": "Fog",
+        "translation.conditions.hail": "Hail",
+        "translation.conditions.lightning": "Lightning",
+        "translation.conditions.lightningRainy": "Lightning and rain",
+        "translation.conditions.partlycloudy": "Partly cloudy",
+        "translation.conditions.pouring": "Pouring",
+        "translation.conditions.rainy": "Rainy",
+        "translation.conditions.snowy": "Snow",
+        "translation.conditions.snowyRainy": "Sleet",
+        "translation.conditions.sunny": "Sunny",
+        "translation.conditions.windy": "Windy"
+      },
+      "de": {
+        "translation.name": "Wetter",
+        "translation.description": "Zeigt Wetterzustand, Temperatur, Feuchtigkeit und Wind an",
+        "translation.variables.entity.label": "Wetter-Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.showDetails.label": "Luftfeuchte und Wind anzeigen",
+        "translation.groups.display": "Anzeige",
+        "translation.variables.roundTemperature.label": "Temperatur runden",
+        "translation.variables.animation.label": "Animierter Hintergrund",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Wetter",
+        "translation.conditions.clearNight": "Klare Nacht",
+        "translation.conditions.cloudy": "Bewölkt",
+        "translation.conditions.fog": "Nebel",
+        "translation.conditions.hail": "Hagel",
+        "translation.conditions.lightning": "Gewitter",
+        "translation.conditions.lightningRainy": "Gewitter mit Regen",
+        "translation.conditions.partlycloudy": "Teilweise bewölkt",
+        "translation.conditions.pouring": "Starkregen",
+        "translation.conditions.rainy": "Regnerisch",
+        "translation.conditions.snowy": "Schnee",
+        "translation.conditions.snowyRainy": "Schneeregen",
+        "translation.conditions.sunny": "Sonnig",
+        "translation.conditions.windy": "Windig"
+      }
+    }
   };
 </script>
 
@@ -234,27 +296,27 @@
     exceptional: 'mdi:alert-circle-outline'
   };
   const labels = {
-    'clear-night': 'Klare Nacht',
-    cloudy: 'Bewölkt',
-    fog: 'Nebel',
-    hail: 'Hagel',
-    lightning: 'Gewitter',
-    'lightning-rainy': 'Gewitter mit Regen',
-    partlycloudy: 'Teilweise bewölkt',
-    pouring: 'Starkregen',
-    rainy: 'Regnerisch',
-    snowy: 'Schnee',
-    'snowy-rainy': 'Schneeregen',
-    sunny: 'Sonnig',
-    windy: 'Windig',
-    'windy-variant': 'Windig'
+    'clear-night': vuePanel.t('translation.conditions.clearNight'),
+    cloudy: vuePanel.t('translation.conditions.cloudy'),
+    fog: vuePanel.t('translation.conditions.fog'),
+    hail: vuePanel.t('translation.conditions.hail'),
+    lightning: vuePanel.t('translation.conditions.lightning'),
+    'lightning-rainy': vuePanel.t('translation.conditions.lightningRainy'),
+    partlycloudy: vuePanel.t('translation.conditions.partlycloudy'),
+    pouring: vuePanel.t('translation.conditions.pouring'),
+    rainy: vuePanel.t('translation.conditions.rainy'),
+    snowy: vuePanel.t('translation.conditions.snowy'),
+    'snowy-rainy': vuePanel.t('translation.conditions.snowyRainy'),
+    sunny: vuePanel.t('translation.conditions.sunny'),
+    windy: vuePanel.t('translation.conditions.windy'),
+    'windy-variant': vuePanel.t('translation.conditions.windy')
   };
 
   async function render(entity) {
     const condition = String(entity?.state || '');
     card.className = `tile weather-card${config.animation === true ? ` animated ${condition}` : ''}`;
-    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Wetter');
-    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' : labels[condition] || condition;
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
+    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : labels[condition] || condition;
     const temp = Number(entity?.attributes?.temperature);
     temperature.textContent = Number.isFinite(temp) ? `${config.roundTemperature === false ? temp : Math.round(temp)} ${entity.attributes?.temperature_unit || '°C'}` : '–';
     details.hidden = config.showDetails === false || !entity;

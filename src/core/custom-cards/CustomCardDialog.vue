@@ -16,6 +16,15 @@ import {
   updatePortableCard,
 } from '@/core/ha'
 import { cardRegistry, syncPortableCardCatalog } from '@/core/registry/cardRegistry'
+import type { CardLanguage, CardTranslations } from '@/core/registry/portableCardTypes'
+import {
+  DEFAULT_TRANSLATION_FALLBACK,
+  TRANSLATION_PREFIX,
+  cardLanguageName,
+  cardTranslation,
+  isCardLanguage,
+  isTranslationKey,
+} from '@/core/registry/cardTranslations'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
@@ -35,7 +44,7 @@ import { editorDefinitionFromDocument } from './cardEditorModel'
 
 const props = defineProps<{ definition?: CustomCardDefinition }>()
 const emit = defineEmits<{ close: []; saved: [definition: CustomCardDefinition] }>()
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const store = useDashboardStore()
 
 const DEFAULT_HTML = `<article class="my-card">
@@ -111,6 +120,7 @@ function freshDefinition(): CustomCardDefinition {
     description: '',
     icon: 'mdi:code-tags',
     group: 'local',
+    translations: { fallback: 'en', languages: { en: {}, de: {} } },
     areas: ['dashboard'],
     capabilities: ['entity:read', 'entity:subscribe', 'icon:render', 'service:call'],
     html: DEFAULT_HTML,
@@ -136,6 +146,10 @@ function initialDefinition(): CustomCardDefinition {
     JSON.stringify(props.definition ?? freshDefinition()),
   ) as CustomCardDefinition
   definition.variables ??= []
+  definition.translations ??= { fallback: 'en', languages: {} }
+  definition.translations.languages ??= {}
+  // English stays editable because it is the last fallback of every card
+  definition.translations.languages[DEFAULT_TRANSLATION_FALLBACK] ??= {}
   return definition
 }
 
@@ -162,6 +176,7 @@ const editorLayoutStyle = computed(() => ({
 const tabs = computed<TabItem[]>(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
   { value: 'variables', label: t('customCards.variables.tab'), icon: 'mdi:variable' },
+  { value: 'translations', label: t('customCards.translations.tab'), icon: 'mdi:translate' },
   { value: 'html', label: 'HTML', icon: 'mdi:language-html5' },
   { value: 'css', label: 'CSS', icon: 'mdi:language-css3' },
   { value: 'javascript', label: 'JS', icon: 'mdi:language-javascript' },
@@ -317,6 +332,129 @@ function updateSelectOptions(variable: CustomCardVariable, value: string | numbe
   }
 }
 
+// ── Translations ─────────────────────────────────────────────
+/**
+ * A card may ship any number of languages. English always stays available as
+ * the last fallback, the rest is up to the card author.
+ */
+const translationLanguages = computed<CardLanguage[]>(() => {
+  const languages = Object.keys(draft.value.translations.languages)
+  const fallback = draft.value.translations.fallback
+  return [
+    ...(languages.includes(fallback) ? [fallback] : []),
+    ...languages.filter((language) => language !== fallback).sort(),
+  ]
+})
+
+function languageLabel(language: CardLanguage): string {
+  const name = cardLanguageName(language, locale.value)
+  return name === language ? language : `${name} (${language})`
+}
+
+const fallbackOptions = computed<SelectOption[]>(() => {
+  const languages = translationLanguages.value.includes(DEFAULT_TRANSLATION_FALLBACK)
+    ? translationLanguages.value
+    : [...translationLanguages.value, DEFAULT_TRANSLATION_FALLBACK]
+  return languages.map((language) => ({ value: language, label: languageLabel(language) }))
+})
+
+const newLanguage = ref('')
+
+const newLanguageInvalid = computed(() => {
+  const language = newLanguage.value.trim()
+  return language !== ''
+    && (!isCardLanguage(language) || translationLanguages.value.includes(language))
+})
+
+function addLanguage() {
+  const language = newLanguage.value.trim()
+  if (!isCardLanguage(language) || translationLanguages.value.includes(language)) return
+  // A new language starts with every key the card already uses, still empty
+  draft.value.translations.languages[language] = Object.fromEntries(
+    translationKeys.value.map((key) => [key, '']),
+  )
+  newLanguage.value = ''
+}
+
+async function removeLanguage(language: CardLanguage) {
+  if (!(await confirmDialog(t('customCards.translations.removeLanguageConfirm', {
+    language: languageLabel(language),
+  })))) return
+  delete draft.value.translations.languages[language]
+  if (draft.value.translations.fallback === language) {
+    draft.value.translations.fallback = DEFAULT_TRANSLATION_FALLBACK
+  }
+}
+
+function catalogOf(language: CardLanguage): Record<string, string> {
+  const languages = draft.value.translations.languages
+  languages[language] ??= {}
+  return languages[language]
+}
+
+/** Every key any language defines, in the order the fallback language lists them. */
+const translationKeys = computed<string[]>(() => {
+  const keys: string[] = []
+  for (const language of translationLanguages.value) {
+    for (const key of Object.keys(draft.value.translations.languages[language] ?? {})) {
+      if (!keys.includes(key)) keys.push(key)
+    }
+  }
+  return keys
+})
+
+/** Keys a card refers to but has not defined in any language yet. */
+const referencedTranslationKeys = computed<string[]>(() => {
+  const referenced = new Set<string>()
+  const collect = (value: unknown) => {
+    if (isTranslationKey(value)) referenced.add(value)
+  }
+  collect(draft.value.name)
+  collect(draft.value.description)
+  for (const variable of draft.value.variables) {
+    collect(variable.label)
+    collect(variable.group)
+    for (const label of Object.values(variable.optionLabels ?? {})) collect(label)
+    for (const item of variable.itemFields ?? []) collect(item.label)
+  }
+  for (const match of draft.value.javascript.matchAll(/['"`](translation\.[A-Za-z0-9_.]+)['"`]/g)) {
+    referenced.add(match[1])
+  }
+  return [...referenced].filter((key) => !translationKeys.value.includes(key)).sort()
+})
+
+const newTranslationKey = ref('')
+
+/** The card's own name may itself be a `translation.*` key. */
+const draftName = computed(() =>
+  isTranslationKey(draft.value.name)
+    ? cardTranslation(draft.value.translations, draft.value.name, locale.value)
+    : draft.value.name,
+)
+
+function addTranslationKey(key = newTranslationKey.value) {
+  const trimmed = key.trim()
+  const full = isTranslationKey(trimmed) ? trimmed : `${TRANSLATION_PREFIX}${trimmed}`
+  if (!/^translation\.[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)*$/.test(full)) return
+  for (const language of translationLanguages.value) catalogOf(language)[full] ??= ''
+  newTranslationKey.value = ''
+}
+
+function removeTranslationKey(key: string) {
+  for (const language of translationLanguages.value) delete catalogOf(language)[key]
+}
+
+function setTranslation(language: CardLanguage, key: string, value: string | number) {
+  catalogOf(language)[key] = String(value)
+}
+
+/** A key is only really translated once some language provides a text. */
+function translationMissing(key: string): boolean {
+  return translationLanguages.value.every(
+    (language) => !draft.value.translations.languages[language]?.[key],
+  )
+}
+
 function serializeVariables(): string {
   return JSON.stringify(draft.value.variables.map(({ id: _id, ...variable }) => variable), null, 2)
 }
@@ -469,9 +607,15 @@ function fullCodeMetadata(): FullCodeMetadata {
 function serializeFullCode(): string {
   const metadata = JSON.stringify(fullCodeMetadata(), null, 2)
     .replace(/<\/script/gi, '<\\/script')
+  const translations = JSON.stringify(draft.value.translations, null, 2)
+    .replace(/<\/script/gi, '<\\/script')
   const scriptEnd = '<' + '/script>'
   return `<script data-vue-panel-config>
 const vuePanelCard = ${metadata};
+${scriptEnd}
+
+<script data-vue-panel-translation>
+const vuePanelTranslations = ${translations};
 ${scriptEnd}
 
 <template data-vue-panel-html>
@@ -487,8 +631,34 @@ ${draft.value.javascript}
 ${scriptEnd}`
 }
 
+/** Translation catalogs of the pasted document — a missing block is empty. */
+function translationsFromFullCode(parsed: unknown): CardTranslations {
+  const value = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+    ? parsed
+    : {}) as Record<string, unknown>
+  const source = (value.languages && typeof value.languages === 'object'
+    ? value.languages
+    : {}) as Record<string, unknown>
+  const languages: Record<string, Record<string, string>> = {}
+  for (const [language, entries] of Object.entries(source)) {
+    if (!isCardLanguage(language)) continue
+    if (!entries || typeof entries !== 'object' || Array.isArray(entries)) continue
+    languages[language] = Object.fromEntries(
+      Object.entries(entries as Record<string, unknown>)
+        .filter(([key, text]) => isTranslationKey(key) && typeof text === 'string')
+        .map(([key, text]) => [key, text as string]),
+    )
+  }
+  if (!Object.keys(languages).length) languages[DEFAULT_TRANSLATION_FALLBACK] = {}
+  const fallback = typeof value.fallback === 'string' && languages[value.fallback]
+    ? value.fallback
+    : DEFAULT_TRANSLATION_FALLBACK
+  return { fallback, languages }
+}
+
 function definitionFromFullCode(
   parsed: unknown,
+  translations: unknown,
   html: unknown,
   css: unknown,
   javascript: unknown,
@@ -535,6 +705,7 @@ function definitionFromFullCode(
     description: value.description,
     icon: value.icon,
     group: value.group,
+    translations: translationsFromFullCode(translations),
     areas: value.areas as CustomCardDefinition['areas'],
     capabilities: value.capabilities as CustomCardDefinition['capabilities'],
     defaultSize: {
@@ -567,8 +738,8 @@ function sectionContent(source: string, pattern: RegExp): string {
   return match[1].replace(/^\r?\n/, '').replace(/\r?\n$/, '')
 }
 
-function parseJavaScriptMetadata(source: string): unknown {
-  const declaration = /^\s*const\s+vuePanelCard\s*=\s*/
+function parseJavaScriptMetadata(source: string, constant = 'vuePanelCard'): unknown {
+  const declaration = new RegExp(`^\\s*const\\s+${constant}\\s*=\\s*`)
   if (!declaration.test(source)) throw new Error(t('customCards.fullCode.documentError'))
   let json = source.replace(declaration, '').trim()
   if (json.endsWith(';')) json = json.slice(0, -1).trim()
@@ -583,13 +754,20 @@ function parseFullCode(source: string): CustomCardDefinition {
     ? parseJavaScriptMetadata(currentMetadata[1])
     : undefined
   if (!metadata) throw new Error(t('customCards.fullCode.documentError'))
+  // The translation block is optional — older documents simply carry no texts
+  const currentTranslations = source.match(
+    /<script\s+data-vue-panel-translation>([\s\S]*?)<\/script>/i,
+  )
+  const translations = currentTranslations?.[1] !== undefined
+    ? parseJavaScriptMetadata(currentTranslations[1], 'vuePanelTranslations')
+    : undefined
   const html = sectionContent(source, /<template\s+data-vue-panel-html>([\s\S]*?)<\/template>/i)
   const css = sectionContent(source, /<style\s+data-vue-panel-css>([\s\S]*?)<\/style>/i)
   const javascript = sectionContent(
     source,
     /<script\s+data-vue-panel-javascript>([\s\S]*?)<\/script>/i,
   )
-  return definitionFromFullCode(metadata, html, css, javascript)
+  return definitionFromFullCode(metadata, translations, html, css, javascript)
 }
 
 function updateFullCode(value: string) {
@@ -767,7 +945,7 @@ async function save() {
 
 async function remove() {
   if (!props.definition?.writable || !props.definition.contentHash) return
-  if (!(await confirmDialog(t('customCards.deleteConfirm', { name: props.definition.name })))) return
+  if (!(await confirmDialog(t('customCards.deleteConfirm', { name: draftName.value })))) return
   try {
     await deletePortableCard(props.definition.id, props.definition.contentHash)
     await syncPortableCardCatalog()
@@ -798,7 +976,7 @@ const previewStyle = computed(() => ({
 
 <template>
   <BaseDialog
-    :title="definition ? t('customCards.editTitle', { name: definition.name }) : t('customCards.newTitle')"
+    :title="definition ? t('customCards.editTitle', { name: draftName }) : t('customCards.newTitle')"
     :size="fullCodeFullscreen ? 'full' : 'xl'"
     @close="emit('close')"
   >
@@ -1071,6 +1249,127 @@ const previewStyle = computed(() => ({
           </div>
         </div>
 
+        <div v-show="tab === 'translations'" class="translations-pane">
+          <div class="variables-intro">
+            <div>
+              <strong>{{ t('customCards.translations.title') }}</strong>
+              <p>{{ t('customCards.translations.hint') }}</p>
+            </div>
+          </div>
+
+          <div class="translation-languages">
+            <div class="field fallback-field">
+              <span>{{ t('customCards.translations.fallback') }}</span>
+              <BaseSelectMenu
+                :model-value="draft.translations.fallback"
+                :options="fallbackOptions"
+                @update:model-value="draft.translations.fallback = $event as CardLanguage"
+              />
+              <small class="field-hint">{{ t('customCards.translations.fallbackHint') }}</small>
+            </div>
+
+            <div class="field language-field">
+              <span>{{ t('customCards.translations.languages') }}</span>
+              <div class="language-chips">
+                <span
+                  v-for="language in translationLanguages"
+                  :key="language"
+                  class="language-chip"
+                  :class="{ 'is-fallback': language === draft.translations.fallback }"
+                >
+                  {{ languageLabel(language) }}
+                  <button
+                    v-if="translationLanguages.length > 1"
+                    type="button"
+                    class="translation-remove"
+                    :title="t('customCards.translations.removeLanguage')"
+                    @click="removeLanguage(language)"
+                  >
+                    <MdiIcon icon="mdi:close" :size="13" />
+                  </button>
+                </span>
+              </div>
+              <div class="translation-add">
+                <BaseInput
+                  v-model="newLanguage"
+                  placeholder="fr"
+                  :spellcheck="false"
+                  :invalid="newLanguageInvalid"
+                  @keyup.enter="addLanguage()"
+                />
+                <BaseButton size="sm" :disabled="newLanguageInvalid" @click="addLanguage()">
+                  <MdiIcon icon="mdi:plus" :size="16" />
+                  {{ t('customCards.translations.addLanguage') }}
+                </BaseButton>
+              </div>
+              <small class="field-hint">{{ t('customCards.translations.addLanguageHint') }}</small>
+            </div>
+          </div>
+
+          <div class="translation-add">
+            <BaseInput
+              v-model="newTranslationKey"
+              :placeholder="`${TRANSLATION_PREFIX}name`"
+              :spellcheck="false"
+              @keyup.enter="addTranslationKey()"
+            />
+            <BaseButton size="sm" @click="addTranslationKey()">
+              <MdiIcon icon="mdi:plus" :size="16" />
+              {{ t('customCards.translations.addKey') }}
+            </BaseButton>
+          </div>
+
+          <div v-if="referencedTranslationKeys.length" class="translation-missing">
+            <small>{{ t('customCards.translations.missingKeys') }}</small>
+            <button
+              v-for="key in referencedTranslationKeys"
+              :key="key"
+              type="button"
+              class="translation-chip"
+              @click="addTranslationKey(key)"
+            >
+              <MdiIcon icon="mdi:plus" :size="13" />{{ key }}
+            </button>
+          </div>
+
+          <div v-if="translationKeys.length" class="translation-list">
+            <div
+              v-for="key in translationKeys"
+              :key="key"
+              class="translation-row"
+              :class="{ 'is-missing': translationMissing(key) }"
+            >
+              <div class="translation-key">
+                <code>{{ key }}</code>
+                <button
+                  type="button"
+                  class="translation-remove"
+                  :title="t('common.delete')"
+                  @click="removeTranslationKey(key)"
+                >
+                  <MdiIcon icon="mdi:delete-outline" :size="16" />
+                </button>
+              </div>
+              <label
+                v-for="language in translationLanguages"
+                :key="language"
+                class="field"
+              >
+                <span>{{ languageLabel(language) }}</span>
+                <BaseInput
+                  :model-value="draft.translations.languages[language]?.[key] ?? ''"
+                  @update:model-value="setTranslation(language, key, $event)"
+                />
+              </label>
+            </div>
+          </div>
+          <div v-else class="variables-empty">
+            <MdiIcon icon="mdi:translate" :size="28" />
+            <strong>{{ t('customCards.translations.emptyTitle') }}</strong>
+            <span>{{ t('customCards.translations.emptyHint') }}</span>
+          </div>
+        </div>
+
         <div v-show="tab === 'html'" class="code-pane">
           <p>{{ t('customCards.hints.html') }}</p>
           <BaseCodeEditor v-model="draft.html" language="html" min-height="360px" />
@@ -1088,6 +1387,8 @@ const previewStyle = computed(() => ({
             <code>vuePanel.subscribeEntity(entityId, callback)</code>
             <code>vuePanel.callService(domain, service, data, target)</code>
             <code>vuePanel.config</code>
+            <code>vuePanel.t('translation.key')</code>
+            <code>vuePanel.language</code>
           </div>
         </div>
 
@@ -1281,6 +1582,75 @@ const previewStyle = computed(() => ({
 .variables-intro strong { color: var(--text-primary); font-size: 13px; }
 .variables-intro p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
 .variables-intro :deep(.vp-btn) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.translations-pane { display: flex; flex-direction: column; gap: 14px; }
+.fallback-field { max-width: 280px; }
+.translation-add { display: flex; align-items: center; gap: 8px; }
+.translation-add :deep(.vp-btn) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.translation-missing { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.translation-missing > small { color: var(--text-secondary); font-size: 11px; }
+.translation-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  border: 1px dashed var(--divider);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 3px 9px 3px 6px;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+.translation-chip:hover { border-color: var(--accent); color: var(--text-primary); }
+.translation-list { display: flex; flex-direction: column; gap: 10px; }
+.translation-languages {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+.language-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.language-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  padding: 3px 6px 3px 10px;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+.language-chip.is-fallback { border-color: color-mix(in srgb, var(--accent) 55%, var(--divider)); }
+.translation-row {
+  display: grid;
+  grid-template-columns: 220px repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+}
+.translation-row.is-missing { border-color: color-mix(in srgb, var(--danger, #ef4444) 45%, var(--divider)); }
+.translation-key { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
+.translation-key code {
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.translation-remove {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 2px;
+  cursor: pointer;
+}
+.translation-remove:hover { color: var(--danger, #ef4444); }
+@media (max-width: 900px) {
+  .translation-row { grid-template-columns: minmax(0, 1fr); }
+  .translation-languages { grid-template-columns: minmax(0, 1fr); }
+}
 .variable-mode-tabs :deep(.vp-tab) { padding: 6px 10px; font-size: 12px; }
 .variable-json-pane { display: flex; flex-direction: column; gap: 10px; }
 .variable-json-pane > p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }

@@ -41,6 +41,22 @@ export interface PortableCardVariable {
   nestable?: boolean
 }
 
+/**
+ * Language tag of a card catalog: a card may ship any language, not only the
+ * two the panel UI itself speaks. Examples: `en`, `de`, `pt-BR`.
+ */
+export type CardLanguage = string
+
+/**
+ * The `<script data-vue-panel-translation>` block of a card: one flat catalog
+ * of `translation.*` keys per language plus the language single texts fall
+ * back to when they are missing.
+ */
+export interface CardTranslations {
+  fallback: CardLanguage
+  languages: Record<CardLanguage, Record<string, string>>
+}
+
 export interface PortableCardMetadata {
   format: 'vue-panel-card'
   formatVersion: 2
@@ -60,6 +76,7 @@ export interface PortableCardMetadata {
 }
 
 export interface PortableCardCatalogEntry extends PortableCardMetadata {
+  translations: CardTranslations
   type: string
   source: 'bundled' | 'local'
   writable: boolean

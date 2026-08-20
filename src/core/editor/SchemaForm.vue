@@ -2,6 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
+import type { CardTranslations } from '@/core/registry/portableCardTypes'
+import { cardText } from '@/core/registry/cardTranslations'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import SchemaFieldRow from './SchemaFieldRow.vue'
 
@@ -9,6 +11,8 @@ const props = withDefaults(
   defineProps<{
     schema: Record<string, CardSchemaField>
     modelValue: Record<string, unknown>
+    /** Catalogs of the card whose settings are edited here */
+    translations?: CardTranslations
     /** Off for the fields of a single list entry — those stay a flat form */
     grouped?: boolean
   }>(),
@@ -16,7 +20,7 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ 'update:modelValue': [value: Record<string, unknown>] }>()
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 function set(key: string, value: unknown) {
   emit('update:modelValue', { ...props.modelValue, [key]: value })
@@ -44,7 +48,10 @@ const fieldGroups = computed<Array<{ title: string; fields: FieldEntry[] }>>(() 
   if (!props.grouped) return []
   for (const [key, field] of Object.entries(props.schema)) {
     if (field.type === 'entity') continue
-    const title = field.group?.trim() || t('editor.fieldGroupOther')
+    const group = field.group?.trim()
+    const title = group
+      ? cardText(props.translations, group, locale.value)
+      : t('editor.fieldGroupOther')
     const fields = groups.get(title)
     if (fields) fields.push({ key, field })
     else groups.set(title, [{ key, field }])
@@ -59,6 +66,7 @@ const fieldGroups = computed<Array<{ title: string; fields: FieldEntry[] }>>(() 
       v-for="entry in entityFields"
       :key="entry.key"
       :field="entry.field"
+      :translations="translations"
       :value="modelValue[entry.key]"
       @update:value="set(entry.key, $event)"
     />
@@ -75,6 +83,7 @@ const fieldGroups = computed<Array<{ title: string; fields: FieldEntry[] }>>(() 
           v-for="entry in group.fields"
           :key="entry.key"
           :field="entry.field"
+          :translations="translations"
           :value="modelValue[entry.key]"
           @update:value="set(entry.key, $event)"
         />

@@ -8,7 +8,12 @@ import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
 import type { BarPosition } from '@/core/config/types'
 import { getPortableCard, invalidatePortableCardCatalog, listPortableCards } from '@/core/ha/cardApi'
 import PortableCardHost from '@/core/custom-cards/PortableCardHost.vue'
-import type { PortableCardCatalogEntry, PortableCardVariable } from './portableCardTypes'
+import type {
+  CardTranslations,
+  PortableCardCatalogEntry,
+  PortableCardVariable,
+} from './portableCardTypes'
+import { cardText, emptyCardTranslations } from './cardTranslations'
 import {
   defaultResponsiveVisibility,
   withResponsiveCss,
@@ -66,6 +71,8 @@ export interface CardManifest {
   fullRow?: boolean
   areas?: CardArea[]
   defaultResponsive?: Partial<ResponsiveVisibility>
+  /** Catalogs behind every `translation.*` string of this card */
+  translations: CardTranslations
   portable: PortableCardCatalogEntry
 }
 
@@ -132,6 +139,7 @@ function portableManifest(entry: PortableCardCatalogEntry): CardManifest {
     fullRow: entry.fullRow,
     areas: entry.areas as CardArea[],
     defaultResponsive: entry.defaultResponsive,
+    translations: entry.translations ?? emptyCardTranslations,
     portable: entry,
   }
 }
@@ -177,11 +185,23 @@ export interface CardGroupEntry extends CardGroup {
   cards: CardManifest[]
 }
 
+/**
+ * A card's own name: `translation.*` names come from its catalogs, engine
+ * cards keep using the panel's message keys.
+ */
 export function cardDisplayName(
   manifest: CardManifest,
   translate: (key: string) => string,
+  locale = 'en',
 ): string {
-  return manifest.literalName ? manifest.name : translate(manifest.name)
+  return manifest.literalName
+    ? cardText(manifest.translations, manifest.name, locale)
+    : translate(manifest.name)
+}
+
+/** Description of a card as shown in the picker and the card editor. */
+export function cardDescription(manifest: CardManifest, locale = 'en'): string {
+  return cardText(manifest.translations, manifest.portable.description, locale)
 }
 
 export function groupedCardsForArea(
@@ -201,7 +221,9 @@ export function groupedCardsForArea(
   }
   const byName = (a: string, b: string) => a.localeCompare(b, locale)
   for (const entry of groups.values()) {
-    entry.cards.sort((a, b) => byName(cardDisplayName(a, translate), cardDisplayName(b, translate)))
+    entry.cards.sort(
+      (a, b) => byName(cardDisplayName(a, translate, locale), cardDisplayName(b, translate, locale)),
+    )
   }
   return [...groups.values()].sort((a, b) => {
     if (a.id === NATIVE_GROUP.id) return b.id === NATIVE_GROUP.id ? 0 : -1

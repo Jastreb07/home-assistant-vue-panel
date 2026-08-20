@@ -5,8 +5,8 @@
     "apiVersion": 1,
     "manufacturer": "vue-panel",
     "cardName": "media",
-    "name": "Medien",
-    "description": "Steuert einen Media Player",
+    "name": "translation.name",
+    "description": "translation.description",
     "icon": "mdi:speaker",
     "group": "Vue Panel",
     "areas": [
@@ -35,7 +35,7 @@
     "variables": [
       {
         "key": "entity",
-        "label": "Media-Player-Entity",
+        "label": "translation.variables.entity.label",
         "type": "entity",
         "required": true,
         "domain": "media_player",
@@ -43,21 +43,57 @@
       },
       {
         "key": "name",
-        "label": "Anzeigename",
-        "group": "Darstellung",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
         "type": "string",
         "required": false,
         "default": ""
       },
       {
         "key": "showVolume",
-        "label": "Lautstärke anzeigen",
-        "group": "Anzeige",
+        "label": "translation.variables.showVolume.label",
+        "group": "translation.groups.display",
         "type": "boolean",
         "required": false,
         "default": true
       }
     ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Media",
+        "translation.description": "Controls a media player",
+        "translation.variables.entity.label": "Media player entity",
+        "translation.variables.name.label": "Display name",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.showVolume.label": "Show volume",
+        "translation.groups.display": "Display",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.states.idle": "Idle",
+        "translation.unknownTitle": "Unknown title",
+        "translation.defaultName": "Media"
+      },
+      "de": {
+        "translation.name": "Medien",
+        "translation.description": "Steuert einen Media Player",
+        "translation.variables.entity.label": "Media-Player-Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.showVolume.label": "Lautstärke anzeigen",
+        "translation.groups.display": "Anzeige",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.states.idle": "Inaktiv",
+        "translation.unknownTitle": "Unbekannter Titel",
+        "translation.defaultName": "Medien"
+      }
+    }
   };
 </script>
 
@@ -215,8 +251,8 @@
     const playing = entity?.state === 'playing';
     const idle = ['idle', 'off', 'standby'].includes(entity?.state) || !entity;
     card.classList.toggle('active', playing);
-    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || 'Medien');
-    state.textContent = !entityId ? 'Keine Entity ausgewählt' : !entity ? 'Entity nicht gefunden' : idle ? 'Inaktiv' : `${entity.attributes?.media_title || 'Unbekannter Titel'}${entity.attributes?.media_artist ? ` · ${entity.attributes.media_artist}` : ''}`;
+    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
+    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : idle ? vuePanel.t('translation.states.idle') : `${entity.attributes?.media_title || vuePanel.t('translation.unknownTitle')}${entity.attributes?.media_artist ? ` · ${entity.attributes.media_artist}` : ''}`;
     controls.hidden = idle;
     const level = Math.round(Number(entity?.attributes?.volume_level) * 100);
     volumeWrap.hidden = config.showVolume === false || !Number.isFinite(level);
