@@ -47,6 +47,8 @@ const emit = defineEmits<{
   'resize-card': [cardId: string, width: number, height: number]
   'edit-section': [section: SectionConfig]
   'remove-section': [section: SectionConfig]
+  'duplicate-section': [section: SectionConfig]
+  'copy-section': [section: SectionConfig]
   'section-dragstart': [e: DragEvent, sectionId: string]
   dragstart: [e: DragEvent, cardId: string]
   'dragover-card': [e: DragEvent, sectionId: string, index: number]
@@ -174,6 +176,12 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
       </BaseEditableAreaButton>
       <BaseEditableAreaButton :title="t('editor.section.title')" @click="emit('edit-section', section)">
         <MdiIcon icon="mdi:pencil" :size="16" />
+      </BaseEditableAreaButton>
+      <BaseEditableAreaButton :title="t('editor.duplicateSection')" @click="emit('duplicate-section', section)">
+        <MdiIcon icon="mdi:plus-circle-multiple-outline" :size="16" />
+      </BaseEditableAreaButton>
+      <BaseEditableAreaButton :title="t('editor.copySection')" @click="emit('copy-section', section)">
+        <MdiIcon icon="mdi:content-copy" :size="16" />
       </BaseEditableAreaButton>
       <BaseEditableAreaButton :title="t('editor.deleteSection')" @click="emit('remove-section', section)">
         <MdiIcon icon="mdi:delete-outline" :size="16" />

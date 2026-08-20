@@ -173,6 +173,12 @@ Aktueller Stand:
   die volle Card-Fläche ab — statt eines 24px-Streifens unten wird nur noch die Resize-Ecke per
   `clip-path` ausgespart (die Aussparung nimmt auch Pointer-Events aus, der native Resize-Griff
   bleibt greifbar);
+- ab `2.0.0-alpha.37`/Engine `2.1.34` besitzt die Abschnitts-Toolbar zusätzlich „Duplizieren“
+  (Kopie mit frischen IDs direkt hinter dem Original, `store.duplicateSection`) und „Kopieren“
+  (Abschnitt samt Cards in die App-Zwischenablage `vue-panel:section-clipboard` plus
+  System-Clipboard, `copySectionToClipboard` in `cardClipboard.ts`); liegt ein kopierter
+  Abschnitt vor, zeigt jedes Section-Layout neben „+ Abschnitt“ eine Kachel „Kopierten
+  Abschnitt einfügen“ (`store.pasteSection`, hängt ihn mit neuen IDs an die View an);
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte

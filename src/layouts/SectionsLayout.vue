@@ -32,6 +32,10 @@ const {
   sectionTarget,
   addSection,
   editSection,
+  duplicateSection,
+  copySection,
+  hasSectionClipboard,
+  pasteSection,
   onSectionSave,
   onSectionRemove,
   removeSection,
@@ -120,6 +124,8 @@ const containerStyle = computed(() => {
       @copy-card="copyCard"
       @cut-card="cutCard"
       @edit-section="editSection"
+      @duplicate-section="duplicateSection"
+      @copy-section="copySection"
       @remove-section="removeSection"
       @section-dragstart="onSectionDragStart"
       @dragstart="onDragStart"
@@ -134,6 +140,12 @@ const containerStyle = computed(() => {
       class="add-section"
       :label="t('editor.addSection')"
       @click="addSection"
+    />
+    <BaseAddTile
+      v-if="store.editMode && hasSectionClipboard"
+      class="add-section"
+      :label="t('editor.pasteSection')"
+      @click="pasteSection"
     />
 
     <CardPicker v-if="pickerSectionId" @close="pickerSectionId = null" @pick="onPick" />

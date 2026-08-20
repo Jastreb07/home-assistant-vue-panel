@@ -32,6 +32,10 @@ const {
   sectionTarget,
   addSection,
   editSection,
+  duplicateSection,
+  copySection,
+  hasSectionClipboard,
+  pasteSection,
   onSectionSave,
   onSectionRemove,
   removeSection,
@@ -108,6 +112,8 @@ function onResizeCard(cardId: string, width: number, height: number) {
       @cut-card="cutCard"
       @resize-card="onResizeCard"
       @edit-section="editSection"
+      @duplicate-section="duplicateSection"
+      @copy-section="copySection"
       @remove-section="removeSection"
       @section-dragstart="onSectionDragStart"
       @dragstart="onDragStart"
@@ -123,6 +129,13 @@ function onResizeCard(cardId: string, width: number, height: number) {
       orientation="horizontal"
       :label="t('editor.addSection')"
       @click="addSection"
+    />
+    <BaseAddTile
+      v-if="store.editMode && hasSectionClipboard"
+      variant="pill"
+      orientation="horizontal"
+      :label="t('editor.pasteSection')"
+      @click="pasteSection"
     />
 
     <CardPicker v-if="pickerSectionId" @close="pickerSectionId = null" @pick="onPick" />

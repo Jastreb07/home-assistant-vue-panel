@@ -541,6 +541,28 @@ export const useDashboardStore = defineStore('dashboard', {
       view.sections = view.sections.filter((s) => s.id !== sectionId)
       this.save()
     },
+    /** Insert a deep copy of a section (fresh ids) right after the original. */
+    duplicateSection(viewId: string, sectionId: string) {
+      const view = this.viewById(viewId)
+      if (!view) return
+      const idx = view.sections.findIndex((s) => s.id === sectionId)
+      if (idx < 0) return
+      const clone = JSON.parse(JSON.stringify(view.sections[idx])) as SectionConfig
+      clone.id = newId('sec')
+      clone.cards = clone.cards.map((card) => ({ ...card, id: newId('card') }))
+      view.sections.splice(idx + 1, 0, clone)
+      this.save()
+    },
+    /** Append a copied section from the clipboard with fresh ids. */
+    pasteSection(viewId: string, section: Omit<SectionConfig, 'id'>) {
+      const view = this.viewById(viewId)
+      if (!view) return
+      const clone = JSON.parse(JSON.stringify(section)) as SectionConfig
+      clone.id = newId('sec')
+      clone.cards = (clone.cards ?? []).map((card) => ({ ...card, id: newId('card') }))
+      view.sections.push(clone)
+      this.save()
+    },
     /** Reorder sections within a view (drag handle in edit mode). */
     moveSection(viewId: string, sectionId: string, toIndex: number) {
       const view = this.viewById(viewId)

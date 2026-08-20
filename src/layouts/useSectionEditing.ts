@@ -1,9 +1,9 @@
-import { ref, type Ref } from 'vue'
+import { computed, ref, type Ref } from 'vue'
 import type { CardConfig, SectionConfig, ViewConfig } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import { cardRegistry } from '@/core/registry/cardRegistry'
 import { confirmDialog } from '@/core/ui/dialogService'
-import { copyCardToClipboard } from '@/core/ui/cardClipboard'
+import { copyCardToClipboard, copySectionToClipboard, sectionClipboard } from '@/core/ui/cardClipboard'
 import { t } from '@/i18n'
 
 export type ConfigTarget =
@@ -128,6 +128,22 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     store.removeSection(getView().id, section.id)
   }
 
+  function duplicateSection(section: SectionConfig) {
+    store.duplicateSection(getView().id, section.id)
+  }
+
+  function copySection(section: SectionConfig) {
+    void copySectionToClipboard(section)
+  }
+
+  /** True while a copied section is available to paste. */
+  const hasSectionClipboard = computed(() => sectionClipboard.value !== null)
+
+  function pasteSection() {
+    const section = sectionClipboard.value
+    if (section) store.pasteSection(getView().id, section)
+  }
+
   /** Delete triggered inside the settings dialog — that one already confirmed. */
   function onSectionRemove() {
     const section = sectionTarget.value
@@ -219,6 +235,10 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     onSectionSave,
     onSectionRemove,
     removeSection,
+    duplicateSection,
+    copySection,
+    hasSectionClipboard,
+    pasteSection,
     draggingId,
     dropTarget,
     draggingSectionId,

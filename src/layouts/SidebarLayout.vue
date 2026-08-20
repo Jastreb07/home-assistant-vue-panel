@@ -30,6 +30,10 @@ const {
   sectionTarget,
   addSection,
   editSection,
+  duplicateSection,
+  copySection,
+  hasSectionClipboard,
+  pasteSection,
   onSectionSave,
   onSectionRemove,
   removeSection,
@@ -76,6 +80,8 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @copy-card="copyCard"
         @cut-card="cutCard"
         @edit-section="editSection"
+        @duplicate-section="duplicateSection"
+        @copy-section="copySection"
         @remove-section="removeSection"
         @section-dragstart="onSectionDragStart"
         @dragstart="onDragStart"
@@ -86,12 +92,19 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
       />
 
       <BaseAddTile
-      v-if="store.editMode"
-      variant="pill"
-      orientation="horizontal"
-      :label="t('editor.addSection')"
-      @click="addSection"
-    />
+        v-if="store.editMode"
+        variant="pill"
+        orientation="horizontal"
+        :label="t('editor.addSection')"
+        @click="addSection"
+      />
+      <BaseAddTile
+        v-if="store.editMode && hasSectionClipboard"
+        variant="pill"
+        orientation="horizontal"
+        :label="t('editor.pasteSection')"
+        @click="pasteSection"
+      />
       <p v-if="store.editMode" class="hint">{{ t('editor.sidebarHint') }}</p>
     </div>
 
@@ -109,6 +122,8 @@ const sidebarGrid = { gridTemplateColumns: '1fr', gap: '16px' }
         @copy-card="copyCard"
         @cut-card="cutCard"
         @edit-section="editSection"
+        @duplicate-section="duplicateSection"
+        @copy-section="copySection"
         @remove-section="removeSection"
         @dragstart="onDragStart"
         @dragover-card="onDragOverCard"
