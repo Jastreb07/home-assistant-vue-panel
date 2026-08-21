@@ -143,9 +143,9 @@
 
 <style data-vue-panel-css>
     .ld {
-        --ld-accent: #f6d36b;
-        --ld-surface: rgb(255 255 255 / 7%);
-        --ld-surface-strong: rgb(255 255 255 / 13%);
+        --ld-accent: color-mix(in srgb, currentColor 30%, transparent);
+        --ld-surface: color-mix(in srgb, currentColor 8%, transparent);
+        --ld-surface-strong: color-mix(in srgb, currentColor 15%, transparent);
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -236,7 +236,7 @@
         display: grid;
         place-items: center;
         background: #fff;
-        box-shadow: 0 1px 3px rgb(0 0 0 / 30%);
+        box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
         transition: transform .2s;
     }
 
@@ -262,6 +262,7 @@
 
     .ld__handle {
         position: absolute;
+        z-index: 1;
         top: 50%;
         left: 50%;
         width: 18px;
@@ -530,13 +531,22 @@
     return vuePanel.t('translation.states.on');
   }
 
+  /* Leerer Wert heißt: das Theme färbt neutral (ausgeschaltetes Licht) */
   function accentFor(mode, fraction) {
+    if (!entity || entity.state !== 'on') return '';
     if (mode === 'color') return hueCss(fraction * 360, 55);
     const rgb = attributes().rgb_color;
-    if (Array.isArray(rgb) && rgb.length >= 3 && entity && entity.state === 'on') {
+    if (Array.isArray(rgb) && rgb.length >= 3) {
       return 'rgb(' + Math.round(rgb[0]) + ' ' + Math.round(rgb[1]) + ' ' + Math.round(rgb[2]) + ')';
     }
     return '#f6d36b';
+  }
+
+  /* Icons müssen zum Theme passen, sonst verschwinden sie auf Weiß */
+  function themeColor(name, fallback) {
+    const styles = getComputedStyle(card);
+    const value = String(styles.getPropertyValue(name) || '').trim();
+    return value || String(styles.color || '').trim() || fallback;
   }
 
   function paintDial() {
@@ -556,7 +566,9 @@
 
     readout.textContent = readoutFor(dialMode, fraction);
     caption.textContent = dialMode ? vuePanel.t('translation.modes.' + dialMode) : '';
-    card.style.setProperty('--ld-accent', accentFor(dialMode, fraction));
+    const accent = accentFor(dialMode, fraction);
+    if (accent) card.style.setProperty('--ld-accent', accent);
+    else card.style.removeProperty('--ld-accent');
   }
 
   function renderModes(modes) {
@@ -578,7 +590,10 @@
       button.append(circle, label);
       button.addEventListener('click', () => selectMode(mode));
       modesBox.appendChild(button);
-      vuePanel.getIcon(MODE_ICONS[mode], {size: 72, color: '#d4d4d4'})
+      const tone = mode === activeMode
+        ? themeColor('--text-primary', '#111111')
+        : themeColor('--text-secondary', '#888888');
+      vuePanel.getIcon(MODE_ICONS[mode], {size: 72, color: tone})
         .then(source => { image.src = source; })
         .catch(() => {});
     }
@@ -706,9 +721,10 @@
     const isOn = Boolean(entity) && entity.state === 'on';
     card.classList.toggle('is-on', isOn);
     toggle.setAttribute('aria-checked', isOn ? 'true' : 'false');
-    title.textContent = String(
-      config.name || vuePanel.context.name || attributes().friendly_name || entityId || vuePanel.t('translation.defaultName')
-    );
+    /* Der Dialogkopf zeigt den Namen bereits — nur ein eigener Titel erscheint */
+    const ownTitle = String(config.name || '');
+    title.textContent = ownTitle;
+    title.hidden = !ownTitle;
 
     if (!entityId || !entity) {
       hint.hidden = false;
@@ -752,7 +768,7 @@
 
     paintDial();
 
-    powerIcon.src = await vuePanel.getIcon('mdi:power', {size: 48, color: '#333333'});
+    powerIcon.src = await vuePanel.getIcon('mdi:power', {size: 48, color: '#1f1f1f'});
   }
 
   async function render(next) {

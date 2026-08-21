@@ -225,6 +225,12 @@ Aktueller Stand:
 - ab Engine `2.2.4` zeigt `vue-panel/light-detail` ein Kreis-Dial im Stil der HA-Detailansicht
   (Power-Pille, großer Wert, Modus-Buttons) und blendet Helligkeit, Farbtemperatur, Farbe und
   Effekte nur ein, wenn `supported_color_modes` beziehungsweise `effect_list` sie hergeben;
+- ab Engine `2.2.6` sind die Flächen der Detail-Card theme-fest: Ring, Schalter und Modus-Kacheln
+  mischen ihre Farbe über `color-mix(… currentColor …)` statt über weiß-transparente Werte, die im
+  hellen Theme unsichtbar waren; die Modus-Icons erben `--text-primary`/`--text-secondary`, ein
+  ausgeschaltetes Licht bleibt vollständig neutral (kein Akzent), der doppelte Card-Titel unter den
+  Kacheln entfällt und `PopupFrame` zeigt eine Detailansicht in einem schmalen Dialog mit
+  zentrierter Card statt in einem breiten, linksbündigen;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit

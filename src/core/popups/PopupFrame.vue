@@ -46,7 +46,8 @@ const title = computed(() => {
 })
 
 const icon = computed(() => popup.value?.icon)
-const size = computed(() => DIALOG_SIZE[popup.value?.size ?? 'md'])
+/* A detail view holds a single card, so it stays as narrow as that card */
+const size = computed(() => (popup.value ? DIALOG_SIZE[popup.value.size ?? 'md'] : 'md'))
 /**
  * A popup lays its cards out exactly like a flex view, so it is rendered
  * through the very same layout — including the whole edit-mode tooling.
@@ -86,11 +87,9 @@ const popupView = computed<ViewConfig | null>(() => {
       </CardCss>
     </template>
     <p v-else-if="request.popupId" class="popup-missing">{{ t('popups.missingPopupHint') }}</p>
-    <PortableCardHost
-      v-else-if="request.cardType"
-      :card-type="request.cardType"
-      :config="context"
-    />
+    <div v-else-if="request.cardType" class="detail-body">
+      <PortableCardHost :card-type="request.cardType" :config="context" />
+    </div>
     <EntityDetailFallback v-else :entity-id="request.entityId ?? ''" />
   </BaseDialog>
 </template>
@@ -110,5 +109,15 @@ const popupView = computed<ViewConfig | null>(() => {
   margin: 0;
   color: var(--text-secondary);
   font-size: 13px;
+}
+/* The detail card is a single tile — it stays centred instead of stretching */
+.detail-body {
+  display: flex;
+  justify-content: center;
+  padding: 8px 0 4px;
+}
+.detail-body > :deep(*) {
+  width: 100%;
+  max-width: 340px;
 }
 </style>
