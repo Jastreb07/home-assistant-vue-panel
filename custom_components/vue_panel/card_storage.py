@@ -56,7 +56,19 @@ _CAPABILITIES = {
     "dashboard:context",
     "shell:events",
 }
+_GESTURES = ("tap", "double_tap", "hold")
+_ACTIONS = (
+    "default",
+    "more-info",
+    "toggle",
+    "navigate",
+    "url",
+    "perform-action",
+    "assist",
+    "none",
+)
 _VARIABLE_TYPES = {
+    "action",
     "entity",
     "icon",
     "view",
@@ -85,6 +97,8 @@ _METADATA_FIELDS = {
     "variables",
 }
 _VARIABLE_FIELDS = {
+    "gestures",
+    "actions",
     "key",
     "label",
     "group",
@@ -103,6 +117,8 @@ _VARIABLE_FIELDS = {
 }
 # A list holds repeated objects, so it never carries a scalar default itself.
 _LIST_ONLY_FIELDS = {"itemFields", "nestable"}
+# The tap-action editor is a core component; a card only narrows its choices.
+_ACTION_ONLY_FIELDS = {"gestures", "actions"}
 _MAX_LIST_ITEM_FIELDS = 24
 
 
@@ -155,11 +171,50 @@ def _finite_number(value: Any, label: str) -> float | int:
     return value
 
 
+def _validate_action_variable(variable: dict[str, Any], index: int) -> None:
+    """An `action` variable holds one action per gesture.
+
+    The card only decides which gestures it reacts to and which actions they
+    may use — the panel renders the editor and the target field for them.
+    """
+
+    for field, allowed in (("gestures", _GESTURES), ("actions", _ACTIONS)):
+        if field not in variable:
+            continue
+        values = variable[field]
+        if (
+            not isinstance(values, list)
+            or not values
+            or len(set(values)) != len(values)
+            or any(value not in allowed for value in values)
+        ):
+            raise CardFileError(f"Variable {index} has an invalid {field} list")
+
+    default = variable.get("default")
+    if default is None:
+        return
+    if not isinstance(default, dict):
+        raise CardFileError(f"Variable {index} has an invalid default value")
+    gestures = variable.get("gestures", list(_GESTURES))
+    actions = variable.get("actions", list(_ACTIONS))
+    for gesture, entry in default.items():
+        if gesture not in gestures:
+            raise CardFileError(f"Variable {index} defaults an unsupported gesture")
+        if not isinstance(entry, dict) or set(entry) - {"action", "target"}:
+            raise CardFileError(f"Variable {index} has an invalid default action")
+        if entry.get("action") not in actions:
+            raise CardFileError(f"Variable {index} defaults an unsupported action")
+        if "target" in entry and not isinstance(entry["target"], str):
+            raise CardFileError(f"Variable {index} has an invalid default target")
+
+
 def _validate_default(variable: dict[str, Any], index: int) -> None:
     if "default" not in variable:
         return
     value = variable["default"]
     variable_type = variable["type"]
+    if variable_type == "action":
+        return
     if variable_type == "list":
         raise CardFileError(f"Variable {index} must not define a default")
     valid = (
@@ -265,8 +320,12 @@ def _validate_variable(value: Any, index: int, keys: set[str]) -> list[str]:
         raise CardFileError(f"Variable {index} requires an explicit required flag")
     if variable_type != "list" and set(value) & _LIST_ONLY_FIELDS:
         raise CardFileError(f"Variable {index} contains unsupported fields")
+    if variable_type != "action" and set(value) & _ACTION_ONLY_FIELDS:
+        raise CardFileError(f"Variable {index} contains unsupported fields")
     _validate_default(value, index)
 
+    if variable_type == "action":
+        _validate_action_variable(value, index)
     if variable_type == "list":
         _validate_list_variable(value, index)
     if variable_type == "entity" and "domain" in value:

@@ -1,5 +1,6 @@
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import type { VisibleIf } from './cardConditions'
+import type { CardAction, CardActionValue, CardGesture } from '@/core/ui/cardActions'
 
 export type PortableCardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom'
 export type PortableCardCapability =
@@ -13,6 +14,7 @@ export type PortableCardCapability =
   | 'shell:events'
 
 export type PortableCardVariableType =
+  | 'action'
   | 'entity'
   | 'icon'
   | 'view'
@@ -31,7 +33,8 @@ export interface PortableCardVariable {
   visibleIf?: VisibleIf
   type: PortableCardVariableType
   required: boolean
-  default?: string | number | boolean
+  /** `action` variables default to one action per gesture instead of a scalar */
+  default?: string | number | boolean | Partial<Record<CardGesture, CardActionValue>>
   domain?: string
   options?: string[]
   optionLabels?: Record<string, string>
@@ -42,6 +45,10 @@ export interface PortableCardVariable {
   itemFields?: PortableCardVariable[]
   /** `list` only: entries can be indented to build a hierarchy */
   nestable?: boolean
+  /** `action` only: gestures the card reacts to — all three by default */
+  gestures?: CardGesture[]
+  /** `action` only: actions those gestures may use — all of them by default */
+  actions?: CardAction[]
 }
 
 /**

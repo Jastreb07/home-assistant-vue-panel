@@ -10,6 +10,8 @@ import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
+import BaseTapAction from '@/core/ui/BaseTapAction.vue'
+import type { CardActionValue, CardGesture } from '@/core/ui/cardActions'
 import EntityPicker from './EntityPicker.vue'
 import ListField from './ListField.vue'
 
@@ -64,8 +66,16 @@ const selectOptions = computed<SelectOption[]>(() =>
  * wrapping either in a <label> would forward (and double) clicks.
  */
 const plainWrapper = computed(() =>
-  ['icon', 'select', 'view', 'boolean', 'list'].includes(props.field.type),
+  ['icon', 'select', 'view', 'boolean', 'list', 'action'].includes(props.field.type),
 )
+
+/** Tap actions are stored as one object per gesture. */
+const actionValue = computed<Partial<Record<CardGesture, CardActionValue>>>(() => {
+  const value = props.value ?? props.field.default
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? value as Partial<Record<CardGesture, CardActionValue>>
+    : {}
+})
 </script>
 
 <template>
@@ -74,7 +84,7 @@ const plainWrapper = computed(() =>
     class="field"
     :class="'type-' + field.type"
   >
-    <span class="label">
+    <span v-if="field.type !== 'action'" class="label">
       {{ label }}<span v-if="field.required || (!field.optional && field.type === 'entity')"> *</span>
     </span>
 
@@ -130,6 +140,15 @@ const plainWrapper = computed(() =>
       :model-value="text"
       :options="viewOptions"
       :placeholder="t('editor.noViewTarget')"
+      @update:model-value="emit('update:value', $event)"
+    />
+
+    <BaseTapAction
+      v-else-if="field.type === 'action'"
+      :model-value="actionValue"
+      :gestures="field.gestures"
+      :actions="field.actions"
+      :view-options="viewOptions"
       @update:model-value="emit('update:value', $event)"
     />
 

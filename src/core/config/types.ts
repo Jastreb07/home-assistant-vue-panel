@@ -2,6 +2,7 @@ import type { BoxValue } from '@/core/ui/boxInput'
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import type { CardTranslations } from '@/core/registry/portableCardTypes'
 import type { VisibleIf } from '@/core/registry/cardConditions'
+import type { CardAction, CardActionValue, CardGesture } from '@/core/ui/cardActions'
 
 export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
 export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
@@ -50,6 +51,7 @@ export interface ViewConfig {
 }
 
 export type CustomCardVariableType =
+  | 'action'
   | 'entity'
   | 'string'
   | 'number'
@@ -70,7 +72,8 @@ export interface CustomCardVariable {
   type: CustomCardVariableType
   required: boolean
   domain?: string
-  default?: string | number | boolean
+  /** `action` variables default to one action per gesture instead of a scalar */
+  default?: string | number | boolean | Partial<Record<CardGesture, CardActionValue>>
   options?: string[]
   optionLabels?: Record<string, string>
   min?: number
@@ -80,6 +83,10 @@ export interface CustomCardVariable {
   itemFields?: Array<Omit<CustomCardVariable, 'id'>>
   /** `list` only: entries can be indented to build a hierarchy */
   nestable?: boolean
+  /** `action` only: gestures the card reacts to — all three by default */
+  gestures?: CardGesture[]
+  /** `action` only: actions those gestures may use — all of them by default */
+  actions?: CardAction[]
 }
 
 export interface CustomCardDefinition {

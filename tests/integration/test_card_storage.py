@@ -218,6 +218,43 @@ class CardStorageTests(unittest.TestCase):
             with self.assertRaises(card_storage.CardFileError):
                 card_storage.parse_card_document(card_document(metadata))
 
+    def test_action_variable_narrows_gestures_and_actions(self) -> None:
+        metadata = card_metadata()
+        metadata["variables"].append({
+            "key": "actions",
+            "label": "Tap actions",
+            "type": "action",
+            "required": False,
+            "gestures": ["tap", "hold"],
+            "actions": ["default", "toggle", "navigate"],
+            "default": {"tap": {"action": "navigate", "target": "living-room"}},
+        })
+        parsed = card_storage.parse_card_document(card_document(metadata))
+        variable = parsed["metadata"]["variables"][-1]
+
+        self.assertEqual(variable["gestures"], ["tap", "hold"])
+        self.assertEqual(variable["default"]["tap"]["target"], "living-room")
+
+    def test_action_variable_rejects_unknown_gestures_and_actions(self) -> None:
+        for extra in (
+            {"gestures": ["swipe"]},
+            {"actions": ["explode"]},
+            {"gestures": []},
+            {"default": {"hold": {"action": "toggle"}}, "gestures": ["tap"]},
+            {"default": {"tap": {"action": "fly"}}},
+            {"default": "toggle"},
+        ):
+            metadata = card_metadata()
+            metadata["variables"].append({
+                "key": "actions",
+                "label": "Tap actions",
+                "type": "action",
+                "required": False,
+                **extra,
+            })
+            with self.assertRaises(card_storage.CardFileError):
+                card_storage.parse_card_document(card_document(metadata))
+
     def test_create_list_and_read_card(self) -> None:
         created = card_storage.create_card(self.private_root, card_document())
         catalog = card_storage.list_cards(self.private_root, self.bundled_root)

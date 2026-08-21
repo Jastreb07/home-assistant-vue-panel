@@ -23,6 +23,13 @@ import type {
   VisibleIf,
 } from '@/core/registry/cardConditions'
 import {
+  CARD_ACTIONS,
+  CARD_GESTURES,
+  type CardAction,
+  type CardActionValue,
+  type CardGesture,
+} from '@/core/ui/cardActions'
+import {
   DEFAULT_TRANSLATION_FALLBACK,
   TRANSLATION_PREFIX,
   cardLanguageName,
@@ -203,6 +210,7 @@ const variableTypeOptions = computed<SelectOption[]>(() => [
   {value: 'view', label: t('customCards.variables.types.view')},
   {value: 'select', label: t('customCards.variables.types.select')},
   {value: 'list', label: t('customCards.variables.types.list')},
+  {value: 'action', label: t('customCards.variables.types.action')},
 ])
 
 const areaOptions = computed(() => [
@@ -312,12 +320,15 @@ function changeVariableType(variable: CustomCardVariable, type: string) {
   }
   variable.options = type === 'select' ? (variable.options?.length ? variable.options : ['option']) : undefined
   variable.optionLabels = undefined
+  // The tap-action editor is a core component and needs no scalar default
+  variable.gestures = type === 'action' ? (variable.gestures ?? [...CARD_GESTURES]) : undefined
+  variable.actions = type === 'action' ? (variable.actions ?? [...CARD_ACTIONS]) : undefined
   // A list repeats item fields instead of holding a single scalar default
   variable.itemFields = type === 'list'
       ? (variable.itemFields?.length ? variable.itemFields : defaultItemFields())
       : undefined
   variable.nestable = type === 'list' ? variable.nestable === true : undefined
-  variable.default = type === 'list'
+  variable.default = type === 'list' || type === 'action'
       ? undefined
       : type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
 }
@@ -531,6 +542,20 @@ function portableVariables(): Array<Omit<CustomCardVariable, 'id'>> {
   return draft.value.variables.map(({id: _id, ...variable}) => variable)
 }
 
+/** Gestures and actions a card narrows down for its tap-action variable. */
+function toggleActionValue<T>(
+  values: T[] | undefined,
+  value: T,
+  enabled: boolean,
+  all: readonly T[],
+): T[] {
+  const current = values?.length ? values : [...all]
+  const next = enabled
+    ? all.filter((candidate) => current.includes(candidate) || candidate === value)
+    : current.filter((candidate) => candidate !== value)
+  return next.length ? next : [...all]
+}
+
 function defaultVariableValue(type: CustomCardVariableType): string | number | boolean {
   if (type === 'boolean') return false
   if (type === 'number') return 0
@@ -568,7 +593,7 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
     const defaultValue: string | number | boolean = rawDefault === undefined || rawDefault === null
         ? defaultVariableValue(type)
         : rawDefault as string | number | boolean
-    if (type !== 'list' && ((type === 'number' && typeof defaultValue !== 'number')
+    if (type !== 'list' && type !== 'action' && ((type === 'number' && typeof defaultValue !== 'number')
         || (type === 'boolean' && typeof defaultValue !== 'boolean')
         || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string'))) {
       throw new Error(t('customCards.variables.jsonDefaultError', {index: index + 1}))
@@ -580,6 +605,8 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       throw new Error(t('customCards.variables.jsonEntryError', {index: index + 1}))
     }
     const itemFields = type === 'list' ? parseItemFields(value.itemFields, index) : undefined
+    const gestures = type === 'action' ? parseStringList(value.gestures, CARD_GESTURES) : undefined
+    const actions = type === 'action' ? parseStringList(value.actions, CARD_ACTIONS) : undefined
     keys.add(key)
     const group = typeof value.group === 'string' && value.group.trim()
         ? value.group.trim()
@@ -592,7 +619,13 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       type,
       required: value.required === true,
       domain: type === 'entity' && typeof value.domain === 'string' ? value.domain : undefined,
-      default: type === 'list' ? undefined : defaultValue,
+      default: type === 'list'
+          ? undefined
+          : type === 'action'
+              ? parseActionDefault(value.default)
+              : defaultValue,
+      gestures,
+      actions,
       options,
       optionLabels: type === 'select' && value.optionLabels && typeof value.optionLabels === 'object'
           ? value.optionLabels as Record<string, string>
@@ -605,6 +638,31 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       visibleIf: parseVisibleIf(value.visibleIf),
     }
   })
+}
+
+/** Keep only the known members of a narrowing list. */
+function parseStringList<T extends string>(value: unknown, allowed: readonly T[]): T[] | undefined {
+  if (!Array.isArray(value)) return undefined
+  const values = allowed.filter((candidate) => value.includes(candidate))
+  return values.length ? values : undefined
+}
+
+/** The default of an action variable is one action per gesture. */
+function parseActionDefault(value: unknown): Record<string, CardActionValue> | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const result: Record<string, CardActionValue> = {}
+  for (const [gesture, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!CARD_GESTURES.includes(gesture as CardGesture)) continue
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue
+    const action = (entry as Record<string, unknown>).action
+    if (!CARD_ACTIONS.includes(action as CardAction)) continue
+    const target = (entry as Record<string, unknown>).target
+    result[gesture] = {
+      action: action as CardAction,
+      ...(typeof target === 'string' && target ? {target} : {}),
+    }
+  }
+  return Object.keys(result).length ? result : undefined
 }
 
 /**
@@ -1314,7 +1372,32 @@ const previewStyle = computed(() => ({
                         @update:model-value="updateSelectOptions(variable, $event)"
                     />
                   </label>
-                  <div v-if="variable.type === 'list'" class="field">
+                  <div v-if="variable.type === 'action'" class="field default-field">
+                    <span>{{ t('customCards.variables.gestures') }}</span>
+                    <div class="action-choices">
+                      <label v-for="gesture in CARD_GESTURES" :key="gesture" class="check-row">
+                        <span>{{ t(`editor.cardGestures.${gesture}`) }}</span>
+                        <BaseCheckbox
+                            :model-value="(variable.gestures ?? [...CARD_GESTURES]).includes(gesture)"
+                            @update:model-value="variable.gestures =
+                              toggleActionValue(variable.gestures, gesture, $event, CARD_GESTURES)"
+                        />
+                      </label>
+                    </div>
+                    <span>{{ t('customCards.variables.actions') }}</span>
+                    <div class="action-choices">
+                      <label v-for="action in CARD_ACTIONS" :key="action" class="check-row">
+                        <span>{{ t(`editor.cardActionOptions.${action}`) }}</span>
+                        <BaseCheckbox
+                            :model-value="(variable.actions ?? [...CARD_ACTIONS]).includes(action)"
+                            @update:model-value="variable.actions =
+                              toggleActionValue(variable.actions, action, $event, CARD_ACTIONS)"
+                        />
+                      </label>
+                    </div>
+                    <small class="field-hint">{{ t('customCards.variables.actionsHint') }}</small>
+                  </div>
+                  <div v-else-if="variable.type === 'list'" class="field">
                     <span>{{ t('customCards.variables.itemFields') }}</span>
                     <small class="field-hint">
                       {{
@@ -1897,6 +1980,12 @@ const previewStyle = computed(() => ({
 
 .language-chip.is-fallback {
   border-color: color-mix(in srgb, var(--accent) 55%, var(--divider));
+}
+
+.action-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 2px 14px;
 }
 
 .translation-fields {

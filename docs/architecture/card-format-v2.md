@@ -138,7 +138,7 @@ Rules:
 - `group` is optional user-facing text: the settings dialog puts all variables of one group into
   one collapsed box, ungrouped variables share a fallback box, and `entity` variables are always
   shown above the boxes;
-- `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`, `list`;
+- `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`, `list`, `action`;
 - `visibleIf` is optional and hides the variable in the settings dialog until other variables of
   the same card match. One condition, or an array of conditions that all have to hold, each with a
   `key` and exactly one matcher — `equals`, `not` or a non-empty `in` array:
@@ -157,6 +157,37 @@ Rules:
 - `number` may define finite `min`, `max`, and `step` values;
 - `list` must define a non-empty `itemFields` array (at most 24 scalar variables, no nested
   lists) and may set `nestable` to allow indented entries.
+
+### Tap actions
+
+A variable of type `action` is rendered by the panel, not by the card: it offers a tap, double tap
+and hold action and — depending on the chosen action — the matching target field (a view picker for
+`navigate`, a URL field for `url`, a `domain.action` field for `perform-action`). A card only
+narrows the choices down:
+
+```json
+{
+  "key": "actions",
+  "label": "translation.variables.actions.label",
+  "type": "action",
+  "required": false,
+  "gestures": ["tap", "hold"],
+  "actions": ["default", "toggle", "navigate"],
+  "default": { "tap": { "action": "toggle" } }
+}
+```
+
+`gestures` and `actions` are optional — without them every gesture (`tap`, `double_tap`, `hold`)
+and every action (`default`, `more-info`, `toggle`, `navigate`, `url`, `perform-action`, `assist`,
+`none`) is offered. The stored value is one entry per gesture:
+
+```json
+{ "tap": { "action": "navigate", "target": "living-room" } }
+```
+
+`default` uses the same shape and is the only variable type whose default is an object. `default`
+as an action means "whatever the card does by itself"; `more-info` and `assist` need Home Assistant
+dialogs the panel cannot open yet.
 
 A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used
 when `nestable` is true) and one value per item field:

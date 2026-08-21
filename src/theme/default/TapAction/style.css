@@ -1,0 +1,20 @@
+.vp-tap-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vp-tap-action-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vp-tap-action-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.vp-tap-action-field > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}

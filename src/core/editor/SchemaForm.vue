@@ -66,10 +66,13 @@ const fieldGroups = computed<Array<{ title: string; fields: FieldEntry[] }>>(() 
   if (!props.grouped) return []
   for (const { key, field } of visibleFields.value) {
     if (field.type === 'entity') continue
-    const group = field.group?.trim()
-    const title = group
-      ? cardText(props.translations, group, locale.value)
-      : t('editor.fieldGroupOther')
+    // The tap-action editor is a core component, so the panel names its box
+    const group = field.type === 'action' ? '' : field.group?.trim()
+    const title = field.type === 'action'
+      ? t('editor.cardActionsGroup')
+      : group
+        ? cardText(props.translations, group, locale.value)
+        : t('editor.fieldGroupOther')
     const fields = groups.get(title)
     if (fields) fields.push({ key, field })
     else groups.set(title, [{ key, field }])

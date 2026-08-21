@@ -15,6 +15,7 @@ import type {
 } from './portableCardTypes'
 import { cardText, emptyCardTranslations } from './cardTranslations'
 import type { VisibleIf } from './cardConditions'
+import type { CardAction, CardGesture } from '@/core/ui/cardActions'
 import {
   defaultResponsiveVisibility,
   withResponsiveCss,
@@ -33,7 +34,7 @@ export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'
 
 export interface CardSchemaField {
-  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon' | 'list'
+  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon' | 'list' | 'action'
   label: string
   literalLabel?: boolean
   /** Collapsible box this field is shown in — entity fields are never grouped */
@@ -54,6 +55,10 @@ export interface CardSchemaField {
   itemFields?: CardSchemaListItemField[]
   /** `list` only: entries can be indented to build a hierarchy */
   nestable?: boolean
+  /** `action` only: the gestures this card reacts to — all three by default */
+  gestures?: CardGesture[]
+  /** `action` only: the actions those gestures may use — all of them by default */
+  actions?: CardAction[]
 }
 
 /** One field of a list entry — same as a schema field plus its storage key. */
@@ -105,6 +110,8 @@ function portableField(variable: PortableCardVariable): CardSchemaField {
     optional: !variable.required,
     required: variable.required,
     default: variable.default,
+    gestures: variable.gestures,
+    actions: variable.actions,
     itemFields: variable.itemFields?.map((item) => ({
       ...portableField(item),
       key: item.key,
