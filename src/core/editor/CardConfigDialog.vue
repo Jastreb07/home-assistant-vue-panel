@@ -328,10 +328,12 @@ const isBarArea = computed(() => props.area !== 'default')
 
 <style scoped>
 .dialog-tabs {
+  /* Spans the padding of the dialog body so nothing scrolls through */
   position: sticky;
-  top: 0;
+  top: calc(var(--vp-dialog-padding, 20px) * -1);
   z-index: 4;
-  margin-bottom: 18px;
+  margin: calc(var(--vp-dialog-padding, 20px) * -1) calc(var(--vp-dialog-padding, 20px) * -1) 18px;
+  padding: var(--vp-dialog-padding, 20px) var(--vp-dialog-padding, 20px) 0;
   background: var(--nav-bg);
   box-shadow: 0 10px 14px -16px rgba(0, 0, 0, 0.75);
 }
@@ -339,17 +341,33 @@ const isBarArea = computed(() => props.area !== 'default')
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 45%);
   gap: 24px;
-  align-items: start;
+  /* Fills the dialog so the preview stays as tall as the form */
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
 }
 @media (max-width: 720px) {
   .config-layout {
     grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .form-col {
+    overflow: visible;
+  }
+
+  .preview-col {
+    min-height: 220px;
   }
 }
 .form-col {
   display: flex;
   flex-direction: column;
   gap: 20px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
 }
 .css-col {
   gap: 10px;
@@ -418,15 +436,15 @@ const isBarArea = computed(() => props.area !== 'default')
 }
 /* Set apart from the form: own panel with the background of the target area */
 .preview-col {
-  position: sticky;
-  top: 62px;
   display: flex;
   flex-direction: column;
+  min-height: 0;
   border: 1px solid var(--divider);
   border-radius: 14px;
   overflow: hidden;
 }
 .preview-head {
+  flex: none;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -448,7 +466,8 @@ const isBarArea = computed(() => props.area !== 'default')
 .preview-stage {
   padding: 20px;
   background: var(--bg);
-  min-height: 160px;
+  flex: 1;
+  min-height: 0;
   display: grid;
   place-items: center;
   /* A card wider than the panel stays reachable instead of being clipped */

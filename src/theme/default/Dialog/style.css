@@ -31,12 +31,6 @@
   max-height: none;
   border-radius: 0;
 }
-.vp-dialog--full .vp-dialog-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
 .vp-dialog-header {
   display: flex;
   align-items: center;
@@ -57,7 +51,13 @@
   padding: 4px 8px;
 }
 .vp-dialog-body {
-  padding: 20px;
+  /* Sticky content reads this to cover the padding it scrolls under */
+  --vp-dialog-padding: 20px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: var(--vp-dialog-padding);
   overflow-y: auto;
 }
 .vp-dialog-footer {

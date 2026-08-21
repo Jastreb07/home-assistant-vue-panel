@@ -1719,10 +1719,12 @@ const previewStyle = computed(() => ({
 
 <style scoped>
 .dialog-tabs {
+  /* Spans the padding of the dialog body so nothing scrolls through */
   position: sticky;
-  top: 0;
+  top: calc(var(--vp-dialog-padding, 20px) * -1);
   z-index: 4;
-  margin-bottom: 18px;
+  margin: calc(var(--vp-dialog-padding, 20px) * -1) calc(var(--vp-dialog-padding, 20px) * -1) 18px;
+  padding: var(--vp-dialog-padding, 20px) var(--vp-dialog-padding, 20px) 0;
   background: var(--nav-bg);
   box-shadow: 0 10px 14px -16px rgba(0, 0, 0, 0.75);
 }
@@ -1731,11 +1733,17 @@ const previewStyle = computed(() => ({
   display: grid;
   grid-template-columns: minmax(260px, var(--custom-editor-share, 57%)) 14px minmax(260px, 1fr);
   gap: 10px;
-  align-items: start;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
 }
 
 .editor-pane {
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  padding-right: 4px;
 }
 
 .identity-grid {
@@ -1776,10 +1784,9 @@ const previewStyle = computed(() => ({
 }
 
 .editor-preview-splitter {
-  position: sticky;
-  top: 62px;
+  position: relative;
   align-self: stretch;
-  min-height: 250px;
+  min-height: 0;
   display: grid;
   place-items: center;
   border-radius: 8px;
@@ -2236,14 +2243,16 @@ const previewStyle = computed(() => ({
 }
 
 .preview-panel {
-  position: sticky;
-  top: 62px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--divider);
   border-radius: 14px;
 }
 
 .preview-head, .preview-foot {
+  flex: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2274,7 +2283,8 @@ const previewStyle = computed(() => ({
 }
 
 .preview-stage {
-  min-height: 250px;
+  flex: 1;
+  min-height: 0;
   padding: 24px;
   display: grid;
   place-items: center;
@@ -2296,6 +2306,15 @@ const previewStyle = computed(() => ({
 @media (max-width: 760px) {
   .custom-editor-layout {
     grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .editor-pane {
+    overflow: visible;
+  }
+
+  .preview-panel {
+    min-height: 320px;
   }
 
   .editor-preview-splitter {
