@@ -24,7 +24,14 @@ _VIEW_PATH_PATTERN = re.compile(
 )
 _LAYOUTS = {"sections", "flex", "panel", "sidebar", "grid"}
 _BAR_POSITIONS = {"sidebar-left", "sidebar-right", "header", "bottom"}
-_BAR_FIELDS = {"id", "size", "placement", "css", "columns"}
+_BAR_FIELDS = {"id", "size", "placement", "css", "visibility", "columns"}
+_RESPONSIVE_VISIBILITY_FIELDS = {
+    "mobile",
+    "tablet",
+    "desktop",
+    "mobileMax",
+    "tabletMax",
+}
 _BAR_COLUMN_FIELDS = {
     "id",
     "sizeMode",
@@ -218,12 +225,33 @@ def _validate_bar(
 
     if "css" in bar and not isinstance(bar["css"], str):
         raise DashboardFileError("Bar CSS must be a string")
+    if "visibility" in bar:
+        _validate_responsive_visibility(bar["visibility"], "Bar visibility")
 
     columns = bar.get("columns")
     if not isinstance(columns, list) or not columns:
         raise DashboardFileError("Bars require at least one column")
     for column in columns:
         _validate_bar_column(column, identifiers)
+
+
+def _validate_responsive_visibility(value: Any, label: str) -> None:
+    if not isinstance(value, dict) or set(value) != _RESPONSIVE_VISIBILITY_FIELDS:
+        raise DashboardFileError(f"{label} must be a responsive visibility object")
+    for field in ("mobile", "tablet", "desktop"):
+        if not isinstance(value[field], bool):
+            raise DashboardFileError(f"{label} {field} must be boolean")
+    mobile_max = value["mobileMax"]
+    tablet_max = value["tabletMax"]
+    if (
+        isinstance(mobile_max, bool)
+        or not isinstance(mobile_max, int)
+        or not 320 <= mobile_max <= 2000
+        or isinstance(tablet_max, bool)
+        or not isinstance(tablet_max, int)
+        or not mobile_max < tablet_max <= 4000
+    ):
+        raise DashboardFileError(f"{label} breakpoints are invalid")
 
 
 def _validate_box(value: Any, label: str) -> None:

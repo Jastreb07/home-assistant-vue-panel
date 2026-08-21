@@ -174,6 +174,49 @@ class DashboardStorageTests(unittest.TestCase):
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
 
+    def test_bar_visibility_is_saved_and_loaded(self) -> None:
+        document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
+        visibility = {
+            "mobile": False,
+            "tablet": True,
+            "desktop": True,
+            "mobileMax": 720,
+            "tabletMax": 1180,
+        }
+        document["bars"]["sidebar-left"]["visibility"] = visibility
+
+        saved = dashboard_storage.save_dashboard(
+            self.private_root,
+            "wohnung",
+            document,
+            document["revision"],
+        )
+        loaded = dashboard_storage.read_dashboard(self.private_root, "wohnung")
+
+        self.assertEqual(saved["bars"]["sidebar-left"]["visibility"], visibility)
+        self.assertEqual(loaded["bars"]["sidebar-left"]["visibility"], visibility)
+
+    def test_bar_visibility_rejects_invalid_values(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+        visibility = {
+            "mobile": True,
+            "tablet": True,
+            "desktop": True,
+            "mobileMax": 767,
+            "tabletMax": 1023,
+        }
+        document["bars"]["sidebar-left"]["visibility"] = visibility
+        dashboard_storage.validate_dashboard(document)
+
+        visibility["mobile"] = "yes"
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+        visibility["mobile"] = True
+        visibility["tabletMax"] = 700
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
     def test_bar_column_size_modes(self) -> None:
         document = deepcopy(dashboard_storage.default_dashboard())
         column = document["bars"]["sidebar-left"]["columns"][0]
