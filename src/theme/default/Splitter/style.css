@@ -1,0 +1,40 @@
+.vp-splitter {
+  position: relative;
+  align-self: stretch;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+.vp-splitter::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--divider);
+  transform: translateX(-50%);
+  transition: width 140ms ease, background 140ms ease;
+}
+.vp-splitter:hover::before,
+.vp-splitter:focus-visible::before,
+.vp-splitter.is-dragging::before {
+  width: 3px;
+  background: var(--accent);
+}
+.vp-splitter > span {
+  position: relative;
+  z-index: 1;
+  width: 6px;
+  height: 42px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--nav-bg);
+  box-shadow: var(--card-shadow);
+}
+.vp-splitter:focus-visible > span {
+  border-color: var(--accent);
+}

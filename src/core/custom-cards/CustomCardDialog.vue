@@ -45,6 +45,7 @@ import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import BaseSplitter from '@/core/ui/BaseSplitter.vue'
 import BaseCollapsibleAdvanced from '@/core/ui/BaseCollapsibleAdvanced.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import {mdiIconOptions} from '@/core/ui/mdiIconNames'
@@ -177,7 +178,6 @@ const fullCodeText = ref('')
 const fullCodeError = ref('')
 const fullCodeFullscreen = ref(false)
 const importInput = ref<HTMLInputElement | null>(null)
-const editorLayout = ref<HTMLElement | null>(null)
 const editorShare = ref(57)
 const splitterDragging = ref(false)
 const importMode = ref(false)
@@ -238,44 +238,6 @@ function toggleArrayValue<T>(values: T[], value: T, enabled: boolean): T[] {
   return enabled
       ? [...new Set([...values, value])]
       : values.filter((candidate) => candidate !== value)
-}
-
-function setEditorShare(value: number) {
-  const width = editorLayout.value?.getBoundingClientRect().width ?? 1000
-  const minimum = Math.min(45, 260 / width * 100)
-  const maximum = Math.max(minimum, (width - 294) / width * 100)
-  editorShare.value = Math.round(Math.min(maximum, Math.max(minimum, value)) * 10) / 10
-}
-
-function updateEditorShare(clientX: number) {
-  const bounds = editorLayout.value?.getBoundingClientRect()
-  if (!bounds) return
-  setEditorShare((clientX - bounds.left) / bounds.width * 100)
-}
-
-function startSplitter(event: PointerEvent) {
-  splitterDragging.value = true
-  const target = event.currentTarget as HTMLElement
-  target.setPointerCapture(event.pointerId)
-  updateEditorShare(event.clientX)
-}
-
-function moveSplitter(event: PointerEvent) {
-  if (splitterDragging.value) updateEditorShare(event.clientX)
-}
-
-function stopSplitter(event: PointerEvent) {
-  splitterDragging.value = false
-  const target = event.currentTarget as HTMLElement
-  if (target.hasPointerCapture(event.pointerId)) target.releasePointerCapture(event.pointerId)
-}
-
-function resizeWithKeyboard(event: KeyboardEvent) {
-  if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return
-  event.preventDefault()
-  if (event.key === 'Home') setEditorShare(30)
-  else if (event.key === 'End') setEditorShare(70)
-  else setEditorShare(editorShare.value + (event.key === 'ArrowRight' ? 2 : -2))
 }
 
 /** Icon names are read from the loaded mdi stylesheet — resolved once. */
@@ -1146,7 +1108,6 @@ const previewStyle = computed(() => ({
     <BaseTabs :model-value="tab" :items="tabs" class="dialog-tabs" @update:model-value="changeTab"/>
 
     <div
-        ref="editorLayout"
         class="custom-editor-layout"
         :class="{ 'is-fullscreen': fullCodeFullscreen, 'is-resizing': splitterDragging }"
         :style="editorLayoutStyle"
@@ -1664,23 +1625,11 @@ const previewStyle = computed(() => ({
         </div>
       </div>
 
-      <div
-          class="editor-preview-splitter"
-          role="separator"
-          aria-orientation="vertical"
-          :aria-label="t('customCards.resizePreview')"
-          aria-valuemin="0"
-          aria-valuemax="100"
-          :aria-valuenow="Math.round(editorShare)"
-          tabindex="0"
-          @keydown="resizeWithKeyboard"
-          @pointerdown.prevent="startSplitter"
-          @pointermove.prevent="moveSplitter"
-          @pointerup="stopSplitter"
-          @pointercancel="stopSplitter"
-      >
-        <span/>
-      </div>
+      <BaseSplitter
+          v-model:share="editorShare"
+          :label="t('customCards.resizePreview')"
+          @update:dragging="splitterDragging = $event"
+      />
 
       <aside class="preview-panel">
         <div class="preview-head">
@@ -1786,51 +1735,6 @@ const previewStyle = computed(() => ({
   .identity-grid {
     grid-template-columns: 1fr;
   }
-}
-
-.editor-preview-splitter {
-  position: relative;
-  align-self: stretch;
-  min-height: 0;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  cursor: col-resize;
-  touch-action: none;
-  outline: none;
-}
-
-.editor-preview-splitter::before {
-  content: '';
-  position: absolute;
-  inset-block: 0;
-  left: 50%;
-  width: 1px;
-  background: var(--divider);
-  transform: translateX(-50%);
-  transition: width 140ms ease, background 140ms ease;
-}
-
-.editor-preview-splitter > span {
-  position: relative;
-  z-index: 1;
-  width: 6px;
-  height: 42px;
-  border: 1px solid var(--divider);
-  border-radius: 999px;
-  background: var(--nav-bg);
-  box-shadow: var(--card-shadow);
-}
-
-.editor-preview-splitter:hover::before,
-.editor-preview-splitter:focus-visible::before,
-.custom-editor-layout.is-resizing .editor-preview-splitter::before {
-  width: 3px;
-  background: var(--accent);
-}
-
-.editor-preview-splitter:focus-visible > span {
-  border-color: var(--accent);
 }
 
 .custom-editor-layout.is-resizing,
@@ -2322,7 +2226,7 @@ const previewStyle = computed(() => ({
     min-height: 320px;
   }
 
-  .editor-preview-splitter {
+  .custom-editor-layout :deep(.vp-splitter) {
     display: none;
   }
 

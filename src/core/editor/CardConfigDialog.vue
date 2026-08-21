@@ -17,6 +17,7 @@ import BaseTabs from '@/core/ui/BaseTabs.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import BaseSplitter from '@/core/ui/BaseSplitter.vue'
 import {
   defaultResponsiveVisibility,
   responsiveVisibilityFromCss,
@@ -188,6 +189,11 @@ const previewStyle = computed(() => {
   return style
 })
 
+// ── Resizable preview ────────────────────────────────────────
+const formShare = ref(55)
+const splitterDragging = ref(false)
+const layoutStyle = computed(() => ({ '--config-form-share': `${formShare.value}%` }))
+
 /** Bar areas sit on the nav background, not the dashboard background. */
 const isBarArea = computed(() => props.area !== 'default')
 </script>
@@ -200,7 +206,11 @@ const isBarArea = computed(() => props.area !== 'default')
   >
     <BaseTabs v-model="tab" :items="tabItems" class="dialog-tabs" />
 
-    <div class="config-layout">
+    <div
+      class="config-layout"
+      :class="{ 'is-resizing': splitterDragging }"
+      :style="layoutStyle"
+    >
       <div v-show="tab === 'settings'" class="form-col">
         <SchemaForm
           v-if="hasSchema"
@@ -304,6 +314,12 @@ const isBarArea = computed(() => props.area !== 'default')
           <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
         </div>
       </div>
+      <BaseSplitter
+        v-model:share="formShare"
+        :label="t('customCards.resizePreview')"
+        @update:dragging="splitterDragging = $event"
+      />
+
       <aside class="preview-col">
         <div class="preview-head">
           <span class="preview-label">{{ t('common.preview') }}</span>
@@ -339,17 +355,26 @@ const isBarArea = computed(() => props.area !== 'default')
 }
 .config-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 45%);
-  gap: 24px;
+  grid-template-columns: minmax(260px, var(--config-form-share, 55%)) 14px minmax(260px, 1fr);
+  gap: 10px;
   /* Fills the dialog so the preview stays as tall as the form */
   flex: 1;
   min-height: 0;
   align-items: stretch;
 }
+.config-layout.is-resizing,
+.config-layout.is-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
 @media (max-width: 720px) {
   .config-layout {
     grid-template-columns: 1fr;
     overflow-y: auto;
+  }
+
+  .config-layout :deep(.vp-splitter) {
+    display: none;
   }
 
   .form-col {
