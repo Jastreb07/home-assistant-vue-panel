@@ -1,8 +1,9 @@
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import type { VisibleIf } from './cardConditions'
+import type { CardDetailConfig } from '@/core/config/types'
 import type { CardAction, CardActionValue, CardGesture } from '@/core/ui/cardActions'
 
-export type PortableCardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom'
+export type PortableCardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom' | 'dialog'
 export type PortableCardCapability =
   | 'entity:read'
   | 'entity:subscribe'
@@ -12,6 +13,7 @@ export type PortableCardCapability =
   | 'navigation:write'
   | 'dashboard:context'
   | 'shell:events'
+  | 'dialog:open'
 
 export type PortableCardVariableType =
   | 'action'
@@ -78,6 +80,8 @@ export interface PortableCardMetadata {
   icon: string
   group: string
   areas: PortableCardArea[]
+  /** Detail view for the `more-info` action — domain default when unset */
+  detail?: CardDetailConfig
   capabilities: PortableCardCapability[]
   defaultSize: { cols: number; rows: number; width: number; height: number }
   defaultResponsive: ResponsiveVisibility

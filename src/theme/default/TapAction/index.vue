@@ -26,6 +26,10 @@ const props = defineProps<{
   actions?: CardAction[]
   /** Views the `navigate` action can point at */
   viewOptions: SelectOption[]
+  /** Popups the `popup` action can open */
+  popupOptions?: SelectOption[]
+  /** Dialog cards the `more-info` action may show instead of the default */
+  detailOptions?: SelectOption[]
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: Partial<Record<CardGesture, CardActionValue>>]
@@ -78,6 +82,13 @@ function setAction(gesture: CardGesture, action: string) {
           />
         </label>
 
+        <p
+          v-if="gesture === 'hold' && entry(gesture).action === 'default'"
+          class="vp-tap-action-hint"
+        >
+          {{ t('editor.holdDefaultHint') }}
+        </p>
+
         <label v-if="actionTarget(entry(gesture).action) === 'view'" class="vp-tap-action-field">
           <span>{{ t('editor.cardActionTargets.view') }}</span>
           <BaseSelectMenu
@@ -104,6 +115,26 @@ function setAction(gesture: CardGesture, action: string) {
             :model-value="entry(gesture).target ?? ''"
             placeholder="light.turn_on"
             :spellcheck="false"
+            @update:model-value="update(gesture, { target: String($event) })"
+          />
+        </label>
+
+        <label v-else-if="actionTarget(entry(gesture).action) === 'popup'" class="vp-tap-action-field">
+          <span>{{ t('editor.cardActionTargets.popup') }}</span>
+          <BaseSelectMenu
+            :model-value="entry(gesture).target ?? ''"
+            :options="popupOptions ?? []"
+            searchable
+            @update:model-value="update(gesture, { target: String($event) })"
+          />
+        </label>
+
+        <label v-else-if="actionTarget(entry(gesture).action) === 'detail'" class="vp-tap-action-field">
+          <span>{{ t('editor.cardActionTargets.detail') }}</span>
+          <BaseSelectMenu
+            :model-value="entry(gesture).target ?? ''"
+            :options="detailOptions ?? []"
+            searchable
             @update:model-value="update(gesture, { target: String($event) })"
           />
         </label>

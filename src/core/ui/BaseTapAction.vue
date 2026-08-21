@@ -11,6 +11,10 @@ defineProps<{
   gestures?: CardGesture[]
   actions?: CardAction[]
   viewOptions: SelectOption[]
+  /** Popups the `popup` action can open */
+  popupOptions?: SelectOption[]
+  /** Dialog cards the `more-info` action may show */
+  detailOptions?: SelectOption[]
 }>()
 const emit = defineEmits<{
   'update:modelValue': [value: Partial<Record<CardGesture, CardActionValue>>]
@@ -24,6 +28,8 @@ const emit = defineEmits<{
     :gestures="gestures"
     :actions="actions"
     :view-options="viewOptions"
+    :popup-options="popupOptions"
+    :detail-options="detailOptions"
     @update:model-value="emit('update:modelValue', $event)"
   />
 </template>

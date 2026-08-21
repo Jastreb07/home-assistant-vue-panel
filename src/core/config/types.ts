@@ -8,6 +8,7 @@ export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
 export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
 export type ViewWidth = 'default' | 'full'
 export type ViewAlign = 'left' | 'center' | 'right'
+export type PopupSize = 'sm' | 'md' | 'lg' | 'full'
 
 export interface CardConfig {
   id: string
@@ -50,6 +51,27 @@ export interface ViewConfig {
   sections: SectionConfig[]
 }
 
+/**
+ * A custom popup: a dialog that is defined once for the whole panel and holds
+ * its own cards, laid out like a flex view.
+ */
+export interface PopupConfig {
+  id: string
+  title: string
+  icon?: string
+  /** Width preset — an explicit `width` wins over it */
+  size?: PopupSize
+  /** Explicit dialog width in px */
+  width?: number
+  /** Explicit dialog body height in px — the content decides when unset */
+  height?: number
+  /** Custom CSS for the popup body, scoped via [data-vp-card] */
+  css?: string
+  align?: ViewAlign
+  padding?: BoxValue
+  sections: SectionConfig[]
+}
+
 export type CustomCardVariableType =
   | 'action'
   | 'entity'
@@ -89,6 +111,19 @@ export interface CustomCardVariable {
   actions?: CardAction[]
 }
 
+/**
+ * Detail view of a card: which dialog card the `more-info` action shows and
+ * which of the card's variables are handed to it.
+ */
+export interface CardDetailConfig {
+  /** Portable card type of area `dialog` — the domain default when unset */
+  card?: string
+  /** Variable keys passed on — all of them when unset */
+  variables?: string[]
+  /** Variable holding the entity the domain default is resolved from */
+  entityKey?: string
+}
+
 export interface CustomCardDefinition {
   id: string
   /** Contents of the card's `<script data-vue-panel-translation>` block */
@@ -102,7 +137,9 @@ export interface CustomCardDefinition {
   description: string
   icon: string
   group: string
-  areas: Array<'dashboard' | 'sidebar' | 'header' | 'bottom'>
+  areas: Array<'dashboard' | 'sidebar' | 'header' | 'bottom' | 'dialog'>
+  /** Detail view opened by the `more-info` action — domain default when unset */
+  detail?: CardDetailConfig
   capabilities: Array<
     | 'entity:read'
     | 'entity:subscribe'
@@ -112,6 +149,7 @@ export interface CustomCardDefinition {
     | 'navigation:write'
     | 'dashboard:context'
     | 'shell:events'
+    | 'dialog:open'
   >
   html: string
   css: string
@@ -197,5 +235,7 @@ export interface DashboardConfig {
   revision: number
   settings?: Partial<DashboardSettings>
   bars?: Partial<BarConfig>
+  /** Custom popups, available panel-wide from every tap action */
+  popups?: PopupConfig[]
   views: ViewConfig[]
 }

@@ -39,6 +39,20 @@ _BAR_SIZE_MODES = {"fit", "full", "fixed"}
 _BOX_SIDES = {"top", "right", "bottom", "left"}
 _BAR_ALIGNMENTS = {"start", "center", "end", "stretch"}
 _BAR_PLACEMENTS = {"view", "full"}
+_POPUP_FIELDS = {
+    "id",
+    "title",
+    "icon",
+    "size",
+    "width",
+    "height",
+    "css",
+    "align",
+    "padding",
+    "sections",
+}
+_POPUP_SIZES = {"sm", "md", "lg", "full"}
+_ALIGNMENTS = {"left", "center", "right"}
 _BAR_SIZE_LIMITS = {
     "sidebar-left": (160, 560),
     "sidebar-right": (160, 560),
@@ -256,6 +270,60 @@ def _validate_bar_column(column: Any, identifiers: set[str]) -> None:
         _validate_card(card, identifiers)
 
 
+def _validate_sections(sections: Any, identifiers: set[str]) -> None:
+    """Validate the section/card tree shared by views and popups."""
+
+    if not isinstance(sections, list):
+        raise DashboardFileError("Sections must be an array")
+    for section in sections:
+        if not isinstance(section, dict):
+            raise DashboardFileError("Section entries must be objects")
+        section_id = section.get("id")
+        if not isinstance(section_id, str) or not _IDENTIFIER_PATTERN.fullmatch(
+            section_id
+        ):
+            raise DashboardFileError("Section IDs must be URL-safe identifiers")
+        if section_id in identifiers:
+            raise DashboardFileError("Dashboard IDs must be unique")
+        identifiers.add(section_id)
+        cards = section.get("cards")
+        if not isinstance(cards, list):
+            raise DashboardFileError("Section cards must be an array")
+        for card in cards:
+            _validate_card(card, identifiers)
+
+
+def _validate_popup(popup: Any, identifiers: set[str]) -> None:
+    """Validate one custom popup: a dialog that hosts its own card sections."""
+
+    if not isinstance(popup, dict) or set(popup) - _POPUP_FIELDS:
+        raise DashboardFileError("Popup entries contain unsupported fields")
+    popup_id = popup.get("id")
+    if not isinstance(popup_id, str) or not _IDENTIFIER_PATTERN.fullmatch(popup_id):
+        raise DashboardFileError("Popup IDs must be URL-safe identifiers")
+    if popup_id in identifiers:
+        raise DashboardFileError("Dashboard IDs must be unique")
+    identifiers.add(popup_id)
+    if not isinstance(popup.get("title"), str) or not popup["title"].strip():
+        raise DashboardFileError("Popups require a title")
+    if "icon" in popup and not isinstance(popup["icon"], str):
+        raise DashboardFileError("Popup icon must be a string")
+    if "size" in popup and popup["size"] not in _POPUP_SIZES:
+        raise DashboardFileError("Unsupported popup size")
+    for field in ("width", "height"):
+        if field in popup:
+            value = popup[field]
+            if isinstance(value, bool) or not isinstance(value, int) or not 100 <= value <= 4000:
+                raise DashboardFileError(f"Popup {field} is out of range")
+    if "css" in popup and not isinstance(popup["css"], str):
+        raise DashboardFileError("Popup CSS must be a string")
+    if "align" in popup and popup["align"] not in _ALIGNMENTS:
+        raise DashboardFileError("Unsupported popup alignment")
+    if "padding" in popup:
+        _validate_box(popup["padding"], "Popup padding")
+    _validate_sections(popup.get("sections"), identifiers)
+
+
 def validate_dashboard(document: Any) -> dict[str, Any]:
     """Validate and return a dashboard document."""
 
@@ -300,25 +368,13 @@ def validate_dashboard(document: Any) -> dict[str, Any]:
         if view_path in view_paths:
             raise DashboardFileError("View paths must be unique")
         view_paths.add(view_path)
-        sections = view.get("sections")
-        if not isinstance(sections, list):
-            raise DashboardFileError("View sections must be an array")
-        for section in sections:
-            if not isinstance(section, dict):
-                raise DashboardFileError("Section entries must be objects")
-            section_id = section.get("id")
-            if not isinstance(section_id, str) or not _IDENTIFIER_PATTERN.fullmatch(
-                section_id
-            ):
-                raise DashboardFileError("Section IDs must be URL-safe identifiers")
-            if section_id in identifiers:
-                raise DashboardFileError("Dashboard IDs must be unique")
-            identifiers.add(section_id)
-            cards = section.get("cards")
-            if not isinstance(cards, list):
-                raise DashboardFileError("Section cards must be an array")
-            for card in cards:
-                _validate_card(card, identifiers)
+        _validate_sections(view.get("sections"), identifiers)
+
+    popups = document.get("popups", [])
+    if not isinstance(popups, list):
+        raise DashboardFileError("Dashboard popups must be an array")
+    for popup in popups:
+        _validate_popup(popup, identifiers)
 
     for position, bar in bars.items():
         _validate_bar(position, bar, identifiers)

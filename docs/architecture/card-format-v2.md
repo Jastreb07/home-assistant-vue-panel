@@ -107,15 +107,44 @@ Required metadata:
 - `apiVersion`: card API major version required by the card;
 - `manufacturer` and `cardName`: immutable identity;
 - `name`, `description`, `icon`, and `group`: picker metadata;
-- `areas`: one or more of `dashboard`, `sidebar`, `header`, `bottom`;
+- `areas`: one or more of `dashboard`, `sidebar`, `header`, `bottom`, `dialog`;
 - `capabilities`: explicit card API permissions;
 - `defaultSize`: positive `cols`, `rows`, `width`, and `height` values;
 - `defaultResponsive`: device defaults and ordered breakpoints;
 - `fullRow`: whether the card always spans its container;
 - `variables`: generated configuration schema.
 
+Optional metadata:
+
+- `detail`: the detail view opened by the `more-info` tap action.
+
 The supported API v1 capabilities are defined in `sandbox-api-v1.md` (Card API v1). Unknown capabilities or a
 newer API major version make a card incompatible instead of silently granting access.
+
+## Dialog cards and the detail view
+
+Cards with the area `dialog` are not placed on a dashboard. They fill a custom popup or the detail view of
+an entity. Both hand the values of the triggering card to every card inside the dialog: they arrive as
+`vuePanel.context` and can be referenced from any instance value with `${variableKey}`.
+
+The optional `detail` block declares which dialog card the `more-info` tap action of this card opens:
+
+```json
+"detail": {
+  "card": "vue-panel/light-detail",
+  "entityKey": "entity",
+  "variables": ["entity", "name", "icon"]
+}
+```
+
+- `card`: dialog card to render — omit it to use the domain default;
+- `entityKey`: variable holding the entity the detail view belongs to (default `entity`);
+- `variables`: values handed over — omit it to hand over all of them.
+
+The engine resolves the detail view in this order: the target configured on the tap action, the card's own
+`detail.card`, the domain default `vue-panel/<domain>-detail` when the catalog ships it, and finally a
+built-in dialog listing name, state, and attributes. Opening popups or detail views requires the
+`dialog:open` capability.
 
 ## Variables
 
@@ -186,8 +215,10 @@ and every action (`default`, `more-info`, `toggle`, `navigate`, `url`, `perform-
 ```
 
 `default` uses the same shape and is the only variable type whose default is an object. `default`
-as an action means "whatever the card does by itself"; `more-info` and `assist` need Home Assistant
-dialogs the panel cannot open yet.
+as an action means "whatever the card does by itself". For `hold` a card usually does nothing on
+its own, so the bundled cards fall back to the automatic detail view of the card's entity — a
+plain `hold` slot therefore behaves like `more-info` without a target. `assist` needs a Home
+Assistant dialog the panel cannot open yet.
 
 A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used
 when `nestable` is true) and one value per item field:

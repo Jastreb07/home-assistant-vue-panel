@@ -6,7 +6,7 @@ import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import SectionSettingsDialog from '@/core/editor/SectionSettingsDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
-import { cardRegistry } from '@/core/registry/cardRegistry'
+import { cardRegistry, type CardArea } from '@/core/registry/cardRegistry'
 import LayoutSection from './LayoutSection.vue'
 import { useSectionEditing } from './useSectionEditing'
 
@@ -15,7 +15,10 @@ import { useSectionEditing } from './useSectionEditing'
  * own FIXED pixel size — in edit mode simply drag the bottom-right
  * corner of a card (native CSS resize handle).
  */
-const props = defineProps<{ view: ViewConfig }>()
+const props = withDefaults(
+  defineProps<{ view: ViewConfig; area?: CardArea }>(),
+  { area: 'dashboard' },
+)
 
 const {
   store,
@@ -137,7 +140,7 @@ function onResizeCard(cardId: string, width: number, height: number) {
       @click="pasteSection"
     />
 
-    <CardPicker v-if="pickerSectionId" @close="pickerSectionId = null" @pick="onPick" />
+    <CardPicker v-if="pickerSectionId" :area="area" @close="pickerSectionId = null" @pick="onPick" />
     <CardConfigDialog
       v-if="configTarget"
       :card-type="configTarget.cardType"

@@ -458,6 +458,7 @@ class CardStorageTests(unittest.TestCase):
             "vue-panel/entities",
             "vue-panel/entity",
             "vue-panel/light",
+            "vue-panel/light-detail",
             "vue-panel/media",
             "vue-panel/menu",
             "vue-panel/room-tile",
@@ -470,6 +471,55 @@ class CardStorageTests(unittest.TestCase):
         self.assertEqual({card["type"] for card in catalog}, expected)
         self.assertTrue(all(card["source"] == "bundled" for card in catalog))
         self.assertTrue(all(card["writable"] is False for card in catalog))
+
+
+    def test_dialog_area_and_detail_metadata_round_trip(self) -> None:
+        metadata = card_metadata()
+        metadata["areas"] = ["dashboard", "dialog"]
+        metadata["capabilities"] = ["entity:read", "icon:render", "dialog:open"]
+        metadata["detail"] = {
+            "card": "vue-panel/light-detail",
+            "entityKey": "entity",
+            "variables": ["entity"],
+        }
+
+        parsed = card_storage.parse_card_document(card_document(metadata))
+
+        self.assertEqual(parsed["metadata"]["detail"], metadata["detail"])
+        self.assertIn("dialog", parsed["metadata"]["areas"])
+
+    def test_detail_block_is_validated(self) -> None:
+        for detail in (
+            "vue-panel/light-detail",
+            {"card": "light-detail"},
+            {"card": "vue-panel/light-detail", "bogus": 1},
+            {"entityKey": "missing"},
+            {"variables": ["missing"]},
+            {"variables": ["entity", "entity"]},
+        ):
+            metadata = card_metadata()
+            metadata["detail"] = detail
+            with self.subTest(detail=detail):
+                with self.assertRaises(card_storage.CardFileError):
+                    card_storage.validate_card_metadata(metadata)
+
+    def test_popup_tap_action_is_accepted(self) -> None:
+        metadata = card_metadata()
+        metadata["variables"].append(
+            {
+                "key": "actions",
+                "label": "Tap actions",
+                "type": "action",
+                "required": False,
+                "default": {"tap": {"action": "popup", "target": "popup-1"}},
+            }
+        )
+
+        parsed = card_storage.parse_card_document(card_document(metadata))
+
+        self.assertEqual(
+            parsed["metadata"]["variables"][-1]["default"]["tap"]["action"], "popup"
+        )
 
 
 if __name__ == "__main__":

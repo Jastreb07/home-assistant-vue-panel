@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
+import { cardDisplayName, cardsForArea } from '@/core/registry/cardRegistry'
 import type { CardTranslations } from '@/core/registry/portableCardTypes'
 import { cardText } from '@/core/registry/cardTranslations'
 import { useDashboardStore } from '@/core/config/dashboardStore'
@@ -48,6 +49,26 @@ const iconOptions = computed<SelectOption[]>(() =>
 const viewOptions = computed<SelectOption[]>(() => [
   { value: '', label: t('editor.noViewTarget') },
   ...store.config.views.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
+])
+
+/** Popups a tap action can open — they are defined once for the whole panel. */
+const popupOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('editor.noPopupTarget') },
+  ...store.popups.map((popup) => ({
+    value: popup.id,
+    label: popup.title,
+    icon: popup.icon || 'mdi:card-text-outline',
+  })),
+])
+
+/** Dialog cards a `more-info` action may show instead of the card's default. */
+const detailOptions = computed<SelectOption[]>(() => [
+  { value: '', label: t('editor.automaticDetail') },
+  ...cardsForArea('dialog').map((manifest) => ({
+    value: manifest.type,
+    label: cardDisplayName(manifest, t, locale.value),
+    icon: manifest.icon,
+  })),
 ])
 
 const selectOptions = computed<SelectOption[]>(() =>
@@ -149,6 +170,8 @@ const actionValue = computed<Partial<Record<CardGesture, CardActionValue>>>(() =
       :gestures="field.gestures"
       :actions="field.actions"
       :view-options="viewOptions"
+      :popup-options="popupOptions"
+      :detail-options="detailOptions"
       @update:model-value="emit('update:value', $event)"
     />
 

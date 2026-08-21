@@ -213,5 +213,73 @@ class DashboardStorageTests(unittest.TestCase):
             dashboard_storage.ensure_dashboard(self.private_root, "../outside")
 
 
+    def test_popups_are_stored_and_validated(self) -> None:
+        document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
+        document["popups"] = [
+            {
+                "id": "popup-1",
+                "title": "Licht",
+                "icon": "mdi:lightbulb",
+                "size": "lg",
+                "width": 640,
+                "height": 480,
+                "align": "center",
+                "css": ".x { color: red; }",
+                "sections": [
+                    {
+                        "id": "sec-1",
+                        "cards": [
+                            {
+                                "id": "card-1",
+                                "type": "vue-panel/light-detail",
+                                "config": {"entity": "light.kitchen"},
+                            }
+                        ],
+                    }
+                ],
+            }
+        ]
+
+        saved = dashboard_storage.save_dashboard(
+            self.private_root,
+            "wohnung",
+            document,
+            1,
+        )
+
+        self.assertEqual(saved["popups"][0]["id"], "popup-1")
+        self.assertEqual(
+            saved["popups"][0]["sections"][0]["cards"][0]["type"],
+            "vue-panel/light-detail",
+        )
+
+    def test_invalid_popups_are_rejected(self) -> None:
+        document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
+        for popup in (
+            "popup-1",
+            {"title": "Ohne ID", "sections": []},
+            {"id": "popup 1", "title": "Leerzeichen", "sections": []},
+            {"id": "popup-1", "title": "Zu klein", "width": 10, "sections": []},
+            {"id": "popup-1", "title": "Falsche Größe", "size": "xxl", "sections": []},
+            {"id": "popup-1", "title": "Unbekannt", "sections": [], "bogus": True},
+            {"id": "popup-1", "title": "Ohne Abschnitte"},
+        ):
+            candidate = deepcopy(document)
+            candidate["popups"] = [popup]
+            with self.subTest(popup=popup):
+                with self.assertRaises(dashboard_storage.DashboardFileError):
+                    dashboard_storage.validate_dashboard(candidate)
+
+    def test_duplicate_popup_ids_are_rejected(self) -> None:
+        document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
+        document["popups"] = [
+            {"id": "popup-1", "title": "A", "sections": []},
+            {"id": "popup-1", "title": "B", "sections": []},
+        ]
+
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+
 if __name__ == "__main__":
     unittest.main()

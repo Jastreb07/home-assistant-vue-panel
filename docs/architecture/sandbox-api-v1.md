@@ -23,6 +23,7 @@ The engine passes one frozen object into the card script as `vuePanel`:
 interface VuePanelCardApiV1 {
   readonly apiVersion: 1
   readonly config: Readonly<Record<string, unknown>>
+  readonly context: Readonly<Record<string, unknown>>
   readonly language: string
   t(key: string): string
   getEntity(entityId: string): Promise<EntitySnapshot | null>
@@ -43,11 +44,27 @@ interface VuePanelCardApiV1 {
   subscribeNavigation(callback: (view: ViewSnapshot | null) => void): () => void
   getDashboardContext(): Promise<DashboardContextSnapshot>
   emitAction(action: string, detail?: Record<string, unknown>): Promise<void>
+  showDetail(options?: {
+    card?: string
+    entity?: string
+    variables?: readonly string[]
+  }): Promise<null>
+  openPopup(popupId: string, context?: Record<string, unknown>): Promise<null>
 }
 ```
 
 Entity, view, and dashboard context values are immutable JSON snapshots. Subscriptions are
 disposed when the returned function is called or when the card is removed.
+
+`context` holds the values the surrounding popup or detail view was opened with and is an empty
+object for a card on a dashboard. The same values also replace `${variableKey}` placeholders in the
+card's own instance values before `config` is frozen: a value that is exactly one placeholder keeps
+the original type, mixed text is interpolated as a string, and unknown keys stay untouched.
+
+`showDetail()` opens the detail view of this card: the requested `card`, otherwise the card's own
+`detail.card`, otherwise the default card of the entity's domain, otherwise a built-in dialog.
+`openPopup()` opens a popup defined in the dashboard and hands over all instance values unless an
+explicit context object is passed.
 
 ## Capabilities
 
@@ -63,6 +80,7 @@ Calls are denied unless the card declares the matching capability:
 | `navigation:write` | `navigate` |
 | `dashboard:context` | `getDashboardContext` |
 | `shell:events` | `emitAction` |
+| `dialog:open` | `showDetail`, `openPopup` |
 
 Configuration access does not require a capability because only the current instance values are
 provided. The same holds for `language` and `t()`: they only expose the card's own translation
@@ -74,7 +92,8 @@ during rendering. Unknown actions and capabilities fail closed.
 ## Preview mode
 
 Preview mode uses the same runtime and validation path as a live card. Mutating capabilities are
-disabled regardless of declarations: `service:call`, `navigation:write`, and `shell:events`.
+disabled regardless of declarations: `service:call`, `navigation:write`, `shell:events`, and
+`dialog:open`.
 The API returns a structured `preview_action_denied` error for those operations.
 
 ## Host responsibilities

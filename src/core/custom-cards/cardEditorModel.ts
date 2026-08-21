@@ -25,6 +25,7 @@ export function editorDefinitionFromDocument(
     },
     areas: [...document.areas],
     capabilities: [...document.capabilities],
+    detail: document.detail ? { ...document.detail } : undefined,
     html: document.html,
     css: document.css,
     javascript: document.javascript,

@@ -216,6 +216,20 @@ Aktueller Stand:
   „Icons anzeigen“ durch die Auswahl `display` mit „Icon und Text“, „Nur Icon“ und „Nur Text“.
   Ältere Instanzen fallen weiterhin auf `showTitles`/`showIcons` zurück. Ohne Text bekommt jeder
   Eintrag ein Ersatzicon plus Tooltip, und Überschriften ohne darstellbaren Inhalt entfallen;
+- ab `2.2.0`/Engine `2.2.0` gibt es Popups und Detailansichten: `DashboardConfig.popups` hält global
+  definierte Dialoge, die wie eine Flex-View Sections und Cards aufnehmen. Cards für Dialoge tragen die
+  neue Area `dialog`; die neue Tap-Action `popup` öffnet ein Popup, `more-info` öffnet die
+  Detailansicht. Die Card-API kennt dafür `vuePanel.showDetail()` und `vuePanel.openPopup()` unter der
+  Capability `dialog:open`, außerdem `vuePanel.context` und `${variable}`-Platzhalter in Instanzwerten.
+  Erste mitgelieferte Detail-Card ist `vue-panel/light-detail`;
+- ab Engine `2.2.4` zeigt `vue-panel/light-detail` ein Kreis-Dial im Stil der HA-Detailansicht
+  (Power-Pille, großer Wert, Modus-Buttons) und blendet Helligkeit, Farbtemperatur, Farbe und
+  Effekte nur ein, wenn `supported_color_modes` beziehungsweise `effect_list` sie hergeben;
+- ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
+  Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
+  `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit
+  ohne Konfiguration wie `more-info` ohne Ziel; `light.html` hat deshalb keinen expliziten
+  `hold`-Default mehr;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
@@ -339,8 +353,13 @@ Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
 Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
 ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
-  room-tile, menu, entity und section-title. Die Bars sind Engine-Komponenten und keine Cards
-  mehr.
+  room-tile, menu, entity und section-title, dazu die Dialog-Card light-detail. Die Bars sind
+  Engine-Komponenten und keine Cards mehr.
+- **Cards in Popups und Detailansichten**: `areas` enthält `dialog`. Solche Cards laufen nicht auf
+  dem Dashboard, sondern in einem Popup oder einer Detailansicht und erhalten deren Werte über
+  `vuePanel.context` sowie über `${variable}`-Platzhalter in ihren eigenen Instanzwerten. Das
+  optionale Metadatenfeld `detail` (`card`, `entityKey`, `variables`) legt fest, welche
+  Dialog-Card die Aktion `more-info` dieser Card öffnet. Details in §6a.
 - **Portable Cards und Browser-Editor**: Der Code-Button öffnet `CustomCardDialog.vue`. Das
   Card-Format besitzt `format: 'vue-panel-card'`, `formatVersion: 2`, `apiVersion: 1`, die
   unveränderliche Identität `manufacturer/cardName`, Metadaten, Bereiche, deklarierte
@@ -380,6 +399,27 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
+
+## 6a. Popups & Detailansicht (`src/core/popups/`)
+
+- `DashboardConfig.popups: PopupConfig[]` — global, unabhängig von Views. Ein `PopupConfig` hat
+  `id`, `title`, `icon?`, `size?` (`sm|md|lg|full`), `width?`/`height?` (px), `css?`, `align?`,
+  `padding?` und `sections[]`. Der Inhalt ist **wie eine Flex-View**: `PopupFrame.vue` baut aus dem
+  Popup eine synthetische `ViewConfig` mit `layout: 'flex'` und rendert sie über `FlexLayout` mit
+  `area="dialog"` — dadurch gilt die komplette `useSectionEditing`-Werkzeugleiste unverändert.
+- Store: Views und Popups teilen sich alle Section-/Card-Actions. `sectionHost(id)` löst beide auf,
+  alle Actions nehmen deshalb `hostId` statt `viewId`. Popup-Actions: `addPopup`, `updatePopup`,
+  `removePopup`, `duplicatePopup`, `movePopup`; Getter `popups`, `popupById`.
+- Verwaltung im Edit-Modus über den Toolbar-Button der AppShell → `PopupManagerDialog.vue`
+  (Liste, sortieren, duplizieren, löschen, „Cards bearbeiten“) und `PopupSettingsDialog.vue`.
+- Laufzeit: `popupService.ts` hält den Dialogstapel (`openPopup`, `openDetail`, `closePopup`),
+  `PopupHost.vue` rendert ihn (einmal in der AppShell). Der Kontext wird über `popupContextKey`
+  bereitgestellt; `resolvePlaceholders()` ersetzt `${key}` in Instanzwerten (reiner Platzhalter
+  behält den Typ, gemischter Text wird interpoliert), `pickVariables()` schränkt die Übergabe ein.
+- Detailauflösung (`openDetail`): Ziel der Tap-Action → `detail.card` der Card → Domain-Standard
+  `vue-panel/<domain>-detail` (falls im Katalog) → eingebauter `EntityDetailFallback.vue`
+  (Name, Status, Attribute). Die aufgelöste Entity liegt im Kontext immer unter `entity`.
+- **Nicht verwechseln mit dem Dialog-Service unten**: der ist für Alert/Confirm/Prompt der Engine.
 
 ## 7. Dialog-Service (keine nativen Popups!)
 
@@ -423,6 +463,7 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - [x] Phase 3: privaten Card-Katalog, Card-Datei-CRUD, Runtime-Registry und Sandbox API v1 implementieren.
 - [x] Phase 4: alle Core-Cards in portable HTML-Dateien portieren und den SFC-Fallback entfernen.
 - [ ] Git-Repo für vue-panel initialisieren (bisher keins!).
+- [ ] Weitere Detail-Cards je Domain (`vue-panel/<domain>-detail`, bisher nur `light`).
 - [ ] Weitere Cards (z.B. Kamera, Verlaufs-Graph, Szenen/Buttons, Alarm).
 - [ ] Beispiel-Custom-Theme als Vorlage.
 - [ ] `size.rows` wird noch nicht ausgewertet (nur `cols` als grid-column span).

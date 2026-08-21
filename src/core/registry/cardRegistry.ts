@@ -24,11 +24,11 @@ import {
 
 export { NATIVE_GROUP, OTHER_GROUP, type CardGroup }
 
-/** Where a card may be placed — the dashboard grid or a kind of global bar. */
-export type CardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom'
+/** Where a card may be placed — the dashboard grid, a global bar or a popup. */
+export type CardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom' | 'dialog'
 
 /** Both sidebars accept the same cards, so they share one card area. */
-export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard'> {
+export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard' | 'dialog'> {
   return position === 'sidebar-left' || position === 'sidebar-right' ? 'sidebar' : position
 }
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'

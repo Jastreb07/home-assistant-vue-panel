@@ -20,7 +20,8 @@
       "entity:subscribe",
       "icon:render",
       "service:call",
-      "navigation:write"
+      "navigation:write",
+      "dialog:open"
     ],
     "defaultSize": {
       "cols": 1,
@@ -375,8 +376,10 @@
 
   /*
    * Tipp-Aktionen: Tippen, Doppeltippen und Halten. "default" behält die
-   * eingebaute Aktion der Card; "more-info" und "assist" brauchen Dialoge von
-   * Home Assistant, die das Panel noch nicht öffnen kann, und bleiben leer.
+   * eingebaute Aktion der Card und öffnet beim Halten ohne eigene Aktion die
+   * automatische Detailansicht; "more-info" öffnet die Detailansicht (Ziel ist
+   * optional eine bestimmte Dialog-Card), "popup" ein eigenes Popup. "assist"
+   * braucht einen Home-Assistant-Dialog, den das Panel nicht öffnen kann.
    */
   function bindGestures(element, settings, handlers) {
     /* Das Panel speichert je Geste eine Aktion samt Ziel */
@@ -387,8 +390,18 @@
       const action = actionOf(gesture);
       const target = String(slotOf(gesture).target || '');
 
-      if (action === 'none' || action === 'more-info' || action === 'assist') return;
-      if (action === 'default') return handlers.default ? handlers.default(gesture) : undefined;
+      if (action === 'none' || action === 'assist') return;
+      if (action === 'more-info') {
+        return vuePanel.showDetail(target ? {card: target, entity: handlers.entityId} : {entity: handlers.entityId});
+      }
+      if (action === 'popup') return target ? vuePanel.openPopup(target) : undefined;
+      if (action === 'default') {
+        const handled = handlers.default ? handlers.default(gesture) : undefined;
+        if (handled !== undefined) return handled;
+        /* Ohne eigene Card-Aktion öffnet Halten die automatische Detailansicht */
+        if (gesture === 'hold' && handlers.entityId) return vuePanel.showDetail({entity: handlers.entityId});
+        return undefined;
+      }
       if (action === 'toggle') return handlers.toggle ? handlers.toggle() : undefined;
       if (action === 'navigate') return target ? vuePanel.navigate(target) : undefined;
       if (action === 'url') {

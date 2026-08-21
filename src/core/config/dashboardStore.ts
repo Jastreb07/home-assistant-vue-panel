@@ -8,6 +8,7 @@ import type {
   CardConfig,
   DashboardConfig,
   DashboardSettings,
+  PopupConfig,
   SectionConfig,
   ViewConfig,
 } from './types'
@@ -26,6 +27,9 @@ import { t } from '@/i18n'
 import { choiceDialog } from '@/core/ui/dialogService'
 
 const HISTORY_LIMIT = 50
+
+/** Anything that owns card sections: a view or a custom popup. */
+export type SectionHost = Pick<ViewConfig, 'id' | 'sections'>
 
 export const defaultSettings: DashboardSettings = {
   theme: 'dark',
@@ -215,6 +219,22 @@ export const useDashboardStore = defineStore('dashboard', {
     /** The first view is the dashboard default — unknown URLs redirect to it. */
     defaultView(state): ViewConfig | undefined {
       return state.config.views[0]
+    },
+    popups(state): PopupConfig[] {
+      return state.config.popups ?? []
+    },
+    popupById(state) {
+      return (id: string): PopupConfig | undefined =>
+        (state.config.popups ?? []).find((popup) => popup.id === id)
+    },
+    /**
+     * Sections live in views and popups alike, so every section and card
+     * action resolves its container through one lookup.
+     */
+    sectionHost(state) {
+      return (id: string): SectionHost | undefined =>
+        state.config.views.find((view) => view.id === id)
+        ?? (state.config.popups ?? []).find((popup) => popup.id === id)
     },
     settings(state): DashboardSettings {
       return { ...defaultSettings, ...state.config.settings }
@@ -546,71 +566,115 @@ export const useDashboardStore = defineStore('dashboard', {
       this.save()
     },
 
+    // ── Popups ───────────────────────────────────────────────
+    addPopup(title: string): PopupConfig {
+      const popup: PopupConfig = { id: newId('popup'), title, icon: 'mdi:card-text-outline', size: 'md', sections: [] }
+      this.config.popups = [...(this.config.popups ?? []), popup]
+      this.save()
+      return popup
+    },
+    updatePopup(popupId: string, patch: Partial<Omit<PopupConfig, 'id' | 'sections'>>) {
+      const popup = this.popupById(popupId)
+      if (!popup) return
+      Object.assign(popup, patch)
+      this.save()
+    },
+    removePopup(popupId: string) {
+      this.config.popups = (this.config.popups ?? []).filter((popup) => popup.id !== popupId)
+      this.save()
+    },
+    /** Copy a popup including its sections and cards, all with fresh ids. */
+    duplicatePopup(popupId: string): PopupConfig | undefined {
+      const popup = this.popupById(popupId)
+      if (!popup) return
+      const clone = JSON.parse(JSON.stringify(popup)) as PopupConfig
+      clone.id = newId('popup')
+      clone.title = `${popup.title} (2)`
+      clone.sections = clone.sections.map((section) => ({
+        ...section,
+        id: newId('sec'),
+        cards: section.cards.map((card) => ({ ...card, id: newId('card') })),
+      }))
+      this.config.popups = [...(this.config.popups ?? []), clone]
+      this.save()
+      return clone
+    },
+    movePopup(popupId: string, direction: -1 | 1) {
+      const popups = this.config.popups
+      if (!popups) return
+      const index = popups.findIndex((popup) => popup.id === popupId)
+      const target = index + direction
+      if (index < 0 || target < 0 || target >= popups.length) return
+      const [popup] = popups.splice(index, 1)
+      popups.splice(target, 0, popup!)
+      this.save()
+    },
+
     // ── Sections ─────────────────────────────────────────────
-    addSection(viewId: string): SectionConfig | undefined {
-      const view = this.viewById(viewId)
-      if (!view) return
+    addSection(hostId: string): SectionConfig | undefined {
+      const host = this.sectionHost(hostId)
+      if (!host) return
       const section: SectionConfig = { id: newId('sec'), cards: [] }
-      view.sections.push(section)
+      host.sections.push(section)
       this.save()
       return section
     },
-    updateSection(viewId: string, sectionId: string, patch: Partial<Omit<SectionConfig, 'id' | 'cards'>>) {
-      const section = this.viewById(viewId)?.sections.find((s) => s.id === sectionId)
+    updateSection(hostId: string, sectionId: string, patch: Partial<Omit<SectionConfig, 'id' | 'cards'>>) {
+      const section = this.sectionHost(hostId)?.sections.find((s) => s.id === sectionId)
       if (!section) return
       Object.assign(section, patch)
       this.save()
     },
-    removeSection(viewId: string, sectionId: string) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      view.sections = view.sections.filter((s) => s.id !== sectionId)
+    removeSection(hostId: string, sectionId: string) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      host.sections = host.sections.filter((s) => s.id !== sectionId)
       this.save()
     },
     /** Insert a deep copy of a section (fresh ids) right after the original. */
-    duplicateSection(viewId: string, sectionId: string) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      const idx = view.sections.findIndex((s) => s.id === sectionId)
+    duplicateSection(hostId: string, sectionId: string) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      const idx = host.sections.findIndex((s) => s.id === sectionId)
       if (idx < 0) return
-      const clone = JSON.parse(JSON.stringify(view.sections[idx])) as SectionConfig
+      const clone = JSON.parse(JSON.stringify(host.sections[idx])) as SectionConfig
       clone.id = newId('sec')
       clone.cards = clone.cards.map((card) => ({ ...card, id: newId('card') }))
-      view.sections.splice(idx + 1, 0, clone)
+      host.sections.splice(idx + 1, 0, clone)
       this.save()
     },
     /** Append a copied section from the clipboard with fresh ids. */
-    pasteSection(viewId: string, section: Omit<SectionConfig, 'id'>) {
-      const view = this.viewById(viewId)
-      if (!view) return
+    pasteSection(hostId: string, section: Omit<SectionConfig, 'id'>) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
       const clone = JSON.parse(JSON.stringify(section)) as SectionConfig
       clone.id = newId('sec')
       clone.cards = (clone.cards ?? []).map((card) => ({ ...card, id: newId('card') }))
-      view.sections.push(clone)
+      host.sections.push(clone)
       this.save()
     },
-    /** Reorder sections within a view (drag handle in edit mode). */
-    moveSection(viewId: string, sectionId: string, toIndex: number) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      const idx = view.sections.findIndex((s) => s.id === sectionId)
+    /** Reorder sections within a host (drag handle in edit mode). */
+    moveSection(hostId: string, sectionId: string, toIndex: number) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      const idx = host.sections.findIndex((s) => s.id === sectionId)
       if (idx < 0 || toIndex < 0 || idx === toIndex) return
-      const [section] = view.sections.splice(idx, 1)
-      view.sections.splice(Math.min(toIndex, view.sections.length), 0, section)
+      const [section] = host.sections.splice(idx, 1)
+      host.sections.splice(Math.min(toIndex, host.sections.length), 0, section)
       this.save()
     },
 
     // ── Cards ────────────────────────────────────────────────
-    addCard(viewId: string, sectionId: string, card: Omit<CardConfig, 'id'>) {
-      const section = this.viewById(viewId)?.sections.find((s) => s.id === sectionId)
+    addCard(hostId: string, sectionId: string, card: Omit<CardConfig, 'id'>) {
+      const section = this.sectionHost(hostId)?.sections.find((s) => s.id === sectionId)
       if (!section) return
       section.cards.push({ ...card, id: newId('card') })
       this.save()
     },
-    duplicateCard(viewId: string, cardId: string) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      for (const section of view.sections) {
+    duplicateCard(hostId: string, cardId: string) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      for (const section of host.sections) {
         const index = section.cards.findIndex((card) => card.id === cardId)
         if (index < 0) continue
         section.cards.splice(index + 1, 0, duplicateCardConfig(section.cards[index]!, 'card'))
@@ -618,18 +682,18 @@ export const useDashboardStore = defineStore('dashboard', {
         return
       }
     },
-    removeCard(viewId: string, cardId: string) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      for (const section of view.sections) {
+    removeCard(hostId: string, cardId: string) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      for (const section of host.sections) {
         section.cards = section.cards.filter((c) => c.id !== cardId)
       }
       this.save()
     },
-    updateCardConfig(viewId: string, cardId: string, config: Record<string, unknown>, css?: string) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      for (const section of view.sections) {
+    updateCardConfig(hostId: string, cardId: string, config: Record<string, unknown>, css?: string) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      for (const section of host.sections) {
         const card = section.cards.find((c) => c.id === cardId)
         if (card) {
           card.config = config
@@ -639,21 +703,21 @@ export const useDashboardStore = defineStore('dashboard', {
       this.save()
     },
     /** Set a card's fixed pixel size (flex layout resize handle / size tab). */
-    updateCardSize(viewId: string, cardId: string, size: Partial<NonNullable<CardConfig['size']>>) {
-      const view = this.viewById(viewId)
-      if (!view) return
-      for (const section of view.sections) {
+    updateCardSize(hostId: string, cardId: string, size: Partial<NonNullable<CardConfig['size']>>) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
+      for (const section of host.sections) {
         const card = section.cards.find((c) => c.id === cardId)
         if (card) card.size = { ...card.size, ...size }
       }
       this.save()
     },
     /** Move a card via drag & drop (within/between sections). */
-    moveCard(viewId: string, cardId: string, toSectionId: string, toIndex: number) {
-      const view = this.viewById(viewId)
-      if (!view) return
+    moveCard(hostId: string, cardId: string, toSectionId: string, toIndex: number) {
+      const host = this.sectionHost(hostId)
+      if (!host) return
       let card: CardConfig | undefined
-      for (const section of view.sections) {
+      for (const section of host.sections) {
         const idx = section.cards.findIndex((c) => c.id === cardId)
         if (idx >= 0) {
           // Adjust the target index when moving backwards within the same section
@@ -662,7 +726,7 @@ export const useDashboardStore = defineStore('dashboard', {
           break
         }
       }
-      const target = view.sections.find((s) => s.id === toSectionId)
+      const target = host.sections.find((s) => s.id === toSectionId)
       if (!card || !target) return
       target.cards.splice(Math.max(0, Math.min(toIndex, target.cards.length)), 0, card)
       this.save()

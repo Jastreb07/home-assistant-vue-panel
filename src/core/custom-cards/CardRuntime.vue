@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CardTranslations, PortableCardCapability } from '@/core/registry/portableCardTypes'
 import { cardTranslation } from '@/core/registry/cardTranslations'
 import { callService, useEntities } from '@/core/ha'
@@ -8,6 +8,9 @@ import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
 import { mdiIconDataUrl } from '@/core/ui/mdiIconNames'
 import { runtimeId } from '@/core/utils/runtimeId'
+import type { CardDetailConfig } from '@/core/config/types'
+import { popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
+import { openDetail, openPopup } from '@/core/popups/popupService'
 
 /**
  * Runs one portable card inside the engine document. Markup is injected into
@@ -34,6 +37,8 @@ interface CardDefinition {
   css: string
   javascript: string
   capabilities: PortableCardCapability[]
+  /** Detail view this card opens for the `more-info` action */
+  detail?: CardDetailConfig
   /** Catalogs behind `vuePanel.t()` — a card without them shows its keys */
   translations?: CardTranslations
 }
@@ -56,8 +61,10 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   subscribeNavigation: 'navigation:read',
   getDashboardContext: 'dashboard:context',
   emitAction: 'shell:events',
+  showDetail: 'dialog:open',
+  openPopup: 'dialog:open',
 }
-const PREVIEW_DENIED = ['callService', 'navigate', 'emitAction']
+const PREVIEW_DENIED = ['callService', 'navigate', 'emitAction', 'showDetail', 'openPopup']
 
 const scope = runtimeId('card')
 const root = ref<HTMLElement | null>(null)
@@ -67,6 +74,17 @@ const entities = useEntities()
 const store = useDashboardStore()
 const routePath = usePanelRoutePath()
 const { locale } = useI18n()
+
+/**
+ * Inside a popup or detail view the card may reference the values the dialog
+ * was opened with — as `${key}` in its own configuration and as
+ * `vuePanel.context` in its script.
+ */
+const popupContext = inject(popupContextKey, null)
+const cardConfig = computed<Record<string, unknown>>(() => {
+  const config = props.config ?? {}
+  return popupContext ? resolvePlaceholders(config, popupContext.value) : config
+})
 
 const entitySubscriptions = new Map<string, { entityId: string; callback: (entity: unknown) => void }>()
 const navigationSubscriptions = new Map<string, (view: unknown) => void>()
@@ -121,7 +139,10 @@ function buildApi(capabilities: PortableCardCapability[]) {
 
   return Object.freeze({
     apiVersion: CARD_API_VERSION,
-    config: deepFreeze(snapshot(props.config ?? {})),
+    config: deepFreeze(snapshot(cardConfig.value)),
+
+    /** Values of the popup or detail view this card runs in — empty otherwise. */
+    context: deepFreeze(snapshot(popupContext?.value ?? {})),
 
     /** Language the panel currently runs in — cards render text for it. */
     language: locale.value,
@@ -222,6 +243,39 @@ function buildApi(capabilities: PortableCardCapability[]) {
         throw new Error('Invalid action name.')
       }
       emit('action', action, snapshot(recordPayload(detail, 'Action detail')))
+      return null
+    },
+
+    /**
+     * Open the detail view of this card: the requested dialog card, the card's
+     * own `detail.card`, or the default card of the entity's domain.
+     */
+    async showDetail(options: Record<string, unknown> = {}) {
+      guard('showDetail')
+      const payload = recordPayload(options, 'Detail options')
+      const card = payload.card === undefined ? undefined : String(payload.card)
+      if (card && !/^[a-z0-9-]+\/[a-z0-9-]+$/.test(card)) throw new Error('Invalid card type.')
+      const variables = Array.isArray(payload.variables)
+        ? payload.variables.map(String)
+        : undefined
+      openDetail(snapshot(cardConfig.value), props.definition.detail, {
+        card,
+        entityId: payload.entity === undefined ? undefined : String(payload.entity),
+        variables,
+      })
+      return null
+    },
+
+    /** Open a custom popup — by default with all values of this card. */
+    async openPopup(popupId: string, context?: Record<string, unknown>) {
+      guard('openPopup')
+      if (!store.popupById(String(popupId))) throw new Error('Unknown popup ID.')
+      openPopup(
+        String(popupId),
+        context === undefined
+          ? snapshot(cardConfig.value)
+          : snapshot(recordPayload(context, 'Popup context')),
+      )
       return null
     },
   })
@@ -412,7 +466,7 @@ watch(() => props.definition, () => {
   renderTimer = setTimeout(render, 220)
 }, { deep: true })
 
-watch(() => props.config, render, { deep: true })
+watch(cardConfig, render, { deep: true })
 
 /** Cards build their text once per render, so a language switch re-runs them. */
 watch(locale, render)

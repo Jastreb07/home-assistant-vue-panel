@@ -13,6 +13,7 @@ export const CARD_ACTIONS = [
   'navigate',
   'url',
   'perform-action',
+  'popup',
   'assist',
   'none',
 ] as const
@@ -20,7 +21,10 @@ export type CardAction = (typeof CARD_ACTIONS)[number]
 
 export interface CardActionValue {
   action: CardAction
-  /** View id, URL or `domain.service`, depending on the action */
+  /**
+   * View id, URL, `domain.service`, popup id or — for `more-info` — the card
+   * type of a detail view that overrides the card's own default.
+   */
   target?: string
 }
 
@@ -31,9 +35,13 @@ export const GESTURE_ICONS: Record<CardGesture, string> = {
 }
 
 /** Which kind of target field an action needs — `none` hides the field. */
-export function actionTarget(action: CardAction | string): 'view' | 'url' | 'service' | 'none' {
+export function actionTarget(
+  action: CardAction | string,
+): 'view' | 'url' | 'service' | 'popup' | 'detail' | 'none' {
   if (action === 'navigate') return 'view'
   if (action === 'url') return 'url'
   if (action === 'perform-action') return 'service'
+  if (action === 'popup') return 'popup'
+  if (action === 'more-info') return 'detail'
   return 'none'
 }

@@ -8,12 +8,26 @@ defineProps<{
   title: string
   /** Dialog width: md (default), lg, xl, full */
   size?: 'md' | 'lg' | 'xl' | 'full'
+  /** Optional icon in front of the title */
+  icon?: string
+  /** Explicit dialog width in px — beats the size preset */
+  width?: number
+  /** Explicit body height in px — the content decides when unset */
+  bodyHeight?: number
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
 
 <template>
-  <component :is="Dialog" :title="title" :size="size" @close="emit('close')">
+  <component
+    :is="Dialog"
+    :title="title"
+    :size="size"
+    :icon="icon"
+    :width="width"
+    :body-height="bodyHeight"
+    @close="emit('close')"
+  >
     <slot />
     <template v-if="$slots.footer" #footer>
       <slot name="footer" />

@@ -117,6 +117,7 @@ interface FullCodeMetadata {
   defaultSize: CustomCardDefinition['defaultSize']
   defaultResponsive: CustomCardDefinition['defaultResponsive']
   fullRow: boolean
+  detail?: CustomCardDefinition['detail']
   variables: Array<Omit<CustomCardVariable, 'id'>>
 }
 
@@ -218,6 +219,7 @@ const areaOptions = computed(() => [
   {value: 'sidebar' as const, label: t('customCards.areas.sidebar')},
   {value: 'header' as const, label: t('customCards.areas.header')},
   {value: 'bottom' as const, label: t('customCards.areas.bottom')},
+  {value: 'dialog' as const, label: t('customCards.areas.dialog')},
 ])
 
 const capabilityOptions = computed(() => [
@@ -229,6 +231,7 @@ const capabilityOptions = computed(() => [
   'navigation:write',
   'dashboard:context',
   'shell:events',
+  'dialog:open',
 ] as const)
 
 function toggleArrayValue<T>(values: T[], value: T, enabled: boolean): T[] {
@@ -759,6 +762,7 @@ function fullCodeMetadata(): FullCodeMetadata {
     defaultSize: {...draft.value.defaultSize},
     defaultResponsive: {...draft.value.defaultResponsive},
     fullRow: draft.value.fullRow,
+    ...(draft.value.detail ? {detail: {...draft.value.detail}} : {}),
     variables: portableVariables(),
   }
 }
@@ -881,6 +885,7 @@ function definitionFromFullCode(
       tabletMax: positiveInteger(Number(responsive.tabletMax), 1023),
     },
     fullRow: value.fullRow,
+    detail: value.detail ? {...value.detail} : undefined,
     variables,
     html,
     css,

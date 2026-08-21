@@ -13,6 +13,9 @@ import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
 import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
 import DashboardSettingsDialog from '@/core/editor/DashboardSettingsDialog.vue'
+import PopupManagerDialog from '@/core/editor/PopupManagerDialog.vue'
+import PopupHost from '@/core/popups/PopupHost.vue'
+import { closeAllPopups, openPopup } from '@/core/popups/popupService'
 import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseViewSelectMenu from '@/core/ui/BaseViewSelectMenu.vue'
@@ -56,6 +59,11 @@ watch(
   },
   { immediate: true },
 )
+
+/** A dialog always belongs to the view it was opened from. */
+watch(activeView, (view, previous) => {
+  if (view?.id !== previous?.id) closeAllPopups()
+})
 
 /** All pages as options for the edit toolbar picker. */
 const viewOptions = computed<ViewSelectOption[]>(() =>
@@ -123,6 +131,14 @@ watch(idleSeconds, (idle) => {
 const viewDialog = ref<'closed' | 'edit' | 'new' | 'duplicate'>('closed')
 const settingsOpen = ref(false)
 const customCardDialogOpen = ref(false)
+const popupManagerOpen = ref(false)
+
+/** Editing a popup hides the manager and brings it back when the popup closes. */
+function editPopupCards(popupId: string) {
+  store.editMode = true
+  popupManagerOpen.value = false
+  openPopup(popupId, {}, { onClose: () => { popupManagerOpen.value = true } })
+}
 
 function onViewCreated(viewId: string) {
   navigate(viewId)
@@ -189,6 +205,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               >
                 <MdiIcon icon="mdi:code-tags" :size="18" />
               </button>
+              <button
+                class="toolbar-icon-btn"
+                :title="t('shell.managePopups')"
+                @click="popupManagerOpen = true"
+              >
+                <MdiIcon icon="mdi:card-text-outline" :size="18" />
+              </button>
               <div class="toolbar-actions">
                 <button
                   class="toolbar-icon-btn"
@@ -243,6 +266,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       v-if="customCardDialogOpen"
       @close="customCardDialogOpen = false"
     />
+    <PopupManagerDialog
+      v-if="popupManagerOpen"
+      @close="popupManagerOpen = false"
+      @edit-cards="editPopupCards"
+    />
+    <!-- Custom popups and detail views live above the whole panel -->
+    <PopupHost />
   </div>
 </template>
 

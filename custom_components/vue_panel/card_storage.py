@@ -45,7 +45,7 @@ _TRANSLATION_KEY_PATTERN = re.compile(
 )
 _MAX_TRANSLATION_LANGUAGES = 40
 _MAX_TRANSLATION_ENTRIES = 4000
-_AREAS = {"dashboard", "sidebar", "header", "bottom"}
+_AREAS = {"dashboard", "sidebar", "header", "bottom", "dialog"}
 _CAPABILITIES = {
     "entity:read",
     "entity:subscribe",
@@ -55,6 +55,7 @@ _CAPABILITIES = {
     "navigation:write",
     "dashboard:context",
     "shell:events",
+    "dialog:open",
 }
 _GESTURES = ("tap", "double_tap", "hold")
 _ACTIONS = (
@@ -64,6 +65,7 @@ _ACTIONS = (
     "navigate",
     "url",
     "perform-action",
+    "popup",
     "assist",
     "none",
 )
@@ -96,6 +98,9 @@ _METADATA_FIELDS = {
     "fullRow",
     "variables",
 }
+# Optional metadata: a card without them simply keeps the engine defaults
+_OPTIONAL_METADATA_FIELDS = {"detail"}
+_DETAIL_FIELDS = {"card", "variables", "entityKey"}
 _VARIABLE_FIELDS = {
     "gestures",
     "actions",
@@ -408,7 +413,8 @@ def validate_card_metadata(value: Any) -> dict[str, Any]:
 
     if not isinstance(value, dict):
         raise CardFileError("Card metadata must be an object")
-    if set(value) != _METADATA_FIELDS:
+    fields = set(value)
+    if not _METADATA_FIELDS <= fields or fields - _METADATA_FIELDS - _OPTIONAL_METADATA_FIELDS:
         raise CardFileError("Card metadata fields are incomplete or unsupported")
     if value.get("format") != CARD_FORMAT:
         raise CardFileError("Unsupported card format")
@@ -481,7 +487,37 @@ def validate_card_metadata(value: Any) -> dict[str, Any]:
     for key in referenced:
         if key not in keys:
             raise CardFileError(f"A visibleIf condition references the unknown key {key}")
+    if "detail" in value:
+        _validate_detail(value["detail"], keys)
     return deepcopy(value)
+
+
+def _validate_detail(value: Any, keys: set[str]) -> None:
+    """Validate the optional detail view a card opens for `more-info`."""
+
+    if not isinstance(value, dict):
+        raise CardFileError("Card detail must be an object")
+    if set(value) - _DETAIL_FIELDS:
+        raise CardFileError("Card detail contains unsupported fields")
+    card = value.get("card")
+    if card is not None:
+        if not isinstance(card, str) or card.count("/") != 1:
+            raise CardFileError("Card detail card must be a card type")
+        manufacturer, card_name = card.split("/")
+        _validate_identifier(manufacturer, "Card detail manufacturer")
+        _validate_identifier(card_name, "Card detail card name")
+    variables = value.get("variables")
+    if variables is not None:
+        if not isinstance(variables, list) or len(set(variables)) != len(variables):
+            raise CardFileError("Card detail variables must be a unique array")
+        for key in variables:
+            if not isinstance(key, str) or key not in keys:
+                raise CardFileError(f"Card detail references the unknown variable {key}")
+    entity_key = value.get("entityKey")
+    if entity_key is not None and (
+        not isinstance(entity_key, str) or entity_key not in keys
+    ):
+        raise CardFileError("Card detail entityKey must be a declared variable")
 
 
 def parse_card_document(document: str) -> dict[str, Any]:
@@ -816,24 +852,7 @@ def duplicate_card(
         "metadata": {
             key: deepcopy(value)
             for key, value in source.items()
-            if key
-            in {
-                "format",
-                "formatVersion",
-                "apiVersion",
-                "manufacturer",
-                "cardName",
-                "name",
-                "description",
-                "icon",
-                "group",
-                "areas",
-                "capabilities",
-                "defaultSize",
-                "defaultResponsive",
-                "fullRow",
-                "variables",
-            }
+            if key in _METADATA_FIELDS | _OPTIONAL_METADATA_FIELDS
         },
         "html": source["html"],
         "css": source["css"],
