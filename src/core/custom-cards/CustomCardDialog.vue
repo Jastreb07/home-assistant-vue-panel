@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useI18n } from 'vue-i18n'
+import {computed, ref, watch} from 'vue'
+import {useI18n} from 'vue-i18n'
 import type {
   CustomCardDefinition,
   CustomCardVariable,
   CustomCardVariableType,
 } from '@/core/config/types'
-import { newId, useDashboardStore } from '@/core/config/dashboardStore'
+import {newId, useDashboardStore} from '@/core/config/dashboardStore'
 import {
   createPortableCard,
   deletePortableCard,
@@ -15,8 +15,13 @@ import {
   isCardRevisionConflict,
   updatePortableCard,
 } from '@/core/ha'
-import { cardRegistry, syncPortableCardCatalog } from '@/core/registry/cardRegistry'
-import type { CardLanguage, CardTranslations } from '@/core/registry/portableCardTypes'
+import {cardRegistry, syncPortableCardCatalog} from '@/core/registry/cardRegistry'
+import type {CardLanguage, CardTranslations} from '@/core/registry/portableCardTypes'
+import type {
+  ConditionValue,
+  VisibilityCondition,
+  VisibleIf,
+} from '@/core/registry/cardConditions'
 import {
   DEFAULT_TRANSLATION_FALLBACK,
   TRANSLATION_PREFIX,
@@ -32,19 +37,20 @@ import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseTabs from '@/core/ui/BaseTabs.vue'
-import BaseVariableCard from '@/core/ui/BaseVariableCard.vue'
+import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
+import BaseCollapsibleAdvanced from '@/core/ui/BaseCollapsibleAdvanced.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
-import { mdiIconOptions } from '@/core/ui/mdiIconNames'
-import type { SelectOption } from '@/core/ui/selectMenu'
-import type { TabItem } from '@/core/ui/tabs'
-import { alertDialog, choiceDialog, confirmDialog } from '@/core/ui/dialogService'
+import {mdiIconOptions} from '@/core/ui/mdiIconNames'
+import type {SelectOption} from '@/core/ui/selectMenu'
+import type {TabItem} from '@/core/ui/tabs'
+import {alertDialog, choiceDialog, confirmDialog} from '@/core/ui/dialogService'
 import EntityPicker from '@/core/editor/EntityPicker.vue'
 import CardRuntime from './CardRuntime.vue'
-import { editorDefinitionFromDocument } from './cardEditorModel'
+import {editorDefinitionFromDocument} from './cardEditorModel'
 
 const props = defineProps<{ definition?: CustomCardDefinition }>()
 const emit = defineEmits<{ close: []; saved: [definition: CustomCardDefinition] }>()
-const { t, locale } = useI18n()
+const {t, locale} = useI18n()
 const store = useDashboardStore()
 
 const DEFAULT_HTML = `<article class="my-card">
@@ -120,14 +126,14 @@ function freshDefinition(): CustomCardDefinition {
     description: '',
     icon: 'mdi:code-tags',
     group: 'local',
-    translations: { fallback: 'en', languages: { en: {}, de: {} } },
+    translations: {fallback: 'en', languages: {en: {}, de: {}}},
     areas: ['dashboard'],
     capabilities: ['entity:read', 'entity:subscribe', 'icon:render', 'service:call'],
     html: DEFAULT_HTML,
     css: DEFAULT_CSS,
     javascript: DEFAULT_JAVASCRIPT,
     variables: [],
-    defaultSize: { cols: 1, rows: 1, width: 140, height: 120 },
+    defaultSize: {cols: 1, rows: 1, width: 140, height: 120},
     defaultResponsive: {
       mobile: true,
       tablet: true,
@@ -143,10 +149,10 @@ function freshDefinition(): CustomCardDefinition {
 
 function initialDefinition(): CustomCardDefinition {
   const definition = JSON.parse(
-    JSON.stringify(props.definition ?? freshDefinition()),
+      JSON.stringify(props.definition ?? freshDefinition()),
   ) as CustomCardDefinition
   definition.variables ??= []
-  definition.translations ??= { fallback: 'en', languages: {} }
+  definition.translations ??= {fallback: 'en', languages: {}}
   definition.translations.languages ??= {}
   // English stays editable because it is the last fallback of every card
   definition.translations.languages[DEFAULT_TRANSLATION_FALLBACK] ??= {}
@@ -174,36 +180,36 @@ const editorLayoutStyle = computed(() => ({
 }))
 
 const tabs = computed<TabItem[]>(() => [
-  { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
-  { value: 'variables', label: t('customCards.variables.tab'), icon: 'mdi:variable' },
-  { value: 'translations', label: t('customCards.translations.tab'), icon: 'mdi:translate' },
-  { value: 'html', label: 'HTML', icon: 'mdi:language-html5' },
-  { value: 'css', label: 'CSS', icon: 'mdi:language-css3' },
-  { value: 'javascript', label: 'JS', icon: 'mdi:language-javascript' },
-  { value: 'fullCode', label: t('customCards.fullCode.tab'), icon: 'mdi:file-code-outline', align: 'end' },
+  {value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune'},
+  {value: 'variables', label: t('customCards.variables.tab'), icon: 'mdi:variable'},
+  {value: 'translations', label: t('customCards.translations.tab'), icon: 'mdi:translate'},
+  {value: 'html', label: 'HTML', icon: 'mdi:language-html5'},
+  {value: 'css', label: 'CSS', icon: 'mdi:language-css3'},
+  {value: 'javascript', label: 'JS', icon: 'mdi:language-javascript'},
+  {value: 'fullCode', label: t('customCards.fullCode.tab'), icon: 'mdi:file-code-outline', align: 'end'},
 ])
 
 const variableEditorTabs = computed(() => [
-  { value: 'visual', label: t('customCards.variables.visual'), icon: 'mdi:view-dashboard-edit-outline' },
-  { value: 'json', label: 'JSON', icon: 'mdi:code-json' },
+  {value: 'visual', label: t('customCards.variables.visual'), icon: 'mdi:view-dashboard-edit-outline'},
+  {value: 'json', label: 'JSON', icon: 'mdi:code-json'},
 ])
 
 const variableTypeOptions = computed<SelectOption[]>(() => [
-  { value: 'entity', label: t('customCards.variables.types.entity') },
-  { value: 'string', label: t('customCards.variables.types.string') },
-  { value: 'number', label: t('customCards.variables.types.number') },
-  { value: 'boolean', label: t('customCards.variables.types.boolean') },
-  { value: 'icon', label: t('customCards.variables.types.icon') },
-  { value: 'view', label: t('customCards.variables.types.view') },
-  { value: 'select', label: t('customCards.variables.types.select') },
-  { value: 'list', label: t('customCards.variables.types.list') },
+  {value: 'entity', label: t('customCards.variables.types.entity')},
+  {value: 'string', label: t('customCards.variables.types.string')},
+  {value: 'number', label: t('customCards.variables.types.number')},
+  {value: 'boolean', label: t('customCards.variables.types.boolean')},
+  {value: 'icon', label: t('customCards.variables.types.icon')},
+  {value: 'view', label: t('customCards.variables.types.view')},
+  {value: 'select', label: t('customCards.variables.types.select')},
+  {value: 'list', label: t('customCards.variables.types.list')},
 ])
 
 const areaOptions = computed(() => [
-  { value: 'dashboard' as const, label: t('customCards.areas.dashboard') },
-  { value: 'sidebar' as const, label: t('customCards.areas.sidebar') },
-  { value: 'header' as const, label: t('customCards.areas.header') },
-  { value: 'bottom' as const, label: t('customCards.areas.bottom') },
+  {value: 'dashboard' as const, label: t('customCards.areas.dashboard')},
+  {value: 'sidebar' as const, label: t('customCards.areas.sidebar')},
+  {value: 'header' as const, label: t('customCards.areas.header')},
+  {value: 'bottom' as const, label: t('customCards.areas.bottom')},
 ])
 
 const capabilityOptions = computed(() => [
@@ -219,8 +225,8 @@ const capabilityOptions = computed(() => [
 
 function toggleArrayValue<T>(values: T[], value: T, enabled: boolean): T[] {
   return enabled
-    ? [...new Set([...values, value])]
-    : values.filter((candidate) => candidate !== value)
+      ? [...new Set([...values, value])]
+      : values.filter((candidate) => candidate !== value)
 }
 
 function setEditorShare(value: number) {
@@ -261,9 +267,8 @@ function resizeWithKeyboard(event: KeyboardEvent) {
   else setEditorShare(editorShare.value + (event.key === 'ArrowRight' ? 2 : -2))
 }
 
-const iconOptions = computed<SelectOption[]>(() =>
-  draft.value.variables.some((variable) => variable.type === 'icon') ? mdiIconOptions() : [],
-)
+/** Icon names are read from the loaded mdi stylesheet — resolved once. */
+const iconOptions = computed<SelectOption[]>(() => mdiIconOptions())
 const viewOptions = computed<SelectOption[]>(() => store.config.views.map((view) => ({
   value: view.id,
   label: view.title,
@@ -300,25 +305,88 @@ function changeVariableType(variable: CustomCardVariable, type: string) {
   variable.domain = type === 'entity' ? (variable.domain ?? '') : undefined
   // Entity fields sit above the collapsed boxes, so they never carry a group
   if (type === 'entity') variable.group = undefined
+  if (type === 'list') {
+    for (const candidate of draft.value.variables) {
+      if (conditionKey(candidate) === variable.key) candidate.visibleIf = undefined
+    }
+  }
   variable.options = type === 'select' ? (variable.options?.length ? variable.options : ['option']) : undefined
   variable.optionLabels = undefined
   // A list repeats item fields instead of holding a single scalar default
   variable.itemFields = type === 'list'
-    ? (variable.itemFields?.length ? variable.itemFields : defaultItemFields())
-    : undefined
+      ? (variable.itemFields?.length ? variable.itemFields : defaultItemFields())
+      : undefined
   variable.nestable = type === 'list' ? variable.nestable === true : undefined
   variable.default = type === 'list'
-    ? undefined
-    : type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
+      ? undefined
+      : type === 'boolean' ? false : type === 'number' ? 0 : type === 'icon' ? 'mdi:star' : ''
 }
 
 /** Starting point for a new list: a labelled entry pointing at a view. */
 function defaultItemFields(): Array<Omit<CustomCardVariable, 'id'>> {
   return [
-    { key: 'label', label: t('customCards.variables.itemLabel'), type: 'string', required: false },
-    { key: 'icon', label: t('customCards.variables.itemIcon'), type: 'icon', required: false },
-    { key: 'view', label: t('customCards.variables.itemView'), type: 'view', required: false },
+    {key: 'label', label: t('customCards.variables.itemLabel'), type: 'string', required: false},
+    {key: 'icon', label: t('customCards.variables.itemIcon'), type: 'icon', required: false},
+    {key: 'view', label: t('customCards.variables.itemView'), type: 'view', required: false},
   ]
+}
+
+/**
+ * The visual editor keeps one condition per variable; several conditions at
+ * once stay editable through the JSON and full-code views.
+ */
+function firstCondition(variable: CustomCardVariable): VisibilityCondition | undefined {
+  const visibleIf = variable.visibleIf
+  return Array.isArray(visibleIf) ? visibleIf[0] : visibleIf
+}
+
+function conditionKey(variable: CustomCardVariable): string {
+  return firstCondition(variable)?.key ?? ''
+}
+
+/** Every other variable of this card can drive the visibility. */
+function conditionSourceOptions(variable: CustomCardVariable): SelectOption[] {
+  return [
+    { value: '', label: t('customCards.variables.conditionAlways') },
+    ...draft.value.variables
+      .filter((candidate) => candidate.id !== variable.id && candidate.key && candidate.type !== 'list')
+      .map((candidate) => ({ value: candidate.key, label: candidate.label || candidate.key })),
+  ]
+}
+
+function conditionSource(variable: CustomCardVariable): CustomCardVariable | undefined {
+  const key = conditionKey(variable)
+  return draft.value.variables.find((candidate) => candidate.key === key)
+}
+
+/** Values the condition accepts, as a comma separated list for select fields. */
+function conditionValueText(variable: CustomCardVariable): string {
+  const condition = firstCondition(variable)
+  if (!condition) return ''
+  if (condition.in) return condition.in.join(', ')
+  return String(condition.equals ?? condition.not ?? '')
+}
+
+function setConditionKey(variable: CustomCardVariable, key: string) {
+  if (!key) {
+    variable.visibleIf = undefined
+    return
+  }
+  const source = draft.value.variables.find((candidate) => candidate.key === key)
+  variable.visibleIf = source?.type === 'boolean'
+    ? { key, equals: true }
+    : { key, in: source?.options?.length ? [source.options[0]] : [''] }
+}
+
+function setConditionValue(variable: CustomCardVariable, value: string | number | boolean) {
+  const key = conditionKey(variable)
+  if (!key) return
+  if (typeof value === 'boolean') {
+    variable.visibleIf = { key, equals: value }
+    return
+  }
+  const options = String(value).split(',').map((option) => option.trim()).filter(Boolean)
+  variable.visibleIf = { key, in: options.length ? options : [''] }
 }
 
 function selectOptionsText(variable: CustomCardVariable): string {
@@ -353,9 +421,9 @@ function languageLabel(language: CardLanguage): string {
 
 const fallbackOptions = computed<SelectOption[]>(() => {
   const languages = translationLanguages.value.includes(DEFAULT_TRANSLATION_FALLBACK)
-    ? translationLanguages.value
-    : [...translationLanguages.value, DEFAULT_TRANSLATION_FALLBACK]
-  return languages.map((language) => ({ value: language, label: languageLabel(language) }))
+      ? translationLanguages.value
+      : [...translationLanguages.value, DEFAULT_TRANSLATION_FALLBACK]
+  return languages.map((language) => ({value: language, label: languageLabel(language)}))
 })
 
 const newLanguage = ref('')
@@ -363,7 +431,7 @@ const newLanguage = ref('')
 const newLanguageInvalid = computed(() => {
   const language = newLanguage.value.trim()
   return language !== ''
-    && (!isCardLanguage(language) || translationLanguages.value.includes(language))
+      && (!isCardLanguage(language) || translationLanguages.value.includes(language))
 })
 
 function addLanguage() {
@@ -371,7 +439,7 @@ function addLanguage() {
   if (!isCardLanguage(language) || translationLanguages.value.includes(language)) return
   // A new language starts with every key the card already uses, still empty
   draft.value.translations.languages[language] = Object.fromEntries(
-    translationKeys.value.map((key) => [key, '']),
+      translationKeys.value.map((key) => [key, '']),
   )
   newLanguage.value = ''
 }
@@ -427,9 +495,9 @@ const newTranslationKey = ref('')
 
 /** The card's own name may itself be a `translation.*` key. */
 const draftName = computed(() =>
-  isTranslationKey(draft.value.name)
-    ? cardTranslation(draft.value.translations, draft.value.name, locale.value)
-    : draft.value.name,
+    isTranslationKey(draft.value.name)
+        ? cardTranslation(draft.value.translations, draft.value.name, locale.value)
+        : draft.value.name,
 )
 
 function addTranslationKey(key = newTranslationKey.value) {
@@ -451,16 +519,16 @@ function setTranslation(language: CardLanguage, key: string, value: string | num
 /** A key is only really translated once some language provides a text. */
 function translationMissing(key: string): boolean {
   return translationLanguages.value.every(
-    (language) => !draft.value.translations.languages[language]?.[key],
+      (language) => !draft.value.translations.languages[language]?.[key],
   )
 }
 
 function serializeVariables(): string {
-  return JSON.stringify(draft.value.variables.map(({ id: _id, ...variable }) => variable), null, 2)
+  return JSON.stringify(draft.value.variables.map(({id: _id, ...variable}) => variable), null, 2)
 }
 
 function portableVariables(): Array<Omit<CustomCardVariable, 'id'>> {
-  return draft.value.variables.map(({ id: _id, ...variable }) => variable)
+  return draft.value.variables.map(({id: _id, ...variable}) => variable)
 }
 
 function defaultVariableValue(type: CustomCardVariableType): string | number | boolean {
@@ -482,40 +550,40 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
 
   return parsed.map((entry, index) => {
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-      throw new Error(t('customCards.variables.jsonEntryError', { index: index + 1 }))
+      throw new Error(t('customCards.variables.jsonEntryError', {index: index + 1}))
     }
     const value = entry as Record<string, unknown>
     const key = typeof value.key === 'string' ? value.key.trim() : ''
     const label = typeof value.label === 'string' ? value.label.trim() : ''
     const type = value.type as CustomCardVariableType
     if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key)
-      || keys.has(key)
-      || ['__proto__', 'prototype', 'constructor'].includes(key)) {
-      throw new Error(t('customCards.variables.jsonKeyError', { index: index + 1 }))
+        || keys.has(key)
+        || ['__proto__', 'prototype', 'constructor'].includes(key)) {
+      throw new Error(t('customCards.variables.jsonKeyError', {index: index + 1}))
     }
     if (!label || !allowedTypes.includes(type)) {
-      throw new Error(t('customCards.variables.jsonEntryError', { index: index + 1 }))
+      throw new Error(t('customCards.variables.jsonEntryError', {index: index + 1}))
     }
     const rawDefault = value.default
     const defaultValue: string | number | boolean = rawDefault === undefined || rawDefault === null
-      ? defaultVariableValue(type)
-      : rawDefault as string | number | boolean
+        ? defaultVariableValue(type)
+        : rawDefault as string | number | boolean
     if (type !== 'list' && ((type === 'number' && typeof defaultValue !== 'number')
-      || (type === 'boolean' && typeof defaultValue !== 'boolean')
-      || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string'))) {
-      throw new Error(t('customCards.variables.jsonDefaultError', { index: index + 1 }))
+        || (type === 'boolean' && typeof defaultValue !== 'boolean')
+        || (!['number', 'boolean'].includes(type) && typeof defaultValue !== 'string'))) {
+      throw new Error(t('customCards.variables.jsonDefaultError', {index: index + 1}))
     }
     const options = type === 'select' && Array.isArray(value.options)
-      ? value.options.filter((option): option is string => typeof option === 'string' && option !== '')
-      : undefined
+        ? value.options.filter((option): option is string => typeof option === 'string' && option !== '')
+        : undefined
     if (type === 'select' && !options?.length) {
-      throw new Error(t('customCards.variables.jsonEntryError', { index: index + 1 }))
+      throw new Error(t('customCards.variables.jsonEntryError', {index: index + 1}))
     }
     const itemFields = type === 'list' ? parseItemFields(value.itemFields, index) : undefined
     keys.add(key)
     const group = typeof value.group === 'string' && value.group.trim()
-      ? value.group.trim()
-      : undefined
+        ? value.group.trim()
+        : undefined
     return {
       id: existingIds.get(key) ?? newId('variable'),
       key,
@@ -527,21 +595,53 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
       default: type === 'list' ? undefined : defaultValue,
       options,
       optionLabels: type === 'select' && value.optionLabels && typeof value.optionLabels === 'object'
-        ? value.optionLabels as Record<string, string>
-        : undefined,
+          ? value.optionLabels as Record<string, string>
+          : undefined,
       min: type === 'number' && typeof value.min === 'number' ? value.min : undefined,
       max: type === 'number' && typeof value.max === 'number' ? value.max : undefined,
       step: type === 'number' && typeof value.step === 'number' ? value.step : undefined,
       itemFields,
       nestable: type === 'list' ? value.nestable === true : undefined,
+      visibleIf: parseVisibleIf(value.visibleIf),
     }
   })
+}
+
+/**
+ * A condition names another variable of the same card and one matcher.
+ * Anything else is dropped instead of breaking the whole document.
+ */
+function parseVisibleIf(value: unknown): VisibleIf | undefined {
+  const entries = (Array.isArray(value) ? value : [value]).filter(
+    (entry): entry is Record<string, unknown> =>
+      Boolean(entry) && typeof entry === 'object' && !Array.isArray(entry),
+  )
+  const conditions: VisibilityCondition[] = []
+  for (const entry of entries) {
+    if (typeof entry.key !== 'string' || !entry.key) continue
+    if (Array.isArray(entry.in)) {
+      const options = entry.in.filter(
+        (option): option is ConditionValue => ['string', 'number', 'boolean'].includes(typeof option),
+      )
+      if (options.length) conditions.push({ key: entry.key, in: options })
+      continue
+    }
+    for (const matcher of ['equals', 'not'] as const) {
+      const expected = entry[matcher]
+      if (['string', 'number', 'boolean'].includes(typeof expected)) {
+        conditions.push({ key: entry.key, [matcher]: expected as ConditionValue })
+        break
+      }
+    }
+  }
+  if (!conditions.length) return undefined
+  return conditions.length === 1 ? conditions[0] : conditions
 }
 
 /** Item fields repeat scalar variables — nested lists are rejected. */
 function parseItemFields(value: unknown, index: number): Array<Omit<CustomCardVariable, 'id'>> {
   if (!Array.isArray(value) || value.length === 0) {
-    throw new Error(t('customCards.variables.jsonItemFieldsError', { index: index + 1 }))
+    throw new Error(t('customCards.variables.jsonItemFieldsError', {index: index + 1}))
   }
   return value.map((entry) => {
     const field = entry as Record<string, unknown> | null
@@ -552,7 +652,7 @@ function parseItemFields(value: unknown, index: number): Array<Omit<CustomCardVa
       'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select',
     ]
     if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) || !label || !scalarTypes.includes(type)) {
-      throw new Error(t('customCards.variables.jsonItemFieldsError', { index: index + 1 }))
+      throw new Error(t('customCards.variables.jsonItemFieldsError', {index: index + 1}))
     }
     return {
       key,
@@ -560,8 +660,9 @@ function parseItemFields(value: unknown, index: number): Array<Omit<CustomCardVa
       type,
       required: field?.required === true,
       options: type === 'select' && Array.isArray(field?.options)
-        ? (field.options as unknown[]).filter((o): o is string => typeof o === 'string' && o !== '')
-        : undefined,
+          ? (field.options as unknown[]).filter((o): o is string => typeof o === 'string' && o !== '')
+          : undefined,
+      visibleIf: parseVisibleIf(field?.visibleIf),
     }
   })
 }
@@ -573,8 +674,8 @@ function updateVariableJson(value: string) {
     variableJsonError.value = ''
   } catch (error) {
     variableJsonError.value = error instanceof SyntaxError
-      ? t('customCards.variables.jsonSyntaxError', { message: error.message })
-      : error instanceof Error ? error.message : t('customCards.variables.jsonInvalid')
+        ? t('customCards.variables.jsonSyntaxError', {message: error.message})
+        : error instanceof Error ? error.message : t('customCards.variables.jsonInvalid')
   }
 }
 
@@ -597,8 +698,8 @@ function fullCodeMetadata(): FullCodeMetadata {
     group: draft.value.group,
     areas: [...draft.value.areas],
     capabilities: [...draft.value.capabilities],
-    defaultSize: { ...draft.value.defaultSize },
-    defaultResponsive: { ...draft.value.defaultResponsive },
+    defaultSize: {...draft.value.defaultSize},
+    defaultResponsive: {...draft.value.defaultResponsive},
     fullRow: draft.value.fullRow,
     variables: portableVariables(),
   }
@@ -606,9 +707,9 @@ function fullCodeMetadata(): FullCodeMetadata {
 
 function serializeFullCode(): string {
   const metadata = JSON.stringify(fullCodeMetadata(), null, 2)
-    .replace(/<\/script/gi, '<\\/script')
+      .replace(/<\/script/gi, '<\\/script')
   const translations = JSON.stringify(draft.value.translations, null, 2)
-    .replace(/<\/script/gi, '<\\/script')
+      .replace(/<\/script/gi, '<\\/script')
   const scriptEnd = '<' + '/script>'
   return `<script data-vue-panel-config>
 const vuePanelCard = ${metadata};
@@ -634,34 +735,34 @@ ${scriptEnd}`
 /** Translation catalogs of the pasted document — a missing block is empty. */
 function translationsFromFullCode(parsed: unknown): CardTranslations {
   const value = (parsed && typeof parsed === 'object' && !Array.isArray(parsed)
-    ? parsed
-    : {}) as Record<string, unknown>
+      ? parsed
+      : {}) as Record<string, unknown>
   const source = (value.languages && typeof value.languages === 'object'
-    ? value.languages
-    : {}) as Record<string, unknown>
+      ? value.languages
+      : {}) as Record<string, unknown>
   const languages: Record<string, Record<string, string>> = {}
   for (const [language, entries] of Object.entries(source)) {
     if (!isCardLanguage(language)) continue
     if (!entries || typeof entries !== 'object' || Array.isArray(entries)) continue
     languages[language] = Object.fromEntries(
-      Object.entries(entries as Record<string, unknown>)
-        .filter(([key, text]) => isTranslationKey(key) && typeof text === 'string')
-        .map(([key, text]) => [key, text as string]),
+        Object.entries(entries as Record<string, unknown>)
+            .filter(([key, text]) => isTranslationKey(key) && typeof text === 'string')
+            .map(([key, text]) => [key, text as string]),
     )
   }
   if (!Object.keys(languages).length) languages[DEFAULT_TRANSLATION_FALLBACK] = {}
   const fallback = typeof value.fallback === 'string' && languages[value.fallback]
-    ? value.fallback
-    : DEFAULT_TRANSLATION_FALLBACK
-  return { fallback, languages }
+      ? value.fallback
+      : DEFAULT_TRANSLATION_FALLBACK
+  return {fallback, languages}
 }
 
 function definitionFromFullCode(
-  parsed: unknown,
-  translations: unknown,
-  html: unknown,
-  css: unknown,
-  javascript: unknown,
+    parsed: unknown,
+    translations: unknown,
+    html: unknown,
+    css: unknown,
+    javascript: unknown,
 ): CustomCardDefinition {
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
     throw new Error(t('customCards.fullCode.documentError'))
@@ -671,24 +772,24 @@ function definitionFromFullCode(
     throw new Error(t('customCards.fullCode.formatError'))
   }
   if (typeof value.manufacturer !== 'string'
-    || typeof value.cardName !== 'string'
-    || typeof value.name !== 'string'
-    || typeof value.description !== 'string'
-    || typeof value.icon !== 'string'
-    || typeof value.group !== 'string'
-    || typeof html !== 'string'
-    || typeof css !== 'string'
-    || typeof javascript !== 'string'
-    || !Array.isArray(value.areas)
-    || !Array.isArray(value.capabilities)
-    || !Array.isArray(value.variables)
-    || !value.defaultSize
-    || typeof value.defaultSize !== 'object'
-    || Array.isArray(value.defaultSize)
-    || !value.defaultResponsive
-    || typeof value.defaultResponsive !== 'object'
-    || Array.isArray(value.defaultResponsive)
-    || typeof value.fullRow !== 'boolean') {
+      || typeof value.cardName !== 'string'
+      || typeof value.name !== 'string'
+      || typeof value.description !== 'string'
+      || typeof value.icon !== 'string'
+      || typeof value.group !== 'string'
+      || typeof html !== 'string'
+      || typeof css !== 'string'
+      || typeof javascript !== 'string'
+      || !Array.isArray(value.areas)
+      || !Array.isArray(value.capabilities)
+      || !Array.isArray(value.variables)
+      || !value.defaultSize
+      || typeof value.defaultSize !== 'object'
+      || Array.isArray(value.defaultSize)
+      || !value.defaultResponsive
+      || typeof value.defaultResponsive !== 'object'
+      || Array.isArray(value.defaultResponsive)
+      || typeof value.fullRow !== 'boolean') {
     throw new Error(t('customCards.fullCode.documentError'))
   }
   const size = value.defaultSize as Record<string, unknown>
@@ -748,24 +849,24 @@ function parseJavaScriptMetadata(source: string, constant = 'vuePanelCard'): unk
 
 function parseFullCode(source: string): CustomCardDefinition {
   const currentMetadata = source.match(
-    /<script\s+data-vue-panel-config>([\s\S]*?)<\/script>/i,
+      /<script\s+data-vue-panel-config>([\s\S]*?)<\/script>/i,
   )
   const metadata = currentMetadata?.[1] !== undefined
-    ? parseJavaScriptMetadata(currentMetadata[1])
-    : undefined
+      ? parseJavaScriptMetadata(currentMetadata[1])
+      : undefined
   if (!metadata) throw new Error(t('customCards.fullCode.documentError'))
   // The translation block is optional — older documents simply carry no texts
   const currentTranslations = source.match(
-    /<script\s+data-vue-panel-translation>([\s\S]*?)<\/script>/i,
+      /<script\s+data-vue-panel-translation>([\s\S]*?)<\/script>/i,
   )
   const translations = currentTranslations?.[1] !== undefined
-    ? parseJavaScriptMetadata(currentTranslations[1], 'vuePanelTranslations')
-    : undefined
+      ? parseJavaScriptMetadata(currentTranslations[1], 'vuePanelTranslations')
+      : undefined
   const html = sectionContent(source, /<template\s+data-vue-panel-html>([\s\S]*?)<\/template>/i)
   const css = sectionContent(source, /<style\s+data-vue-panel-css>([\s\S]*?)<\/style>/i)
   const javascript = sectionContent(
-    source,
-    /<script\s+data-vue-panel-javascript>([\s\S]*?)<\/script>/i,
+      source,
+      /<script\s+data-vue-panel-javascript>([\s\S]*?)<\/script>/i,
   )
   return definitionFromFullCode(metadata, translations, html, css, javascript)
 }
@@ -779,8 +880,8 @@ function updateFullCode(value: string) {
     fullCodeError.value = ''
   } catch (error) {
     fullCodeError.value = error instanceof SyntaxError
-      ? t('customCards.fullCode.syntaxError', { message: error.message })
-      : error instanceof Error ? error.message : t('customCards.fullCode.documentError')
+        ? t('customCards.fullCode.syntaxError', {message: error.message})
+        : error instanceof Error ? error.message : t('customCards.fullCode.documentError')
   }
 }
 
@@ -793,13 +894,13 @@ function changeTab(value: string) {
 function exportFullCode() {
   if (fullCodeError.value) return
   const content = fullCodeText.value || serializeFullCode()
-  const blob = new Blob([content], { type: 'text/html' })
+  const blob = new Blob([content], {type: 'text/html'})
   const url = URL.createObjectURL(blob)
   const anchor = document.createElement('a')
   const filename = (draft.value.name || 'custom-card')
-    .toLocaleLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'custom-card'
+      .toLocaleLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'custom-card'
   anchor.href = url
   anchor.download = `${filename}.vue-panel-card.html`
   anchor.click()
@@ -836,26 +937,26 @@ watch(() => draft.value.variables, () => {
   if (variableEditorMode.value !== 'visual') return
   variableJsonText.value = serializeVariables()
   variableJsonError.value = ''
-}, { deep: true })
+}, {deep: true})
 watch(draft, () => {
   if (tab.value === 'fullCode' || fullCodeFullscreen.value) return
   fullCodeText.value = serializeFullCode()
   fullCodeError.value = ''
-}, { deep: true })
+}, {deep: true})
 
 function variableKeyInvalid(variable: CustomCardVariable): boolean {
   if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(variable.key)) return true
   if (['__proto__', 'prototype', 'constructor'].includes(variable.key)) return true
   return draft.value.variables.some(
-    (candidate) => candidate.id !== variable.id && candidate.key === variable.key,
+      (candidate) => candidate.id !== variable.id && candidate.key === variable.key,
   )
 }
 
 const variablesInvalid = computed(() => draft.value.variables.some(
-  (variable) => variableKeyInvalid(variable)
-    || !variable.label.trim()
-    || (variable.type === 'select' && !variable.options?.length)
-    || (variable.type === 'list' && !variable.itemFields?.length),
+    (variable) => variableKeyInvalid(variable)
+        || !variable.label.trim()
+        || (variable.type === 'select' && !variable.options?.length)
+        || (variable.type === 'list' && !variable.itemFields?.length),
 ) || Boolean(variableJsonError.value))
 
 const previewConfig = computed<Record<string, unknown>>(() => Object.fromEntries([
@@ -865,18 +966,18 @@ const previewConfig = computed<Record<string, unknown>>(() => Object.fromEntries
 const identityPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const identityType = computed(() => `${draft.value.manufacturer}/${draft.value.cardName}`)
 const duplicateIdentity = computed(() => Boolean(
-  cardRegistry[identityType.value]?.portable
+    cardRegistry[identityType.value]?.portable
     && identityType.value !== props.definition?.id,
 ))
 const identityInvalid = computed(() => !identityPattern.test(draft.value.manufacturer)
-  || draft.value.manufacturer === 'vue-panel'
-  || !identityPattern.test(draft.value.cardName)
-  || duplicateIdentity.value)
+    || draft.value.manufacturer === 'vue-panel'
+    || !identityPattern.test(draft.value.cardName)
+    || duplicateIdentity.value)
 const nameInvalid = computed(() => validationAttempted.value && !draft.value.name.trim())
 const metadataInvalid = computed(() => draft.value.areas.length === 0
-  || !/^mdi:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(draft.value.icon)
-  || !draft.value.group.trim()
-  || draft.value.defaultResponsive.tabletMax <= draft.value.defaultResponsive.mobileMax)
+    || !/^mdi:[a-z0-9]+(?:-[a-z0-9]+)*$/.test(draft.value.icon)
+    || !draft.value.group.trim()
+    || draft.value.defaultResponsive.tabletMax <= draft.value.defaultResponsive.mobileMax)
 const readOnly = computed(() => Boolean(props.definition && !props.definition.writable && !duplicating.value))
 
 function sourceBytes(): number {
@@ -894,7 +995,7 @@ function positiveInteger(value: number | string, fallback: number): number {
 async function save() {
   validationAttempted.value = true
   if (readOnly.value || nameInvalid.value || identityInvalid.value || metadataInvalid.value
-    || variablesInvalid.value || fullCodeError.value || definitionTooLarge.value) return
+      || variablesInvalid.value || fullCodeError.value || definitionTooLarge.value) return
   draft.value.manufacturer = draft.value.manufacturer.trim()
   draft.value.cardName = draft.value.cardName.trim()
   draft.value.id = `${draft.value.manufacturer}/${draft.value.cardName}`
@@ -916,10 +1017,10 @@ async function save() {
   const document = serializeFullCode()
   try {
     const saved = props.definition && props.definition.writable && !duplicating.value
-      ? await updatePortableCard(props.definition.id, document, props.definition.contentHash ?? '')
-      : importMode.value
-        ? await importPortableCard(document)
-        : await createPortableCard(document)
+        ? await updatePortableCard(props.definition.id, document, props.definition.contentHash ?? '')
+        : importMode.value
+            ? await importPortableCard(document)
+            : await createPortableCard(document)
     draft.value.contentHash = saved.contentHash
     draft.value.writable = saved.writable
     draft.value.source = saved.source
@@ -929,8 +1030,8 @@ async function save() {
   } catch (error) {
     if (isCardRevisionConflict(error) && props.definition) {
       const choice = await choiceDialog(t('customCards.errors.revisionConflict'), [
-        { value: 'copy', label: t('persistence.saveCopy') },
-        { value: 'reload', label: t('persistence.reload'), variant: 'primary' },
+        {value: 'copy', label: t('persistence.saveCopy')},
+        {value: 'reload', label: t('persistence.reload'), variant: 'primary'},
       ])
       if (choice === 'copy') exportFullCode()
       if (choice === 'reload') {
@@ -939,19 +1040,19 @@ async function save() {
       }
       return
     }
-    await alertDialog(t('customCards.errors.saveFailed', { message: String(error) }))
+    await alertDialog(t('customCards.errors.saveFailed', {message: String(error)}))
   }
 }
 
 async function remove() {
   if (!props.definition?.writable || !props.definition.contentHash) return
-  if (!(await confirmDialog(t('customCards.deleteConfirm', { name: draftName.value })))) return
+  if (!(await confirmDialog(t('customCards.deleteConfirm', {name: draftName.value})))) return
   try {
     await deletePortableCard(props.definition.id, props.definition.contentHash)
     await syncPortableCardCatalog()
     emit('close')
   } catch (error) {
-    await alertDialog(t('customCards.errors.deleteFailed', { message: String(error) }))
+    await alertDialog(t('customCards.errors.deleteFailed', {message: String(error)}))
   }
 }
 
@@ -975,18 +1076,17 @@ const previewStyle = computed(() => ({
 </script>
 
 <template>
-  <BaseDialog
-    :title="definition ? t('customCards.editTitle', { name: draftName }) : t('customCards.newTitle')"
-    :size="fullCodeFullscreen ? 'full' : 'xl'"
-    @close="emit('close')"
+  <BaseDialog size="full"
+      :title="definition ? t('customCards.editTitle', { name: draftName }) : t('customCards.newTitle')"
+      @close="emit('close')"
   >
-    <BaseTabs :model-value="tab" :items="tabs" class="dialog-tabs" @update:model-value="changeTab" />
+    <BaseTabs :model-value="tab" :items="tabs" class="dialog-tabs" @update:model-value="changeTab"/>
 
     <div
-      ref="editorLayout"
-      class="custom-editor-layout"
-      :class="{ 'is-fullscreen': fullCodeFullscreen, 'is-resizing': splitterDragging }"
-      :style="editorLayoutStyle"
+        ref="editorLayout"
+        class="custom-editor-layout"
+        :class="{ 'is-fullscreen': fullCodeFullscreen, 'is-resizing': splitterDragging }"
+        :style="editorLayoutStyle"
     >
       <div class="editor-pane">
         <div v-show="tab === 'settings'" class="settings-form">
@@ -994,98 +1094,122 @@ const previewStyle = computed(() => ({
             <label class="field">
               <span>{{ t('customCards.fields.manufacturer') }} *</span>
               <BaseInput
-                v-model="draft.manufacturer"
-                :disabled="Boolean(definition && !duplicating)"
-                :invalid="validationAttempted && identityInvalid"
-                placeholder="local"
-                :spellcheck="false"
+                  v-model="draft.manufacturer"
+                  :disabled="Boolean(definition && !duplicating)"
+                  :invalid="validationAttempted && identityInvalid"
+                  placeholder="local"
+                  :spellcheck="false"
               />
             </label>
             <label class="field">
               <span>{{ t('customCards.fields.cardName') }} *</span>
               <BaseInput
-                v-model="draft.cardName"
-                :disabled="Boolean(definition && !duplicating)"
-                :invalid="validationAttempted && identityInvalid"
-                placeholder="my-card"
-                :spellcheck="false"
+                  v-model="draft.cardName"
+                  :disabled="Boolean(definition && !duplicating)"
+                  :invalid="validationAttempted && identityInvalid"
+                  placeholder="my-card"
+                  :spellcheck="false"
               />
             </label>
           </div>
           <small v-if="validationAttempted && identityInvalid" class="field-error">
-            {{ duplicateIdentity ? t('customCards.errors.duplicateIdentity') : t('customCards.errors.identityInvalid') }}
+            {{
+              duplicateIdentity ? t('customCards.errors.duplicateIdentity') : t('customCards.errors.identityInvalid')
+            }}
           </small>
-          <label class="field">
-            <span>{{ t('customCards.fields.name') }} *</span>
-            <BaseInput v-model="draft.name" :invalid="nameInvalid" />
-            <small v-if="validationAttempted && !draft.name.trim()" class="field-error">
-              {{ t('customCards.errors.nameRequired') }}
-            </small>
-          </label>
-          <label class="field">
-            <span>{{ t('customCards.fields.description') }}</span>
-            <BaseInput v-model="draft.description" />
-          </label>
-          <label class="field">
-            <span>{{ t('customCards.fields.icon') }}</span>
-            <div class="icon-field">
-              <span class="icon-preview"><MdiIcon :icon="draft.icon || 'mdi:code-tags'" :size="20" /></span>
-              <BaseInput v-model="draft.icon" placeholder="mdi:code-tags" />
+
+          <BaseCollapsible
+              :title="t('customCards.groups.presentation')"
+              icon="mdi:card-text-outline"
+              default-open
+          >
+            <div class="settings-grid">
+              <label class="field wide">
+                <span>{{ t('customCards.fields.name') }} *</span>
+                <BaseInput v-model="draft.name" :invalid="nameInvalid"/>
+                <small v-if="validationAttempted && !draft.name.trim()" class="field-error">
+                  {{ t('customCards.errors.nameRequired') }}
+                </small>
+              </label>
+              <label class="field wide">
+                <span>{{ t('customCards.fields.description') }}</span>
+                <BaseInput v-model="draft.description"/>
+              </label>
+              <div class="field">
+                <span>{{ t('customCards.fields.icon') }}</span>
+                <BaseSelectMenu
+                    :model-value="draft.icon"
+                    :options="iconOptions"
+                    searchable
+                    allow-custom
+                    custom-prefix="mdi:"
+                    @update:model-value="draft.icon = String($event)"
+                />
+              </div>
+              <label class="field">
+                <span>{{ t('customCards.fields.group') }}</span>
+                <BaseInput v-model="draft.group" placeholder="local"/>
+              </label>
             </div>
-          </label>
-          <label class="field">
-            <span>{{ t('customCards.fields.group') }}</span>
-            <BaseInput v-model="draft.group" placeholder="local" />
-          </label>
-          <div class="metadata-group">
-            <strong>{{ t('customCards.fields.areas') }}</strong>
-            <label v-for="option in areaOptions" :key="option.value" class="check-row">
-              <span>{{ option.label }}</span>
-              <BaseCheckbox
-                :model-value="draft.areas.includes(option.value)"
-                @update:model-value="draft.areas = toggleArrayValue(draft.areas, option.value, $event)"
-              />
-            </label>
-          </div>
-          <div class="metadata-group">
-            <strong>{{ t('customCards.fields.capabilities') }}</strong>
-            <label v-for="capability in capabilityOptions" :key="capability" class="check-row">
-              <code>{{ capability }}</code>
-              <BaseCheckbox
-                :model-value="draft.capabilities.includes(capability)"
-                @update:model-value="draft.capabilities = toggleArrayValue(draft.capabilities, capability, $event)"
-              />
-            </label>
-          </div>
-          <label class="check-row">
-            <span>{{ t('customCards.fields.fullRow') }}</span>
-            <BaseCheckbox v-model="draft.fullRow" />
-          </label>
+          </BaseCollapsible>
+
+          <BaseCollapsible :title="t('customCards.groups.placement')" icon="mdi:view-dashboard-outline">
+            <div class="settings-grid">
+              <div class="metadata-group">
+                <strong>{{ t('customCards.fields.areas') }}</strong>
+                <label v-for="option in areaOptions" :key="option.value" class="check-row">
+                  <span>{{ option.label }}</span>
+                  <BaseCheckbox
+                      :model-value="draft.areas.includes(option.value)"
+                      @update:model-value="draft.areas = toggleArrayValue(draft.areas, option.value, $event)"
+                  />
+                </label>
+              </div>
+              <div class="metadata-group">
+                <strong>{{ t('customCards.fields.defaultSize') }}</strong>
+                <small class="field-hint">{{ t('customCards.fields.defaultSizeHint') }}</small>
+                <div class="size-grid">
+                  <label class="field">
+                    <span>{{ t('customCards.fields.width') }}</span>
+                    <BaseInput v-model="draft.defaultSize.width" type="number" :min="40" :max="4000"/>
+                  </label>
+                  <label class="field">
+                    <span>{{ t('customCards.fields.height') }}</span>
+                    <BaseInput v-model="draft.defaultSize.height" type="number" :min="40" :max="4000"/>
+                  </label>
+                  <label class="field">
+                    <span>{{ t('customCards.fields.columns') }}</span>
+                    <BaseInput v-model="draft.defaultSize.cols" type="number" :min="1" :max="12"/>
+                  </label>
+                  <label class="field">
+                    <span>{{ t('customCards.fields.rows') }}</span>
+                    <BaseInput v-model="draft.defaultSize.rows" type="number" :min="1" :max="12"/>
+                  </label>
+                </div>
+                <label class="check-row">
+                  <span>{{ t('customCards.fields.fullRow') }}</span>
+                  <BaseCheckbox v-model="draft.fullRow"/>
+                </label>
+              </div>
+            </div>
+          </BaseCollapsible>
+
+          <BaseCollapsible :title="t('customCards.fields.capabilities')" icon="mdi:shield-key-outline">
+            <div class="metadata-group">
+              <small class="field-hint">{{ t('customCards.groups.capabilitiesHint') }}</small>
+              <label v-for="capability in capabilityOptions" :key="capability" class="check-row">
+                <code>{{ capability }}</code>
+                <BaseCheckbox
+                    :model-value="draft.capabilities.includes(capability)"
+                    @update:model-value="draft.capabilities = toggleArrayValue(draft.capabilities, capability, $event)"
+                />
+              </label>
+            </div>
+          </BaseCollapsible>
+
           <small v-if="validationAttempted && metadataInvalid" class="field-error">
             {{ t('customCards.errors.metadataInvalid') }}
           </small>
-          <div class="size-group">
-            <div class="size-heading">
-              <strong>{{ t('customCards.fields.defaultSize') }}</strong>
-              <small>{{ t('customCards.fields.defaultSizeHint') }}</small>
-            </div>
-            <label class="field">
-              <span>{{ t('customCards.fields.width') }}</span>
-              <BaseInput v-model="draft.defaultSize.width" type="number" :min="40" :max="4000" />
-            </label>
-            <label class="field">
-              <span>{{ t('customCards.fields.height') }}</span>
-              <BaseInput v-model="draft.defaultSize.height" type="number" :min="40" :max="4000" />
-            </label>
-            <label class="field">
-              <span>{{ t('customCards.fields.columns') }}</span>
-              <BaseInput v-model="draft.defaultSize.cols" type="number" :min="1" :max="12" />
-            </label>
-            <label class="field">
-              <span>{{ t('customCards.fields.rows') }}</span>
-              <BaseInput v-model="draft.defaultSize.rows" type="number" :min="1" :max="12" />
-            </label>
-          </div>
         </div>
 
         <div v-show="tab === 'variables'" class="variables-pane">
@@ -1095,141 +1219,169 @@ const previewStyle = computed(() => ({
               <p>{{ t('customCards.variables.hint') }}</p>
             </div>
             <BaseButton v-if="variableEditorMode === 'visual'" size="sm" @click="addVariable">
-              <MdiIcon icon="mdi:plus" :size="16" />
+              <MdiIcon icon="mdi:plus" :size="16"/>
               {{ t('customCards.variables.add') }}
             </BaseButton>
           </div>
 
           <BaseTabs
-            :model-value="variableEditorMode"
-            :items="variableEditorTabs"
-            class="variable-mode-tabs"
-            @update:model-value="changeVariableEditorMode"
+              :model-value="variableEditorMode"
+              :items="variableEditorTabs"
+              class="variable-mode-tabs"
+              @update:model-value="changeVariableEditorMode"
           />
 
           <template v-if="variableEditorMode === 'visual'">
             <div v-if="draft.variables.length" class="variable-list">
-              <BaseVariableCard
-                v-for="(variable, index) in draft.variables"
-                :key="variable.id"
-                :title="`vuePanel.config.${variable.key || 'variable'}`"
-                :marker="index + 1"
-                :remove-label="t('common.delete')"
-                default-open
-                @remove="removeVariable(variable.id)"
+              <BaseCollapsibleAdvanced
+                  v-for="(variable, index) in draft.variables"
+                  :key="variable.id"
+                  :title="`vuePanel.config.${variable.key || 'variable'}`"
+                  :subtitle="variable.label"
+                  :marker="index + 1"
+                  :remove-label="t('common.delete')"
+                  @remove="removeVariable(variable.id)"
               >
                 <div class="variable-fields">
                   <label class="field">
                     <span>{{ t('customCards.variables.key') }} *</span>
-                    <BaseInput v-model="variable.key" :invalid="variableKeyInvalid(variable)" :spellcheck="false" />
+                    <BaseInput v-model="variable.key" :invalid="variableKeyInvalid(variable)" :spellcheck="false"/>
                     <small v-if="variableKeyInvalid(variable)" class="field-error">
                       {{ t('customCards.variables.keyError') }}
                     </small>
                   </label>
                   <label class="field">
                     <span>{{ t('customCards.variables.label') }} *</span>
-                    <BaseInput v-model="variable.label" :invalid="validationAttempted && !variable.label.trim()" />
+                    <BaseInput v-model="variable.label" :invalid="validationAttempted && !variable.label.trim()"/>
                   </label>
+                  <div class="field">
+                    <span>{{ t('customCards.variables.condition') }}</span>
+                    <BaseSelectMenu
+                        :model-value="conditionKey(variable)"
+                        :options="conditionSourceOptions(variable)"
+                        @update:model-value="setConditionKey(variable, String($event))"
+                    />
+                    <small class="field-hint">{{ t('customCards.variables.conditionHint') }}</small>
+                  </div>
+                  <div v-if="conditionKey(variable)" class="field">
+                    <span>{{ t('customCards.variables.conditionValue') }}</span>
+                    <BaseCheckbox
+                        v-if="conditionSource(variable)?.type === 'boolean'"
+                        :model-value="firstCondition(variable)?.equals === true"
+                        :label="firstCondition(variable)?.equals === true
+                          ? t('customCards.variables.enabled')
+                          : t('customCards.variables.disabled')"
+                        @update:model-value="setConditionValue(variable, $event)"
+                    />
+                    <BaseInput
+                        v-else
+                        :model-value="conditionValueText(variable)"
+                        :placeholder="(conditionSource(variable)?.options ?? []).join(', ')"
+                        @update:model-value="setConditionValue(variable, $event)"
+                    />
+                  </div>
                   <label v-if="variable.type !== 'entity'" class="field">
                     <span>{{ t('customCards.variables.group') }}</span>
                     <BaseInput
-                      :model-value="variable.group ?? ''"
-                      :placeholder="t('editor.fieldGroupOther')"
-                      @update:model-value="variable.group = String($event).trim() || undefined"
+                        :model-value="variable.group ?? ''"
+                        :placeholder="t('editor.fieldGroupOther')"
+                        @update:model-value="variable.group = String($event).trim() || undefined"
                     />
                     <small class="field-hint">{{ t('customCards.variables.groupHint') }}</small>
                   </label>
                   <div class="field">
                     <span>{{ t('customCards.variables.type') }}</span>
                     <BaseSelectMenu
-                      :model-value="variable.type"
-                      :options="variableTypeOptions"
-                      @update:model-value="changeVariableType(variable, $event)"
+                        :model-value="variable.type"
+                        :options="variableTypeOptions"
+                        @update:model-value="changeVariableType(variable, $event)"
                     />
                   </div>
                   <label v-if="variable.type === 'entity'" class="field">
                     <span>{{ t('customCards.variables.domain') }}</span>
                     <BaseInput
-                      :model-value="variable.domain ?? ''"
-                      placeholder="light"
-                      :spellcheck="false"
-                      @update:model-value="variable.domain = String($event)"
+                        :model-value="variable.domain ?? ''"
+                        placeholder="light"
+                        :spellcheck="false"
+                        @update:model-value="variable.domain = String($event)"
                     />
                   </label>
                   <label v-if="variable.type === 'select'" class="field">
                     <span>{{ t('customCards.variables.options') }}</span>
                     <BaseInput
-                      :model-value="selectOptionsText(variable)"
-                      placeholder="option-one, option-two"
-                      @update:model-value="updateSelectOptions(variable, $event)"
+                        :model-value="selectOptionsText(variable)"
+                        placeholder="option-one, option-two"
+                        @update:model-value="updateSelectOptions(variable, $event)"
                     />
                   </label>
                   <div v-if="variable.type === 'list'" class="field">
                     <span>{{ t('customCards.variables.itemFields') }}</span>
                     <small class="field-hint">
-                      {{ t('customCards.variables.itemFieldsHint', {
-                        fields: (variable.itemFields ?? []).map((f) => f.key).join(', '),
-                      }) }}
+                      {{
+                        t('customCards.variables.itemFieldsHint', {
+                          fields: (variable.itemFields ?? []).map((f) => f.key).join(', '),
+                        })
+                      }}
                     </small>
                   </div>
                   <div v-else class="field default-field">
                     <span>{{ t('customCards.variables.defaultValue') }}</span>
                     <EntityPicker
-                      v-if="variable.type === 'entity'"
-                      :model-value="String(variable.default ?? '')"
-                      :domain="variable.domain || undefined"
-                      @update:model-value="variable.default = $event"
+                        v-if="variable.type === 'entity'"
+                        :model-value="String(variable.default ?? '')"
+                        :domain="variable.domain || undefined"
+                        @update:model-value="variable.default = $event"
                     />
                     <BaseSelectMenu
-                      v-else-if="variable.type === 'icon'"
-                      :model-value="String(variable.default ?? '')"
-                      :options="iconOptions"
-                      searchable
-                      allow-custom
-                      custom-prefix="mdi:"
-                      clearable
-                      @update:model-value="variable.default = $event"
+                        v-else-if="variable.type === 'icon'"
+                        :model-value="String(variable.default ?? '')"
+                        :options="iconOptions"
+                        searchable
+                        allow-custom
+                        custom-prefix="mdi:"
+                        clearable
+                        @update:model-value="variable.default = $event"
                     />
                     <BaseSelectMenu
-                      v-else-if="variable.type === 'view'"
-                      :model-value="String(variable.default ?? '')"
-                      :options="viewOptions"
-                      clearable
-                      @update:model-value="variable.default = $event"
+                        v-else-if="variable.type === 'view'"
+                        :model-value="String(variable.default ?? '')"
+                        :options="viewOptions"
+                        clearable
+                        @update:model-value="variable.default = $event"
                     />
                     <BaseSelectMenu
-                      v-else-if="variable.type === 'select'"
-                      :model-value="String(variable.default ?? '')"
-                      :options="(variable.options ?? []).map((option) => ({ value: option, label: variable.optionLabels?.[option] ?? option }))"
-                      @update:model-value="variable.default = $event"
+                        v-else-if="variable.type === 'select'"
+                        :model-value="String(variable.default ?? '')"
+                        :options="(variable.options ?? []).map((option) => ({ value: option, label: variable.optionLabels?.[option] ?? option }))"
+                        @update:model-value="variable.default = $event"
                     />
                     <BaseCheckbox
-                      v-else-if="variable.type === 'boolean'"
-                      :model-value="variable.default === true"
-                      :label="variable.default === true ? t('customCards.variables.enabled') : t('customCards.variables.disabled')"
-                      @update:model-value="variable.default = $event"
+                        v-else-if="variable.type === 'boolean'"
+                        :model-value="variable.default === true"
+                        :label="variable.default === true ? t('customCards.variables.enabled') : t('customCards.variables.disabled')"
+                        @update:model-value="variable.default = $event"
                     />
                     <BaseInput
-                      v-else-if="variable.type === 'number'"
-                      :model-value="Number(variable.default ?? 0)"
-                      type="number"
-                      @update:model-value="variable.default = Number($event)"
+                        v-else-if="variable.type === 'number'"
+                        :model-value="Number(variable.default ?? 0)"
+                        type="number"
+                        @update:model-value="variable.default = Number($event)"
                     />
                     <BaseInput
-                      v-else
-                      :model-value="String(variable.default ?? '')"
-                      @update:model-value="variable.default = String($event)"
+                        v-else
+                        :model-value="String(variable.default ?? '')"
+                        @update:model-value="variable.default = String($event)"
                     />
                   </div>
                   <div class="required-field">
                     <span>{{ t('customCards.variables.required') }}</span>
-                    <BaseCheckbox v-model="variable.required" />
+                    <BaseCheckbox v-model="variable.required"/>
                   </div>
                 </div>
-              </BaseVariableCard>
+              </BaseCollapsibleAdvanced>
             </div>
             <div v-else class="variables-empty">
-              <MdiIcon icon="mdi:variable" :size="28" />
+              <MdiIcon icon="mdi:variable" :size="28"/>
               <strong>{{ t('customCards.variables.emptyTitle') }}</strong>
               <span>{{ t('customCards.variables.emptyHint') }}</span>
             </div>
@@ -1238,10 +1390,10 @@ const previewStyle = computed(() => ({
           <div v-else class="variable-json-pane">
             <p>{{ t('customCards.variables.jsonHint') }}</p>
             <BaseCodeEditor
-              :model-value="variableJsonText"
-              language="json"
-              min-height="360px"
-              @update:model-value="updateVariableJson"
+                :model-value="variableJsonText"
+                language="json"
+                min-height="360px"
+                @update:model-value="updateVariableJson"
             />
             <small v-if="variableJsonError" class="field-error variable-json-error">
               {{ variableJsonError }}
@@ -1261,9 +1413,9 @@ const previewStyle = computed(() => ({
             <div class="field fallback-field">
               <span>{{ t('customCards.translations.fallback') }}</span>
               <BaseSelectMenu
-                :model-value="draft.translations.fallback"
-                :options="fallbackOptions"
-                @update:model-value="draft.translations.fallback = $event as CardLanguage"
+                  :model-value="draft.translations.fallback"
+                  :options="fallbackOptions"
+                  @update:model-value="draft.translations.fallback = $event as CardLanguage"
               />
               <small class="field-hint">{{ t('customCards.translations.fallbackHint') }}</small>
             </div>
@@ -1272,33 +1424,33 @@ const previewStyle = computed(() => ({
               <span>{{ t('customCards.translations.languages') }}</span>
               <div class="language-chips">
                 <span
-                  v-for="language in translationLanguages"
-                  :key="language"
-                  class="language-chip"
-                  :class="{ 'is-fallback': language === draft.translations.fallback }"
+                    v-for="language in translationLanguages"
+                    :key="language"
+                    class="language-chip"
+                    :class="{ 'is-fallback': language === draft.translations.fallback }"
                 >
                   {{ languageLabel(language) }}
                   <button
-                    v-if="translationLanguages.length > 1"
-                    type="button"
-                    class="translation-remove"
-                    :title="t('customCards.translations.removeLanguage')"
-                    @click="removeLanguage(language)"
+                      v-if="translationLanguages.length > 1"
+                      type="button"
+                      class="translation-remove"
+                      :title="t('customCards.translations.removeLanguage')"
+                      @click="removeLanguage(language)"
                   >
-                    <MdiIcon icon="mdi:close" :size="13" />
+                    <MdiIcon icon="mdi:close" :size="13"/>
                   </button>
                 </span>
               </div>
               <div class="translation-add">
                 <BaseInput
-                  v-model="newLanguage"
-                  placeholder="fr"
-                  :spellcheck="false"
-                  :invalid="newLanguageInvalid"
-                  @keyup.enter="addLanguage()"
+                    v-model="newLanguage"
+                    placeholder="fr"
+                    :spellcheck="false"
+                    :invalid="newLanguageInvalid"
+                    @keyup.enter="addLanguage()"
                 />
                 <BaseButton size="sm" :disabled="newLanguageInvalid" @click="addLanguage()">
-                  <MdiIcon icon="mdi:plus" :size="16" />
+                  <MdiIcon icon="mdi:plus" :size="16"/>
                   {{ t('customCards.translations.addLanguage') }}
                 </BaseButton>
               </div>
@@ -1308,13 +1460,13 @@ const previewStyle = computed(() => ({
 
           <div class="translation-add">
             <BaseInput
-              v-model="newTranslationKey"
-              :placeholder="`${TRANSLATION_PREFIX}name`"
-              :spellcheck="false"
-              @keyup.enter="addTranslationKey()"
+                v-model="newTranslationKey"
+                :placeholder="`${TRANSLATION_PREFIX}name`"
+                :spellcheck="false"
+                @keyup.enter="addTranslationKey()"
             />
             <BaseButton size="sm" @click="addTranslationKey()">
-              <MdiIcon icon="mdi:plus" :size="16" />
+              <MdiIcon icon="mdi:plus" :size="16"/>
               {{ t('customCards.translations.addKey') }}
             </BaseButton>
           </div>
@@ -1322,49 +1474,45 @@ const previewStyle = computed(() => ({
           <div v-if="referencedTranslationKeys.length" class="translation-missing">
             <small>{{ t('customCards.translations.missingKeys') }}</small>
             <button
-              v-for="key in referencedTranslationKeys"
-              :key="key"
-              type="button"
-              class="translation-chip"
-              @click="addTranslationKey(key)"
+                v-for="key in referencedTranslationKeys"
+                :key="key"
+                type="button"
+                class="translation-chip"
+                @click="addTranslationKey(key)"
             >
-              <MdiIcon icon="mdi:plus" :size="13" />{{ key }}
+              <MdiIcon icon="mdi:plus" :size="13"/>
+              {{ key }}
             </button>
           </div>
 
           <div v-if="translationKeys.length" class="translation-list">
-            <div
-              v-for="key in translationKeys"
-              :key="key"
-              class="translation-row"
-              :class="{ 'is-missing': translationMissing(key) }"
+            <BaseCollapsibleAdvanced
+                v-for="(key, index) in translationKeys"
+                :key="key"
+                :title="key"
+                :marker="index + 1"
+                :remove-label="t('common.delete')"
+                class="translation-entry"
+                :class="{ 'is-missing': translationMissing(key) }"
+                @remove="removeTranslationKey(key)"
             >
-              <div class="translation-key">
-                <code>{{ key }}</code>
-                <button
-                  type="button"
-                  class="translation-remove"
-                  :title="t('common.delete')"
-                  @click="removeTranslationKey(key)"
+              <div class="translation-fields">
+                <label
+                    v-for="language in translationLanguages"
+                    :key="language"
+                    class="field"
                 >
-                  <MdiIcon icon="mdi:delete-outline" :size="16" />
-                </button>
+                  <span>{{ languageLabel(language) }}</span>
+                  <BaseInput
+                      :model-value="draft.translations.languages[language]?.[key] ?? ''"
+                      @update:model-value="setTranslation(language, key, $event)"
+                  />
+                </label>
               </div>
-              <label
-                v-for="language in translationLanguages"
-                :key="language"
-                class="field"
-              >
-                <span>{{ languageLabel(language) }}</span>
-                <BaseInput
-                  :model-value="draft.translations.languages[language]?.[key] ?? ''"
-                  @update:model-value="setTranslation(language, key, $event)"
-                />
-              </label>
-            </div>
+            </BaseCollapsibleAdvanced>
           </div>
           <div v-else class="variables-empty">
-            <MdiIcon icon="mdi:translate" :size="28" />
+            <MdiIcon icon="mdi:translate" :size="28"/>
             <strong>{{ t('customCards.translations.emptyTitle') }}</strong>
             <span>{{ t('customCards.translations.emptyHint') }}</span>
           </div>
@@ -1372,15 +1520,15 @@ const previewStyle = computed(() => ({
 
         <div v-show="tab === 'html'" class="code-pane">
           <p>{{ t('customCards.hints.html') }}</p>
-          <BaseCodeEditor v-model="draft.html" language="html" min-height="360px" />
+          <BaseCodeEditor v-model="draft.html" language="html" min-height="360px"/>
         </div>
         <div v-show="tab === 'css'" class="code-pane">
           <p>{{ t('customCards.hints.css') }}</p>
-          <BaseCodeEditor v-model="draft.css" language="css" min-height="360px" />
+          <BaseCodeEditor v-model="draft.css" language="css" min-height="360px"/>
         </div>
         <div v-show="tab === 'javascript'" class="code-pane">
           <p>{{ t('customCards.hints.javascript') }}</p>
-          <BaseCodeEditor v-model="draft.javascript" language="javascript" min-height="320px" />
+          <BaseCodeEditor v-model="draft.javascript" language="javascript" min-height="320px"/>
           <div class="api-reference">
             <code>vuePanel.getEntity(entityId)</code>
             <code>vuePanel.getIcon(icon, options)</code>
@@ -1400,25 +1548,25 @@ const previewStyle = computed(() => ({
             </div>
             <div class="full-code-actions">
               <BaseButton size="sm" @click="openImport">
-                <MdiIcon icon="mdi:upload" :size="16" />
+                <MdiIcon icon="mdi:upload" :size="16"/>
                 {{ t('customCards.fullCode.import') }}
               </BaseButton>
               <BaseButton size="sm" :disabled="Boolean(fullCodeError)" @click="exportFullCode">
-                <MdiIcon icon="mdi:download" :size="16" />
+                <MdiIcon icon="mdi:download" :size="16"/>
                 {{ t('customCards.fullCode.export') }}
               </BaseButton>
               <BaseButton size="sm" @click="fullCodeFullscreen = !fullCodeFullscreen">
-                <MdiIcon :icon="fullCodeFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'" :size="17" />
+                <MdiIcon :icon="fullCodeFullscreen ? 'mdi:fullscreen-exit' : 'mdi:fullscreen'" :size="17"/>
                 {{ t(fullCodeFullscreen ? 'customCards.fullCode.exitFullscreen' : 'customCards.fullCode.fullscreen') }}
               </BaseButton>
             </div>
           </div>
           <BaseCodeEditor
-            class="full-code-editor"
-            :model-value="fullCodeText"
-            language="html"
-            :min-height="fullCodeFullscreen ? 'calc(100dvh - 220px)' : '420px'"
-            @update:model-value="updateFullCode"
+              class="full-code-editor"
+              :model-value="fullCodeText"
+              language="html"
+              :min-height="fullCodeFullscreen ? 'calc(100dvh - 220px)' : '420px'"
+              @update:model-value="updateFullCode"
           />
           <small v-if="fullCodeError" class="field-error full-code-error">{{ fullCodeError }}</small>
         </div>
@@ -1429,31 +1577,33 @@ const previewStyle = computed(() => ({
       </div>
 
       <div
-        class="editor-preview-splitter"
-        role="separator"
-        aria-orientation="vertical"
-        :aria-label="t('customCards.resizePreview')"
-        aria-valuemin="0"
-        aria-valuemax="100"
-        :aria-valuenow="Math.round(editorShare)"
-        tabindex="0"
-        @keydown="resizeWithKeyboard"
-        @pointerdown.prevent="startSplitter"
-        @pointermove.prevent="moveSplitter"
-        @pointerup="stopSplitter"
-        @pointercancel="stopSplitter"
+          class="editor-preview-splitter"
+          role="separator"
+          aria-orientation="vertical"
+          :aria-label="t('customCards.resizePreview')"
+          aria-valuemin="0"
+          aria-valuemax="100"
+          :aria-valuenow="Math.round(editorShare)"
+          tabindex="0"
+          @keydown="resizeWithKeyboard"
+          @pointerdown.prevent="startSplitter"
+          @pointermove.prevent="moveSplitter"
+          @pointerup="stopSplitter"
+          @pointercancel="stopSplitter"
       >
-        <span />
+        <span/>
       </div>
 
       <aside class="preview-panel">
         <div class="preview-head">
           <span>{{ t('common.preview') }}</span>
-          <span class="preview-badge"><MdiIcon icon="mdi:palette-outline" :size="13" /> {{ t('customCards.previewThemed') }}</span>
+          <span class="preview-badge"><MdiIcon icon="mdi:palette-outline" :size="13"/> {{
+              t('customCards.previewThemed')
+            }}</span>
         </div>
         <div class="preview-stage">
           <div class="preview-card" :style="previewStyle">
-            <CardRuntime :definition="draft" :config="previewConfig" preview />
+            <CardRuntime :definition="draft" :config="previewConfig" preview/>
           </div>
         </div>
         <div class="preview-foot">
@@ -1476,11 +1626,11 @@ const previewStyle = computed(() => ({
   </BaseDialog>
 
   <input
-    ref="importInput"
-    class="visually-hidden"
-    type="file"
-    accept=".html,.vue-panel-card.html,text/html"
-    @change="importFullCode"
+      ref="importInput"
+      class="visually-hidden"
+      type="file"
+      accept=".html,.vue-panel-card.html,text/html"
+      @change="importFullCode"
   >
 </template>
 
@@ -1493,18 +1643,25 @@ const previewStyle = computed(() => ({
   background: var(--nav-bg);
   box-shadow: 0 10px 14px -16px rgba(0, 0, 0, 0.75);
 }
+
 .custom-editor-layout {
   display: grid;
   grid-template-columns: minmax(260px, var(--custom-editor-share, 57%)) 14px minmax(260px, 1fr);
   gap: 10px;
   align-items: start;
 }
-.editor-pane { min-width: 0; }
+
+.editor-pane {
+  min-width: 0;
+}
+
 .identity-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+  margin-bottom: 6px;
 }
+
 .metadata-group {
   display: grid;
   gap: 6px;
@@ -1512,11 +1669,13 @@ const previewStyle = computed(() => ({
   border: 1px solid var(--divider);
   border-radius: 10px;
 }
+
 .metadata-group > strong {
   margin-bottom: 2px;
   color: var(--text-secondary);
   font-size: 12px;
 }
+
 .check-row {
   display: flex;
   align-items: center;
@@ -1526,9 +1685,13 @@ const previewStyle = computed(() => ({
   color: var(--text-primary);
   font-size: 13px;
 }
+
 @media (max-width: 620px) {
-  .identity-grid { grid-template-columns: 1fr; }
+  .identity-grid {
+    grid-template-columns: 1fr;
+  }
 }
+
 .editor-preview-splitter {
   position: sticky;
   top: 62px;
@@ -1541,6 +1704,7 @@ const previewStyle = computed(() => ({
   touch-action: none;
   outline: none;
 }
+
 .editor-preview-splitter::before {
   content: '';
   position: absolute;
@@ -1551,6 +1715,7 @@ const previewStyle = computed(() => ({
   transform: translateX(-50%);
   transition: width 140ms ease, background 140ms ease;
 }
+
 .editor-preview-splitter > span {
   position: relative;
   z-index: 1;
@@ -1561,33 +1726,126 @@ const previewStyle = computed(() => ({
   background: var(--nav-bg);
   box-shadow: var(--card-shadow);
 }
+
 .editor-preview-splitter:hover::before,
 .editor-preview-splitter:focus-visible::before,
 .custom-editor-layout.is-resizing .editor-preview-splitter::before {
   width: 3px;
   background: var(--accent);
 }
-.editor-preview-splitter:focus-visible > span { border-color: var(--accent); }
+
+.editor-preview-splitter:focus-visible > span {
+  border-color: var(--accent);
+}
+
 .custom-editor-layout.is-resizing,
-.custom-editor-layout.is-resizing * { cursor: col-resize !important; user-select: none !important; }
-.settings-form { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
-.variables-pane { display: flex; flex-direction: column; gap: 14px; }
+.custom-editor-layout.is-resizing * {
+  cursor: col-resize !important;
+  user-select: none !important;
+}
+
+.settings-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  align-items: start;
+}
+
+.settings-grid > .wide {
+  grid-column: 1 / -1;
+}
+
+.size-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 760px) {
+  .settings-grid,
+  .size-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.variables-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
 .variables-intro {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
-.variables-intro > div { display: grid; gap: 4px; }
-.variables-intro strong { color: var(--text-primary); font-size: 13px; }
-.variables-intro p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
-.variables-intro :deep(.vp-btn) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.translations-pane { display: flex; flex-direction: column; gap: 14px; }
-.fallback-field { max-width: 280px; }
-.translation-add { display: flex; align-items: center; gap: 8px; }
-.translation-add :deep(.vp-btn) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.translation-missing { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.translation-missing > small { color: var(--text-secondary); font-size: 11px; }
+
+.variables-intro > div {
+  display: grid;
+  gap: 4px;
+}
+
+.variables-intro strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.variables-intro p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.variables-intro :deep(.vp-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.translations-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.fallback-field {
+  max-width: 280px;
+}
+
+.translation-add {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.translation-add :deep(.vp-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.translation-missing {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.translation-missing > small {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
 .translation-chip {
   display: inline-flex;
   align-items: center;
@@ -1601,15 +1859,31 @@ const previewStyle = computed(() => ({
   font-size: 11px;
   cursor: pointer;
 }
-.translation-chip:hover { border-color: var(--accent); color: var(--text-primary); }
-.translation-list { display: flex; flex-direction: column; gap: 10px; }
+
+.translation-chip:hover {
+  border-color: var(--accent);
+  color: var(--text-primary);
+}
+
+.translation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
 .translation-languages {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 14px;
   align-items: start;
 }
-.language-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.language-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .language-chip {
   display: inline-flex;
   align-items: center;
@@ -1620,25 +1894,22 @@ const previewStyle = computed(() => ({
   color: var(--text-primary);
   font-size: 11px;
 }
-.language-chip.is-fallback { border-color: color-mix(in srgb, var(--accent) 55%, var(--divider)); }
-.translation-row {
+
+.language-chip.is-fallback {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--divider));
+}
+
+.translation-fields {
   display: grid;
-  grid-template-columns: 220px repeat(auto-fit, minmax(180px, 1fr));
-  align-items: end;
-  gap: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--divider);
-  border-radius: 10px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  padding: 14px;
 }
-.translation-row.is-missing { border-color: color-mix(in srgb, var(--danger, #ef4444) 45%, var(--divider)); }
-.translation-key { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
-.translation-key code {
-  overflow: hidden;
-  color: var(--text-secondary);
-  font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+
+.translation-entry.is-missing {
+  border-color: color-mix(in srgb, var(--danger, #ef4444) 45%, var(--divider));
 }
+
 .translation-remove {
   border: none;
   background: transparent;
@@ -1646,23 +1917,61 @@ const previewStyle = computed(() => ({
   padding: 2px;
   cursor: pointer;
 }
-.translation-remove:hover { color: var(--danger, #ef4444); }
-@media (max-width: 900px) {
-  .translation-row { grid-template-columns: minmax(0, 1fr); }
-  .translation-languages { grid-template-columns: minmax(0, 1fr); }
+
+.translation-remove:hover {
+  color: var(--danger, #ef4444);
 }
-.variable-mode-tabs :deep(.vp-tab) { padding: 6px 10px; font-size: 12px; }
-.variable-json-pane { display: flex; flex-direction: column; gap: 10px; }
-.variable-json-pane > p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
-.variable-json-error { display: block; line-height: 1.4; }
-.variable-list { display: flex; flex-direction: column; gap: 12px; }
+
+@media (max-width: 900px) {
+  .translation-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .translation-languages {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.variable-mode-tabs :deep(.vp-tab) {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.variable-json-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.variable-json-pane > p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.variable-json-error {
+  display: block;
+  line-height: 1.4;
+}
+
+.variable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .variable-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 13px;
   padding: 14px;
 }
-.default-field { grid-column: 1 / -1; }
+
+.default-field {
+  grid-column: 1 / -1;
+}
+
 .required-field {
   grid-column: 1 / -1;
   display: flex;
@@ -1671,7 +1980,12 @@ const previewStyle = computed(() => ({
   gap: 12px;
   min-height: 34px;
 }
-.required-field > span { color: var(--text-secondary); font-size: 12px; }
+
+.required-field > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .variables-empty {
   min-height: 190px;
   display: grid;
@@ -1684,56 +1998,124 @@ const previewStyle = computed(() => ({
   color: var(--text-secondary);
   text-align: center;
 }
-.variables-empty strong { color: var(--text-primary); font-size: 13px; }
-.variables-empty span { max-width: 360px; font-size: 11px; line-height: 1.45; }
-.field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
-.field > span, .size-heading small { color: var(--text-secondary); font-size: 12px; }
-.settings-form > .field:first-child,
-.settings-form > .field:nth-child(2),
-.size-group { grid-column: 1 / -1; }
-.field-error, .source-error { color: var(--danger, #ef4444); font-size: 11px; }
-.field-hint { color: var(--text-muted, #94a3b8); font-size: 11px; }
-.icon-field { display: flex; gap: 8px; }
-.icon-preview {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  flex: 0 0 40px;
-  border: 1px solid var(--divider);
-  border-radius: 9px;
-  background: var(--card-bg);
+
+.variables-empty strong {
   color: var(--text-primary);
+  font-size: 13px;
 }
-.size-group {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  padding-top: 18px;
-  border-top: 1px solid var(--divider);
+
+.variables-empty span {
+  max-width: 360px;
+  font-size: 11px;
+  line-height: 1.45;
 }
-.size-heading { grid-column: 1 / -1; display: grid; gap: 3px; }
-.size-heading strong { color: var(--text-primary); font-size: 13px; }
-.code-pane { display: flex; flex-direction: column; gap: 10px; }
-.code-pane > p { margin: 0; color: var(--text-secondary); font-size: 12px; }
-.full-code-pane { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.field-error, .source-error {
+  color: var(--danger, #ef4444);
+  font-size: 11px;
+}
+
+.field-hint {
+  color: var(--text-muted, #94a3b8);
+  font-size: 11px;
+}
+
+.code-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.code-pane > p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.full-code-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
 .full-code-toolbar {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
 }
-.full-code-toolbar > div:first-child { display: grid; gap: 4px; }
-.full-code-toolbar strong { color: var(--text-primary); font-size: 13px; }
-.full-code-toolbar p { margin: 0; color: var(--text-secondary); font-size: 12px; line-height: 1.45; }
-.full-code-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
-.full-code-actions :deep(.vp-btn) { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.full-code-error { display: block; line-height: 1.4; }
-.custom-editor-layout.is-fullscreen { flex: 1; min-height: 0; align-items: stretch; }
+
+.full-code-toolbar > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.full-code-toolbar strong {
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.full-code-toolbar p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.full-code-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.full-code-actions :deep(.vp-btn) {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.full-code-error {
+  display: block;
+  line-height: 1.4;
+}
+
+.custom-editor-layout.is-fullscreen {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
 .custom-editor-layout.is-fullscreen .editor-pane,
-.custom-editor-layout.is-fullscreen .full-code-pane { min-height: 0; height: 100%; }
-.custom-editor-layout.is-fullscreen .full-code-editor { flex: 1; min-height: 0; }
+.custom-editor-layout.is-fullscreen .full-code-pane {
+  min-height: 0;
+  height: 100%;
+}
+
+.custom-editor-layout.is-fullscreen .full-code-editor {
+  flex: 1;
+  min-height: 0;
+}
+
 .custom-editor-layout.is-fullscreen .full-code-editor :deep(.vp-code-editor),
-.custom-editor-layout.is-fullscreen .full-code-editor :deep(.cm-editor) { height: 100%; }
+.custom-editor-layout.is-fullscreen .full-code-editor :deep(.cm-editor) {
+  height: 100%;
+}
+
 .visually-hidden {
   position: fixed;
   width: 1px;
@@ -1742,11 +2124,13 @@ const previewStyle = computed(() => ({
   clip-path: inset(50%);
   white-space: nowrap;
 }
+
 .api-reference {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 6px;
 }
+
 .api-reference code {
   overflow: hidden;
   padding: 7px 9px;
@@ -1757,7 +2141,11 @@ const previewStyle = computed(() => ({
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.source-error { margin-top: 10px; }
+
+.source-error {
+  margin-top: 10px;
+}
+
 .preview-panel {
   position: sticky;
   top: 62px;
@@ -1765,6 +2153,7 @@ const previewStyle = computed(() => ({
   border: 1px solid var(--divider);
   border-radius: 14px;
 }
+
 .preview-head, .preview-foot {
   display: flex;
   align-items: center;
@@ -1775,31 +2164,81 @@ const previewStyle = computed(() => ({
   color: var(--text-secondary);
   font-size: 11px;
 }
-.preview-head { border-bottom: 1px solid var(--divider); letter-spacing: .1em; text-transform: uppercase; }
-.preview-foot { border-top: 1px solid var(--divider); }
-.preview-badge { display: inline-flex; align-items: center; gap: 4px; color: #44a46f; letter-spacing: 0; text-transform: none; }
+
+.preview-head {
+  border-bottom: 1px solid var(--divider);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.preview-foot {
+  border-top: 1px solid var(--divider);
+}
+
+.preview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #44a46f;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .preview-stage {
   min-height: 250px;
   padding: 24px;
   display: grid;
   place-items: center;
   overflow: auto;
-  background:
-    linear-gradient(45deg, color-mix(in srgb, var(--divider) 30%, transparent) 25%, transparent 25%) 0 0 / 16px 16px,
-    linear-gradient(-45deg, color-mix(in srgb, var(--divider) 30%, transparent) 25%, transparent 25%) 0 8px / 16px 16px,
-    var(--bg);
+  background: linear-gradient(45deg, color-mix(in srgb, var(--divider) 30%, transparent) 25%, transparent 25%) 0 0 / 16px 16px,
+  linear-gradient(-45deg, color-mix(in srgb, var(--divider) 30%, transparent) 25%, transparent 25%) 0 8px / 16px 16px,
+  var(--bg);
 }
-.preview-card { max-width: 100%; flex: 0 0 auto; }
-.delete-button { margin-right: auto; }
+
+.preview-card {
+  max-width: 100%;
+  flex: 0 0 auto;
+}
+
+.delete-button {
+  margin-right: auto;
+}
+
 @media (max-width: 760px) {
-  .custom-editor-layout { grid-template-columns: 1fr; }
-  .editor-preview-splitter { display: none; }
-  .settings-form, .size-group, .api-reference { grid-template-columns: 1fr; }
-  .settings-form > *, .size-heading { grid-column: auto; }
-  .preview-panel { position: static; }
-  .variable-fields { grid-template-columns: 1fr; }
-  .default-field, .required-field { grid-column: auto; }
-  .full-code-toolbar { flex-direction: column; }
-  .full-code-actions { justify-content: flex-start; }
+  .custom-editor-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .editor-preview-splitter {
+    display: none;
+  }
+
+  .settings-form, .size-group, .api-reference {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-form > *, .size-heading {
+    grid-column: auto;
+  }
+
+  .preview-panel {
+    position: static;
+  }
+
+  .variable-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .default-field, .required-field {
+    grid-column: auto;
+  }
+
+  .full-code-toolbar {
+    flex-direction: column;
+  }
+
+  .full-code-actions {
+    justify-content: flex-start;
+  }
 }
 </style>

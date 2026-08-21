@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import type { CardSchemaField } from '@/core/registry/cardRegistry'
 import type { CardTranslations } from '@/core/registry/portableCardTypes'
 import { cardText } from '@/core/registry/cardTranslations'
+import { isVisible } from '@/core/registry/cardConditions'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import SchemaFieldRow from './SchemaFieldRow.vue'
 
@@ -31,11 +32,28 @@ interface FieldEntry {
   field: CardSchemaField
 }
 
+/**
+ * Conditions read the current settings; a field the user has not touched yet
+ * still counts with the default the card ships.
+ */
+const conditionValues = computed<Record<string, unknown>>(() => {
+  const values: Record<string, unknown> = {}
+  for (const [key, field] of Object.entries(props.schema)) {
+    if (field.default !== undefined) values[key] = field.default
+  }
+  return { ...values, ...props.modelValue }
+})
+
+/** Fields a card hides until another of its settings has the right value. */
+const visibleFields = computed<FieldEntry[]>(() =>
+  Object.entries(props.schema)
+    .filter(([, field]) => isVisible(field.visibleIf, conditionValues.value))
+    .map(([key, field]) => ({ key, field })),
+)
+
 /** Entities pick what a card shows — they stay above the collapsed boxes. */
 const entityFields = computed<FieldEntry[]>(() =>
-  Object.entries(props.schema)
-    .filter(([, field]) => !props.grouped || field.type === 'entity')
-    .map(([key, field]) => ({ key, field })),
+  visibleFields.value.filter(({ field }) => !props.grouped || field.type === 'entity'),
 )
 
 /**
@@ -46,7 +64,7 @@ const entityFields = computed<FieldEntry[]>(() =>
 const fieldGroups = computed<Array<{ title: string; fields: FieldEntry[] }>>(() => {
   const groups = new Map<string, FieldEntry[]>()
   if (!props.grouped) return []
-  for (const [key, field] of Object.entries(props.schema)) {
+  for (const { key, field } of visibleFields.value) {
     if (field.type === 'entity') continue
     const group = field.group?.trim()
     const title = group

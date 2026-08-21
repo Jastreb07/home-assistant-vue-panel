@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { themed } from '@/theme/registry'
 
-const VariableCard = themed('VariableCard')
+/** Thin wrapper: renders the 'CollapsibleAdvanced' component of the active theme. */
+const CollapsibleAdvanced = themed('CollapsibleAdvanced')
 
 defineProps<{
   title: string
+  subtitle?: string
   marker?: string | number
   defaultOpen?: boolean
   removeLabel: string
@@ -14,8 +16,9 @@ const emit = defineEmits<{ remove: [] }>()
 
 <template>
   <component
-    :is="VariableCard"
+    :is="CollapsibleAdvanced"
     :title="title"
+    :subtitle="subtitle"
     :marker="marker"
     :default-open="defaultOpen"
     :remove-label="removeLabel"

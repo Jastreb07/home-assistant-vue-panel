@@ -4,6 +4,8 @@ import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = withDefaults(defineProps<{
   title: string
+  /** Readable name shown in brackets behind the technical title */
+  subtitle?: string
   marker?: string | number
   defaultOpen?: boolean
   removeLabel: string
@@ -25,6 +27,7 @@ const open = ref(props.defaultOpen)
         <MdiIcon icon="mdi:chevron-right" class="vp-variable-card-chevron" :size="18" />
         <span v-if="marker !== undefined" class="vp-variable-card-marker">{{ marker }}</span>
         <code class="vp-variable-card-title">{{ title }}</code>
+        <span v-if="subtitle" class="vp-variable-card-subtitle">({{ subtitle }})</span>
       </button>
       <button
         type="button"

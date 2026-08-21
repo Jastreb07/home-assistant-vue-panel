@@ -139,12 +139,23 @@ Rules:
   one collapsed box, ungrouped variables share a fallback box, and `entity` variables are always
   shown above the boxes;
 - `type` is one of `entity`, `icon`, `view`, `select`, `string`, `number`, `boolean`, `list`;
+- `visibleIf` is optional and hides the variable in the settings dialog until other variables of
+  the same card match. One condition, or an array of conditions that all have to hold, each with a
+  `key` and exactly one matcher — `equals`, `not` or a non-empty `in` array:
+
+  ```json
+  { "key": "attribute", "visibleIf": { "key": "showAttribute", "equals": true } }
+  ```
+
+  A referenced key must exist in the same card (inside `itemFields`: in the same item fields).
+  Conditions only drive the editor — a hidden variable keeps its stored value and stays readable
+  through `vuePanel.config`;
 - `required` is always explicit;
 - `default` must match the variable type when present and is rejected for `list`;
 - `entity` may define a lowercase `domain`;
 - `select` must define a non-empty `options` array and may define `optionLabels`;
 - `number` may define finite `min`, `max`, and `step` values;
-- `list` must define a non-empty `itemFields` array (at most 12 scalar variables, no nested
+- `list` must define a non-empty `itemFields` array (at most 24 scalar variables, no nested
   lists) and may set `nestable` to allow indented entries.
 
 A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used

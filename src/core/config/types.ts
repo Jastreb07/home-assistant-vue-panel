@@ -1,6 +1,7 @@
 import type { BoxValue } from '@/core/ui/boxInput'
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import type { CardTranslations } from '@/core/registry/portableCardTypes'
+import type { VisibleIf } from '@/core/registry/cardConditions'
 
 export type ViewLayout = 'sections' | 'flex' | 'panel' | 'sidebar' | 'grid'
 export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
@@ -64,6 +65,8 @@ export interface CustomCardVariable {
   label: string
   /** Settings box this variable is shown in — ungrouped variables share one box */
   group?: string
+  /** Conditions on other variables that decide whether this one is offered */
+  visibleIf?: VisibleIf
   type: CustomCardVariableType
   required: boolean
   domain?: string

@@ -54,6 +54,14 @@
   font-size: 10px;
   font-weight: 700;
 }
+.vp-variable-card-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .vp-variable-card-title {
   min-width: 0;
   overflow: hidden;

@@ -1,4 +1,5 @@
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
+import type { VisibleIf } from './cardConditions'
 
 export type PortableCardArea = 'dashboard' | 'sidebar' | 'header' | 'bottom'
 export type PortableCardCapability =
@@ -26,6 +27,8 @@ export interface PortableCardVariable {
   label: string
   /** Settings box this variable is shown in — ungrouped variables share one box */
   group?: string
+  /** Conditions on other variables that decide whether this one is offered */
+  visibleIf?: VisibleIf
   type: PortableCardVariableType
   required: boolean
   default?: string | number | boolean

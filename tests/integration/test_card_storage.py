@@ -173,6 +173,51 @@ class CardStorageTests(unittest.TestCase):
         with self.assertRaises(card_storage.CardFileError):
             card_storage.parse_card_document(document)
 
+    def test_conditional_variables_reference_known_keys(self) -> None:
+        metadata = card_metadata()
+        metadata["variables"].extend([
+            {
+                "key": "showAttribute",
+                "label": "Show attribute",
+                "type": "boolean",
+                "required": False,
+                "default": False,
+            },
+            {
+                "key": "attribute",
+                "label": "Attribute",
+                "type": "string",
+                "required": False,
+                "default": "",
+                "visibleIf": {"key": "showAttribute", "equals": True},
+            },
+        ])
+        parsed = card_storage.parse_card_document(card_document(metadata))
+        self.assertEqual(
+            parsed["metadata"]["variables"][-1]["visibleIf"],
+            {"key": "showAttribute", "equals": True},
+        )
+
+    def test_conditional_variables_reject_broken_conditions(self) -> None:
+        for condition in (
+            {"key": "missingVariable", "equals": True},
+            {"key": "entity"},
+            {"key": "entity", "equals": True, "not": False},
+            {"key": "entity", "in": []},
+            {"equals": True},
+        ):
+            metadata = card_metadata()
+            metadata["variables"].append({
+                "key": "attribute",
+                "label": "Attribute",
+                "type": "string",
+                "required": False,
+                "default": "",
+                "visibleIf": condition,
+            })
+            with self.assertRaises(card_storage.CardFileError):
+                card_storage.parse_card_document(card_document(metadata))
+
     def test_create_list_and_read_card(self) -> None:
         created = card_storage.create_card(self.private_root, card_document())
         catalog = card_storage.list_cards(self.private_root, self.bundled_root)

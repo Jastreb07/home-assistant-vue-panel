@@ -88,6 +88,7 @@ _VARIABLE_FIELDS = {
     "key",
     "label",
     "group",
+    "visibleIf",
     "type",
     "required",
     "default",
@@ -102,7 +103,7 @@ _VARIABLE_FIELDS = {
 }
 # A list holds repeated objects, so it never carries a scalar default itself.
 _LIST_ONLY_FIELDS = {"itemFields", "nestable"}
-_MAX_LIST_ITEM_FIELDS = 12
+_MAX_LIST_ITEM_FIELDS = 24
 
 
 class CardFileError(Exception):
@@ -189,13 +190,54 @@ def _validate_list_variable(variable: dict[str, Any], index: int) -> None:
     if "nestable" in variable and not isinstance(variable["nestable"], bool):
         raise CardFileError(f"Variable {index} has an invalid nestable flag")
     item_keys: set[str] = set()
+    referenced: list[str] = []
     for item in item_fields:
         if not isinstance(item, dict) or item.get("type") == "list":
             raise CardFileError(f"Variable {index} has an invalid item field")
-        _validate_variable(item, index, item_keys)
+        referenced.extend(_validate_variable(item, index, item_keys))
+    for key in referenced:
+        if key not in item_keys:
+            raise CardFileError(f"Variable {index} references an unknown item field")
 
 
-def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
+def _validate_visible_if(value: Any, index: int) -> list[str]:
+    """One or more conditions that decide whether a variable is offered.
+
+    Every condition names another variable of the same card and exactly one
+    matcher. Several conditions all have to hold. Returns the referenced keys
+    so the caller can check them once every variable is known.
+    """
+
+    conditions = value if isinstance(value, list) else [value]
+    if not conditions:
+        raise CardFileError(f"Variable {index} has an empty visibleIf")
+    referenced: list[str] = []
+    for condition in conditions:
+        if not isinstance(condition, dict) or set(condition) - {
+            "key", "equals", "in", "not"
+        }:
+            raise CardFileError(f"Variable {index} has an invalid visibleIf")
+        key = condition.get("key")
+        if not isinstance(key, str) or not _VARIABLE_KEY_PATTERN.fullmatch(key):
+            raise CardFileError(f"Variable {index} has an invalid visibleIf key")
+        matchers = [name for name in ("equals", "in", "not") if name in condition]
+        if len(matchers) != 1:
+            raise CardFileError(f"Variable {index} needs exactly one visibleIf matcher")
+        if "in" in condition:
+            options = condition["in"]
+            if not isinstance(options, list) or not options or any(
+                not isinstance(option, (str, int, float, bool)) for option in options
+            ):
+                raise CardFileError(f"Variable {index} has an invalid visibleIf list")
+        else:
+            expected = condition[matchers[0]]
+            if not isinstance(expected, (str, int, float, bool)):
+                raise CardFileError(f"Variable {index} has an invalid visibleIf value")
+        referenced.append(key)
+    return referenced
+
+
+def _validate_variable(value: Any, index: int, keys: set[str]) -> list[str]:
     if not isinstance(value, dict):
         raise CardFileError(f"Variable {index} must be an object")
     if set(value) - _VARIABLE_FIELDS:
@@ -259,6 +301,10 @@ def _validate_variable(value: Any, index: int, keys: set[str]) -> None:
             raise CardFileError(f"Variable {index} step must be positive")
         if "min" in value and "max" in value and value["min"] > value["max"]:
             raise CardFileError(f"Variable {index} min must not exceed max")
+
+    if "visibleIf" not in value:
+        return []
+    return _validate_visible_if(value["visibleIf"], index)
 
 
 def validate_card_translations(value: Any) -> dict[str, Any]:
@@ -370,8 +416,12 @@ def validate_card_metadata(value: Any) -> dict[str, Any]:
     if not isinstance(variables, list):
         raise CardFileError("Card variables must be an array")
     keys: set[str] = set()
+    referenced: list[str] = []
     for index, variable in enumerate(variables, start=1):
-        _validate_variable(variable, index, keys)
+        referenced.extend(_validate_variable(variable, index, keys))
+    for key in referenced:
+        if key not in keys:
+            raise CardFileError(f"A visibleIf condition references the unknown key {key}")
     return deepcopy(value)
 
 

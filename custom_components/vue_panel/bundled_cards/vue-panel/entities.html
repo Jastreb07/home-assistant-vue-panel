@@ -17,7 +17,8 @@
       "entity:read",
       "entity:subscribe",
       "icon:render",
-      "service:call"
+      "service:call",
+      "navigation:write"
     ],
     "defaultSize": {
       "cols": 2,
@@ -73,6 +74,178 @@
             "label": "translation.variables.entities.items.icon",
             "type": "icon",
             "required": false
+          },
+          {
+            "key": "textScroll",
+            "label": "translation.variables.entities.items.textScroll",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "key": "showIcon",
+            "label": "translation.variables.entities.items.showIcon",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "key": "showName",
+            "label": "translation.variables.entities.items.showName",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "key": "showState",
+            "label": "translation.variables.entities.items.showState",
+            "type": "boolean",
+            "required": false,
+            "default": true
+          },
+          {
+            "key": "showAttribute",
+            "label": "translation.variables.entities.items.showAttribute",
+            "type": "boolean",
+            "required": false,
+            "default": false
+          },
+          {
+            "key": "attribute",
+            "label": "translation.variables.entities.items.attribute",
+            "type": "string",
+            "required": false,
+            "default": "",
+            "visibleIf": {
+              "key": "showAttribute",
+              "equals": true
+            }
+          },
+          {
+            "key": "tapAction",
+            "label": "translation.variables.entities.items.tapAction",
+            "type": "select",
+            "required": false,
+            "options": [
+              "default",
+              "more-info",
+              "toggle",
+              "navigate",
+              "url",
+              "perform-action",
+              "assist",
+              "none"
+            ],
+            "optionLabels": {
+              "default": "translation.variables.tapAction.options.default",
+              "more-info": "translation.variables.tapAction.options.moreInfo",
+              "toggle": "translation.variables.tapAction.options.toggle",
+              "navigate": "translation.variables.tapAction.options.navigate",
+              "url": "translation.variables.tapAction.options.url",
+              "perform-action": "translation.variables.tapAction.options.performAction",
+              "assist": "translation.variables.tapAction.options.assist",
+              "none": "translation.variables.tapAction.options.none"
+            },
+            "default": "toggle"
+          },
+          {
+            "key": "tapTarget",
+            "label": "translation.variables.entities.items.tapTarget",
+            "type": "string",
+            "required": false,
+            "default": "",
+            "visibleIf": {
+              "key": "tapAction",
+              "in": [
+                "navigate",
+                "url",
+                "perform-action"
+              ]
+            }
+          },
+          {
+            "key": "doubleTapAction",
+            "label": "translation.variables.entities.items.doubleTapAction",
+            "type": "select",
+            "required": false,
+            "options": [
+              "default",
+              "more-info",
+              "toggle",
+              "navigate",
+              "url",
+              "perform-action",
+              "assist",
+              "none"
+            ],
+            "optionLabels": {
+              "default": "translation.variables.doubleTapAction.options.default",
+              "more-info": "translation.variables.doubleTapAction.options.moreInfo",
+              "toggle": "translation.variables.doubleTapAction.options.toggle",
+              "navigate": "translation.variables.doubleTapAction.options.navigate",
+              "url": "translation.variables.doubleTapAction.options.url",
+              "perform-action": "translation.variables.doubleTapAction.options.performAction",
+              "assist": "translation.variables.doubleTapAction.options.assist",
+              "none": "translation.variables.doubleTapAction.options.none"
+            },
+            "default": "default"
+          },
+          {
+            "key": "doubleTapTarget",
+            "label": "translation.variables.entities.items.doubleTapTarget",
+            "type": "string",
+            "required": false,
+            "default": "",
+            "visibleIf": {
+              "key": "doubleTapAction",
+              "in": [
+                "navigate",
+                "url",
+                "perform-action"
+              ]
+            }
+          },
+          {
+            "key": "holdAction",
+            "label": "translation.variables.entities.items.holdAction",
+            "type": "select",
+            "required": false,
+            "options": [
+              "default",
+              "more-info",
+              "toggle",
+              "navigate",
+              "url",
+              "perform-action",
+              "assist",
+              "none"
+            ],
+            "optionLabels": {
+              "default": "translation.variables.holdAction.options.default",
+              "more-info": "translation.variables.holdAction.options.moreInfo",
+              "toggle": "translation.variables.holdAction.options.toggle",
+              "navigate": "translation.variables.holdAction.options.navigate",
+              "url": "translation.variables.holdAction.options.url",
+              "perform-action": "translation.variables.holdAction.options.performAction",
+              "assist": "translation.variables.holdAction.options.assist",
+              "none": "translation.variables.holdAction.options.none"
+            },
+            "default": "default"
+          },
+          {
+            "key": "holdTarget",
+            "label": "translation.variables.entities.items.holdTarget",
+            "type": "string",
+            "required": false,
+            "default": "",
+            "visibleIf": {
+              "key": "holdAction",
+              "in": [
+                "navigate",
+                "url",
+                "perform-action"
+              ]
+            }
           }
         ]
       },
@@ -146,7 +319,43 @@
         "translation.states.idle": "Idle",
         "translation.states.playing": "Playing",
         "translation.states.paused": "Paused",
-        "translation.empty": "No entities selected"
+        "translation.empty": "No entities selected",
+        "translation.variables.entities.items.textScroll": "Text scrolling effect",
+        "translation.variables.entities.items.showIcon": "Show icon",
+        "translation.variables.entities.items.showName": "Show name",
+        "translation.variables.entities.items.showState": "Show entity state",
+        "translation.variables.entities.items.showAttribute": "Show attribute",
+        "translation.variables.entities.items.attribute": "Attribute to show",
+        "translation.variables.tapAction.options.default": "Default (card action)",
+        "translation.variables.tapAction.options.moreInfo": "More info (not available)",
+        "translation.variables.tapAction.options.toggle": "Toggle",
+        "translation.variables.tapAction.options.navigate": "Navigate",
+        "translation.variables.tapAction.options.url": "URL",
+        "translation.variables.tapAction.options.performAction": "Perform action",
+        "translation.variables.tapAction.options.assist": "Assist (not available)",
+        "translation.variables.tapAction.options.none": "Nothing",
+        "translation.variables.entities.items.tapAction": "Tap action",
+        "translation.variables.entities.items.tapTarget": "Tap target (view, URL or domain.action)",
+        "translation.variables.doubleTapAction.options.default": "Default (nothing)",
+        "translation.variables.doubleTapAction.options.moreInfo": "More info (not available)",
+        "translation.variables.doubleTapAction.options.toggle": "Toggle",
+        "translation.variables.doubleTapAction.options.navigate": "Navigate",
+        "translation.variables.doubleTapAction.options.url": "URL",
+        "translation.variables.doubleTapAction.options.performAction": "Perform action",
+        "translation.variables.doubleTapAction.options.assist": "Assist (not available)",
+        "translation.variables.doubleTapAction.options.none": "Nothing",
+        "translation.variables.entities.items.doubleTapAction": "Double tap action",
+        "translation.variables.entities.items.doubleTapTarget": "Double tap target (view, URL or domain.action)",
+        "translation.variables.holdAction.options.default": "Default (nothing)",
+        "translation.variables.holdAction.options.moreInfo": "More info (not available)",
+        "translation.variables.holdAction.options.toggle": "Toggle",
+        "translation.variables.holdAction.options.navigate": "Navigate",
+        "translation.variables.holdAction.options.url": "URL",
+        "translation.variables.holdAction.options.performAction": "Perform action",
+        "translation.variables.holdAction.options.assist": "Assist (not available)",
+        "translation.variables.holdAction.options.none": "Nothing",
+        "translation.variables.entities.items.holdAction": "Hold action",
+        "translation.variables.entities.items.holdTarget": "Hold target (view, URL or domain.action)"
       },
       "de": {
         "translation.name": "Entitäten",
@@ -178,7 +387,43 @@
         "translation.states.idle": "Bereit",
         "translation.states.playing": "Läuft",
         "translation.states.paused": "Pausiert",
-        "translation.empty": "Keine Entitäten ausgewählt"
+        "translation.empty": "Keine Entitäten ausgewählt",
+        "translation.variables.entities.items.textScroll": "Lauftext-Effekt",
+        "translation.variables.entities.items.showIcon": "Icon anzeigen",
+        "translation.variables.entities.items.showName": "Namen anzeigen",
+        "translation.variables.entities.items.showState": "Entity-Status anzeigen",
+        "translation.variables.entities.items.showAttribute": "Attribut anzeigen",
+        "translation.variables.entities.items.attribute": "Anzuzeigendes Attribut",
+        "translation.variables.tapAction.options.default": "Standard (Card-Aktion)",
+        "translation.variables.tapAction.options.moreInfo": "Detailansicht (nicht verfügbar)",
+        "translation.variables.tapAction.options.toggle": "Umschalten",
+        "translation.variables.tapAction.options.navigate": "Navigieren",
+        "translation.variables.tapAction.options.url": "URL",
+        "translation.variables.tapAction.options.performAction": "Aktion ausführen",
+        "translation.variables.tapAction.options.assist": "Assist (nicht verfügbar)",
+        "translation.variables.tapAction.options.none": "Nichts",
+        "translation.variables.entities.items.tapAction": "Tipp-Aktion",
+        "translation.variables.entities.items.tapTarget": "Tipp-Ziel (Ansicht, URL oder domain.aktion)",
+        "translation.variables.doubleTapAction.options.default": "Standard (Nichts)",
+        "translation.variables.doubleTapAction.options.moreInfo": "Detailansicht (nicht verfügbar)",
+        "translation.variables.doubleTapAction.options.toggle": "Umschalten",
+        "translation.variables.doubleTapAction.options.navigate": "Navigieren",
+        "translation.variables.doubleTapAction.options.url": "URL",
+        "translation.variables.doubleTapAction.options.performAction": "Aktion ausführen",
+        "translation.variables.doubleTapAction.options.assist": "Assist (nicht verfügbar)",
+        "translation.variables.doubleTapAction.options.none": "Nichts",
+        "translation.variables.entities.items.doubleTapAction": "Doppeltipp-Aktion",
+        "translation.variables.entities.items.doubleTapTarget": "Doppeltipp-Ziel (Ansicht, URL oder domain.aktion)",
+        "translation.variables.holdAction.options.default": "Standard (Nichts)",
+        "translation.variables.holdAction.options.moreInfo": "Detailansicht (nicht verfügbar)",
+        "translation.variables.holdAction.options.toggle": "Umschalten",
+        "translation.variables.holdAction.options.navigate": "Navigieren",
+        "translation.variables.holdAction.options.url": "URL",
+        "translation.variables.holdAction.options.performAction": "Aktion ausführen",
+        "translation.variables.holdAction.options.assist": "Assist (nicht verfügbar)",
+        "translation.variables.holdAction.options.none": "Nichts",
+        "translation.variables.entities.items.holdAction": "Halten-Aktion",
+        "translation.variables.entities.items.holdTarget": "Halten-Ziel (Ansicht, URL oder domain.aktion)"
       }
     }
   };
@@ -359,10 +604,130 @@
         opacity: .5;
         cursor: default;
     }
+
+    @keyframes vp-text-scroll {
+        0%, 12% {
+            transform: translateX(0);
+        }
+        88%, 100% {
+            transform: translateX(var(--vp-scroll-shift, 0));
+        }
+    }
+
+    .is-scrolling {
+        text-overflow: clip;
+        animation: vp-text-scroll 7s ease-in-out infinite alternate;
+    }
 </style>
 
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
+  /* Lauftext nur, wenn der Text wirklich nicht in die Card passt */
+  function applyTextScroll(element, settings) {
+    if (!element) return;
+    const overflow = element.scrollWidth - element.clientWidth;
+    const scrolling = (settings || config).textScroll !== false && overflow > 1;
+    element.classList.toggle('is-scrolling', scrolling);
+    if (scrolling) element.style.setProperty('--vp-scroll-shift', `-${overflow}px`);
+    else element.style.removeProperty('--vp-scroll-shift');
+  }
+
+  /* Status und optionales Attribut gemäß den Card-Einstellungen */
+  function stateLine(entity, text, settings) {
+    const values = settings || config;
+    const parts = [];
+    if (values.showState !== false) parts.push(text);
+    if (values.showAttribute === true) {
+      const attribute = String(values.attribute || '');
+      const value = attribute ? entity?.attributes?.[attribute] : undefined;
+      if (value !== undefined && value !== null && value !== '') parts.push(String(value));
+    }
+    return parts.filter(Boolean).join(' · ');
+  }
+
+  /* Ein einfacher Umschalter für jede Domain */
+  async function toggleEntity(id) {
+    if (!id) return;
+    await vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: id});
+  }
+
+  /*
+   * Tipp-Aktionen: Tippen, Doppeltippen und Halten. "default" behält die
+   * eingebaute Aktion der Card; "more-info" und "assist" brauchen Dialoge von
+   * Home Assistant, die das Panel noch nicht öffnen kann, und bleiben leer.
+   */
+  const GESTURE_KEYS = {
+    tap: ['tapAction', 'tapTarget'],
+    double_tap: ['doubleTapAction', 'doubleTapTarget'],
+    hold: ['holdAction', 'holdTarget']
+  };
+
+  function bindGestures(element, settings, handlers) {
+    const actionOf = gesture => String(settings[GESTURE_KEYS[gesture][0]] || 'default');
+
+    const run = async gesture => {
+      const action = actionOf(gesture);
+      const target = String(settings[GESTURE_KEYS[gesture][1]] || '');
+
+      if (action === 'none' || action === 'more-info' || action === 'assist') return;
+      if (action === 'default') return handlers.default ? handlers.default(gesture) : undefined;
+      if (action === 'toggle') return handlers.toggle ? handlers.toggle() : undefined;
+      if (action === 'navigate') return target ? vuePanel.navigate(target) : undefined;
+      if (action === 'url') {
+        if (target) window.open(target, '_blank', 'noopener');
+        return;
+      }
+      if (action === 'perform-action') {
+        const [domain, service] = target.split('.');
+        if (!domain || !service) return;
+        await vuePanel.callService(domain, service, {}, handlers.entityId ? {entity_id: handlers.entityId} : {});
+      }
+    };
+
+    const ignored = event => Boolean(handlers.ignore) && Boolean(event.target.closest(handlers.ignore));
+    let holdTimer = null;
+    let held = false;
+    let taps = 0;
+
+    element.addEventListener('pointerdown', event => {
+      if (ignored(event)) return;
+      held = false;
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        held = true;
+        run('hold');
+      }, 500);
+    });
+
+    for (const name of ['pointerup', 'pointercancel', 'pointerleave']) {
+      element.addEventListener(name, () => {
+        if (holdTimer) clearTimeout(holdTimer);
+        holdTimer = null;
+      });
+    }
+
+    element.addEventListener('click', event => {
+      if (ignored(event)) return;
+      if (held) {
+        held = false;
+        return;
+      }
+      const doubled = actionOf('double_tap');
+      /* Ohne Doppeltipp-Aktion reagiert der einfache Tipp sofort */
+      if (doubled === 'default' || doubled === 'none') {
+        run('tap');
+        return;
+      }
+      taps += 1;
+      if (taps > 1) return;
+      setTimeout(() => {
+        const wasDoubled = taps > 1;
+        taps = 0;
+        run(wasDoubled ? 'double_tap' : 'tap');
+      }, 250);
+    });
+  }
+
 
   const list = document.getElementById('list');
   const empty = document.getElementById('empty');
@@ -442,11 +807,21 @@
    */
   const items = (Array.isArray(config.entities) ? config.entities : [])
     .map(item => ({
+      ...(item && typeof item === 'object' ? item : {}),
       entity: item && typeof item.entity === 'string' ? item.entity : '',
       name: item && typeof item.name === 'string' ? item.name : '',
       icon: item && typeof item.icon === 'string' ? item.icon : ''
     }))
     .filter(item => item.entity);
+
+  /*
+   * Die Einstellungen einer Zeile gewinnen; ohne eigene Angabe gilt die
+   * Einstellung der ganzen Card.
+   */
+  function setting(item, key, cardKey) {
+    if (item[key] !== undefined) return item[key] !== false;
+    return config[cardKey] !== false;
+  }
 
   /*
    * Überschrift
@@ -473,6 +848,10 @@
     const domain = domainOf(entityId);
     const toggleable = config.showToggles !== false && TOGGLE_DOMAINS.has(domain);
 
+    const showIcon = setting(item, 'showIcon', 'showIcons');
+    const showName = setting(item, 'showName', 'showName');
+    const showState = setting(item, 'showState', 'showStates');
+
     const row = document.createElement('div');
 
     row.className = 'row';
@@ -482,7 +861,7 @@
      */
     let iconElement = null;
 
-    if (config.showIcons !== false) {
+    if (showIcon) {
       iconElement = document.createElement('img');
       iconElement.className = 'row__icon';
       iconElement.alt = '';
@@ -499,6 +878,8 @@
     const name = document.createElement('span');
 
     name.className = 'row__name';
+
+    name.hidden = !showName;
 
     label.append(name);
 
@@ -520,7 +901,7 @@
 
     state.className = 'row__state';
 
-    if (config.showStates !== false && !toggleable) row.append(state);
+    if ((showState || item.showAttribute === true) && !toggleable) row.append(state);
 
     let toggle = null;
 
@@ -534,12 +915,26 @@
 
     list.append(row);
 
+    bindGestures(row, item, {
+      entityId,
+      ignore: '.row__toggle',
+      toggle: () => toggleEntity(entityId),
+      default: gesture => (gesture === 'tap' && !toggleable ? toggleEntity(entityId) : undefined)
+    });
+
     const render = entity => {
       const isOn = entity?.state === 'on';
       const unavailable = !entity || entity.state === 'unavailable';
 
       name.textContent = item.name || entity?.attributes?.friendly_name || entityId;
-      state.textContent = stateText(entity);
+      state.textContent = stateLine(entity, stateText(entity), {
+        showState,
+        showAttribute: item.showAttribute === true,
+        attribute: item.attribute
+      });
+
+      applyTextScroll(name, item);
+      applyTextScroll(state, item);
 
       if (toggle) {
         toggle.classList.toggle('on', isOn);

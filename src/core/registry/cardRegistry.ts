@@ -14,6 +14,7 @@ import type {
   PortableCardVariable,
 } from './portableCardTypes'
 import { cardText, emptyCardTranslations } from './cardTranslations'
+import type { VisibleIf } from './cardConditions'
 import {
   defaultResponsiveVisibility,
   withResponsiveCss,
@@ -37,6 +38,8 @@ export interface CardSchemaField {
   literalLabel?: boolean
   /** Collapsible box this field is shown in — entity fields are never grouped */
   group?: string
+  /** Only offered while these conditions on other fields hold */
+  visibleIf?: VisibleIf
   domain?: string
   options?: string[]
   optionLabels?: Record<string, string>
@@ -91,6 +94,7 @@ function portableField(variable: PortableCardVariable): CardSchemaField {
     label: variable.label,
     literalLabel: true,
     group: variable.group,
+    visibleIf: variable.visibleIf,
     domain: variable.domain,
     options: variable.options,
     optionLabels: variable.optionLabels,
