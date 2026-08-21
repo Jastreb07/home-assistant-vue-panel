@@ -1,0 +1,1073 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "alarm",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:shield-home-outline",
+    "group": "Vue Panel",
+    "areas": [
+      "dashboard",
+      "sidebar"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call",
+      "navigation:write",
+      "dialog:open"
+    ],
+    "defaultSize": {
+      "cols": 2,
+      "rows": 3,
+      "width": 320,
+      "height": 420
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "translation.variables.entity.label",
+        "type": "entity",
+        "required": true,
+        "domain": "alarm_control_panel",
+        "default": ""
+      },
+      {
+        "key": "name",
+        "label": "translation.variables.name.label",
+        "group": "translation.groups.appearance",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "icon",
+        "label": "translation.variables.icon.label",
+        "group": "translation.groups.appearance",
+        "type": "icon",
+        "required": false,
+        "default": "mdi:shield-home-outline"
+      },
+      {
+        "key": "size",
+        "label": "translation.variables.size.label",
+        "group": "translation.groups.appearance",
+        "type": "select",
+        "required": false,
+        "options": [
+          "compact",
+          "normal",
+          "large"
+        ],
+        "optionLabels": {
+          "compact": "translation.variables.size.options.compact",
+          "normal": "translation.variables.size.options.normal",
+          "large": "translation.variables.size.options.large"
+        },
+        "default": "normal"
+      },
+      {
+        "key": "pinAlwaysVisible",
+        "label": "translation.variables.pinAlwaysVisible.label",
+        "group": "translation.groups.display",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
+        "key": "locks",
+        "label": "translation.variables.locks.label",
+        "group": "translation.groups.locks",
+        "type": "list",
+        "required": false,
+        "itemFields": [
+          {
+            "key": "entity",
+            "label": "translation.variables.locks.items.entity",
+            "type": "entity",
+            "required": false,
+            "domain": "lock"
+          },
+          {
+            "key": "name",
+            "label": "translation.variables.locks.items.name",
+            "type": "string",
+            "required": false
+          }
+        ]
+      },
+      {
+        "key": "actions",
+        "label": "translation.variables.actions.label",
+        "type": "action",
+        "required": false
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Alarm",
+        "translation.description": "Controls an alarm panel — works with the native Home Assistant alarm control and with the Alarmo integration",
+        "translation.variables.entity.label": "Alarm panel entity",
+        "translation.variables.name.label": "Display name",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.size.label": "Card size",
+        "translation.variables.size.options.compact": "Compact",
+        "translation.variables.size.options.normal": "Normal",
+        "translation.variables.size.options.large": "Large",
+        "translation.variables.pinAlwaysVisible.label": "Always show the code panel",
+        "translation.variables.locks.label": "Smart locks",
+        "translation.variables.locks.items.entity": "Lock entity",
+        "translation.variables.locks.items.name": "Display name",
+        "translation.variables.actions.label": "Tap actions",
+        "translation.groups.appearance": "Appearance",
+        "translation.groups.display": "Display",
+        "translation.groups.locks": "Smart locks",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Alarm",
+        "translation.states.disarmed": "Disarmed",
+        "translation.states.armed_home": "Armed home",
+        "translation.states.armed_away": "Armed away",
+        "translation.states.armed_night": "Armed night",
+        "translation.states.armed_vacation": "Armed vacation",
+        "translation.states.armed_custom_bypass": "Armed (custom)",
+        "translation.states.arming": "Arming…",
+        "translation.states.pending": "Alarm pending…",
+        "translation.states.disarming": "Disarming…",
+        "translation.states.triggered": "Alarm triggered",
+        "translation.states.unavailable": "Unavailable",
+        "translation.states.unknown": "Unknown",
+        "translation.modes.home": "Home",
+        "translation.modes.away": "Away",
+        "translation.modes.night": "Night",
+        "translation.modes.vacation": "Vacation",
+        "translation.modes.customBypass": "Custom",
+        "translation.code.cancel": "Cancel",
+        "translation.code.wrong": "Incorrect code",
+        "translation.code.backspace": "Delete",
+        "translation.code.confirm": "Confirm",
+        "translation.locks.locked": "Locked",
+        "translation.locks.unlocked": "Unlocked",
+        "translation.locks.locking": "Locking…",
+        "translation.locks.unlocking": "Unlocking…",
+        "translation.locks.jammed": "Jammed",
+        "translation.locks.unavailable": "Unavailable",
+        "translation.locks.unknown": "Unknown",
+        "translation.locks.lock": "Lock",
+        "translation.locks.unlock": "Unlock",
+        "translation.locks.defaultName": "Smart lock"
+      },
+      "de": {
+        "translation.name": "Alarm",
+        "translation.description": "Steuert eine Alarmanlage — funktioniert mit der nativen Home-Assistant-Alarmsteuerung und mit der Alarmo-Integration",
+        "translation.variables.entity.label": "Alarm-Entity",
+        "translation.variables.name.label": "Anzeigename",
+        "translation.variables.icon.label": "Icon",
+        "translation.variables.size.label": "Card-Größe",
+        "translation.variables.size.options.compact": "Kompakt",
+        "translation.variables.size.options.normal": "Normal",
+        "translation.variables.size.options.large": "Groß",
+        "translation.variables.pinAlwaysVisible.label": "Code-Feld immer anzeigen",
+        "translation.variables.locks.label": "Smart Locks",
+        "translation.variables.locks.items.entity": "Lock-Entity",
+        "translation.variables.locks.items.name": "Anzeigename",
+        "translation.variables.actions.label": "Tipp-Aktionen",
+        "translation.groups.appearance": "Darstellung",
+        "translation.groups.display": "Anzeige",
+        "translation.groups.locks": "Smart Locks",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Alarmanlage",
+        "translation.states.disarmed": "Deaktiviert",
+        "translation.states.armed_home": "Zuhause scharf",
+        "translation.states.armed_away": "Abwesend scharf",
+        "translation.states.armed_night": "Nacht scharf",
+        "translation.states.armed_vacation": "Urlaub scharf",
+        "translation.states.armed_custom_bypass": "Scharf (angepasst)",
+        "translation.states.arming": "Wird scharf geschaltet…",
+        "translation.states.pending": "Alarm droht…",
+        "translation.states.disarming": "Wird deaktiviert…",
+        "translation.states.triggered": "Alarm ausgelöst",
+        "translation.states.unavailable": "Nicht verfügbar",
+        "translation.states.unknown": "Unbekannt",
+        "translation.modes.home": "Zuhause",
+        "translation.modes.away": "Abwesend",
+        "translation.modes.night": "Nacht",
+        "translation.modes.vacation": "Urlaub",
+        "translation.modes.customBypass": "Angepasst",
+        "translation.code.cancel": "Abbrechen",
+        "translation.code.wrong": "Falscher Code",
+        "translation.code.backspace": "Löschen",
+        "translation.code.confirm": "Bestätigen",
+        "translation.locks.locked": "Verriegelt",
+        "translation.locks.unlocked": "Entriegelt",
+        "translation.locks.locking": "Verriegelt…",
+        "translation.locks.unlocking": "Entriegelt…",
+        "translation.locks.jammed": "Blockiert",
+        "translation.locks.unavailable": "Nicht verfügbar",
+        "translation.locks.unknown": "Unbekannt",
+        "translation.locks.lock": "Verriegeln",
+        "translation.locks.unlock": "Entriegeln",
+        "translation.locks.defaultName": "Smart Lock"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <article class="alarm-card" id="card" data-size="normal">
+    <header class="alarm-header">
+      <span class="alarm-icon-wrap" id="icon-wrap">
+        <img class="alarm-icon" id="icon" alt="">
+      </span>
+      <span class="alarm-copy">
+        <span class="alarm-name" id="name"></span>
+        <span class="alarm-state" id="state"></span>
+      </span>
+    </header>
+
+    <nav class="alarm-modes" id="modes" aria-label="Alarm mode"></nav>
+
+    <section class="alarm-locks" id="locks" hidden></section>
+
+    <section class="alarm-code" id="code-panel" hidden>
+      <button type="button" class="alarm-code-cancel" id="code-cancel" hidden><img id="code-cancel-icon" alt=""></button>
+      <div class="alarm-code-dots" id="code-dots"></div>
+      <div class="alarm-keypad" id="keypad">
+        <button class="alarm-key" type="button" data-key="1">1</button>
+        <button class="alarm-key" type="button" data-key="2">2</button>
+        <button class="alarm-key" type="button" data-key="3">3</button>
+        <button class="alarm-key" type="button" data-key="4">4</button>
+        <button class="alarm-key" type="button" data-key="5">5</button>
+        <button class="alarm-key" type="button" data-key="6">6</button>
+        <button class="alarm-key" type="button" data-key="7">7</button>
+        <button class="alarm-key" type="button" data-key="8">8</button>
+        <button class="alarm-key" type="button" data-key="9">9</button>
+        <button class="alarm-key" type="button" id="key-back"><img id="key-back-icon" alt=""></button>
+        <button class="alarm-key" type="button" data-key="0">0</button>
+        <button class="alarm-key alarm-key--confirm" type="button" id="key-confirm"><img id="key-confirm-icon" alt=""></button>
+      </div>
+      <p class="alarm-code-error" id="code-error" hidden></p>
+    </section>
+  </article>
+</template>
+
+<style data-vue-panel-css>
+    .alarm-card {
+        --alarm-header-icon: 56px;
+        --alarm-mode-height: 60px;
+        --alarm-mode-icon: 22px;
+        --alarm-key-height: 52px;
+        --alarm-gap: 12px;
+        --alarm-armed: #2f8f4b;
+        --alarm-busy: #d59c00;
+        --alarm-alert: #e53935;
+        position: relative;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: var(--alarm-gap);
+        padding: var(--alarm-gap);
+        box-sizing: border-box;
+        border-radius: var(--card-radius);
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
+        overflow: auto;
+    }
+
+    .alarm-card[data-size="compact"] {
+        --alarm-header-icon: 42px;
+        --alarm-mode-height: 44px;
+        --alarm-mode-icon: 18px;
+        --alarm-key-height: 40px;
+        --alarm-gap: 8px;
+        font-size: 12px;
+    }
+
+    .alarm-card[data-size="large"] {
+        --alarm-header-icon: 72px;
+        --alarm-mode-height: 72px;
+        --alarm-mode-icon: 26px;
+        --alarm-key-height: 62px;
+        --alarm-gap: 16px;
+    }
+
+    .alarm-header {
+        display: flex;
+        align-items: center;
+        gap: var(--alarm-gap);
+    }
+
+    .alarm-icon-wrap {
+        flex: 0 0 auto;
+        width: var(--alarm-header-icon);
+        height: var(--alarm-header-icon);
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+        transition: background .18s ease;
+    }
+
+    .alarm-card.is-armed .alarm-icon-wrap {
+        background: color-mix(in srgb, var(--alarm-armed) 20%, transparent);
+    }
+
+    .alarm-card.is-busy .alarm-icon-wrap {
+        background: color-mix(in srgb, var(--alarm-busy) 22%, transparent);
+        animation: alarm-pulse 1.1s ease-in-out infinite;
+    }
+
+    .alarm-card.is-alarm .alarm-icon-wrap {
+        background: color-mix(in srgb, var(--alarm-alert) 24%, transparent);
+        animation: alarm-pulse .55s ease-in-out infinite;
+    }
+
+    @keyframes alarm-pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: .45; }
+    }
+
+    .alarm-icon {
+        width: calc(var(--alarm-header-icon) * .55);
+        height: calc(var(--alarm-header-icon) * .55);
+    }
+
+    .alarm-copy {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .alarm-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 15px;
+        font-weight: 600;
+    }
+
+    .alarm-state {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        color: var(--text-secondary);
+        font-size: 12px;
+    }
+
+    .alarm-card.is-armed .alarm-state {
+        color: var(--alarm-armed);
+    }
+
+    .alarm-card.is-busy .alarm-state {
+        color: var(--alarm-busy);
+    }
+
+    .alarm-card.is-alarm .alarm-state {
+        color: var(--alarm-alert);
+    }
+
+    .alarm-modes {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+        gap: 5px;
+        padding: 5px;
+        border-radius: 18px;
+        background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+    }
+
+    .alarm-mode {
+        height: var(--alarm-mode-height);
+        padding: 6px 4px;
+        border: 0;
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: transparent;
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: background .15s ease, color .15s ease, transform .08s ease;
+    }
+
+    .alarm-mode:hover {
+        background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+    }
+
+    .alarm-mode:active {
+        transform: scale(.96);
+    }
+
+    .alarm-mode.active {
+        background: var(--accent);
+        color: var(--card-bg);
+    }
+
+    .alarm-mode-icon {
+        width: var(--alarm-mode-icon);
+        height: var(--alarm-mode-icon);
+    }
+
+    .alarm-mode-label {
+        font-size: 12px;
+        line-height: 1;
+        white-space: nowrap;
+    }
+
+    .alarm-card[data-size="compact"] .alarm-mode-label {
+        display: none;
+    }
+
+    .alarm-code {
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 14px;
+        padding: 16px 12px;
+        border: 1px solid var(--divider);
+        border-radius: 22px;
+    }
+
+    .alarm-code-cancel {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 26px;
+        height: 26px;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+        cursor: pointer;
+    }
+
+    .alarm-code-cancel img {
+        width: 15px;
+        height: 15px;
+    }
+
+    .alarm-code-dots {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+    .alarm-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--text-secondary) 24%, transparent);
+    }
+
+    .alarm-dot.is-filled {
+        background: var(--accent);
+    }
+
+    .alarm-keypad {
+        width: 100%;
+        max-width: 320px;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .alarm-key {
+        height: var(--alarm-key-height);
+        border: 0;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+        color: var(--text-primary);
+        font-size: 16px;
+        cursor: pointer;
+        transition: background .13s ease, transform .07s ease;
+    }
+
+    .alarm-key img {
+        width: 20px;
+        height: 20px;
+    }
+
+    .alarm-key:hover {
+        background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
+    }
+
+    .alarm-key:active {
+        transform: scale(.95);
+    }
+
+    .alarm-key--confirm {
+        background: color-mix(in srgb, var(--accent) 24%, transparent);
+    }
+
+    .alarm-code-error {
+        margin: 0;
+        color: var(--alarm-alert);
+        font-size: 12px;
+    }
+
+    .alarm-locks {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .alarm-lock {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 8px 10px;
+        border-radius: 16px;
+        background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
+    }
+
+    .alarm-lock-icon {
+        flex: 0 0 auto;
+        width: 36px;
+        height: 36px;
+        display: grid;
+        place-items: center;
+        border-radius: 50%;
+        background: var(--card-bg);
+    }
+
+    .alarm-lock-icon img {
+        width: 20px;
+        height: 20px;
+    }
+
+    .alarm-lock-copy {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .alarm-lock-name {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px;
+        font-weight: 600;
+    }
+
+    .alarm-lock-state {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        margin-top: 1px;
+        color: var(--text-secondary);
+        font-size: 11px;
+    }
+
+    .alarm-card[data-size="compact"] .alarm-lock-state {
+        display: none;
+    }
+
+    .alarm-lock-button {
+        flex: 0 0 auto;
+        height: 32px;
+        padding: 0 12px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background .14s ease, transform .08s ease;
+    }
+
+    .alarm-lock-button:hover {
+        background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+    }
+
+    .alarm-lock-button:active {
+        transform: scale(.96);
+    }
+
+    .alarm-lock-button:disabled {
+        opacity: .5;
+        cursor: default;
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+
+  /* Ein einfacher Umschalter für jede Domain */
+  async function toggleEntity(id) {
+    if (!id) return;
+    await vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: id});
+  }
+
+  /*
+   * Tipp-Aktionen: Tippen, Doppeltippen und Halten. "default" behält die
+   * eingebaute Aktion der Card und öffnet beim Halten ohne eigene Aktion die
+   * automatische Detailansicht; "more-info" öffnet die Detailansicht (Ziel ist
+   * optional eine bestimmte Dialog-Card), "popup" ein eigenes Popup. "assist"
+   * braucht einen Home-Assistant-Dialog, den das Panel nicht öffnen kann.
+   */
+  function bindGestures(element, settings, handlers) {
+    /* Das Panel speichert je Geste eine Aktion samt Ziel */
+    const slotOf = gesture => (settings.actions || {})[gesture] || {};
+    const actionOf = gesture => String(slotOf(gesture).action || 'default');
+
+    const run = async gesture => {
+      const action = actionOf(gesture);
+      const target = String(slotOf(gesture).target || '');
+
+      if (action === 'none' || action === 'assist') return;
+      if (action === 'more-info') {
+        return vuePanel.showDetail(target ? {card: target, entity: handlers.entityId} : {entity: handlers.entityId});
+      }
+      if (action === 'popup') return target ? vuePanel.openPopup(target) : undefined;
+      if (action === 'default') {
+        const handled = handlers.default ? handlers.default(gesture) : undefined;
+        if (handled !== undefined) return handled;
+        /* Ohne eigene Card-Aktion öffnet Halten die automatische Detailansicht */
+        if (gesture === 'hold' && handlers.entityId) return vuePanel.showDetail({entity: handlers.entityId});
+        return undefined;
+      }
+      if (action === 'toggle') return handlers.toggle ? handlers.toggle() : undefined;
+      if (action === 'navigate') return target ? vuePanel.navigate(target) : undefined;
+      if (action === 'url') {
+        if (target) window.open(target, '_blank', 'noopener');
+        return;
+      }
+      if (action === 'perform-action') {
+        const [domain, service] = target.split('.');
+        if (!domain || !service) return;
+        await vuePanel.callService(domain, service, {}, handlers.entityId ? {entity_id: handlers.entityId} : {});
+      }
+    };
+
+    const ignored = event => Boolean(handlers.ignore) && Boolean(event.target.closest(handlers.ignore));
+    let holdTimer = null;
+    let held = false;
+    let taps = 0;
+
+    element.addEventListener('pointerdown', event => {
+      if (ignored(event)) return;
+      held = false;
+      holdTimer = setTimeout(() => {
+        holdTimer = null;
+        held = true;
+        run('hold');
+      }, 500);
+    });
+
+    for (const name of ['pointerup', 'pointercancel', 'pointerleave']) {
+      element.addEventListener(name, () => {
+        if (holdTimer) clearTimeout(holdTimer);
+        holdTimer = null;
+      });
+    }
+
+    element.addEventListener('click', event => {
+      if (ignored(event)) return;
+      if (held) {
+        held = false;
+        return;
+      }
+      const doubled = actionOf('double_tap');
+      /* Ohne Doppeltipp-Aktion reagiert der einfache Tipp sofort */
+      if (doubled === 'default' || doubled === 'none') {
+        run('tap');
+        return;
+      }
+      taps += 1;
+      if (taps > 1) return;
+      setTimeout(() => {
+        const wasDoubled = taps > 1;
+        taps = 0;
+        run(wasDoubled ? 'double_tap' : 'tap');
+      }, 250);
+    });
+  }
+
+  /*
+   * Bit-Flags aus SUPPORT_ALARM_ARM_* (Home Assistant, gilt genauso für
+   * Alarmo, da Alarmo ein reguläres alarm_control_panel-Entity ist).
+   */
+  const ARM_HOME = 1;
+  const ARM_AWAY = 2;
+  const ARM_NIGHT = 4;
+  const ARM_CUSTOM_BYPASS = 16;
+  const ARM_VACATION = 32;
+
+  const DISARM_MODE = {
+    key: 'disarmed',
+    service: 'alarm_disarm',
+    icon: 'mdi:shield-off-outline',
+    label: 'translation.states.disarmed'
+  };
+
+  const ARM_MODES = [
+    {key: 'armed_home', service: 'alarm_arm_home', bit: ARM_HOME, icon: 'mdi:shield-home', label: 'translation.modes.home'},
+    {key: 'armed_away', service: 'alarm_arm_away', bit: ARM_AWAY, icon: 'mdi:shield-lock', label: 'translation.modes.away'},
+    {key: 'armed_night', service: 'alarm_arm_night', bit: ARM_NIGHT, icon: 'mdi:shield-moon', label: 'translation.modes.night'},
+    {key: 'armed_vacation', service: 'alarm_arm_vacation', bit: ARM_VACATION, icon: 'mdi:shield-airplane', label: 'translation.modes.vacation'},
+    {key: 'armed_custom_bypass', service: 'alarm_arm_custom_bypass', bit: ARM_CUSTOM_BYPASS, icon: 'mdi:shield-star', label: 'translation.modes.customBypass'}
+  ];
+
+  const STATE_LABELS = {
+    disarmed: 'translation.states.disarmed',
+    armed_home: 'translation.states.armed_home',
+    armed_away: 'translation.states.armed_away',
+    armed_night: 'translation.states.armed_night',
+    armed_vacation: 'translation.states.armed_vacation',
+    armed_custom_bypass: 'translation.states.armed_custom_bypass',
+    arming: 'translation.states.arming',
+    pending: 'translation.states.pending',
+    disarming: 'translation.states.disarming',
+    triggered: 'translation.states.triggered',
+    unavailable: 'translation.states.unavailable'
+  };
+
+  const STATE_ICONS = {
+    disarmed: 'mdi:shield-off-outline',
+    armed_home: 'mdi:shield-home',
+    armed_away: 'mdi:shield-lock',
+    armed_night: 'mdi:shield-moon',
+    armed_vacation: 'mdi:shield-airplane',
+    armed_custom_bypass: 'mdi:shield-star',
+    arming: 'mdi:shield-sync-outline',
+    disarming: 'mdi:shield-sync-outline',
+    pending: 'mdi:shield-alert-outline',
+    triggered: 'mdi:bell-alert',
+    unavailable: 'mdi:shield-off-outline'
+  };
+
+  const LOCK_STATE_LABELS = {
+    locked: 'translation.locks.locked',
+    unlocked: 'translation.locks.unlocked',
+    locking: 'translation.locks.locking',
+    unlocking: 'translation.locks.unlocking',
+    jammed: 'translation.locks.jammed',
+    unavailable: 'translation.locks.unavailable'
+  };
+
+  function knownState(raw) {
+    return STATE_LABELS[raw] ? raw : 'unknown';
+  }
+
+  /* Welche Arm-Modi das Entity anbietet — identisch für HA-nativ und Alarmo */
+  function supportedArmModes(entity) {
+    const bits = Number(entity?.attributes?.supported_features) || 0;
+    return ARM_MODES.filter(mode => (bits & mode.bit) === mode.bit);
+  }
+
+  /* Ob ein Code nötig ist, direkt aus den Standard-Attributen gelesen */
+  function codeInfo(entity) {
+    const format = entity?.attributes?.code_format || null;
+    const armRequired = entity?.attributes?.code_arm_required !== false;
+    return {format, armRequired};
+  }
+
+  const entityId = String(config.entity || '');
+  const card = document.getElementById('card');
+  card.dataset.size = ['compact', 'normal', 'large'].includes(config.size) ? config.size : 'normal';
+
+  const iconElement = document.getElementById('icon');
+  const nameElement = document.getElementById('name');
+  const stateElement = document.getElementById('state');
+  const modesElement = document.getElementById('modes');
+
+  const codePanel = document.getElementById('code-panel');
+  const codeCancel = document.getElementById('code-cancel');
+  const codeDots = document.getElementById('code-dots');
+  const keypad = document.getElementById('keypad');
+  const keyBack = document.getElementById('key-back');
+  const keyConfirm = document.getElementById('key-confirm');
+  const codeError = document.getElementById('code-error');
+  const locksElement = document.getElementById('locks');
+
+  codeCancel.setAttribute('aria-label', vuePanel.t('translation.code.cancel'));
+  keyBack.setAttribute('aria-label', vuePanel.t('translation.code.backspace'));
+  keyConfirm.setAttribute('aria-label', vuePanel.t('translation.code.confirm'));
+
+  const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#737373';
+  for (const [id, icon, color] of [
+    ['code-cancel-icon', 'mdi:close', '#737373'],
+    ['key-back-icon', 'mdi:backspace-outline', '#737373'],
+    ['key-confirm-icon', 'mdi:check', accentColor]
+  ]) document.getElementById(id).src = await vuePanel.getIcon(icon, {size: 32, color});
+
+  let currentEntity = null;
+  let pendingAction = null; // {type: 'arm', mode} | {type: 'disarm'}
+  let requestedMode = null; // rein kosmetisch: welcher Modus lokal angefragt wurde
+  let code = '';
+
+  function renderDots() {
+    codeDots.replaceChildren();
+    const total = Math.max(code.length, 4);
+    for (let index = 0; index < total; index++) {
+      const dot = document.createElement('span');
+      dot.className = 'alarm-dot';
+      if (index < code.length) dot.classList.add('is-filled');
+      codeDots.append(dot);
+    }
+  }
+
+  function updateCodePanelVisibility() {
+    const info = codeInfo(currentEntity);
+    const show = Boolean(info.format) && (pendingAction !== null || config.pinAlwaysVisible === true);
+    codePanel.hidden = !show;
+    codeCancel.hidden = pendingAction === null;
+    keyConfirm.disabled = pendingAction === null;
+  }
+
+  function openCodePanel(action) {
+    pendingAction = action;
+    code = '';
+    codeError.hidden = true;
+    renderDots();
+    updateCodePanelVisibility();
+  }
+
+  function closeCodePanel() {
+    pendingAction = null;
+    requestedMode = null;
+    code = '';
+    renderDots();
+    updateCodePanelVisibility();
+  }
+
+  function showCodeError() {
+    code = '';
+    renderDots();
+    codeError.textContent = vuePanel.t('translation.code.wrong');
+    codeError.hidden = false;
+  }
+
+  async function performArm(mode, codeValue) {
+    requestedMode = mode.key;
+    renderModes();
+    try {
+      await vuePanel.callService('alarm_control_panel', mode.service, codeValue ? {code: codeValue} : {}, {entity_id: entityId});
+      closeCodePanel();
+    } catch (error) {
+      showCodeError();
+    }
+  }
+
+  async function performDisarm(codeValue) {
+    requestedMode = 'disarmed';
+    renderModes();
+    try {
+      await vuePanel.callService('alarm_control_panel', 'alarm_disarm', codeValue ? {code: codeValue} : {}, {entity_id: entityId});
+      closeCodePanel();
+    } catch (error) {
+      showCodeError();
+    }
+  }
+
+  function requestArm(mode) {
+    if (!entityId) return;
+    const info = codeInfo(currentEntity);
+    if (info.format && info.armRequired) {
+      openCodePanel({type: 'arm', mode});
+    } else {
+      performArm(mode, '');
+    }
+  }
+
+  function requestDisarm() {
+    if (!entityId) return;
+    const info = codeInfo(currentEntity);
+    if (info.format) {
+      openCodePanel({type: 'disarm'});
+    } else {
+      performDisarm('');
+    }
+  }
+
+  function submitCode() {
+    if (!pendingAction || !code) return;
+    if (pendingAction.type === 'disarm') performDisarm(code);
+    else performArm(pendingAction.mode, code);
+  }
+
+  keypad.addEventListener('click', event => {
+    const button = event.target.closest('[data-key]');
+    if (button) {
+      if (code.length < 8) code += button.dataset.key;
+      renderDots();
+    }
+  });
+
+  keyBack.addEventListener('click', () => {
+    code = code.slice(0, -1);
+    renderDots();
+  });
+
+  keyConfirm.addEventListener('click', submitCode);
+  codeCancel.addEventListener('click', closeCodePanel);
+
+  function renderModes() {
+    const modes = [DISARM_MODE, ...supportedArmModes(currentEntity)];
+    const state = knownState(currentEntity?.state);
+    const busy = ['arming', 'pending', 'disarming'].includes(state) || state === 'triggered';
+    const activeKey = busy ? requestedMode : state;
+
+    modesElement.replaceChildren();
+    const buttons = modes.map(mode => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'alarm-mode';
+      button.classList.toggle('active', mode.key === activeKey);
+      const img = document.createElement('img');
+      img.className = 'alarm-mode-icon';
+      img.alt = '';
+      const label = document.createElement('span');
+      label.className = 'alarm-mode-label';
+      label.textContent = vuePanel.t(mode.label);
+      button.append(img, label);
+      button.addEventListener('click', () => {
+        if (mode.key === 'disarmed') {
+          if (state === 'disarmed') return;
+          requestDisarm();
+        } else {
+          if (state === mode.key) return;
+          requestArm(mode);
+        }
+      });
+      modesElement.append(button);
+      return {button, img, icon: mode.icon};
+    });
+
+    Promise.all(buttons.map(async entry => {
+      entry.img.src = await vuePanel.getIcon(entry.icon, {size: 48, color: '#737373'});
+    }));
+  }
+
+  async function render(entity) {
+    currentEntity = entity;
+    const state = !entityId ? 'unknown' : !entity ? 'unknown' : knownState(entity.state);
+    const armed = state.startsWith('armed');
+    const busy = ['arming', 'pending', 'disarming'].includes(state);
+    const alarm = state === 'triggered';
+
+    card.classList.toggle('is-armed', armed);
+    card.classList.toggle('is-busy', busy);
+    card.classList.toggle('is-alarm', alarm);
+
+    nameElement.textContent = String(config.name || entity?.attributes?.friendly_name || vuePanel.t('translation.defaultName'));
+    stateElement.textContent = !entityId
+      ? vuePanel.t('translation.noEntity')
+      : !entity
+        ? vuePanel.t('translation.entityNotFound')
+        : vuePanel.t(STATE_LABELS[state] || 'translation.states.unknown');
+
+    iconElement.src = await vuePanel.getIcon(STATE_ICONS[state] || 'mdi:shield-off-outline', {
+      size: 64,
+      color: alarm ? '#e53935' : busy ? '#d59c00' : armed ? '#2f8f4b' : '#737373'
+    });
+
+    if (!busy && !alarm) requestedMode = null;
+
+    renderModes();
+    updateCodePanelVisibility();
+  }
+
+  /* Smart Locks — feste Liste, jede Zeile abonniert ihr eigenes Entity */
+  const lockEntries = (Array.isArray(config.locks) ? config.locks : [])
+    .filter(item => item && typeof item.entity === 'string' && item.entity);
+
+  function buildLocks() {
+    if (!lockEntries.length) {
+      locksElement.hidden = true;
+      return;
+    }
+    locksElement.hidden = false;
+    locksElement.replaceChildren();
+
+    for (const item of lockEntries) {
+      const id = item.entity;
+      const row = document.createElement('div');
+      row.className = 'alarm-lock';
+
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'alarm-lock-icon';
+      const img = document.createElement('img');
+      img.alt = '';
+      iconWrap.append(img);
+
+      const copy = document.createElement('div');
+      copy.className = 'alarm-lock-copy';
+      const lockName = document.createElement('div');
+      lockName.className = 'alarm-lock-name';
+      const lockState = document.createElement('div');
+      lockState.className = 'alarm-lock-state';
+      copy.append(lockName, lockState);
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'alarm-lock-button';
+
+      row.append(iconWrap, copy, button);
+      locksElement.append(row);
+
+      const renderLock = async lockEntity => {
+        const state = lockEntity?.state || 'unknown';
+        const locked = state === 'locked';
+        lockName.textContent = item.name || lockEntity?.attributes?.friendly_name || id || vuePanel.t('translation.locks.defaultName');
+        lockState.textContent = vuePanel.t(LOCK_STATE_LABELS[state] || 'translation.locks.unknown');
+        button.textContent = vuePanel.t(locked ? 'translation.locks.unlock' : 'translation.locks.lock');
+        button.disabled = !lockEntity || state === 'unavailable';
+        img.src = await vuePanel.getIcon(locked ? 'mdi:lock' : 'mdi:lock-open-variant', {
+          size: 40,
+          color: locked ? '#5c635e' : '#9a6d37'
+        });
+      };
+
+      button.addEventListener('click', async () => {
+        const lockEntity = await vuePanel.getEntity(id);
+        const service = lockEntity?.state === 'locked' ? 'unlock' : 'lock';
+        await vuePanel.callService('lock', service, {}, {entity_id: id});
+      });
+
+      vuePanel.getEntity(id).then(renderLock);
+      vuePanel.subscribeEntity(id, renderLock);
+    }
+  }
+
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, render);
+  } else {
+    await render(null);
+  }
+  buildLocks();
+
+  bindGestures(card, config, {
+    entityId,
+    ignore: '#modes, #code-panel, #locks',
+    toggle: () => toggleEntity(entityId)
+  });
+</script>

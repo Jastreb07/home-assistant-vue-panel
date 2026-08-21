@@ -453,6 +453,7 @@ class CardStorageTests(unittest.TestCase):
         bundled_root = MODULE_PATH.parent / "bundled_cards"
         catalog = card_storage.list_cards(self.private_root, bundled_root)
         expected = {
+            "vue-panel/alarm",
             "vue-panel/clock",
             "vue-panel/cover",
             "vue-panel/entities",
