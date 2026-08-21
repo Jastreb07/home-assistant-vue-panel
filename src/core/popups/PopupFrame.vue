@@ -47,7 +47,10 @@ const title = computed(() => {
 
 const icon = computed(() => popup.value?.icon)
 /* A detail view holds a single card, so it stays as narrow as that card */
-const size = computed(() => (popup.value ? DIALOG_SIZE[popup.value.size ?? 'md'] : 'md'))
+const isLargeDetail = computed(() => props.request.cardType === 'vue-panel/light-detail')
+const size = computed(() => (
+  popup.value ? DIALOG_SIZE[popup.value.size ?? 'md'] : isLargeDetail.value ? 'lg' : 'md'
+))
 /**
  * A popup lays its cards out exactly like a flex view, so it is rendered
  * through the very same layout — including the whole edit-mode tooling.
@@ -87,7 +90,11 @@ const popupView = computed<ViewConfig | null>(() => {
       </CardCss>
     </template>
     <p v-else-if="request.popupId" class="popup-missing">{{ t('popups.missingPopupHint') }}</p>
-    <div v-else-if="request.cardType" class="detail-body">
+    <div
+      v-else-if="request.cardType"
+      class="detail-body"
+      :class="{ 'is-large-detail': isLargeDetail }"
+    >
       <PortableCardHost :card-type="request.cardType" :config="context" />
     </div>
     <EntityDetailFallback v-else :entity-id="request.entityId ?? ''" />
@@ -113,11 +120,15 @@ const popupView = computed<ViewConfig | null>(() => {
 /* The detail card is a single tile — it stays centred instead of stretching */
 .detail-body {
   display: flex;
+  align-items: center;
   justify-content: center;
   padding: 8px 0 4px;
 }
 .detail-body > :deep(*) {
   width: 100%;
   max-width: 340px;
+}
+.detail-body.is-large-detail > :deep(*) {
+  max-width: 424px;
 }
 </style>

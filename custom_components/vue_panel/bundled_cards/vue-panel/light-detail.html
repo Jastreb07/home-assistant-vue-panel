@@ -21,8 +21,8 @@
     "defaultSize": {
       "cols": 1,
       "rows": 1,
-      "width": 380,
-      "height": 460
+      "width": 424,
+      "height": 513
     },
     "defaultResponsive": {
       "mobile": true,
@@ -40,13 +40,6 @@
         "required": true,
         "domain": "light",
         "default": ""
-      },
-      {
-        "key": "name",
-        "label": "translation.variables.name.label",
-        "type": "string",
-        "required": false,
-        "default": ""
       }
     ]
   };
@@ -60,10 +53,8 @@
         "translation.name": "Light details",
         "translation.description": "Detail view of a light: switch, brightness and color temperature",
         "translation.variables.entity.label": "Light entity",
-        "translation.variables.name.label": "Display name",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
-        "translation.defaultName": "Light",
         "translation.states.on": "On",
         "translation.states.off": "Off",
         "translation.toggle": "Switch",
@@ -77,10 +68,8 @@
         "translation.name": "Licht-Details",
         "translation.description": "Detailansicht eines Lichts: Schalter, Helligkeit und Farbtemperatur",
         "translation.variables.entity.label": "Licht-Entity",
-        "translation.variables.name.label": "Anzeigename",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
-        "translation.defaultName": "Licht",
         "translation.states.on": "An",
         "translation.states.off": "Aus",
         "translation.toggle": "Schalten",
@@ -95,374 +84,480 @@
 </script>
 
 <template data-vue-panel-html>
-  <div class="ld" id="card">
-    <div class="ld__stage" id="stage">
-      <div class="ld__dial" id="dial">
-        <svg class="ld__ring" viewBox="0 0 200 200" aria-hidden="true">
-          <defs>
-            <linearGradient id="ld-temp" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" stop-color="#ffb057"/>
-              <stop offset="50%" stop-color="#fff4e2"/>
-              <stop offset="100%" stop-color="#a8ccff"/>
-            </linearGradient>
-            <linearGradient id="ld-hue" x1="0" y1="1" x2="1" y2="0">
-              <stop offset="0%" stop-color="#ff0000"/>
-              <stop offset="25%" stop-color="#ffff00"/>
-              <stop offset="50%" stop-color="#00ff88"/>
-              <stop offset="75%" stop-color="#0088ff"/>
-              <stop offset="100%" stop-color="#ff00ff"/>
-            </linearGradient>
-          </defs>
-          <circle class="ld__track" cx="100" cy="100" r="86"/>
-          <circle class="ld__value" id="arc" cx="100" cy="100" r="86"/>
-        </svg>
-        <div class="ld__center">
-          <button class="ld__power" id="toggle" type="button" role="switch">
-            <span class="ld__power-knob"><img id="power-icon" alt=""></span>
-          </button>
-          <div class="ld__readout" id="readout">—</div>
-          <div class="ld__caption" id="caption"></div>
-        </div>
-        <span class="ld__handle" id="handle" aria-hidden="true"></span>
-      </div>
+  <div class="light-ui" id="card">
+    <button class="power" id="toggle" type="button" role="switch" aria-checked="false">
+      <img id="power-icon" alt="">
+    </button>
 
-      <div class="ld__effects" id="effect-panel" hidden>
-        <div class="ld__effect-list" id="effect-list"></div>
-      </div>
+    <div class="dial" id="dial" role="slider">
+      <svg class="dial-svg" viewBox="0 0 232 232" aria-hidden="true">
+        <circle class="arc-track" cx="116" cy="116" r="107"/>
+        <circle class="arc-progress" id="arc-progress" cx="116" cy="116" r="107"/>
+      </svg>
+      <div class="hue-ring"></div>
+      <div class="arc-handle" id="arc-handle"></div>
     </div>
 
-    <div class="ld__saturation" id="saturation-panel" hidden>
-      <input class="ld__saturation-slider" id="saturation" type="range" min="0" max="100" step="1">
+    <div class="status" id="status-text">—</div>
+    <div class="subtitle" id="subtitle-text"></div>
+    <div class="color-preview" id="color-preview"></div>
+
+    <div class="controls" id="controls">
+      <button class="control brightness" data-mode="brightness" type="button">
+        <span class="circle-button preset-trigger" id="brightness-trigger">
+          <img data-icon="mdi:brightness-6" alt="">
+        </span>
+        <span class="label" data-label="brightness"></span>
+      </button>
+
+      <button class="control temp" data-mode="colorTemp" type="button">
+        <span class="circle-button preset-trigger" id="kelvin-trigger">
+          <img data-icon="mdi:thermometer" alt="">
+        </span>
+        <span class="label" data-label="colorTemp"></span>
+      </button>
+
+      <button class="control color" data-mode="color" type="button">
+        <span class="circle-button">
+          <img data-icon="mdi:palette" alt="">
+        </span>
+        <span class="label" data-label="color"></span>
+      </button>
+
+      <button class="control effects" id="effect-trigger" data-mode="effects" type="button" aria-expanded="false">
+        <span class="circle-button">
+          <img data-icon="mdi:auto-fix" alt="">
+        </span>
+        <span class="label" data-label="effects"></span>
+      </button>
     </div>
 
-    <div class="ld__modes" id="modes"></div>
-    <p class="ld__hint" id="hint" hidden></p>
-    <div class="ld__title" id="title"></div>
+    <div class="preset-popup brightness-presets" id="brightness-presets"></div>
+    <div class="preset-popup kelvin-presets" id="kelvin-presets"></div>
+    <div class="effects-popup" id="effects-popup"></div>
+    <p class="hint" id="hint" hidden></p>
   </div>
 </template>
 
 <style data-vue-panel-css>
-    .ld {
-        --ld-accent: color-mix(in srgb, currentColor 30%, transparent);
-        --ld-surface: color-mix(in srgb, currentColor 8%, transparent);
-        --ld-surface-strong: color-mix(in srgb, currentColor 15%, transparent);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 22px;
-        width: 100%;
-        color: var(--text-primary);
-        user-select: none;
-    }
+  .light-ui {
+    position: relative;
+    width: min(424px, 100%);
+    height: 513px;
+    margin-inline: auto;
+    overflow: visible;
+    user-select: none;
+    background: #fff;
+    color: #222;
+    font-family: Arial, Helvetica, sans-serif;
+  }
 
-    .ld__stage {
-        width: 100%;
-        display: flex;
-        justify-content: center;
-    }
+  .dial {
+    --selected-color: hsl(32 100% 50%);
+    position: absolute;
+    left: 32px;
+    top: 8px;
+    width: 360px;
+    height: 360px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .025);
+    touch-action: none;
+  }
 
-    .ld__dial {
-        position: relative;
-        width: min(260px, 78%);
-        aspect-ratio: 1;
-        touch-action: none;
-        cursor: pointer;
-    }
+  .dial.is-enabled { cursor: grab; }
+  .dial.is-enabled:hover { background: rgba(0, 0, 0, .045); }
+  .dial.is-dragging { cursor: grabbing; transform: scale(1.008); }
 
-    .ld__ring {
-        width: 100%;
-        height: 100%;
-        transform: rotate(-90deg);
-        overflow: visible;
-    }
+  .dial-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+    transform: rotate(-90deg);
+  }
 
-    .ld__track,
-    .ld__value {
-        fill: none;
-        stroke-width: 12;
-        stroke-linecap: round;
-    }
+  .arc-track,
+  .arc-progress {
+    fill: none;
+    stroke-width: 13;
+  }
 
-    .ld__track {
-        stroke: var(--ld-surface-strong);
-    }
+  .arc-track { stroke: rgba(0, 0, 0, .075); }
 
-    .ld__value {
-        stroke: var(--ld-accent);
-        stroke-dasharray: 540.35;
-        stroke-dashoffset: 540.35;
-        transition: stroke-dashoffset .18s ease, stroke .25s ease;
-    }
+  .arc-progress {
+    stroke: #303030;
+    stroke-linecap: round;
+    opacity: 0;
+  }
 
-    .ld.is-dragging .ld__value {
-        transition: none;
-    }
+  .dial.is-enabled .arc-progress { opacity: 1; }
+  .dial.is-static-on .arc-progress { opacity: 1; }
 
-    .ld__center {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        pointer-events: none;
-    }
+  .hue-ring {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    opacity: 0;
+    pointer-events: none;
+    background: conic-gradient(
+      from 0deg,
+      hsl(0 100% 50%) 0deg,
+      hsl(60 100% 50%) 60deg,
+      hsl(120 100% 45%) 120deg,
+      hsl(180 100% 45%) 180deg,
+      hsl(240 100% 55%) 240deg,
+      hsl(300 100% 50%) 300deg,
+      hsl(360 100% 50%) 360deg
+    );
+    -webkit-mask: radial-gradient(circle at center, transparent 0 153px, #000 153px 174px, transparent 174px);
+    mask: radial-gradient(circle at center, transparent 0 153px, #000 153px 174px, transparent 174px);
+  }
 
-    .ld__power {
-        width: 62px;
-        height: 32px;
-        padding: 3px;
-        border: 0;
-        border-radius: 999px;
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        background: var(--ld-surface-strong);
-        cursor: pointer;
-        pointer-events: auto;
-        transition: background .2s;
-    }
+  .dial.color-mode.is-enabled .hue-ring { opacity: 1; }
+  .dial.color-mode .arc-track,
+  .dial.color-mode .arc-progress { opacity: 0 !important; }
 
-    .ld.is-on .ld__power {
-        justify-content: flex-end;
-        background: var(--ld-accent);
-    }
+  .arc-handle {
+    position: absolute;
+    z-index: 2;
+    width: 23px;
+    height: 23px;
+    margin: -11.5px 0 0 -11.5px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    background: #f3f3f3;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .10);
+    opacity: 0;
+    pointer-events: none;
+  }
 
-    .ld__power-knob {
-        width: 26px;
-        height: 26px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: #fff;
-        box-shadow: 0 1px 3px rgb(0 0 0 / 25%);
-        transition: transform .2s;
-    }
+  .dial.is-enabled .arc-handle { opacity: 1; }
+  .dial.color-mode .arc-handle { background: var(--selected-color); }
 
-    .ld__power-knob img {
-        width: 15px;
-        height: 15px;
-    }
+  .power {
+    position: absolute;
+    z-index: 20;
+    left: 162px;
+    top: 250px;
+    width: 100px;
+    height: 40px;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .10);
+    color: rgba(0, 0, 0, .65);
+    cursor: pointer;
+    transition: background .16s ease, box-shadow .16s ease, transform .08s ease, color .16s ease;
+  }
 
-    .ld__readout {
-        font-size: 42px;
-        font-weight: 300;
-        line-height: 1;
-        letter-spacing: -.02em;
-    }
+  .power:hover {
+    background: rgba(0, 0, 0, .15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .10);
+  }
 
-    .ld__caption {
-        color: var(--text-secondary);
-        font-size: 11px;
-        font-weight: 500;
-        letter-spacing: .14em;
-        text-transform: uppercase;
-    }
+  .power:active { transform: scale(.94); }
 
-    .ld__handle {
-        position: absolute;
-        z-index: 1;
-        top: 50%;
-        left: 50%;
-        width: 18px;
-        height: 18px;
-        margin: -9px 0 0 -9px;
-        border: 3px solid var(--ld-accent);
-        border-radius: 50%;
-        background: #fff;
-        box-shadow: 0 2px 6px rgb(0 0 0 / 35%);
-        opacity: 0;
-        transform: translate(var(--ld-handle-x, 0), var(--ld-handle-y, 0));
-        transition: opacity .2s, transform .18s ease, border-color .25s ease;
-        pointer-events: none;
-    }
+  .power img {
+    position: absolute;
+    left: 12px;
+    top: 11px;
+    width: 18px;
+    height: 18px;
+    transition: left .20s ease, transform .20s ease;
+  }
 
-    .ld.is-on .ld__handle {
-        opacity: 1;
-    }
+  .light-ui.is-on .power {
+    background: #eee;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .07), inset 0 0 0 1px rgba(0, 0, 0, .09);
+  }
 
-    .ld.is-dragging .ld__handle {
-        transition: opacity .2s, border-color .25s ease;
-    }
+  .light-ui.is-on .power img { left: 70px; transform: rotate(360deg); }
+  .power:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; }
 
-    .ld__saturation {
-        width: min(260px, 78%);
-    }
+  .status {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    top: 159px;
+    width: 100%;
+    color: rgba(0, 0, 0, .82);
+    font-size: 46px;
+    font-weight: 400;
+    line-height: 55px;
+    letter-spacing: -.45px;
+    text-align: center;
+    pointer-events: none;
+  }
 
-    .ld__saturation-slider {
-        width: 100%;
-        height: 26px;
-        appearance: none;
-        border-radius: 13px;
-        background: linear-gradient(90deg, #fff, var(--ld-hue-color, #f00));
-        cursor: pointer;
-    }
+  .status.small { font-size: 36px; }
 
-    .ld__saturation-slider::-webkit-slider-thumb {
-        width: 20px;
-        height: 20px;
-        appearance: none;
-        border: 2px solid #fff;
-        border-radius: 50%;
-        background: transparent;
-        box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
-    }
+  .subtitle {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    top: 219px;
+    width: 100%;
+    color: rgba(0, 0, 0, .28);
+    font-size: 13px;
+    line-height: 15px;
+    letter-spacing: .15px;
+    text-align: center;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
 
-    .ld__saturation-slider::-moz-range-thumb {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #fff;
-        border-radius: 50%;
-        background: transparent;
-    }
+  .color-preview {
+    position: absolute;
+    z-index: 6;
+    left: 50%;
+    top: 298px;
+    display: none;
+    width: 24px;
+    height: 24px;
+    margin-left: -12px;
+    border: 3px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .12);
+    pointer-events: none;
+  }
 
-    .ld__modes {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 18px;
-    }
+  .color-preview.visible { display: block; }
 
-    .ld__mode {
-        width: 74px;
-        padding: 0;
-        border: 0;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        background: none;
-        color: var(--text-secondary);
-        font: inherit;
-        font-size: 11px;
-        cursor: pointer;
-    }
+  .controls {
+    position: absolute;
+    left: 80px;
+    top: 379px;
+    display: flex;
+    width: 264px;
+    justify-content: space-between;
+  }
 
-    .ld__mode-icon {
-        width: 58px;
-        height: 58px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: var(--ld-surface);
-        transition: background .2s, box-shadow .2s;
-    }
+  .control {
+    width: 58px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(0, 0, 0, .58);
+    font: inherit;
+    text-align: center;
+    cursor: pointer;
+  }
 
-    .ld__mode-icon img {
-        width: 24px;
-        height: 24px;
-    }
+  .circle-button {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    margin: 0 auto;
+    border-radius: 50%;
+    place-items: center;
+    background: rgba(0, 0, 0, .10);
+    transition: background .16s ease, color .16s ease, transform .08s ease, box-shadow .16s ease;
+  }
 
-    .ld__mode.is-active {
-        color: var(--text-primary);
-    }
+  .control:hover .circle-button {
+    background: rgba(0, 0, 0, .15);
+    color: rgba(0, 0, 0, .82);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .09);
+  }
 
-    .ld__mode.is-active .ld__mode-icon {
-        background: var(--ld-surface-strong);
-        box-shadow: inset 0 0 0 2px var(--ld-accent);
-    }
+  .control:active .circle-button { transform: scale(.92); background: rgba(0, 0, 0, .22); }
 
-    .ld__mode-label {
-        max-width: 100%;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-    }
+  .control:disabled {
+    color: rgba(0, 0, 0, .22);
+    cursor: not-allowed;
+  }
 
-    .ld__effects {
-        width: min(300px, 100%);
-        display: flex;
-        justify-content: center;
-    }
+  .control:disabled .circle-button {
+    background: rgba(0, 0, 0, .045);
+    box-shadow: none;
+    filter: grayscale(1);
+    opacity: .48;
+  }
 
-    .ld__effect-list {
-        width: 100%;
-        max-height: 240px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-    }
+  .control:disabled .label {
+    color: rgba(0, 0, 0, .28);
+    font-weight: 400;
+  }
 
-    .ld__effect {
-        padding: 11px 16px;
-        border: 0;
-        border-radius: 12px;
-        background: var(--ld-surface);
-        color: inherit;
-        font: inherit;
-        text-align: left;
-        cursor: pointer;
-    }
+  .control:disabled:hover .circle-button,
+  .control:disabled:active .circle-button {
+    background: rgba(0, 0, 0, .045);
+    box-shadow: none;
+    transform: none;
+  }
 
-    .ld__effect.is-active {
-        background: var(--ld-accent);
-        color: #111;
-    }
+  .circle-button img {
+    width: 23px;
+    height: 23px;
+  }
 
-    .ld__title {
-        color: var(--text-secondary);
-        font-size: 13px;
-        text-align: center;
-    }
+  .label {
+    display: block;
+    width: 100%;
+    margin-top: 7px;
+    overflow: hidden;
+    color: rgba(0, 0, 0, .58);
+    font-size: 9.5px;
+    line-height: 12px;
+    text-align: center;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color .16s ease;
+  }
 
-    .ld__hint {
-        margin: 0;
-        color: var(--text-secondary);
-        font-size: 13px;
-        text-align: center;
-    }
+  .control.is-active .circle-button,
+  .control.popup-open .circle-button {
+    background: #f3f3f3;
+    color: #333;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .08), inset 0 0 0 1px rgba(0, 0, 0, .08);
+  }
+
+  .control.is-active .label,
+  .control.popup-open .label {
+    color: rgba(0, 0, 0, .88);
+    font-weight: 600;
+  }
+
+  .preset-popup,
+  .effects-popup {
+    position: absolute;
+    z-index: 55;
+    top: 456px;
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 5px;
+    border: 1px solid rgba(0, 0, 0, .09);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 7px 18px rgba(0, 0, 0, .10);
+    white-space: nowrap;
+  }
+
+  .preset-popup.visible,
+  .effects-popup.visible { display: flex; }
+  .brightness-presets { left: 3px; }
+  .kelvin-presets { left: 57px; }
+  .effects-popup { right: 4px; max-width: 282px; overflow-x: auto; }
+
+  .preset-popup::before,
+  .effects-popup::before {
+    position: absolute;
+    top: -6px;
+    width: 10px;
+    height: 10px;
+    border-top: 1px solid rgba(0, 0, 0, .09);
+    border-left: 1px solid rgba(0, 0, 0, .09);
+    background: #fff;
+    content: "";
+    transform: rotate(45deg);
+  }
+
+  .brightness-presets::before { left: 23px; }
+  .kelvin-presets::before { left: 27px; }
+  .effects-popup::before { right: 24px; }
+
+  .preset-option,
+  .effect-option {
+    position: relative;
+    z-index: 1;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 7px;
+    background: rgba(0, 0, 0, .055);
+    color: rgba(0, 0, 0, .65);
+    font: inherit;
+    font-size: 9px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease, transform .08s ease;
+  }
+
+  .preset-option:hover,
+  .effect-option:hover { background: rgba(0, 0, 0, .11); color: rgba(0, 0, 0, .92); }
+  .preset-option:active,
+  .effect-option:active { transform: scale(.95); }
+
+  .preset-option.active,
+  .effect-option.active {
+    background: #ececec;
+    color: #222;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+  }
+
+  .hint {
+    position: absolute;
+    top: 265px;
+    left: 20px;
+    width: 250px;
+    margin: 0;
+    color: rgba(0, 0, 0, .58);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  [hidden] { display: none !important; }
 </style>
 
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
-  /* Popups reichen die Werte der auslösenden Card durch */
   const entityId = String(config.entity || vuePanel.context.entity || '');
 
   const card = document.getElementById('card');
   const dial = document.getElementById('dial');
-  const arc = document.getElementById('arc');
-  const handle = document.getElementById('handle');
-  const readout = document.getElementById('readout');
-  const caption = document.getElementById('caption');
+  const arc = document.getElementById('arc-progress');
+  const handle = document.getElementById('arc-handle');
+  const readout = document.getElementById('status-text');
+  const caption = document.getElementById('subtitle-text');
+  const colorPreview = document.getElementById('color-preview');
   const toggle = document.getElementById('toggle');
   const powerIcon = document.getElementById('power-icon');
-  const modesBox = document.getElementById('modes');
-  const effectPanel = document.getElementById('effect-panel');
-  const effectList = document.getElementById('effect-list');
-  const saturationPanel = document.getElementById('saturation-panel');
-  const saturation = document.getElementById('saturation');
-  const title = document.getElementById('title');
+  const controls = document.getElementById('controls');
+  const modeButtons = Array.from(controls.querySelectorAll('[data-mode]'));
+  const modeIcons = Array.from(controls.querySelectorAll('[data-icon]'));
+  const brightnessTrigger = document.getElementById('brightness-trigger');
+  const kelvinTrigger = document.getElementById('kelvin-trigger');
+  const brightnessPresets = document.getElementById('brightness-presets');
+  const kelvinPresets = document.getElementById('kelvin-presets');
+  const effectTrigger = document.getElementById('effect-trigger');
+  const effectsPopup = document.getElementById('effects-popup');
   const hint = document.getElementById('hint');
 
-  const CIRCUMFERENCE = 2 * Math.PI * 86;
-  const RADIUS_RATIO = 86 / 200;
+  const SVG_RADIUS = 107;
+  const HANDLE_RADIUS = 166;
+  const HANDLE_CENTER = 180;
+  const CIRCUMFERENCE = 2 * Math.PI * SVG_RADIUS;
+  const PRESETS = [5, 25, 50, 75, 100];
+  const HOLD_DELAY = 520;
 
   /*
-   * Home Assistant meldet die Fähigkeiten eines Lichts über
-   * supported_color_modes. Nur die tatsächlich unterstützten Regler
-   * erscheinen: "onoff" kann gar nichts, "brightness" nur dimmen,
-   * "color_temp" die Farbtemperatur und hs/xy/rgb/rgbw/rgbww echte Farben.
+   * Home Assistant exposes a light's capabilities through
+   * supported_color_modes. Only controls backed by the entity are shown.
    */
   const COLOR_MODES = ['hs', 'xy', 'rgb', 'rgbw', 'rgbww'];
   const DIMMABLE_MODES = ['brightness', 'color_temp', 'white'].concat(COLOR_MODES);
 
-  const MODE_ICONS = {
-    brightness: 'mdi:brightness-6',
-    colorTemp: 'mdi:thermometer',
-    color: 'mdi:palette',
-    effects: 'mdi:auto-fix'
-  };
-
   let entity = null;
   let activeMode = '';
-  /* Der Ring regelt immer etwas Stufenloses — im Effekt-Modus die Helligkeit */
   let dialMode = '';
-  /* Während des Ziehens gewinnt der lokale Wert gegen Zustands-Updates */
   let dragValue = null;
   let dragging = false;
   let commitTimer = null;
+  let dragAccumulatedAngle = 0;
+  let dragLastRawAngle = 0;
+  let holdTimer = null;
+  let holdTriggered = false;
+
+  arc.style.strokeDasharray = String(CIRCUMFERENCE);
+
+  async function loadIcons() {
+    powerIcon.src = await vuePanel.getIcon('mdi:power', {size: 48, color: '#5c5c5c'});
+    await Promise.all(modeIcons.map(async image => {
+      image.src = await vuePanel.getIcon(image.dataset.icon, {size: 72, color: '#666666'});
+    }));
+  }
 
   function attributes() {
     return (entity && entity.attributes) || {};
@@ -473,7 +568,7 @@
     const modes = Array.isArray(raw) ? raw.map(String) : [];
     const list = attributes().effect_list;
     return {
-      /* Ältere Integrationen melden keine Modi, liefern aber Werte */
+      /* Older integrations may expose values without reporting color modes. */
       brightness: modes.some(mode => DIMMABLE_MODES.includes(mode))
         || (!modes.length && Number.isFinite(Number(attributes().brightness))),
       colorTemp: modes.includes('color_temp')
@@ -500,7 +595,7 @@
     return 'hsl(' + Math.round(value) + ' 100% ' + (light || 50) + '%)';
   }
 
-  /* Aktueller Wert des aktiven Reglers als Anteil 0..1 */
+  /* Return the active control's value as a 0..1 fraction. */
   function fractionOf(mode) {
     if (dragValue !== null && mode === dialMode) return dragValue;
     if (mode === 'brightness') {
@@ -522,120 +617,136 @@
 
   function readoutFor(mode, fraction) {
     if (!entity || entity.state !== 'on') return vuePanel.t('translation.states.off');
-    if (mode === 'brightness') return Math.max(1, Math.round(fraction * 100)) + ' %';
+    if (mode === 'brightness') return Math.max(1, Math.round(fraction * 100)) + '%';
     if (mode === 'colorTemp') {
       const range = kelvinRange();
-      return Math.round(range.min + fraction * (range.max - range.min)) + ' K';
+      return Math.round(range.min + fraction * (range.max - range.min)) + 'K';
     }
     if (mode === 'color') return Math.round(fraction * 360) + '°';
     return vuePanel.t('translation.states.on');
   }
 
-  /* Leerer Wert heißt: das Theme färbt neutral (ausgeschaltetes Licht) */
-  function accentFor(mode, fraction) {
-    if (!entity || entity.state !== 'on') return '';
-    if (mode === 'color') return hueCss(fraction * 360, 55);
-    const rgb = attributes().rgb_color;
-    if (Array.isArray(rgb) && rgb.length >= 3) {
-      return 'rgb(' + Math.round(rgb[0]) + ' ' + Math.round(rgb[1]) + ' ' + Math.round(rgb[2]) + ')';
-    }
-    return '#f6d36b';
+  function kelvinColor(fraction) {
+    const warm = [235, 145, 45];
+    const cool = [95, 145, 235];
+    const red = Math.round(warm[0] + (cool[0] - warm[0]) * fraction);
+    const green = Math.round(warm[1] + (cool[1] - warm[1]) * fraction);
+    const blue = Math.round(warm[2] + (cool[2] - warm[2]) * fraction);
+    return 'rgb(' + red + ', ' + green + ', ' + blue + ')';
   }
 
-  /* Icons müssen zum Theme passen, sonst verschwinden sie auf Weiß */
-  function themeColor(name, fallback) {
-    const styles = getComputedStyle(card);
-    const value = String(styles.getPropertyValue(name) || '').trim();
-    return value || String(styles.color || '').trim() || fallback;
+  function isDialInteractive() {
+    return Boolean(entity)
+      && entity.state === 'on'
+      && Boolean(dialMode)
+      && dialMode !== 'static';
   }
 
   function paintDial() {
     const fraction = fractionOf(dialMode);
     const isOn = Boolean(entity) && entity.state === 'on';
-    const shown = isOn ? fraction : 0;
+    const isStatic = dialMode === 'static';
+    const shown = isStatic ? (isOn ? 1 : 0) : Math.max(0, Math.min(1, fraction));
+    const isColor = dialMode === 'color';
+    const color = isColor
+      ? hueCss(shown * 360)
+      : dialMode === 'colorTemp' ? kelvinColor(shown) : '#b8b8b8';
 
+    dial.classList.toggle('is-enabled', isDialInteractive());
+    dial.classList.toggle('is-static-on', isStatic && isOn);
+    dial.classList.toggle('color-mode', isColor);
+    dial.style.setProperty('--selected-color', color);
     arc.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - shown));
-    arc.style.stroke = dialMode === 'colorTemp'
-      ? 'url(#ld-temp)'
-      : dialMode === 'color' ? 'url(#ld-hue)' : 'var(--ld-accent)';
+    arc.style.stroke = color;
 
     const angle = shown * 2 * Math.PI - Math.PI / 2;
-    const radius = dial.clientWidth * RADIUS_RATIO;
-    handle.style.setProperty('--ld-handle-x', (Math.cos(angle) * radius).toFixed(1) + 'px');
-    handle.style.setProperty('--ld-handle-y', (Math.sin(angle) * radius).toFixed(1) + 'px');
+    handle.style.left = (HANDLE_CENTER + HANDLE_RADIUS * Math.cos(angle)).toFixed(1) + 'px';
+    handle.style.top = (HANDLE_CENTER + HANDLE_RADIUS * Math.sin(angle)).toFixed(1) + 'px';
+    handle.style.background = color;
 
     readout.textContent = readoutFor(dialMode, fraction);
-    caption.textContent = dialMode ? vuePanel.t('translation.modes.' + dialMode) : '';
-    const accent = accentFor(dialMode, fraction);
-    if (accent) card.style.setProperty('--ld-accent', accent);
-    else card.style.removeProperty('--ld-accent');
+    caption.textContent = isStatic
+      ? vuePanel.t('translation.toggle')
+      : (dialMode ? vuePanel.t('translation.modes.' + dialMode) : '');
+    readout.classList.toggle('small', isOn && (dialMode === 'colorTemp' || isColor));
+    colorPreview.classList.toggle('visible', isOn && isColor);
+    colorPreview.style.background = color;
+
+    dial.setAttribute('aria-label', caption.textContent);
+    if (isStatic) {
+      dial.setAttribute('aria-valuemin', '0');
+      dial.setAttribute('aria-valuemax', '1');
+      dial.setAttribute('aria-valuenow', isOn ? '1' : '0');
+    } else {
+      dial.setAttribute('aria-valuemin', dialMode === 'colorTemp' ? String(kelvinRange().min) : '0');
+      dial.setAttribute('aria-valuemax', dialMode === 'colorTemp' ? String(kelvinRange().max) : (isColor ? '360' : '100'));
+      dial.setAttribute('aria-valuenow', readout.textContent.replace(/\D/g, ''));
+    }
   }
 
   function renderModes(modes) {
-    if (modesBox.dataset.modes === modes.join('|') + ':' + activeMode) return;
-    modesBox.dataset.modes = modes.join('|') + ':' + activeMode;
-    modesBox.textContent = '';
-    for (const mode of modes) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'ld__mode' + (mode === activeMode ? ' is-active' : '');
-      const circle = document.createElement('span');
-      circle.className = 'ld__mode-icon';
-      const image = document.createElement('img');
-      image.alt = '';
-      circle.appendChild(image);
-      const label = document.createElement('span');
-      label.className = 'ld__mode-label';
-      label.textContent = vuePanel.t('translation.modes.' + mode);
-      button.append(circle, label);
-      button.addEventListener('click', () => selectMode(mode));
-      modesBox.appendChild(button);
-      const tone = mode === activeMode
-        ? themeColor('--text-primary', '#111111')
-        : themeColor('--text-secondary', '#888888');
-      vuePanel.getIcon(MODE_ICONS[mode], {size: 72, color: tone})
-        .then(source => { image.src = source; })
-        .catch(() => {});
+    for (const button of modeButtons) {
+      const mode = button.dataset.mode;
+      const supported = modes.includes(mode);
+      button.hidden = false;
+      button.disabled = !supported;
+      button.setAttribute('aria-disabled', String(!supported));
+      button.classList.toggle('is-active', supported && mode === activeMode);
+      const label = button.querySelector('[data-label]');
+      if (label) {
+        label.textContent = mode === 'colorTemp' ? 'Kelvin' : vuePanel.t('translation.modes.' + mode);
+      }
     }
   }
 
   function renderEffects() {
     const list = (attributes().effect_list || []).map(String);
     const active = String(attributes().effect || '');
-    if (effectList.dataset.list !== list.join('|')) {
-      effectList.dataset.list = list.join('|');
-      effectList.textContent = '';
+    if (effectsPopup.dataset.list !== list.join('|')) {
+      effectsPopup.dataset.list = list.join('|');
+      effectsPopup.textContent = '';
       for (const item of list) {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'ld__effect';
+        button.className = 'effect-option';
         button.dataset.effect = item;
         button.textContent = item;
-        button.addEventListener('click', () => {
+        button.addEventListener('click', event => {
+          event.stopPropagation();
           if (!entityId) return;
           vuePanel.callService('light', 'turn_on', {effect: item}, {entity_id: entityId});
+          setEffectsPopup(false);
         });
-        effectList.appendChild(button);
+        effectsPopup.appendChild(button);
       }
     }
-    for (const button of effectList.children) {
-      button.classList.toggle('is-active', button.dataset.effect === active);
+    for (const button of effectsPopup.children) {
+      button.classList.toggle('active', button.dataset.effect === active);
     }
   }
 
   function selectMode(mode) {
+    if (mode === 'effects') return;
     activeMode = mode;
     dragValue = null;
+    closePopups();
     update();
   }
 
-  /* Zeigerposition auf dem Ring in einen Anteil 0..1 umrechnen */
-  function fractionFromPointer(event) {
+  function rawPointerAngle(event) {
     const box = dial.getBoundingClientRect();
     const dx = event.clientX - (box.left + box.width / 2);
     const dy = event.clientY - (box.top + box.height / 2);
-    const degrees = (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360;
-    return degrees / 360;
+    let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
+    if (angle < 0) angle += 360;
+    return angle;
+  }
+
+  function shortestAngleDelta(from, to) {
+    let delta = to - from;
+    if (delta > 180) delta -= 360;
+    if (delta < -180) delta += 360;
+    return delta;
   }
 
   async function commit(fraction) {
@@ -657,28 +768,32 @@
     }
     if (dialMode === 'color') {
       const hs = attributes().hs_color;
-      const level = Number(saturation.value);
-      const value = Number.isFinite(level) ? level : (Array.isArray(hs) ? Number(hs[1]) || 100 : 100);
+      const saturation = Array.isArray(hs) ? Number(hs[1]) || 100 : 100;
       await vuePanel.callService(
-        'light', 'turn_on', {hs_color: [Math.round(fraction * 360), value]}, {entity_id: entityId}
+        'light', 'turn_on', {hs_color: [Math.round(fraction * 360), saturation]}, {entity_id: entityId}
       );
     }
   }
 
   dial.addEventListener('pointerdown', event => {
-    if (!entity || entity.state !== 'on' || !dialMode) return;
+    if (!isDialInteractive()) return;
     dragging = true;
-    card.classList.add('is-dragging');
+    dial.classList.add('is-dragging');
     dial.setPointerCapture(event.pointerId);
-    dragValue = fractionFromPointer(event);
-    paintDial();
+    dragAccumulatedAngle = fractionOf(dialMode) * 360;
+    dragLastRawAngle = rawPointerAngle(event);
   });
 
   dial.addEventListener('pointermove', event => {
     if (!dragging) return;
-    dragValue = fractionFromPointer(event);
+    const raw = rawPointerAngle(event);
+    dragAccumulatedAngle = Math.max(
+      0,
+      Math.min(360, dragAccumulatedAngle + shortestAngleDelta(dragLastRawAngle, raw))
+    );
+    dragLastRawAngle = raw;
+    dragValue = dragAccumulatedAngle / 360;
     paintDial();
-    /* Live nachziehen, aber die Verbindung nicht mit Aufrufen fluten */
     if (commitTimer === null) {
       commitTimer = setTimeout(() => {
         commitTimer = null;
@@ -690,7 +805,7 @@
   function endDrag() {
     if (!dragging) return;
     dragging = false;
-    card.classList.remove('is-dragging');
+    dial.classList.remove('is-dragging');
     const value = dragValue;
     dragValue = null;
     if (value !== null) commit(value).catch(() => {});
@@ -699,76 +814,159 @@
   dial.addEventListener('pointerup', endDrag);
   dial.addEventListener('pointercancel', endDrag);
 
-  saturation.addEventListener('input', () => {
-    saturation.dataset.dragging = 'true';
+  dial.addEventListener('wheel', event => {
+    if (!isDialInteractive()) return;
+    event.preventDefault();
+    const step = dialMode === 'colorTemp' ? 50 / (kelvinRange().max - kelvinRange().min) : .01;
+    dragValue = Math.max(0, Math.min(1, fractionOf(dialMode) + (event.deltaY < 0 ? step : -step)));
+    const value = dragValue;
+    paintDial();
+    dragValue = null;
+    commit(value).catch(() => {});
+  }, {passive: false});
+
+  for (const button of modeButtons) {
+    if (button.dataset.mode !== 'effects') {
+      button.addEventListener('click', () => {
+        if (!holdTriggered) selectMode(button.dataset.mode);
+      });
+    }
+  }
+
+  function closePresetPopups() {
+    brightnessPresets.classList.remove('visible');
+    kelvinPresets.classList.remove('visible');
+    brightnessTrigger.closest('.control').classList.remove('popup-open');
+    kelvinTrigger.closest('.control').classList.remove('popup-open');
+  }
+
+  function setEffectsPopup(open) {
+    effectsPopup.classList.toggle('visible', open);
+    effectTrigger.classList.toggle('popup-open', open);
+    effectTrigger.setAttribute('aria-expanded', String(open));
+  }
+
+  function closePopups() {
+    closePresetPopups();
+    setEffectsPopup(false);
+  }
+
+  function createPresetButtons(container, mode) {
+    for (const percent of PRESETS) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'preset-option';
+      button.dataset.value = String(percent);
+      button.textContent = percent + '%';
+      button.addEventListener('click', event => {
+        event.stopPropagation();
+        selectMode(mode);
+        const fraction = percent / 100;
+        dragValue = fraction;
+        paintDial();
+        dragValue = null;
+        commit(fraction).catch(() => {});
+        closePresetPopups();
+      });
+      container.appendChild(button);
+    }
+  }
+
+  function setupLongHold(trigger, container, mode) {
+    trigger.addEventListener('pointerdown', event => {
+      if (!entity || entity.state !== 'on' || event.button !== 0) return;
+      holdTriggered = false;
+      clearTimeout(holdTimer);
+      holdTimer = setTimeout(() => {
+        holdTriggered = true;
+        closePopups();
+        selectMode(mode);
+        container.classList.add('visible');
+        trigger.closest('.control').classList.add('popup-open');
+      }, HOLD_DELAY);
+    });
+    const cancel = () => {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    };
+    trigger.addEventListener('pointerup', cancel);
+    trigger.addEventListener('pointercancel', cancel);
+    trigger.addEventListener('pointerleave', cancel);
+    trigger.closest('.control').addEventListener('click', event => {
+      if (!holdTriggered) return;
+      event.preventDefault();
+      event.stopPropagation();
+      holdTriggered = false;
+    });
+  }
+
+  createPresetButtons(brightnessPresets, 'brightness');
+  createPresetButtons(kelvinPresets, 'colorTemp');
+  setupLongHold(brightnessTrigger, brightnessPresets, 'brightness');
+  setupLongHold(kelvinTrigger, kelvinPresets, 'colorTemp');
+
+  effectTrigger.addEventListener('click', event => {
+    event.stopPropagation();
+    if (!entity || entity.state !== 'on') return;
+    closePresetPopups();
+    setEffectsPopup(!effectsPopup.classList.contains('visible'));
   });
-  saturation.addEventListener('change', () => {
-    saturation.dataset.dragging = '';
-    if (!entityId) return;
-    const hs = attributes().hs_color;
-    const hue = Array.isArray(hs) ? Number(hs[0]) || 0 : Math.round(fractionOf('color') * 360);
-    vuePanel.callService(
-      'light', 'turn_on', {hs_color: [hue, Number(saturation.value)]}, {entity_id: entityId}
-    );
+
+  document.addEventListener('click', event => {
+    if (!effectsPopup.contains(event.target) && !effectTrigger.contains(event.target)) {
+      setEffectsPopup(false);
+    }
+    if (!brightnessPresets.contains(event.target) && !brightnessTrigger.contains(event.target)
+      && !kelvinPresets.contains(event.target) && !kelvinTrigger.contains(event.target)) {
+      closePresetPopups();
+    }
   });
 
   toggle.addEventListener('click', () => {
     if (!entityId) return;
-    vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: entityId});
+    closePopups();
+    const service = entity && entity.state === 'on' ? 'turn_off' : 'turn_on';
+    vuePanel.callService('light', service, {}, {entity_id: entityId});
   });
+
+  function updatePresetHighlights() {
+    const brightness = Math.round(fractionOf('brightness') * 100);
+    for (const button of brightnessPresets.children) {
+      button.classList.toggle('active', Number(button.dataset.value) === brightness);
+    }
+    const temperature = Math.round(fractionOf('colorTemp') * 100);
+    for (const button of kelvinPresets.children) {
+      button.classList.toggle('active', Number(button.dataset.value) === temperature);
+    }
+  }
 
   async function update() {
     const isOn = Boolean(entity) && entity.state === 'on';
     card.classList.toggle('is-on', isOn);
     toggle.setAttribute('aria-checked', isOn ? 'true' : 'false');
-    /* Der Dialogkopf zeigt den Namen bereits — nur ein eigener Titel erscheint */
-    const ownTitle = String(config.name || '');
-    title.textContent = ownTitle;
-    title.hidden = !ownTitle;
 
     if (!entityId || !entity) {
       hint.hidden = false;
       hint.textContent = vuePanel.t(entityId ? 'translation.entityNotFound' : 'translation.noEntity');
       dial.hidden = true;
-      modesBox.hidden = true;
+      controls.hidden = true;
       dialMode = '';
-      effectPanel.hidden = true;
-      saturationPanel.hidden = true;
       return;
     }
 
     const modes = availableModes();
-    if (!modes.includes(activeMode)) activeMode = modes[0] || '';
+    const dialModes = modes.filter(mode => mode !== 'effects');
+    if (!dialModes.includes(activeMode)) activeMode = dialModes[0] || '';
     renderModes(modes);
+    if (modes.includes('effects')) renderEffects();
 
-    /* Ein reines Schaltlicht bekommt statt leerer Regler einen Hinweis */
-    hint.hidden = modes.length > 0;
-    if (!hint.hidden) hint.textContent = vuePanel.t('translation.switchOnly');
-    modesBox.hidden = modes.length < 2;
-
-    /*
-     * Der Ring bleibt sichtbar — samt Schalter und Anzeige. In der
-     * Effekt-Auswahl regelt er weiter die Helligkeit, die Liste kommt darunter.
-     */
-    dialMode = activeMode === 'effects'
-      ? (modes.includes('brightness') ? 'brightness' : '')
-      : activeMode;
+    hint.hidden = true;
+    controls.hidden = false;
+    dialMode = dialModes.length > 0 ? activeMode : 'static';
     dial.hidden = false;
-    const showEffects = activeMode === 'effects';
-    effectPanel.hidden = !showEffects;
-    if (showEffects) renderEffects();
-
-    saturationPanel.hidden = !(isOn && activeMode === 'color');
-    if (!saturationPanel.hidden && saturation.dataset.dragging !== 'true') {
-      const hs = attributes().hs_color;
-      const value = Array.isArray(hs) ? Math.round(Number(hs[1]) || 0) : 100;
-      saturation.value = String(value);
-    }
-    saturation.style.setProperty('--ld-hue-color', hueCss(fractionOf('color') * 360));
-
+    if (!isOn) closePopups();
+    updatePresetHighlights();
     paintDial();
-
-    powerIcon.src = await vuePanel.getIcon('mdi:power', {size: 48, color: '#1f1f1f'});
   }
 
   async function render(next) {
@@ -777,8 +975,10 @@
   }
 
   window.addEventListener('resize', () => { if (!dial.hidden) paintDial(); });
-  /* Der Dialog wird animiert eingeblendet — danach stimmt erst die Ringgröße */
+  /* Repaint after the dialog has completed its initial layout. */
   setTimeout(() => { if (!dial.hidden) paintDial(); }, 0);
+
+  await loadIcons();
 
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));
