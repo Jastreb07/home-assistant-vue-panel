@@ -153,6 +153,7 @@ export default {
       indent: 'Indent',
       outdent: 'Outdent',
       editEntry: 'Edit entry',
+      dragHint: 'Drag to reorder',
     },
     popup: {
       managerTitle: 'Custom popups',

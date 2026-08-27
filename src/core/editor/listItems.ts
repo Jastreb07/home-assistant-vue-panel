@@ -89,6 +89,24 @@ export function shiftDepth(items: ListEntry[], index: number, delta: -1 | 1): Li
   return normalizeDepths(result)
 }
 
+/**
+ * Move the block at `index` (with its children) so it sits right before
+ * whatever currently occupies `toIndex` — indices refer to the array as
+ * passed in, before the dragged block is removed. Used by drag & drop, where
+ * the drop target can be any row, not just a neighbour.
+ */
+export function moveBlockTo(items: ListEntry[], index: number, toIndex: number): ListEntry[] {
+  const length = blockLength(items, index)
+  // Dropping inside your own block (e.g. onto a dragged parent's child) is a no-op
+  if (toIndex >= index && toIndex < index + length) return items
+  const result = [...items]
+  const block = result.splice(index, length)
+  const adjusted = toIndex > index ? toIndex - length : toIndex
+  const target = Math.max(0, Math.min(adjusted, result.length))
+  result.splice(target, 0, ...block)
+  return normalizeDepths(result)
+}
+
 /** Drop an entry together with everything nested below it. */
 export function removeBlock(items: ListEntry[], index: number): ListEntry[] {
   const result = [...items]

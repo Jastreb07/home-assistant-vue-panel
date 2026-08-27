@@ -13,6 +13,7 @@ import {
   MAX_LIST_DEPTH,
   maxDepthAt,
   moveBlock,
+  moveBlockTo,
   newEntryId,
   normalizeDepths,
   removeBlock,
@@ -62,6 +63,37 @@ const viewOptions = computed<SelectOption[]>(() =>
 const pendingView = ref('')
 const pendingEntity = ref('')
 const expandedId = ref<string | null>(null)
+
+// ── Drag & drop reordering ────────────────────────────────────
+const draggingId = ref<string | null>(null)
+const dropIndex = ref<number | null>(null)
+
+function onDragStart(event: DragEvent, index: number) {
+  draggingId.value = items.value[index]!.id
+  dropIndex.value = index
+  event.dataTransfer!.setData('text/plain', items.value[index]!.id)
+  event.dataTransfer!.effectAllowed = 'move'
+}
+
+function onDragOver(event: DragEvent, index: number) {
+  if (!draggingId.value) return
+  event.preventDefault()
+  event.dataTransfer!.dropEffect = 'move'
+  dropIndex.value = index
+}
+
+function onDrop(event: DragEvent) {
+  if (!draggingId.value) return
+  event.preventDefault()
+  const from = items.value.findIndex((entry) => entry.id === draggingId.value)
+  if (from >= 0 && dropIndex.value !== null) setItems(moveBlockTo(items.value, from, dropIndex.value))
+  onDragEnd()
+}
+
+function onDragEnd() {
+  draggingId.value = null
+  dropIndex.value = null
+}
 
 function setItems(next: ListEntry[]) {
   emit('update:modelValue', normalizeDepths(next))
@@ -168,9 +200,22 @@ function isHeading(entry: ListEntry): boolean {
         v-for="(entry, index) in items"
         :key="entry.id"
         class="entry"
+        :class="{ dragging: draggingId === entry.id, 'drop-target': draggingId !== null && draggingId !== entry.id && dropIndex === index }"
         :style="{ marginInlineStart: entry.depth * 20 + 'px' }"
+        @dragover="onDragOver($event, index)"
+        @drop="onDrop"
       >
         <div class="entry-head">
+          <button
+            type="button"
+            class="icon-btn drag-handle"
+            draggable="true"
+            :title="t('editor.list.dragHint')"
+            @dragstart="onDragStart($event, index)"
+            @dragend="onDragEnd"
+          >
+            <MdiIcon icon="mdi:drag-horizontal-variant" :size="16" />
+          </button>
           <MdiIcon v-if="iconOf(entry)" :icon="iconOf(entry)!" :size="18" />
           <span class="entry-label">{{ titleOf(entry) }}</span>
           <span v-if="isHeading(entry)" class="badge">{{ t('editor.list.heading') }}</span>
@@ -276,6 +321,19 @@ function isHeading(entry: ListEntry): boolean {
   border: 1px solid var(--divider);
   border-radius: 10px;
   background: var(--card-bg);
+}
+.entry.dragging {
+  opacity: 0.4;
+}
+.entry.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+.drag-handle {
+  cursor: grab;
+}
+.drag-handle:active {
+  cursor: grabbing;
 }
 .entry-head {
   display: flex;

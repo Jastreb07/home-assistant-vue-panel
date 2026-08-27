@@ -153,6 +153,7 @@ export default {
       indent: 'Einrücken',
       outdent: 'Ausrücken',
       editEntry: 'Eintrag bearbeiten',
+      dragHint: 'Zum Sortieren ziehen',
     },
     popup: {
       managerTitle: 'Eigene Popups',

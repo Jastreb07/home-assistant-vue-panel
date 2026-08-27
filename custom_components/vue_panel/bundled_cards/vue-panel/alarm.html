@@ -22,10 +22,10 @@
       "dialog:open"
     ],
     "defaultSize": {
-      "cols": 2,
-      "rows": 3,
-      "width": 320,
-      "height": 420
+      "cols": 4,
+      "rows": 4,
+      "width": 597,
+      "height": 500
     },
     "defaultResponsive": {
       "mobile": true,
@@ -61,30 +61,83 @@
         "default": "mdi:shield-home-outline"
       },
       {
-        "key": "size",
-        "label": "translation.variables.size.label",
+        "key": "showBackground",
+        "label": "translation.variables.showBackground.label",
         "group": "translation.groups.appearance",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "width",
+        "label": "translation.variables.width.label",
+        "group": "translation.groups.appearance",
+        "type": "number",
+        "required": false,
+        "default": 597,
+        "min": 240,
+        "max": 1200,
+        "step": 1
+      },
+      {
+        "key": "scale",
+        "label": "translation.variables.scale.label",
+        "group": "translation.groups.appearance",
+        "type": "number",
+        "required": false,
+        "default": 100,
+        "min": 50,
+        "max": 200,
+        "step": 5
+      },
+      {
+        "key": "codeDisplay",
+        "label": "translation.variables.codeDisplay.label",
+        "group": "translation.groups.display",
         "type": "select",
         "required": false,
         "options": [
-          "compact",
-          "normal",
-          "large"
+          "dots",
+          "input"
         ],
         "optionLabels": {
-          "compact": "translation.variables.size.options.compact",
-          "normal": "translation.variables.size.options.normal",
-          "large": "translation.variables.size.options.large"
+          "dots": "translation.variables.codeDisplay.options.dots",
+          "input": "translation.variables.codeDisplay.options.input"
         },
-        "default": "normal"
+        "default": "dots"
       },
       {
-        "key": "pinAlwaysVisible",
-        "label": "translation.variables.pinAlwaysVisible.label",
+        "key": "pinPanelDisplay",
+        "label": "translation.variables.pinPanelDisplay.label",
         "group": "translation.groups.display",
-        "type": "boolean",
+        "type": "select",
         "required": false,
-        "default": false
+        "options": [
+          "always",
+          "action",
+          "popup"
+        ],
+        "optionLabels": {
+          "always": "translation.variables.pinPanelDisplay.options.always",
+          "action": "translation.variables.pinPanelDisplay.options.action",
+          "popup": "translation.variables.pinPanelDisplay.options.popup"
+        },
+        "default": "always"
+      },
+      {
+        "key": "codeLength",
+        "label": "translation.variables.codeLength.label",
+        "group": "translation.groups.display",
+        "type": "number",
+        "required": false,
+        "default": 4,
+        "min": 1,
+        "max": 12,
+        "step": 1,
+        "visibleIf": {
+          "key": "codeDisplay",
+          "equals": "dots"
+        }
       },
       {
         "key": "locks",
@@ -128,11 +181,17 @@
         "translation.variables.entity.label": "Alarm panel entity",
         "translation.variables.name.label": "Display name",
         "translation.variables.icon.label": "Icon",
-        "translation.variables.size.label": "Card size",
-        "translation.variables.size.options.compact": "Compact",
-        "translation.variables.size.options.normal": "Normal",
-        "translation.variables.size.options.large": "Large",
-        "translation.variables.pinAlwaysVisible.label": "Always show the code panel",
+        "translation.variables.showBackground.label": "Show card background",
+        "translation.variables.width.label": "Card width (px)",
+        "translation.variables.scale.label": "Card scale (%)",
+        "translation.variables.codeDisplay.label": "Code display",
+        "translation.variables.codeDisplay.options.dots": "Code dots",
+        "translation.variables.codeDisplay.options.input": "Input field",
+        "translation.variables.pinPanelDisplay.label": "PIN panel display",
+        "translation.variables.pinPanelDisplay.options.always": "Always",
+        "translation.variables.pinPanelDisplay.options.action": "On action",
+        "translation.variables.pinPanelDisplay.options.popup": "On action as popup",
+        "translation.variables.codeLength.label": "Number of code dots",
         "translation.variables.locks.label": "Smart locks",
         "translation.variables.locks.items.entity": "Lock entity",
         "translation.variables.locks.items.name": "Display name",
@@ -162,8 +221,18 @@
         "translation.modes.customBypass": "Custom",
         "translation.code.cancel": "Cancel",
         "translation.code.wrong": "Incorrect code",
+        "translation.action.failed": "The alarm did not accept the command",
         "translation.code.backspace": "Delete",
         "translation.code.confirm": "Confirm",
+        "translation.openSensors.beforeCount": "Could not arm because",
+        "translation.openSensors.sensor": "sensor",
+        "translation.openSensors.sensors": "sensors",
+        "translation.openSensors.afterCount": "are open",
+        "translation.openSensors.open": "Open",
+        "translation.openSensors.unavailable": "Unavailable",
+        "translation.openSensors.unknown": "Unknown",
+        "translation.openSensors.force": "Ignore open sensors and arm",
+        "translation.openSensors.cancel": "Cancel",
         "translation.locks.locked": "Locked",
         "translation.locks.unlocked": "Unlocked",
         "translation.locks.locking": "Locking…",
@@ -181,11 +250,17 @@
         "translation.variables.entity.label": "Alarm-Entity",
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.icon.label": "Icon",
-        "translation.variables.size.label": "Card-Größe",
-        "translation.variables.size.options.compact": "Kompakt",
-        "translation.variables.size.options.normal": "Normal",
-        "translation.variables.size.options.large": "Groß",
-        "translation.variables.pinAlwaysVisible.label": "Code-Feld immer anzeigen",
+        "translation.variables.showBackground.label": "Card-Hintergrund anzeigen",
+        "translation.variables.width.label": "Card-Breite (px)",
+        "translation.variables.scale.label": "Card-Skalierung (%)",
+        "translation.variables.codeDisplay.label": "Code-Anzeige",
+        "translation.variables.codeDisplay.options.dots": "Code-Punkte",
+        "translation.variables.codeDisplay.options.input": "Eingabefeld",
+        "translation.variables.pinPanelDisplay.label": "PIN-Panel anzeigen",
+        "translation.variables.pinPanelDisplay.options.always": "Immer",
+        "translation.variables.pinPanelDisplay.options.action": "Bei Aktion",
+        "translation.variables.pinPanelDisplay.options.popup": "Bei Aktion als Popup",
+        "translation.variables.codeLength.label": "Anzahl Code-Punkte",
         "translation.variables.locks.label": "Smart Locks",
         "translation.variables.locks.items.entity": "Lock-Entity",
         "translation.variables.locks.items.name": "Anzeigename",
@@ -215,8 +290,18 @@
         "translation.modes.customBypass": "Angepasst",
         "translation.code.cancel": "Abbrechen",
         "translation.code.wrong": "Falscher Code",
+        "translation.action.failed": "Die Alarmanlage hat den Befehl nicht angenommen",
         "translation.code.backspace": "Löschen",
         "translation.code.confirm": "Bestätigen",
+        "translation.openSensors.beforeCount": "Konnte nicht scharf geschaltet werden, da",
+        "translation.openSensors.sensor": "Sensor",
+        "translation.openSensors.sensors": "Sensoren",
+        "translation.openSensors.afterCount": "geöffnet sind",
+        "translation.openSensors.open": "Geöffnet",
+        "translation.openSensors.unavailable": "Nicht verfügbar",
+        "translation.openSensors.unknown": "Unbekannt",
+        "translation.openSensors.force": "Offene Sensoren ignorieren und scharfschalten",
+        "translation.openSensors.cancel": "Abbrechen",
         "translation.locks.locked": "Verriegelt",
         "translation.locks.unlocked": "Entriegelt",
         "translation.locks.locking": "Verriegelt…",
@@ -233,39 +318,71 @@
 </script>
 
 <template data-vue-panel-html>
-  <article class="alarm-card" id="card" data-size="normal">
+  <article class="alarm-card" id="card">
     <header class="alarm-header">
-      <span class="alarm-icon-wrap" id="icon-wrap">
-        <img class="alarm-icon" id="icon" alt="">
-      </span>
-      <span class="alarm-copy">
-        <span class="alarm-name" id="name"></span>
-        <span class="alarm-state" id="state"></span>
-      </span>
+      <div class="alarm-header-main">
+        <span class="alarm-icon-wrap" id="icon-wrap">
+          <img class="alarm-icon" id="icon" alt="">
+          <svg class="alarm-countdown-arc" id="countdown-arc" viewBox="0 0 64 64" aria-hidden="true">
+            <circle class="alarm-countdown-track" cx="32" cy="32" r="27"></circle>
+            <circle class="alarm-countdown-progress" id="countdown-progress" cx="32" cy="32" r="27"></circle>
+          </svg>
+          <span class="alarm-countdown" id="countdown" hidden></span>
+        </span>
+        <span class="alarm-copy">
+          <span class="alarm-name" id="name"></span>
+          <span class="alarm-state" id="state"></span>
+        </span>
+      </div>
     </header>
 
     <nav class="alarm-modes" id="modes" aria-label="Alarm mode"></nav>
 
+    <p class="alarm-action-error" id="action-error" hidden></p>
+
     <section class="alarm-locks" id="locks" hidden></section>
 
-    <section class="alarm-code" id="code-panel" hidden>
-      <button type="button" class="alarm-code-cancel" id="code-cancel" hidden><img id="code-cancel-icon" alt=""></button>
-      <div class="alarm-code-dots" id="code-dots"></div>
-      <div class="alarm-keypad" id="keypad">
-        <button class="alarm-key" type="button" data-key="1">1</button>
-        <button class="alarm-key" type="button" data-key="2">2</button>
-        <button class="alarm-key" type="button" data-key="3">3</button>
-        <button class="alarm-key" type="button" data-key="4">4</button>
-        <button class="alarm-key" type="button" data-key="5">5</button>
-        <button class="alarm-key" type="button" data-key="6">6</button>
-        <button class="alarm-key" type="button" data-key="7">7</button>
-        <button class="alarm-key" type="button" data-key="8">8</button>
-        <button class="alarm-key" type="button" data-key="9">9</button>
-        <button class="alarm-key" type="button" id="key-back"><img id="key-back-icon" alt=""></button>
-        <button class="alarm-key" type="button" data-key="0">0</button>
-        <button class="alarm-key alarm-key--confirm" type="button" id="key-confirm"><img id="key-confirm-icon" alt=""></button>
+    <section class="alarm-open-sensors" id="open-sensors" aria-hidden="true" hidden>
+      <div class="alarm-open-sensors-dialog" role="dialog" aria-modal="true" aria-labelledby="open-sensors-title">
+        <button type="button" class="alarm-open-sensors-cancel" id="open-sensors-cancel">×</button>
+        <div class="alarm-open-sensors-alert">
+          <span class="alarm-open-sensors-alert-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 3 2.8 20.5h18.4L12 3Z" fill="currentColor"></path>
+              <path d="M12 8.2v5.9" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"></path>
+              <circle cx="12" cy="17.3" r="1.1" fill="#fff"></circle>
+            </svg>
+          </span>
+          <h3 class="alarm-open-sensors-title" id="open-sensors-title"></h3>
+        </div>
+        <div class="alarm-open-sensors-list" id="open-sensors-list"></div>
+        <div class="alarm-open-sensors-actions">
+          <button type="button" class="alarm-open-sensors-force" id="open-sensors-force"></button>
+        </div>
       </div>
-      <p class="alarm-code-error" id="code-error" hidden></p>
+    </section>
+
+    <section class="alarm-code-layer" id="code-panel" aria-hidden="true" hidden>
+      <div class="alarm-code" role="dialog" aria-modal="false">
+        <button type="button" class="alarm-code-cancel" id="code-cancel" hidden><img id="code-cancel-icon" alt=""></button>
+        <div class="alarm-code-dots" id="code-dots"></div>
+        <input class="alarm-code-input" id="code-input" type="text" inputmode="numeric" autocomplete="off" hidden>
+        <div class="alarm-keypad" id="keypad">
+          <button class="alarm-key" type="button" data-key="1">1</button>
+          <button class="alarm-key" type="button" data-key="2">2</button>
+          <button class="alarm-key" type="button" data-key="3">3</button>
+          <button class="alarm-key" type="button" data-key="4">4</button>
+          <button class="alarm-key" type="button" data-key="5">5</button>
+          <button class="alarm-key" type="button" data-key="6">6</button>
+          <button class="alarm-key" type="button" data-key="7">7</button>
+          <button class="alarm-key" type="button" data-key="8">8</button>
+          <button class="alarm-key" type="button" data-key="9">9</button>
+          <button class="alarm-key" type="button" id="key-back"><img id="key-back-icon" alt=""></button>
+          <button class="alarm-key" type="button" data-key="0">0</button>
+          <button class="alarm-key alarm-key--confirm" type="button" id="key-confirm"><img id="key-confirm-icon" alt=""></button>
+        </div>
+        <p class="alarm-code-error" id="code-error" hidden></p>
+      </div>
     </section>
   </article>
 </template>
@@ -273,73 +390,83 @@
 <style data-vue-panel-css>
     .alarm-card {
         --alarm-header-icon: 56px;
-        --alarm-mode-height: 60px;
-        --alarm-mode-icon: 22px;
-        --alarm-key-height: 52px;
-        --alarm-gap: 12px;
+        --alarm-mode-height: 62px;
+        --alarm-mode-icon: 27px;
+        --alarm-key-height: 60px;
+        --alarm-gap: 10px;
         --alarm-armed: #2f8f4b;
         --alarm-busy: #d59c00;
-        --alarm-alert: #e53935;
+        --alarm-alert: #f24b45;
         position: relative;
         width: 100%;
         height: 100%;
         display: flex;
         flex-direction: column;
         gap: var(--alarm-gap);
-        padding: var(--alarm-gap);
+        padding: 14px 8px 18px;
+        border: 0;
         box-sizing: border-box;
         border-radius: var(--card-radius);
         background: var(--card-bg);
         box-shadow: var(--card-shadow);
         color: var(--text-primary);
         overflow: auto;
+        font-family: Arial, Helvetica, sans-serif;
+        user-select: none;
+        transition: background .2s, box-shadow .2s;
     }
 
-    .alarm-card[data-size="compact"] {
-        --alarm-header-icon: 42px;
-        --alarm-mode-height: 44px;
-        --alarm-mode-icon: 18px;
-        --alarm-key-height: 40px;
-        --alarm-gap: 8px;
-        font-size: 12px;
-    }
-
-    .alarm-card[data-size="large"] {
-        --alarm-header-icon: 72px;
-        --alarm-mode-height: 72px;
-        --alarm-mode-icon: 26px;
-        --alarm-key-height: 62px;
-        --alarm-gap: 16px;
+    .alarm-card.is-transparent {
+        background: transparent;
+        box-shadow: none;
     }
 
     .alarm-header {
+        position: relative;
+        min-height: 94px;
+        padding: 4px 18px 10px;
         display: flex;
         align-items: center;
-        gap: var(--alarm-gap);
+        justify-content: flex-start;
+    }
+
+    .alarm-header-main {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+        text-align: left;
     }
 
     .alarm-icon-wrap {
+        position: relative;
         flex: 0 0 auto;
         width: var(--alarm-header-icon);
         height: var(--alarm-header-icon);
         display: grid;
         place-items: center;
+        border: 3px solid #a5a5a5;
         border-radius: 50%;
-        background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
-        transition: background .18s ease;
+        background: var(--card-bg);
+        transition: color .18s ease, border-color .18s ease, background .18s ease;
     }
 
     .alarm-card.is-armed .alarm-icon-wrap {
-        background: color-mix(in srgb, var(--alarm-armed) 20%, transparent);
+        border-color: #9eaaa2;
+        background: #f7f9f7;
     }
 
     .alarm-card.is-busy .alarm-icon-wrap {
-        background: color-mix(in srgb, var(--alarm-busy) 22%, transparent);
+        border-color: #d59c00;
+        background: #fff9e8;
         animation: alarm-pulse 1.1s ease-in-out infinite;
     }
 
     .alarm-card.is-alarm .alarm-icon-wrap {
-        background: color-mix(in srgb, var(--alarm-alert) 24%, transparent);
+        border-color: var(--alarm-alert);
+        background: #fff1f0;
         animation: alarm-pulse .55s ease-in-out infinite;
     }
 
@@ -349,31 +476,89 @@
     }
 
     .alarm-icon {
-        width: calc(var(--alarm-header-icon) * .55);
-        height: calc(var(--alarm-header-icon) * .55);
+        width: 31px;
+        height: 31px;
+    }
+
+    .alarm-countdown {
+        position: relative;
+        z-index: 1;
+        color: #ff9800;
+        font-size: 22px;
+        line-height: 1;
+        font-weight: 400;
+        font-variant-numeric: tabular-nums;
+    }
+
+    .alarm-countdown[hidden],
+    .alarm-icon-wrap.has-countdown .alarm-icon,
+    .alarm-icon-wrap:not(.has-countdown):not(.has-complete-arc) .alarm-countdown-arc {
+        display: none;
+    }
+
+    .alarm-icon-wrap.has-countdown,
+    .alarm-icon-wrap.has-complete-arc {
+        border-color: transparent;
+        background: transparent;
+        animation: none;
+    }
+
+    .alarm-countdown-arc {
+        position: absolute;
+        width: 64px;
+        height: 64px;
+        overflow: visible;
+        transform: rotate(-90deg);
+    }
+
+    .alarm-countdown-track,
+    .alarm-countdown-progress {
+        fill: none;
+        stroke-width: 2.5;
+    }
+
+    .alarm-countdown-track {
+        stroke: #bdbdbd;
+    }
+
+    .alarm-countdown-progress {
+        stroke: #39a85a;
+        stroke-linecap: round;
+        transition: stroke-dashoffset .25s linear;
+    }
+
+    .alarm-icon-wrap.has-countdown .alarm-countdown-progress {
+        stroke: #ff9800;
+    }
+
+    .alarm-icon-wrap.has-countdown .alarm-countdown-track {
+        stroke: #bdbdbd;
     }
 
     .alarm-copy {
         min-width: 0;
         display: flex;
         flex-direction: column;
-        gap: 2px;
+        text-align: left;
     }
 
     .alarm-name {
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        font-size: 15px;
-        font-weight: 600;
+        font-size: 26px;
+        line-height: 30px;
+        font-weight: 400;
     }
 
     .alarm-state {
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        color: var(--text-secondary);
-        font-size: 12px;
+        margin-top: 4px;
+        color: var(--text-primary);
+        font-size: 16px;
+        line-height: 20px;
     }
 
     .alarm-card.is-armed .alarm-state {
@@ -393,15 +578,15 @@
         grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
         gap: 5px;
         padding: 5px;
-        border-radius: 18px;
-        background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
+        border-radius: 22px;
+        background: #d7d7d7;
     }
 
     .alarm-mode {
         height: var(--alarm-mode-height);
         padding: 6px 4px;
         border: 0;
-        border-radius: 14px;
+        border-radius: 17px;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -414,16 +599,36 @@
     }
 
     .alarm-mode:hover {
-        background: color-mix(in srgb, var(--text-secondary) 12%, transparent);
+        background: rgba(0, 0, 0, .045);
     }
 
     .alarm-mode:active {
         transform: scale(.96);
     }
 
+    .alarm-mode:disabled {
+        opacity: .55;
+        cursor: default;
+        transform: none;
+    }
+
     .alarm-mode.active {
-        background: var(--accent);
-        color: var(--card-bg);
+        background: #a6a6a6;
+        color: #fff;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .05);
+    }
+
+    .alarm-mode.selected {
+        outline: 2px solid #e0a416;
+        outline-offset: -2px;
+    }
+
+    .alarm-mode-icon-wrap {
+        position: relative;
+        width: 29px;
+        height: 28px;
+        display: grid;
+        place-items: center;
     }
 
     .alarm-mode-icon {
@@ -432,37 +637,91 @@
     }
 
     .alarm-mode-label {
-        font-size: 12px;
-        line-height: 1;
+        font-size: 17px;
+        line-height: 19px;
+        font-weight: 700;
         white-space: nowrap;
     }
 
-    .alarm-card[data-size="compact"] .alarm-mode-label {
+    .alarm-code-layer {
+        width: 364px;
+        max-width: calc(100% - 16px);
+        margin: 2px auto 0;
+    }
+
+    .alarm-code-layer[hidden] {
         display: none;
+    }
+
+    .alarm-code-layer.is-popup {
+        position: absolute;
+        inset: 0;
+        z-index: 90;
+        width: auto;
+        max-width: none;
+        margin: 0;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: inherit;
+        background: rgba(0, 0, 0, .24);
     }
 
     .alarm-code {
         position: relative;
+        width: 100%;
         display: flex;
         flex-direction: column;
         align-items: center;
         gap: 14px;
-        padding: 16px 12px;
-        border: 1px solid var(--divider);
-        border-radius: 22px;
+        padding: 24px 14px;
+        border: 1px solid #d7d7d7;
+        border-radius: 32px;
+        box-sizing: border-box;
+    }
+
+    .alarm-code-layer.is-popup .alarm-code {
+        max-width: 364px;
+        max-height: calc(100% - 12px);
+        overflow: auto;
+        background: var(--card-bg);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+    }
+
+    .alarm-code-layer.requires-pin .alarm-code {
+        border-color: #e0a416;
+        animation: alarm-pin-required .42s ease-out;
+    }
+
+    @keyframes alarm-pin-required {
+        0% { transform: scale(.985); box-shadow: 0 0 0 0 rgba(224, 164, 22, 0); }
+        55% { transform: scale(1.01); box-shadow: 0 0 0 4px rgba(224, 164, 22, .18); }
+        100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(224, 164, 22, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .alarm-code-layer.requires-pin .alarm-code {
+            animation: none;
+        }
     }
 
     .alarm-code-cancel {
+        display: none;
+    }
+
+    .alarm-code-cancel:not([hidden]) {
         position: absolute;
-        top: 8px;
-        right: 8px;
-        width: 26px;
-        height: 26px;
+        top: 10px;
+        right: 10px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
         border: 0;
         border-radius: 50%;
         display: grid;
         place-items: center;
-        background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+        background: #f1f1f1;
         cursor: pointer;
     }
 
@@ -471,29 +730,61 @@
         height: 15px;
     }
 
+    .alarm-code-cancel:disabled {
+        opacity: .45;
+        cursor: default;
+    }
+
     .alarm-code-dots {
+        height: 34px;
         display: flex;
         align-items: center;
+        justify-content: center;
         gap: 9px;
+        padding-bottom: 22px;
+    }
+
+    .alarm-code-dots[hidden],
+    .alarm-code-input[hidden] {
+        display: none;
     }
 
     .alarm-dot {
-        width: 14px;
-        height: 14px;
+        width: 18px;
+        height: 18px;
         border-radius: 50%;
-        background: color-mix(in srgb, var(--text-secondary) 24%, transparent);
+        background: #d7d7d7;
     }
 
     .alarm-dot.is-filled {
-        background: var(--accent);
+        background: #777;
+    }
+
+    .alarm-code-input {
+        width: 100%;
+        max-width: 336px;
+        height: 52px;
+        padding: 0 18px;
+        border: 1px solid #d7d7d7;
+        border-radius: 999px;
+        outline: 0;
+        background: var(--card-bg);
+        color: var(--text-primary);
+        font: 22px/1 Arial, Helvetica, sans-serif;
+        letter-spacing: .35em;
+        text-align: center;
+    }
+
+    .alarm-code-input:focus {
+        border-color: #a6a6a6;
+        box-shadow: 0 0 0 2px rgba(166, 166, 166, .18);
     }
 
     .alarm-keypad {
         width: 100%;
-        max-width: 320px;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+        gap: 9px;
     }
 
     .alarm-key {
@@ -502,20 +793,21 @@
         border-radius: 999px;
         display: grid;
         place-items: center;
-        background: color-mix(in srgb, var(--text-secondary) 10%, transparent);
-        color: var(--text-primary);
-        font-size: 16px;
+        background: #d7d7d7;
+        color: #444;
+        font-size: 22px;
+        font-weight: 700;
         cursor: pointer;
         transition: background .13s ease, transform .07s ease;
     }
 
     .alarm-key img {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
     }
 
     .alarm-key:hover {
-        background: color-mix(in srgb, var(--text-secondary) 18%, transparent);
+        background: #e7e7e7;
     }
 
     .alarm-key:active {
@@ -523,18 +815,240 @@
     }
 
     .alarm-key--confirm {
-        background: color-mix(in srgb, var(--accent) 24%, transparent);
+        background: #d7d7d7;
     }
 
     .alarm-code-error {
         margin: 0;
         color: var(--alarm-alert);
+        font-size: 13px;
+    }
+
+    .alarm-action-error {
+        margin: 0;
+        padding: 8px 10px;
+        border-radius: 12px;
+        background: color-mix(in srgb, var(--alarm-alert) 12%, transparent);
+        color: var(--alarm-alert);
+        font-size: 13px;
+        text-align: center;
+    }
+
+    .alarm-open-sensors {
+        position: absolute;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 14px;
+        border-radius: inherit;
+        background: rgba(0, 0, 0, .24);
+        box-sizing: border-box;
+    }
+
+    .alarm-open-sensors[hidden] {
+        display: none;
+    }
+
+    .alarm-open-sensors-dialog {
+        position: relative;
+        width: 100%;
+        max-width: 560px;
+        max-height: calc(100% - 12px);
+        overflow: auto;
+        padding: 16px 14px 18px;
+        border: 2px solid #f24b45;
+        border-radius: 20px;
+        background: var(--card-bg);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
+        box-sizing: border-box;
+    }
+
+    .alarm-open-sensors-alert {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        color: #f24b45;
+    }
+
+    .alarm-open-sensors-alert-icon {
+        width: 26px;
+        height: 26px;
+        flex: 0 0 26px;
+        display: grid;
+        place-items: center;
+        color: #f24b45;
+    }
+
+    .alarm-open-sensors-alert-icon svg {
+        width: 22px;
+        height: 22px;
+    }
+
+    .alarm-open-sensors-title {
+        margin: 0;
+        padding: 1px 38px 0 0;
+        color: #f24b45;
+        font-size: 14px;
+        line-height: 18px;
+        font-weight: 600;
+    }
+
+    .alarm-open-sensors-list {
+        margin-top: 18px;
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .alarm-open-sensor {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .alarm-open-sensor-icon-wrap {
+        position: relative;
+        width: 68px;
+        padding-bottom: 12px;
+    }
+
+    .alarm-open-sensor-icon {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto;
+        border: 2px solid #f24b45;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--card-bg);
+        box-sizing: border-box;
+    }
+
+    .alarm-open-sensor-icon img {
+        width: 26px;
+        height: 26px;
+    }
+
+    .alarm-open-sensor-state {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        transform: translateX(-50%);
+        min-width: 56px;
+        padding: 3px 9px 4px;
+        border-radius: 999px;
+        background: #f24b45;
+        color: #fff;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: .15px;
+        text-transform: uppercase;
+        box-sizing: border-box;
+    }
+
+    .alarm-open-sensor-name {
+        margin-top: 8px;
+        max-width: 100%;
+        color: var(--text-primary);
         font-size: 12px;
+        line-height: 15px;
+        word-break: break-word;
+    }
+
+    .alarm-open-sensors-actions {
+        margin-top: 16px;
+        display: flex;
+        justify-content: center;
+    }
+
+    .alarm-open-sensors-cancel {
+        position: absolute;
+        top: 8px;
+        right: 9px;
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        border: 0;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: #f1f1f1;
+        color: #666;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .alarm-open-sensors-cancel:hover {
+        background: #e7e7e7;
+    }
+
+    .alarm-open-sensors-force {
+        min-width: 214px;
+        height: 46px;
+        padding: 0 18px;
+        border: 0;
+        border-radius: 9px;
+        background: #f24b45;
+        color: #fff;
+        font-size: 15px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+        transition: background .14s ease, transform .08s ease;
+    }
+
+    .alarm-open-sensors-force:hover {
+        background: #e8453f;
+    }
+
+    .alarm-open-sensors-force:active {
+        transform: scale(.98);
+    }
+
+    .alarm-open-sensors-force:disabled {
+        opacity: .5;
+        cursor: default;
+    }
+
+    @media (max-width: 460px) {
+        .alarm-card {
+            padding-left: 5px;
+            padding-right: 5px;
+        }
+
+        .alarm-modes {
+            border-radius: 18px;
+        }
+
+        .alarm-mode {
+            height: 59px;
+            border-radius: 14px;
+        }
+
+        .alarm-mode-label {
+            font-size: 14px;
+        }
+
+        .alarm-open-sensors-list {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px 8px;
+        }
+
+        .alarm-open-sensors-force {
+            min-width: 100%;
+        }
     }
 
     .alarm-locks {
         display: flex;
         flex-direction: column;
+        margin-top: 10px;
         gap: 8px;
     }
 
@@ -542,15 +1056,15 @@
         display: flex;
         align-items: center;
         gap: 10px;
-        padding: 8px 10px;
-        border-radius: 16px;
-        background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
+        padding: 10px 12px;
+        border-radius: 18px;
+        background: #d7d7d7;
     }
 
     .alarm-lock-icon {
         flex: 0 0 auto;
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
         display: grid;
         place-items: center;
         border-radius: 50%;
@@ -571,7 +1085,7 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        font-size: 13px;
+        font-size: 14px;
         font-weight: 600;
     }
 
@@ -580,30 +1094,28 @@
         white-space: nowrap;
         text-overflow: ellipsis;
         margin-top: 1px;
-        color: var(--text-secondary);
-        font-size: 11px;
-    }
-
-    .alarm-card[data-size="compact"] .alarm-lock-state {
-        display: none;
+        color: #6c6c6c;
+        font-size: 13px;
+        line-height: 16px;
     }
 
     .alarm-lock-button {
         flex: 0 0 auto;
-        height: 32px;
-        padding: 0 12px;
+        min-width: 112px;
+        height: 40px;
+        padding: 0 16px;
         border: 0;
         border-radius: 999px;
         background: var(--card-bg);
         color: var(--text-primary);
-        font-size: 12px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
         transition: background .14s ease, transform .08s ease;
     }
 
     .alarm-lock-button:hover {
-        background: color-mix(in srgb, var(--text-secondary) 16%, transparent);
+        background: #e7e9ea;
     }
 
     .alarm-lock-button:active {
@@ -728,10 +1240,10 @@
   };
 
   const ARM_MODES = [
-    {key: 'armed_home', service: 'alarm_arm_home', bit: ARM_HOME, icon: 'mdi:shield-home', label: 'translation.modes.home'},
     {key: 'armed_away', service: 'alarm_arm_away', bit: ARM_AWAY, icon: 'mdi:shield-lock', label: 'translation.modes.away'},
-    {key: 'armed_night', service: 'alarm_arm_night', bit: ARM_NIGHT, icon: 'mdi:shield-moon', label: 'translation.modes.night'},
+    {key: 'armed_home', service: 'alarm_arm_home', bit: ARM_HOME, icon: 'mdi:shield-home', label: 'translation.modes.home'},
     {key: 'armed_vacation', service: 'alarm_arm_vacation', bit: ARM_VACATION, icon: 'mdi:shield-airplane', label: 'translation.modes.vacation'},
+    {key: 'armed_night', service: 'alarm_arm_night', bit: ARM_NIGHT, icon: 'mdi:shield-moon', label: 'translation.modes.night'},
     {key: 'armed_custom_bypass', service: 'alarm_arm_custom_bypass', bit: ARM_CUSTOM_BYPASS, icon: 'mdi:shield-star', label: 'translation.modes.customBypass'}
   ];
 
@@ -785,31 +1297,72 @@
   /* Ob ein Code nötig ist, direkt aus den Standard-Attributen gelesen */
   function codeInfo(entity) {
     const format = entity?.attributes?.code_format || null;
-    const armRequired = entity?.attributes?.code_arm_required !== false;
+    const armRequired = entity?.attributes?.code_arm_required === true;
     return {format, armRequired};
+  }
+
+  function openSensorsOf(entity) {
+    const value = entity?.attributes?.open_sensors;
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
+    return Object.entries(value)
+      .filter(([id]) => /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id))
+      .map(([id, state]) => ({id, state: String(state || 'unknown')}));
   }
 
   const entityId = String(config.entity || '');
   const card = document.getElementById('card');
-  card.dataset.size = ['compact', 'normal', 'large'].includes(config.size) ? config.size : 'normal';
+  const configuredWidth = Number(config.width);
+  const cardWidth = Number.isFinite(configuredWidth)
+    ? Math.min(1200, Math.max(240, configuredWidth))
+    : 597;
+  const configuredScale = Number(config.scale);
+  const cardScale = Number.isFinite(configuredScale)
+    ? Math.min(200, Math.max(50, configuredScale))
+    : 100;
+  const configuredCodeLength = Number(config.codeLength);
+  const codeLength = Number.isFinite(configuredCodeLength)
+    ? Math.round(Math.min(12, Math.max(1, configuredCodeLength)))
+    : 4;
+  const codeDisplay = config.codeDisplay === 'input' ? 'input' : 'dots';
+  const pinPanelDisplay = ['action', 'popup'].includes(config.pinPanelDisplay)
+    ? config.pinPanelDisplay
+    : 'always';
+  card.style.width = `${cardWidth}px`;
+  card.style.maxWidth = '100%';
+  card.style.marginInline = 'auto';
+  card.style.zoom = String(cardScale / 100);
+  card.classList.toggle('is-transparent', config.showBackground === false);
 
+  const iconWrap = document.getElementById('icon-wrap');
   const iconElement = document.getElementById('icon');
+  const countdownElement = document.getElementById('countdown');
+  const countdownProgress = document.getElementById('countdown-progress');
   const nameElement = document.getElementById('name');
   const stateElement = document.getElementById('state');
   const modesElement = document.getElementById('modes');
+  const actionError = document.getElementById('action-error');
 
   const codePanel = document.getElementById('code-panel');
+  const codeDialog = codePanel.querySelector('.alarm-code');
   const codeCancel = document.getElementById('code-cancel');
   const codeDots = document.getElementById('code-dots');
+  const codeInput = document.getElementById('code-input');
   const keypad = document.getElementById('keypad');
   const keyBack = document.getElementById('key-back');
   const keyConfirm = document.getElementById('key-confirm');
   const codeError = document.getElementById('code-error');
   const locksElement = document.getElementById('locks');
+  const openSensorsPanel = document.getElementById('open-sensors');
+  const openSensorsTitle = document.getElementById('open-sensors-title');
+  const openSensorsList = document.getElementById('open-sensors-list');
+  const openSensorsCancel = document.getElementById('open-sensors-cancel');
+  const openSensorsForce = document.getElementById('open-sensors-force');
 
   codeCancel.setAttribute('aria-label', vuePanel.t('translation.code.cancel'));
   keyBack.setAttribute('aria-label', vuePanel.t('translation.code.backspace'));
   keyConfirm.setAttribute('aria-label', vuePanel.t('translation.code.confirm'));
+  openSensorsCancel.setAttribute('aria-label', vuePanel.t('translation.openSensors.cancel'));
+  openSensorsForce.textContent = vuePanel.t('translation.openSensors.force');
 
   const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#737373';
   for (const [id, icon, color] of [
@@ -820,13 +1373,25 @@
 
   let currentEntity = null;
   let pendingAction = null; // {type: 'arm', mode} | {type: 'disarm'}
+  let pendingCommand = null; // {type: 'arm'|'disarm', mode?, code, previousState}
+  let commandTimer = null;
+  let commandInFlight = false;
+  let openSensorsVisible = false;
+  let openSensorsRenderVersion = 0;
+  const countdownCircumference = 2 * Math.PI * 27;
+  let delayCountdown = null;
+  let delayCountdownTotal = null;
+  let delayCountdownState = null;
+  let delayCountdownTimer = null;
   let requestedMode = null; // rein kosmetisch: welcher Modus lokal angefragt wurde
   let code = '';
 
   function renderDots() {
+    codeDots.hidden = codeDisplay !== 'dots';
+    codeInput.hidden = codeDisplay !== 'input';
+    codeInput.value = code;
     codeDots.replaceChildren();
-    const total = Math.max(code.length, 4);
-    for (let index = 0; index < total; index++) {
+    for (let index = 0; index < codeLength; index++) {
       const dot = document.createElement('span');
       dot.className = 'alarm-dot';
       if (index < code.length) dot.classList.add('is-filled');
@@ -834,20 +1399,92 @@
     }
   }
 
+  countdownProgress.style.strokeDasharray = String(countdownCircumference);
+
+  function clearDelayCountdown() {
+    if (delayCountdownTimer) clearInterval(delayCountdownTimer);
+    delayCountdownTimer = null;
+    delayCountdown = null;
+    delayCountdownTotal = null;
+    delayCountdownState = null;
+    countdownElement.hidden = true;
+    iconWrap.classList.remove('has-countdown');
+    iconWrap.classList.remove('is-pending-delay');
+  }
+
+  function updateCompleteArc(state) {
+    const complete = state.startsWith('armed');
+    iconWrap.classList.toggle('has-complete-arc', complete);
+    if (complete) countdownProgress.style.strokeDashoffset = '0';
+  }
+
+  function renderDelayCountdown() {
+    if (delayCountdown === null || delayCountdownTotal === null) return;
+    const ratio = delayCountdownTotal > 0
+      ? Math.max(0, Math.min(1, delayCountdown / delayCountdownTotal))
+      : 0;
+    countdownElement.textContent = String(delayCountdown);
+    countdownProgress.style.strokeDashoffset = String(countdownCircumference * (1 - ratio));
+  }
+
+  function updateDelayCountdown(state, entity) {
+    if (!['arming', 'pending'].includes(state)) {
+      clearDelayCountdown();
+      return;
+    }
+    const rawDelay = entity?.attributes?.delay;
+    const delay = rawDelay === null || rawDelay === undefined || rawDelay === ''
+      ? Number.NaN
+      : Number(rawDelay);
+    if (Number.isFinite(delay) && delay >= 0) {
+      const next = Math.ceil(delay);
+      if (delayCountdownState !== state) {
+        clearDelayCountdown();
+        delayCountdownState = state;
+        delayCountdown = next;
+        delayCountdownTotal = Math.max(1, next);
+      } else if (delayCountdown === null || next < delayCountdown) {
+        delayCountdown = next;
+      }
+    }
+    if (delayCountdown === null) {
+      countdownElement.hidden = true;
+      iconWrap.classList.remove('has-countdown');
+      return;
+    }
+    renderDelayCountdown();
+    countdownElement.hidden = false;
+    iconWrap.classList.add('has-countdown');
+    iconWrap.classList.toggle('is-pending-delay', state === 'pending');
+    if (delayCountdownTimer) return;
+    delayCountdownTimer = setInterval(() => {
+      if (delayCountdown === null) return;
+      delayCountdown = Math.max(0, delayCountdown - 1);
+      renderDelayCountdown();
+    }, 1000);
+  }
+
   function updateCodePanelVisibility() {
-    const info = codeInfo(currentEntity);
-    const show = Boolean(info.format) && (pendingAction !== null || config.pinAlwaysVisible === true);
-    codePanel.hidden = !show;
-    codeCancel.hidden = pendingAction === null;
-    keyConfirm.disabled = pendingAction === null;
+    const popup = pinPanelDisplay === 'popup' && pendingAction !== null;
+    const visible = pinPanelDisplay === 'always' || pendingAction !== null;
+    codePanel.hidden = !visible;
+    codePanel.classList.toggle('is-popup', popup);
+    codePanel.classList.toggle('requires-pin', pendingAction !== null);
+    codePanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    codeDialog.setAttribute('aria-modal', popup ? 'true' : 'false');
+    codeCancel.hidden = !popup;
+    codeCancel.disabled = commandInFlight;
+    keyConfirm.disabled = pendingAction === null || commandInFlight;
   }
 
   function openCodePanel(action) {
     pendingAction = action;
-    code = '';
+    if (pinPanelDisplay !== 'always') code = '';
     codeError.hidden = true;
+    actionError.hidden = true;
     renderDots();
     updateCodePanelVisibility();
+    if (codeDisplay === 'input') setTimeout(() => codeInput.focus(), 0);
   }
 
   function closeCodePanel() {
@@ -856,34 +1493,82 @@
     code = '';
     renderDots();
     updateCodePanelVisibility();
+    renderModes();
   }
 
-  function showCodeError() {
+  function showCommandError() {
+    commandInFlight = false;
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = null;
+    pendingCommand = null;
     code = '';
     renderDots();
-    codeError.textContent = vuePanel.t('translation.code.wrong');
-    codeError.hidden = false;
+    if (pendingAction) {
+      codeError.textContent = vuePanel.t('translation.code.wrong');
+      codeError.hidden = false;
+    } else {
+      actionError.textContent = vuePanel.t('translation.action.failed');
+      actionError.hidden = false;
+    }
+    updateCodePanelVisibility();
+    renderModes();
+  }
+
+  function clearPendingCommand() {
+    commandInFlight = false;
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = null;
+    pendingCommand = null;
+    actionError.hidden = true;
+    closeCodePanel();
+    renderModes();
+  }
+
+  function startCommand(command) {
+    pendingCommand = command;
+    commandInFlight = true;
+    codeError.hidden = true;
+    actionError.hidden = true;
+    updateCodePanelVisibility();
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = setTimeout(() => {
+      if (openSensorsOf(currentEntity).length && command.type === 'arm') {
+        showOpenSensors(currentEntity);
+        return;
+      }
+      showCommandError();
+    }, 2500);
   }
 
   async function performArm(mode, codeValue) {
+    if (currentEntity?.state === 'arming') clearDelayCountdown();
     requestedMode = mode.key;
+    startCommand({
+      type: 'arm',
+      mode,
+      code: codeValue,
+      previousState: currentEntity?.state || 'unknown'
+    });
     renderModes();
     try {
       await vuePanel.callService('alarm_control_panel', mode.service, codeValue ? {code: codeValue} : {}, {entity_id: entityId});
-      closeCodePanel();
     } catch (error) {
-      showCodeError();
+      showCommandError();
     }
   }
 
   async function performDisarm(codeValue) {
     requestedMode = 'disarmed';
+    startCommand({
+      type: 'disarm',
+      code: codeValue,
+      previousState: currentEntity?.state || 'unknown'
+    });
     renderModes();
     try {
       await vuePanel.callService('alarm_control_panel', 'alarm_disarm', codeValue ? {code: codeValue} : {}, {entity_id: entityId});
-      closeCodePanel();
     } catch (error) {
-      showCodeError();
+      showCommandError();
     }
   }
 
@@ -891,6 +1576,8 @@
     if (!entityId) return;
     const info = codeInfo(currentEntity);
     if (info.format && info.armRequired) {
+      requestedMode = mode.key;
+      renderModes();
       openCodePanel({type: 'arm', mode});
     } else {
       performArm(mode, '');
@@ -901,6 +1588,8 @@
     if (!entityId) return;
     const info = codeInfo(currentEntity);
     if (info.format) {
+      requestedMode = 'disarmed';
+      renderModes();
       openCodePanel({type: 'disarm'});
     } else {
       performDisarm('');
@@ -908,7 +1597,7 @@
   }
 
   function submitCode() {
-    if (!pendingAction || !code) return;
+    if (!pendingAction || !code || commandInFlight) return;
     if (pendingAction.type === 'disarm') performDisarm(code);
     else performArm(pendingAction.mode, code);
   }
@@ -916,9 +1605,17 @@
   keypad.addEventListener('click', event => {
     const button = event.target.closest('[data-key]');
     if (button) {
-      if (code.length < 8) code += button.dataset.key;
+      if (codeDisplay === 'input' || code.length < codeLength) code += button.dataset.key;
       renderDots();
     }
+  });
+
+  codeInput.addEventListener('input', () => {
+    code = codeInput.value;
+    renderDots();
+  });
+  codeInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') submitCode();
   });
 
   keyBack.addEventListener('click', () => {
@@ -929,11 +1626,125 @@
   keyConfirm.addEventListener('click', submitCode);
   codeCancel.addEventListener('click', closeCodePanel);
 
+  async function renderOpenSensors(entity) {
+    const renderVersion = ++openSensorsRenderVersion;
+    const sensors = openSensorsOf(entity);
+    openSensorsPanel.hidden = !openSensorsVisible || !sensors.length;
+    openSensorsPanel.setAttribute('aria-hidden', openSensorsPanel.hidden ? 'true' : 'false');
+    if (openSensorsPanel.hidden) return;
+
+    openSensorsTitle.replaceChildren();
+    openSensorsTitle.append(`${vuePanel.t('translation.openSensors.beforeCount')} `);
+    const count = document.createElement('strong');
+    count.textContent = `${sensors.length} ${vuePanel.t(
+      sensors.length === 1 ? 'translation.openSensors.sensor' : 'translation.openSensors.sensors'
+    )}`;
+    openSensorsTitle.append(count, ` ${vuePanel.t('translation.openSensors.afterCount')}`);
+    const rows = document.createDocumentFragment();
+    for (const sensor of sensors) {
+      const sensorEntity = await vuePanel.getEntity(sensor.id);
+      const row = document.createElement('div');
+      row.className = 'alarm-open-sensor';
+
+      const iconWrap = document.createElement('div');
+      iconWrap.className = 'alarm-open-sensor-icon-wrap';
+      const icon = document.createElement('div');
+      icon.className = 'alarm-open-sensor-icon';
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = await vuePanel.getIcon(
+        String(sensorEntity?.attributes?.icon || 'mdi:window-closed-variant'),
+        {size: 40, color: '#606060'}
+      );
+
+      const sensorState = document.createElement('span');
+      sensorState.className = 'alarm-open-sensor-state';
+      const stateKey = ['open', 'unavailable'].includes(sensor.state) ? sensor.state : 'unknown';
+      sensorState.textContent = vuePanel.t(`translation.openSensors.${stateKey}`);
+      icon.append(img);
+      iconWrap.append(icon, sensorState);
+
+      const name = document.createElement('span');
+      name.className = 'alarm-open-sensor-name';
+      name.textContent = String(sensorEntity?.attributes?.friendly_name || sensor.id);
+      row.append(iconWrap, name);
+      rows.append(row);
+    }
+    if (renderVersion !== openSensorsRenderVersion || !openSensorsVisible) return;
+    openSensorsList.replaceChildren(rows);
+  }
+
+  function showOpenSensors(entity) {
+    if (!pendingCommand || pendingCommand.type !== 'arm') return;
+    commandInFlight = false;
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = null;
+    pendingAction = null;
+    code = '';
+    renderDots();
+    openSensorsVisible = true;
+    renderOpenSensors(entity);
+    updateCodePanelVisibility();
+    renderModes();
+  }
+
+  async function forceArm() {
+    if (!pendingCommand || pendingCommand.type !== 'arm' || commandInFlight) return;
+    const previous = pendingCommand;
+    const shortMode = previous.mode.key
+      .replace(/^armed_/, '')
+      .replace('custom_bypass', 'custom');
+    openSensorsVisible = false;
+    openSensorsPanel.hidden = true;
+    openSensorsPanel.setAttribute('aria-hidden', 'true');
+    startCommand({
+      ...previous,
+      previousState: currentEntity?.state || previous.previousState
+    });
+    const data = {
+      entity_id: entityId,
+      mode: shortMode,
+      force: true
+    };
+    if (previous.code) data.code = previous.code;
+    try {
+      await vuePanel.callService('alarmo', 'arm', data);
+    } catch (error) {
+      showCommandError();
+    }
+  }
+
+  openSensorsCancel.addEventListener('click', () => {
+    openSensorsVisible = false;
+    openSensorsPanel.hidden = true;
+    openSensorsPanel.setAttribute('aria-hidden', 'true');
+    clearPendingCommand();
+  });
+  openSensorsForce.addEventListener('click', forceArm);
+  openSensorsPanel.addEventListener('click', event => {
+    if (event.target === openSensorsPanel) openSensorsCancel.click();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    if (!openSensorsPanel.hidden) openSensorsCancel.click();
+    else if (codePanel.classList.contains('is-popup')) closeCodePanel();
+  });
+  codePanel.addEventListener('click', event => {
+    if (event.target === codePanel && codePanel.classList.contains('is-popup')) closeCodePanel();
+  });
+
   function renderModes() {
     const modes = [DISARM_MODE, ...supportedArmModes(currentEntity)];
     const state = knownState(currentEntity?.state);
     const busy = ['arming', 'pending', 'disarming'].includes(state) || state === 'triggered';
-    const activeKey = busy ? requestedMode : state;
+    /*
+     * Ein laufender Befehl oder das Offene-Sensoren-Popup sperren alles.
+     * "pending"/"disarming"/"triggered" sperren dagegen nur die Arm-Modi —
+     * gerade dann muss sich die Anlage noch deaktivieren lassen.
+     */
+    const interactionLocked = commandInFlight || openSensorsVisible;
+    const armLocked = interactionLocked || ['pending', 'disarming', 'triggered'].includes(state);
+    const activeKey = requestedMode || state;
 
     modesElement.replaceChildren();
     const buttons = modes.map(mode => {
@@ -941,13 +1752,18 @@
       button.type = 'button';
       button.className = 'alarm-mode';
       button.classList.toggle('active', mode.key === activeKey);
+      button.classList.toggle('selected', mode.key === requestedMode);
+      button.disabled = mode.key === 'disarmed' ? interactionLocked : armLocked;
       const img = document.createElement('img');
       img.className = 'alarm-mode-icon';
       img.alt = '';
+      const iconWrap = document.createElement('span');
+      iconWrap.className = 'alarm-mode-icon-wrap';
+      iconWrap.append(img);
       const label = document.createElement('span');
       label.className = 'alarm-mode-label';
       label.textContent = vuePanel.t(mode.label);
-      button.append(img, label);
+      button.append(iconWrap, label);
       button.addEventListener('click', () => {
         if (mode.key === 'disarmed') {
           if (state === 'disarmed') return;
@@ -962,7 +1778,10 @@
     });
 
     Promise.all(buttons.map(async entry => {
-      entry.img.src = await vuePanel.getIcon(entry.icon, {size: 48, color: '#737373'});
+      entry.img.src = await vuePanel.getIcon(entry.icon, {
+        size: 48,
+        color: entry.button.classList.contains('active') ? '#ffffff' : '#202020'
+      });
     }));
   }
 
@@ -976,6 +1795,8 @@
     card.classList.toggle('is-armed', armed);
     card.classList.toggle('is-busy', busy);
     card.classList.toggle('is-alarm', alarm);
+    updateDelayCountdown(state, entity);
+    updateCompleteArc(state);
 
     nameElement.textContent = String(config.name || entity?.attributes?.friendly_name || vuePanel.t('translation.defaultName'));
     stateElement.textContent = !entityId
@@ -989,9 +1810,25 @@
       color: alarm ? '#e53935' : busy ? '#d59c00' : armed ? '#2f8f4b' : '#737373'
     });
 
-    if (!busy && !alarm) requestedMode = null;
+    if (pendingCommand) {
+      const succeeded = pendingCommand.type === 'disarm'
+        ? ['disarmed', 'disarming'].includes(state)
+        : state === pendingCommand.mode.key || state === 'arming';
+      if (succeeded && state !== pendingCommand.previousState) {
+        const armedMode = pendingCommand.type === 'arm' ? pendingCommand.mode.key : null;
+        openSensorsVisible = false;
+        openSensorsPanel.hidden = true;
+        clearPendingCommand();
+        if (state === 'arming') requestedMode = armedMode;
+      } else if (pendingCommand.type === 'arm' && openSensorsOf(entity).length) {
+        showOpenSensors(entity);
+      }
+    }
+
+    if (!pendingAction && !pendingCommand && !busy && !alarm) requestedMode = null;
 
     renderModes();
+    await renderOpenSensors(entity);
     updateCodePanelVisibility();
   }
 
@@ -1057,6 +1894,7 @@
     }
   }
 
+  renderDots();
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));
     vuePanel.subscribeEntity(entityId, render);
