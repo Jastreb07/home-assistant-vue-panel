@@ -238,6 +238,11 @@
         font-size: 8px
     }
 
+    /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
+    .details[hidden] {
+        display: none;
+    }
+
     .weather-card.animated {
         background-image: linear-gradient(120deg, #4b5a6b, #2b3542);
         background-size: 200% 200%;

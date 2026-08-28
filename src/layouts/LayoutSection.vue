@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
 import { cardAreaCss, cardRegistry, resolveCardComponent } from '@/core/registry/cardRegistry'
+import { editableCardCss } from '@/core/ui/responsiveCss'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
@@ -127,7 +128,7 @@ function canResize(card: CardConfig): boolean {
 
 /** Instance override wins, otherwise the card's default CSS for the dashboard. */
 function cssFor(card: CardConfig): string {
-  return card.css ?? cardAreaCss(card.type)
+  return editableCardCss(card.css ?? cardAreaCss(card.type), props.editMode)
 }
 
 // ── Resize (flex layout) ─────────────────────────────────────

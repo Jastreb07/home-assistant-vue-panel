@@ -161,11 +161,19 @@ function iconOf(entry: ListEntry): string | undefined {
   return typeof icon === 'string' && icon ? icon : undefined
 }
 
-/** An entry without a target only structures the list, like a heading. */
+/**
+ * An entry without a target only structures the list, like a heading.
+ * Besides the view field, a `url` field counts as a target too — that is the
+ * convention for lists offering a custom link next to a view.
+ */
 function isHeading(entry: ListEntry): boolean {
   if (!viewKey.value) return false
-  const view = entry[viewKey.value]
-  return typeof view !== 'string' || view === ''
+  const filled = (key: string | undefined): boolean => {
+    const value = key ? entry[key] : undefined
+    return typeof value === 'string' && value.trim() !== ''
+  }
+  const urlKey = itemFields.value.find((f) => f.key === 'url')?.key
+  return !filled(viewKey.value) && !filled(urlKey)
 }
 </script>
 

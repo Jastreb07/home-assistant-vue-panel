@@ -3,6 +3,7 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
 import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
+import { editableCardCss } from '@/core/ui/responsiveCss'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
@@ -35,9 +36,10 @@ const firstSection = computed(() => props.view.sections[0])
 const panelCard = computed(() => firstSection.value?.cards[0])
 
 /** Instance override wins, otherwise the card's default CSS for the dashboard. */
-const panelCss = computed(() =>
-  panelCard.value ? (panelCard.value.css ?? cardAreaCss(panelCard.value.type)) : '',
-)
+const panelCss = computed(() => {
+  if (!panelCard.value) return ''
+  return editableCardCss(panelCard.value.css ?? cardAreaCss(panelCard.value.type), store.editMode)
+})
 </script>
 
 <template>

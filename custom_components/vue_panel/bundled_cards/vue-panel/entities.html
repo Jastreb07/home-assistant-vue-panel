@@ -293,6 +293,11 @@
         padding-right: 12px;
     }
 
+    /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
+    .entities-card__header[hidden] {
+        display: none;
+    }
+
     .entities-card__header-icon {
         width: 20px;
         height: 20px;

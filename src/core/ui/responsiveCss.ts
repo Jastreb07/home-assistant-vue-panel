@@ -66,6 +66,16 @@ export function withoutResponsiveCss(css: string): string {
   return css.replace(BLOCK_RE, '').trimEnd()
 }
 
+/**
+ * A card hidden on the current device would otherwise vanish while editing
+ * it — strip its responsive-visibility rules (and only those; any other
+ * custom CSS in the same string is left untouched) so edit mode always shows
+ * every card.
+ */
+export function editableCardCss(css: string, editMode: boolean): string {
+  return editMode ? withoutResponsiveCss(css) : css
+}
+
 export function withResponsiveCss(css: string, value: ResponsiveVisibility): string {
   const visibility = normalized(value)
   const base = withoutResponsiveCss(css)

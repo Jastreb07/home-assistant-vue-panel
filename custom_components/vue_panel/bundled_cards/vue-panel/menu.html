@@ -70,6 +70,50 @@
         "default": "icon_text"
       },
       {
+        "key": "submenuDisplay",
+        "label": "translation.variables.submenuDisplay.label",
+        "group": "translation.groups.appearance",
+        "type": "select",
+        "required": false,
+        "options": [
+          "icon_text",
+          "icon",
+          "text"
+        ],
+        "optionLabels": {
+          "icon_text": "translation.variables.display.options.icon_text",
+          "icon": "translation.variables.display.options.icon",
+          "text": "translation.variables.display.options.text"
+        },
+        "default": "icon_text",
+        "visibleIf": {
+          "key": "orientation",
+          "equals": "horizontal"
+        }
+      },
+      {
+        "key": "dropdownDirection",
+        "label": "translation.variables.dropdownDirection.label",
+        "group": "translation.groups.appearance",
+        "type": "select",
+        "required": false,
+        "options": [
+          "auto",
+          "down",
+          "up"
+        ],
+        "optionLabels": {
+          "auto": "translation.variables.dropdownDirection.options.auto",
+          "down": "translation.variables.dropdownDirection.options.down",
+          "up": "translation.variables.dropdownDirection.options.up"
+        },
+        "default": "auto",
+        "visibleIf": {
+          "key": "orientation",
+          "equals": "horizontal"
+        }
+      },
+      {
         "key": "showSubviews",
         "label": "translation.variables.showSubviews.label",
         "group": "translation.groups.display",
@@ -102,6 +146,12 @@
             "label": "translation.variables.items.items.view",
             "type": "view",
             "required": false
+          },
+          {
+            "key": "url",
+            "label": "translation.variables.items.items.url",
+            "type": "string",
+            "required": false
           }
         ]
       }
@@ -125,12 +175,18 @@
         "translation.variables.display.options.icon": "Icon only",
         "translation.variables.display.options.text": "Text only",
         "translation.variables.showSubviews.label": "Show subviews",
+        "translation.variables.submenuDisplay.label": "Submenu display",
+        "translation.variables.dropdownDirection.label": "Dropdown direction",
+        "translation.variables.dropdownDirection.options.auto": "Automatic",
+        "translation.variables.dropdownDirection.options.down": "Downwards",
+        "translation.variables.dropdownDirection.options.up": "Upwards",
         "translation.groups.display": "Display",
         "translation.variables.items.label": "Menu entries",
         "translation.groups.content": "Content",
         "translation.variables.items.items.label": "Label",
         "translation.variables.items.items.icon": "Icon",
-        "translation.variables.items.items.view": "Target view"
+        "translation.variables.items.items.view": "Target view",
+        "translation.variables.items.items.url": "Custom link (URL)"
       },
       "de": {
         "translation.name": "Navigation",
@@ -144,12 +200,18 @@
         "translation.variables.display.options.icon": "Nur Icon",
         "translation.variables.display.options.text": "Nur Text",
         "translation.variables.showSubviews.label": "Unteransichten anzeigen",
+        "translation.variables.submenuDisplay.label": "Darstellung der Untermenüs",
+        "translation.variables.dropdownDirection.label": "Aufklapp-Richtung",
+        "translation.variables.dropdownDirection.options.auto": "Automatisch",
+        "translation.variables.dropdownDirection.options.down": "Nach unten",
+        "translation.variables.dropdownDirection.options.up": "Nach oben",
         "translation.groups.display": "Anzeige",
         "translation.variables.items.label": "Menüeinträge",
         "translation.groups.content": "Inhalt",
         "translation.variables.items.items.label": "Beschriftung",
         "translation.variables.items.items.icon": "Icon",
-        "translation.variables.items.items.view": "Ziel-Ansicht"
+        "translation.variables.items.items.view": "Ziel-Ansicht",
+        "translation.variables.items.items.url": "Eigener Link (URL)"
       }
     }
   };
@@ -216,6 +278,97 @@
          */
         padding: 12px 14px;
         gap: 8px;
+    }
+
+
+    /* =========================
+       AUFKLAPPBARE GRUPPEN (horizontal)
+       ========================= */
+
+    /*
+     * Ein Eintrag mit Kindern: Eltern-Button + Pfeil nebeneinander,
+     * das Dropdown hängt sich absolut darunter.
+     */
+    /*
+     * Der Eltern-Eintrag ist selbst der Auslöser des Dropdowns — es gibt
+     * keinen eigenen Pfeil-Button daneben.
+     */
+    .item-group {
+        position: relative;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+    }
+
+    /*
+     * Fest am Viewport statt am Eltern-Element: die Leisten schneiden ihren
+     * Inhalt ab (`overflow` an der Karten-Spur und an der Card selbst), ein
+     * absolut positioniertes Dropdown wäre darin gefangen. `fixed` entkommt
+     * jedem `overflow` der Vorfahren; die genaue Position setzt das Skript.
+     */
+    .submenu {
+        position: fixed;
+        z-index: 1000;
+        padding: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 4px;
+        width: max-content;
+        max-width: calc(100vw - 16px);
+        border-radius: 20px;
+        background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+    }
+
+    /*
+     * `display: flex` oben schlaegt die Browser-Regel fuer [hidden] —
+     * ohne diese Zeile bliebe das zugeklappte Menue dauerhaft sichtbar.
+     */
+    .submenu[hidden] {
+        display: none;
+    }
+
+    /*
+     * Untermenü-Einträge: Icon-Kachel links, Beschriftung rechts —
+     * unabhängig von der Reihenfolge in der Hauptleiste.
+     */
+    .submenu .item {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 12px;
+        padding: 6px;
+        border-radius: 16px;
+    }
+
+    .submenu .item img {
+        order: -1;
+        width: 26px;
+        height: 26px;
+        padding: 9px;
+        box-sizing: content-box;
+        border-radius: 16px;
+        background: var(--nav-item-hover);
+    }
+
+    .submenu .item.active img {
+        background: var(--nav-item-active);
+    }
+
+    .submenu .item span {
+        padding-inline-end: 10px;
+    }
+
+    /* Nur-Icon-Untermenü braucht keine Extra-Breite */
+    .submenu .item.icon-only {
+        justify-content: center;
+        padding: 6px;
+    }
+
+    /* Enkel-Ebene innerhalb eines Dropdowns bleibt erkennbar eingerückt */
+    .submenu .item[data-depth='2'] {
+        margin-inline-start: 16px;
+        width: calc(100% - 16px);
     }
 
 
@@ -328,6 +481,9 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
+
+        font-size: 18px;
+        font-weight: 600;
     }
 
     /*
@@ -360,7 +516,339 @@
 
   let active = await vuePanel.currentView();
 
+  /*
+   * Nur horizontal betrifft es: welche Gruppe (per Schlüssel des
+   * Eltern-Eintrags) gerade aufgeklappt ist. Bleibt über ein Re-Render
+   * hinweg bestehen, damit Navigieren innerhalb einer Gruppe sie nicht
+   * schließt.
+   */
+  let openGroupKey = null;
+
+  /*
+   * Das gerade offene Dropdown, um es bei Scrollen/Größenänderung neu
+   * auszurichten — es hängt am Viewport, nicht am Eltern-Element.
+   */
+  let openSubmenu = null;
+
+  /*
+   * Navigieren und Schließen stoßen beide ein Rendern an. Da der Aufbau
+   * `await`s enthält (Icons), laufen sie sonst ineinander. Nur der jüngste
+   * Lauf darf den Baum tauschen.
+   */
+  let renderToken = 0;
+
+  /*
+   * Anzahl der Einträge direkt nach `index`, die tiefer verschachtelt sind
+   * als der Eintrag selbst — also sein Block aus Kindern (und deren
+   * Kindern). Gleiche Idee wie beim WordPress-artigen Listen-Editor.
+   */
+  function childBlockLength(entries, index) {
+    const depth = entries[index].depth;
+    let length = 0;
+
+    while (index + 1 + length < entries.length && entries[index + 1 + length].depth > depth) {
+      length++;
+    }
+
+    return length;
+  }
+
+  function keyOf(entry, index) {
+    if (entry.view) return `view:${entry.view.id}`;
+    if (entry.url) return `url:${index}`;
+    return `heading:${index}`;
+  }
+
+  const SUBMENU_GAP = 6;
+  const SUBMENU_EDGE = 8;
+
+  /*
+   * Setzt das viewport-feste Dropdown an seinen Eltern-Eintrag. Läuft es
+   * seitlich aus dem Bild, wird es an den Rand geschoben statt abgeschnitten.
+   */
+  function positionSubmenu(group, submenu, direction) {
+    const bounds = group.getBoundingClientRect();
+    const viewportWidth = window.innerWidth || 0;
+    const viewportHeight = window.innerHeight || 0;
+
+    submenu.style.minWidth = `${bounds.width}px`;
+
+    if (direction === 'up') {
+      submenu.style.top = 'auto';
+      submenu.style.bottom = `${Math.max(SUBMENU_EDGE, viewportHeight - bounds.top + SUBMENU_GAP)}px`;
+    } else {
+      submenu.style.bottom = 'auto';
+      submenu.style.top = `${bounds.bottom + SUBMENU_GAP}px`;
+    }
+
+    /* Erst nach dem Setzen der Breite messen, sonst ist offsetWidth veraltet */
+    const width = submenu.offsetWidth;
+    const maxLeft = viewportWidth - width - SUBMENU_EDGE;
+
+    submenu.style.left = `${Math.max(SUBMENU_EDGE, Math.min(bounds.left, maxLeft))}px`;
+  }
+
+  function repositionOpenSubmenu() {
+    if (!openSubmenu) return;
+    positionSubmenu(openSubmenu.group, openSubmenu.submenu, openSubmenu.direction);
+  }
+
+  /*
+   * Nach unten oder nach oben aufklappen. "auto" entscheidet nach dem Platz:
+   * sitzt die Card in der unteren Bildschirmhälfte (typisch für die
+   * Bottom-Leiste), klappt das Menü nach oben, sonst nach unten.
+   */
+  function resolveDirection(config) {
+    const setting = String(config.dropdownDirection || 'auto');
+
+    if (setting === 'up' || setting === 'down') return setting;
+
+    const bounds = menu.getBoundingClientRect();
+    const viewportHeight = window.innerHeight || 0;
+
+    if (!viewportHeight || !bounds.height) return 'down';
+
+    return bounds.top + bounds.height / 2 > viewportHeight / 2 ? 'up' : 'down';
+  }
+
+  /*
+   * `asTrigger` markiert den Eltern-Eintrag einer Gruppe: Er bleibt klickbar,
+   * bekommt aber keine eigene Navigation — sein Klick öffnet das Dropdown.
+   */
+  async function buildItem(entry, showText, showIcon, asTrigger = false) {
+    const view = entry.view;
+
+    /*
+     * Ziel eines Eintrags: entweder eine Ansicht oder ein eigener Link.
+     * Ohne beides bleibt der Eintrag eine reine Überschrift.
+     */
+    const url = entry.url;
+    const hasTarget = Boolean(view) || Boolean(url);
+
+    /* Ein Gruppen-Auslöser ist auch ohne eigenes Ziel bedienbar */
+    const interactive = hasTarget || asTrigger;
+
+    /*
+     * Überschriften ohne darstellbaren Inhalt würden nur
+     * eine leere Fläche erzeugen und entfallen deshalb.
+     */
+    if (!interactive && !showText && !(showIcon && entry.icon)) return null;
+
+    /*
+     * Ein Eintrag ohne Ziel ist eine reine Überschrift
+     * und darf deshalb nicht klickbar sein.
+     */
+    const element = document.createElement(interactive ? 'button' : 'div');
+
+    if (interactive) element.type = 'button';
+
+    element.className = 'item';
+    element.dataset.depth = String(entry.depth);
+
+    /*
+     * Aktiv ist die View mit exakt passendem Pfad.
+     * Liegt der aktive Pfad unterhalb dieser View,
+     * ist sie der Parent der aktiven Unteransicht.
+     */
+    const isActive = Boolean(view) && active?.path === view.path;
+
+    const isActiveParent =
+      Boolean(view) &&
+      !isActive &&
+      Boolean(active?.path?.startsWith(`${view.path}/`));
+
+    /*
+     * Struktur: hat die View Kinder (parent)
+     * bzw. liegt sie selbst unterhalb einer anderen View (child)?
+     */
+    const isParent =
+      Boolean(view) &&
+      entry.allViews.some(
+        other =>
+          other.path !== view.path &&
+          other.path.startsWith(`${view.path}/`)
+      );
+
+    const isChild = Boolean(view) && view.path.includes('/');
+
+    element.classList.toggle('heading', !interactive);
+    element.classList.toggle('active', isActive);
+    element.classList.toggle('active-parent', isActiveParent);
+    element.classList.toggle('parent', isParent);
+    element.classList.toggle('child', isChild);
+    element.classList.toggle('icon-only', !showText);
+
+    /*
+     * Ohne Text erklärt ein Tooltip den Eintrag.
+     */
+    if (!showText && entry.label) element.title = entry.label;
+
+    /*
+     * Titel
+     */
+    if (showText) {
+      const label = document.createElement('span');
+
+      label.textContent = entry.label;
+
+      element.append(label);
+    }
+
+    /*
+     * Icon. Ohne Text braucht jeder Eintrag ein Icon,
+     * sonst bliebe die Schaltfläche leer.
+     */
+    const iconName = entry.icon || (showText ? '' : 'mdi:circle-outline');
+
+    if (showIcon && iconName) {
+      const icon = document.createElement('img');
+
+      icon.alt = '';
+
+      icon.src = await vuePanel.getIcon(iconName, {
+        size: 56,
+        color:
+          getComputedStyle(document.documentElement)
+            .getPropertyValue('--text-primary')
+            .trim() || '#ffffff'
+      });
+
+      element.append(icon);
+    }
+
+    /*
+     * Navigation. Eine Ansicht gewinnt gegen einen eigenen Link, damit ein
+     * versehentlich gefülltes URL-Feld die Navigation nicht überschreibt.
+     */
+    if (asTrigger) {
+      /* Den Klick verdrahtet die Gruppe selbst */
+    } else if (view) {
+      element.addEventListener('click', () => {
+        vuePanel.navigate(view.id);
+        closeOpenGroup();
+      });
+    } else if (url) {
+      element.addEventListener('click', () => {
+        window.open(url, '_blank', 'noopener');
+        closeOpenGroup();
+      });
+    }
+
+    return element;
+  }
+
+  /*
+   * Zwischen Eltern-Eintrag und Dropdown liegt eine kleine Lücke. Ohne
+   * kurzen Aufschub würde das Menü zuklappen, während die Maus sie quert.
+   */
+  const CLOSE_DELAY = 180;
+  let closeTimer = null;
+
+  function cancelScheduledClose() {
+    if (closeTimer === null) return;
+    clearTimeout(closeTimer);
+    closeTimer = null;
+  }
+
+  function closeOpenGroup() {
+    cancelScheduledClose();
+    if (openGroupKey === null) return;
+    openGroupKey = null;
+    render();
+  }
+
+  function scheduleClose() {
+    cancelScheduledClose();
+    closeTimer = setTimeout(() => {
+      closeTimer = null;
+      closeOpenGroup();
+    }, CLOSE_DELAY);
+  }
+
+  function openGroup(key) {
+    cancelScheduledClose();
+    if (openGroupKey === key) return;
+    openGroupKey = key;
+    render();
+  }
+
+  function toggleGroup(key) {
+    cancelScheduledClose();
+    openGroupKey = openGroupKey === key ? null : key;
+    render();
+  }
+
+  /*
+   * Horizontal: Kinder werden als Dropdown unter ihrem Eltern-Eintrag
+   * geführt statt flach in der Zeile. So bleibt eine Zeile lesbar, egal
+   * wie viele Unteransichten konfiguriert sind.
+   */
+  async function buildHorizontalGroup(node, options) {
+    const hasChildren = node.children.length > 0;
+
+    /*
+     * Hat der Eintrag Kinder, ist er selbst der Auslöser des Dropdowns und
+     * navigiert deshalb nicht mehr — sonst bliebe sein Untermenü unerreichbar.
+     */
+    const parentElement = await buildItem(
+      node.entry,
+      options.showText,
+      options.showIcon,
+      hasChildren
+    );
+
+    if (!parentElement) return null;
+
+    if (!hasChildren) return { element: parentElement };
+
+    const key = node.key;
+    const isOpen = openGroupKey === key;
+
+    const group = document.createElement('div');
+
+    group.className = 'item-group';
+    group.classList.toggle('open', isOpen);
+
+    /* Hovern öffnet, Verlassen schließt kurz verzögert */
+    group.addEventListener('mouseenter', () => openGroup(key));
+    group.addEventListener('mouseleave', scheduleClose);
+
+    /* Der Eltern-Eintrag selbst klappt die Gruppe auf und zu */
+    parentElement.setAttribute('aria-expanded', String(isOpen));
+    parentElement.addEventListener('click', () => toggleGroup(key));
+
+    const submenu = document.createElement('div');
+
+    submenu.className = 'submenu';
+    submenu.classList.add(options.direction === 'up' ? 'up' : 'down');
+    submenu.hidden = !isOpen;
+
+    /*
+     * Untermenüs haben ihre eigene Darstellung — unabhängig davon, ob die
+     * Hauptleiste gerade Icon, Text oder beides zeigt.
+     */
+    for (const child of node.children) {
+      const childElement = await buildItem(child, options.submenuText, options.submenuIcon);
+
+      if (childElement) submenu.append(childElement);
+    }
+
+    group.append(parentElement, submenu);
+
+    /*
+     * Ausgerichtet wird erst nach dem Einhängen — vorher lässt sich die
+     * Breite nicht messen. Deshalb reicht die Gruppe die offene Position
+     * nur nach oben durch.
+     */
+    return {
+      element: group,
+      open: isOpen ? { group, submenu, direction: options.direction } : null
+    };
+  }
+
   async function render() {
+    const token = ++renderToken;
+
     /*
      * Config immer neu lesen.
      * Dadurch werden Änderungen an der Karten-Konfiguration
@@ -375,11 +863,9 @@
      */
     menu.classList.remove('vertical', 'horizontal');
 
-    menu.classList.add(
-      config.orientation === 'horizontal'
-        ? 'horizontal'
-        : 'vertical'
-    );
+    const horizontal = config.orientation === 'horizontal';
+
+    menu.classList.add(horizontal ? 'horizontal' : 'vertical');
 
     /*
      * Darstellung: Icon und Text, nur Icon oder nur Text.
@@ -403,10 +889,21 @@
           : config.showIcons !== false;
 
     /*
+     * Untermenüs dürfen eine eigene Darstellung haben. Ohne Angabe
+     * zeigen sie Icon und Text — wie im Screenshot-Layout.
+     */
+    const submenuDisplay = String(config.submenuDisplay || 'icon_text');
+    const submenuText = submenuDisplay !== 'icon';
+    const submenuIcon = submenuDisplay !== 'text';
+
+    /*
      * Views ebenfalls neu laden, damit auch showSubviews
      * bei einer Konfigurationsänderung korrekt berücksichtigt wird.
      */
     const allViews = await vuePanel.listViews();
+
+    /* Ein neuerer Lauf hat übernommen — diesen hier verwerfen */
+    if (token !== renderToken) return;
 
     /*
      * Eigene Menüeinträge gewinnen. Ohne konfigurierte Einträge
@@ -414,7 +911,7 @@
      */
     const configured = Array.isArray(config.items) ? config.items : [];
 
-    const entries = configured.length
+    const entries = (configured.length
       ? configured.map(item => {
           const target =
             item && typeof item.view === 'string'
@@ -430,6 +927,8 @@
               (item && typeof item.icon === 'string' && item.icon) ||
               target?.icon,
             view: target,
+            url:
+              (item && typeof item.url === 'string' && item.url.trim()) || '',
             depth:
               item && Number(item.depth) > 0
                 ? Math.min(Math.floor(Number(item.depth)), 2)
@@ -442,112 +941,95 @@
             label: view.title,
             icon: view.icon,
             view,
+            url: '',
             depth: 0
-          }));
+          }))
+    // `isParent` braucht die volle View-Liste — an jedem Eintrag mitgeben,
+    // statt sie als globale Closure-Variable vorauszusetzen.
+    ).map(entry => ({ ...entry, allViews }));
 
-    menu.replaceChildren();
+    if (!horizontal) {
+      const children = [];
 
-    for (const entry of entries) {
-      const view = entry.view;
+      for (const entry of entries) {
+        const element = await buildItem(entry, showText, showIcon);
 
-      /*
-       * Überschriften ohne darstellbaren Inhalt würden nur
-       * eine leere Fläche erzeugen und entfallen deshalb.
-       */
-      if (!view && !showText && !(showIcon && entry.icon)) continue;
-
-      /*
-       * Ein Eintrag ohne Ziel ist eine reine Überschrift
-       * und darf deshalb nicht klickbar sein.
-       */
-      const element = document.createElement(view ? 'button' : 'div');
-
-      if (view) element.type = 'button';
-
-      element.className = 'item';
-      element.dataset.depth = String(entry.depth);
-
-      /*
-       * Aktiv ist die View mit exakt passendem Pfad.
-       * Liegt der aktive Pfad unterhalb dieser View,
-       * ist sie der Parent der aktiven Unteransicht.
-       */
-      const isActive = Boolean(view) && active?.path === view.path;
-
-      const isActiveParent =
-        Boolean(view) &&
-        !isActive &&
-        Boolean(active?.path?.startsWith(`${view.path}/`));
-
-      /*
-       * Struktur: hat die View Kinder (parent)
-       * bzw. liegt sie selbst unterhalb einer anderen View (child)?
-       */
-      const isParent =
-        Boolean(view) &&
-        allViews.some(
-          other =>
-            other.path !== view.path &&
-            other.path.startsWith(`${view.path}/`)
-        );
-
-      const isChild = Boolean(view) && view.path.includes('/');
-
-      element.classList.toggle('heading', !view);
-      element.classList.toggle('active', isActive);
-      element.classList.toggle('active-parent', isActiveParent);
-      element.classList.toggle('parent', isParent);
-      element.classList.toggle('child', isChild);
-      element.classList.toggle('icon-only', !showText);
-
-      /*
-       * Ohne Text erklärt ein Tooltip den Eintrag.
-       */
-      if (!showText && entry.label) element.title = entry.label;
-
-      /*
-       * Titel
-       */
-      if (showText) {
-        const label = document.createElement('span');
-
-        label.textContent = entry.label;
-
-        element.append(label);
+        /* Ein neuerer Lauf hat übernommen — diesen hier verwerfen */
+        if (token !== renderToken) return;
+        if (element) children.push(element);
       }
 
-      /*
-       * Icon. Ohne Text braucht jeder Eintrag ein Icon,
-       * sonst bliebe die Schaltfläche leer.
-       */
-      const iconName = entry.icon || (showText ? '' : 'mdi:circle-outline');
+      openSubmenu = null;
+      menu.replaceChildren(...children);
 
-      if (showIcon && iconName) {
-        const icon = document.createElement('img');
+      return;
+    }
 
-        icon.alt = '';
+    /*
+     * Horizontal: aus der flachen, Tiefe-basierten Liste Gruppen bilden.
+     * Ein Eintrag auf oberster Ebene sammelt die unmittelbar folgenden,
+     * tieferen Einträge als seine Kinder (identisch zum "Block"-Konzept
+     * des Listen-Editors).
+     */
+    const nodes = [];
 
-        icon.src = await vuePanel.getIcon(iconName, {
-          size: 56,
-          color:
-            getComputedStyle(document.documentElement)
-              .getPropertyValue('--text-primary')
-              .trim() || '#ffffff'
-        });
+    for (let index = 0; index < entries.length; index++) {
+      const entry = entries[index];
 
-        element.append(icon);
-      }
+      if (entry.depth > 0) continue;
 
-      /*
-       * Navigation
-       */
-      if (view) {
-        element.addEventListener('click', () => {
-          vuePanel.navigate(view.id);
-        });
-      }
+      const length = childBlockLength(entries, index);
 
-      menu.append(element);
+      nodes.push({
+        key: keyOf(entry, index),
+        entry,
+        children: entries.slice(index + 1, index + 1 + length)
+      });
+    }
+
+    /*
+     * Zeigt eine Gruppe, die es nicht mehr gibt, wird die Auswahl verworfen.
+     * Automatisch aufklappen tut hier bewusst nichts: ein Untermenü geht nur
+     * durch Hovern oder einen Klick auf den Eltern-Eintrag auf.
+     */
+    if (openGroupKey !== null && !nodes.some(node => node.key === openGroupKey)) {
+      openGroupKey = null;
+    }
+
+    const direction = resolveDirection(config);
+
+    const children = [];
+    let pendingOpen = null;
+
+    for (const node of nodes) {
+      const built = await buildHorizontalGroup(node, {
+        showText,
+        showIcon,
+        submenuText,
+        submenuIcon,
+        direction
+      });
+
+      /* Ein neuerer Lauf hat übernommen — diesen hier verwerfen */
+      if (token !== renderToken) return;
+      if (!built) continue;
+
+      children.push(built.element);
+      if (built.open) pendingOpen = built.open;
+    }
+
+    /*
+     * Erst hier den Baum tauschen: würde schon vor den `await`s geleert,
+     * könnten zwei gleichzeitige Läufe (Navigation + Schließen) beide
+     * anhängen und die Einträge verdoppeln.
+     */
+    menu.classList.toggle('opens-up', direction === 'up');
+    openSubmenu = null;
+    menu.replaceChildren(...children);
+
+    if (pendingOpen) {
+      openSubmenu = pendingOpen;
+      positionSubmenu(pendingOpen.group, pendingOpen.submenu, pendingOpen.direction);
     }
   }
 
@@ -557,4 +1039,28 @@
     active = view;
     render();
   });
+
+  /*
+   * Außerhalb der offenen Gruppe klicken oder Escape drücken schließt sie.
+   * Wirkt nur, wenn horizontal überhaupt eine Gruppe offen hat.
+   */
+  document.addEventListener('click', event => {
+    if (openGroupKey === null) return;
+    // Nur diese Card-Instanz betrachten — mehrere Menü-Cards mit eigenen
+    // Dropdowns dürfen sich nicht gegenseitig offen halten.
+    if (menu.contains(event.target)) return;
+    closeOpenGroup();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeOpenGroup();
+  });
+
+  /*
+   * Das Dropdown hängt am Viewport: Scrollen oder Größenänderungen
+   * verschieben seinen Eltern-Eintrag, also muss es nachgeführt werden.
+   * `true` fängt auch das Scrollen innerhalb der Leiste ab.
+   */
+  window.addEventListener('resize', repositionOpenSubmenu);
+  window.addEventListener('scroll', repositionOpenSubmenu, true);
 </script>

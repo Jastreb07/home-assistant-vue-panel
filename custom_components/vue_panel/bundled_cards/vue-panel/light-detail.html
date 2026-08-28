@@ -335,6 +335,11 @@
     justify-content: space-between;
   }
 
+  /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
+  .controls[hidden] {
+    display: none;
+  }
+
   .control {
     width: 58px;
     padding: 0;

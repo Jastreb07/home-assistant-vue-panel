@@ -16,6 +16,7 @@ import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { copyCardToClipboard } from '@/core/ui/cardClipboard'
+import { editableCardCss } from '@/core/ui/responsiveCss'
 
 /**
  * The cards of one bar column. The column itself — spacing, alignment and
@@ -41,7 +42,7 @@ const cards = computed<CardConfig[]>(() => props.column.cards)
 const cssArea = computed<CardCssArea>(() => `bar_${barCardArea(props.bar)}`)
 
 function cssFor(card: CardConfig): string {
-  return card.css ?? cardAreaCss(card.type, cssArea.value)
+  return editableCardCss(card.css ?? cardAreaCss(card.type, cssArea.value), store.editMode)
 }
 
 /**

@@ -265,6 +265,11 @@
         text-overflow: ellipsis;
     }
 
+    /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
+    .tile__name[hidden], .tile__state[hidden] {
+        display: none;
+    }
+
     .tile__name {
         font-size: 14px;
         font-weight: 600;

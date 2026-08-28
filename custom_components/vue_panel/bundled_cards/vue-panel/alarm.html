@@ -1052,6 +1052,11 @@
         gap: 8px;
     }
 
+    /* `display: flex` oben wuerde die Browser-Regel fuer [hidden] schlagen */
+    .alarm-locks[hidden] {
+        display: none;
+    }
+
     .alarm-lock {
         display: flex;
         align-items: center;
