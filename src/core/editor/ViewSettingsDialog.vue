@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { SectionConfig, ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
+import type { BarPosition, SectionConfig, ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
 import { newId, slugify, slugifyPath, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -78,6 +78,15 @@ const showSidebarLeft = ref(props.view?.showSidebarLeft !== false)
 const showSidebarRight = ref(props.view?.showSidebarRight === true)
 const showHeader = ref(props.view?.showHeader !== false)
 const showBottom = ref(props.view?.showBottom !== false)
+
+/**
+ * A 'global' bar is switched on or off dashboard-wide from the dashboard
+ * settings dialog — its own show/hide toggle here would be misleading, since
+ * it would silently do nothing, so it is hidden entirely for that bar.
+ */
+function isPerView(position: BarPosition): boolean {
+  return store.bars[position].scope === 'perView'
+}
 const gridColumns = ref(Number(props.view?.layoutOptions?.columns) || 4)
 // Sections view specific options
 const maxColumns = ref(Number(props.view?.layoutOptions?.maxColumns) || 4)
@@ -95,6 +104,7 @@ const layouts: ViewLayout[] = ['sections', 'flex', 'panel', 'sidebar', 'grid']
 const tab = ref('general')
 const tabItems = computed(() => [
   { value: 'general', label: t('editor.view.tabGeneral'), icon: 'mdi:tune' },
+  { value: 'bars', label: t('editor.view.tabBars'), icon: 'mdi:dock-window' },
   { value: 'advanced', label: t('editor.view.tabAdvanced'), icon: 'mdi:page-layout-body' },
 ])
 
@@ -243,21 +253,23 @@ function remove() {
           :spellcheck="false"
         />
       </div>
+    </div>
 
-      <h3>{{ t('editor.view.bars') }}</h3>
-      <div class="row">
+    <div v-show="tab === 'bars'" class="view-form">
+      <small>{{ t('editor.view.barsPerViewHint') }}</small>
+      <div v-if="isPerView('sidebar-left')" class="row">
         <span>{{ t('editor.view.showSidebarLeft') }}</span>
         <BaseCheckbox v-model="showSidebarLeft" />
       </div>
-      <div class="row">
+      <div v-if="isPerView('sidebar-right')" class="row">
         <span>{{ t('editor.view.showSidebarRight') }}</span>
         <BaseCheckbox v-model="showSidebarRight" />
       </div>
-      <div class="row">
+      <div v-if="isPerView('header')" class="row">
         <span>{{ t('editor.view.showHeader') }}</span>
         <BaseCheckbox v-model="showHeader" />
       </div>
-      <div class="row">
+      <div v-if="isPerView('bottom')" class="row">
         <span>{{ t('editor.view.showBottom') }}</span>
         <BaseCheckbox v-model="showBottom" />
       </div>
@@ -427,6 +439,11 @@ h3 {
   font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.1em;
+  color: var(--text-secondary);
+}
+h3 + small {
+  margin-top: -8px;
+  font-size: 12px;
   color: var(--text-secondary);
 }
 </style>

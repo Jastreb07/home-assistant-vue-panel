@@ -92,15 +92,23 @@ function fitsViewport(position: BarPosition): boolean {
   return matchesViewport(store.bars[position].visibility, viewportWidth.value)
 }
 
+/**
+ * A 'global' bar is switched on or off dashboard-wide from the settings
+ * dialog — a view's own show/hide toggle is hidden and ignored for it. A
+ * 'perView' bar has no such master switch: each view decides for itself via
+ * `viewFlag`, `defaultShown` being its fallback when unset.
+ */
+function barVisible(position: BarPosition, viewFlag: boolean | undefined, defaultShown: boolean): boolean {
+  const bar = store.bars[position]
+  const allowed = bar.scope === 'perView' ? (viewFlag ?? defaultShown) : bar.enabled !== false
+  return allowed && fitsViewport(position)
+}
+
 // Per-view bar visibility — every bar but the right sidebar is on by default.
-const showSidebarLeft = computed(
-  () => activeView.value?.showSidebarLeft !== false && fitsViewport('sidebar-left'),
-)
-const showSidebarRight = computed(
-  () => activeView.value?.showSidebarRight === true && fitsViewport('sidebar-right'),
-)
-const showHeader = computed(() => activeView.value?.showHeader !== false && fitsViewport('header'))
-const showBottom = computed(() => activeView.value?.showBottom !== false && fitsViewport('bottom'))
+const showSidebarLeft = computed(() => barVisible('sidebar-left', activeView.value?.showSidebarLeft, true))
+const showSidebarRight = computed(() => barVisible('sidebar-right', activeView.value?.showSidebarRight, false))
+const showHeader = computed(() => barVisible('header', activeView.value?.showHeader, true))
+const showBottom = computed(() => barVisible('bottom', activeView.value?.showBottom, true))
 const headerInViewArea = computed(() => store.bars.header.placement === 'view')
 const bottomInViewArea = computed(() => store.bars.bottom.placement === 'view')
 
@@ -162,13 +170,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
 <template>
   <div class="app-shell">
-    <ShellBarHost v-if="showHeader && !headerInViewArea" position="header" />
+    <ShellBarHost v-if="showHeader && !headerInViewArea" position="header" :view-id="activeView?.id" />
 
     <div class="shell-body">
       <!-- The global bars are engine components fed by the dashboard store. -->
-      <ShellBarHost v-if="showSidebarLeft" position="sidebar-left" />
+      <ShellBarHost v-if="showSidebarLeft" position="sidebar-left" :view-id="activeView?.id" />
       <div class="view-column">
-        <ShellBarHost v-if="showHeader && headerInViewArea" position="header" />
+        <ShellBarHost v-if="showHeader && headerInViewArea" position="header" :view-id="activeView?.id" />
         <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
           <div class="view-scroll">
             <div v-if="store.editMode && activeView" class="edit-toolbar">
@@ -244,12 +252,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
           </div>
           <EditFab />
         </main>
-        <ShellBarHost v-if="showBottom && bottomInViewArea" position="bottom" />
+        <ShellBarHost v-if="showBottom && bottomInViewArea" position="bottom" :view-id="activeView?.id" />
       </div>
-      <ShellBarHost v-if="showSidebarRight" position="sidebar-right" />
+      <ShellBarHost v-if="showSidebarRight" position="sidebar-right" :view-id="activeView?.id" />
     </div>
 
-    <ShellBarHost v-if="showBottom && !bottomInViewArea" position="bottom" />
+    <ShellBarHost v-if="showBottom && !bottomInViewArea" position="bottom" :view-id="activeView?.id" />
 
     <DevSidebar v-if="showDevSidebar" />
     <Screensaver v-if="screensaverActive" />

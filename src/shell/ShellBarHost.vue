@@ -17,7 +17,7 @@ import { useI18n } from 'vue-i18n'
  * Columns run along the bar — left to right in the header and bottom bars,
  * top to bottom in the sidebars — and each one holds its own cards.
  */
-const props = defineProps<{ position: BarPosition }>()
+const props = defineProps<{ position: BarPosition; viewId?: string }>()
 
 const FLEX_ALIGN: Record<BarAlign, string> = {
   start: 'flex-start',
@@ -29,6 +29,8 @@ const FLEX_ALIGN: Record<BarAlign, string> = {
 const { t } = useI18n()
 const store = useDashboardStore()
 const bar = computed(() => store.bars[props.position])
+/** The columns actually rendered — the view's own set when the bar is 'perView'. */
+const columns = computed(() => store.barColumnsFor(props.position, props.viewId))
 const vertical = computed(() => isSidebar(props.position))
 const direction = computed<'column' | 'row'>(() => (vertical.value ? 'column' : 'row'))
 const columnTarget = ref<string | null>(null)
@@ -99,7 +101,7 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
   >
     <CardCss :card-id="bar.id" :css="bar.css ?? ''">
       <BaseEditableArea
-        v-for="column in bar.columns"
+        v-for="column in columns"
         :key="column.id"
         class="bar-column"
         :editing="store.editMode"
@@ -108,13 +110,13 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
         <template v-if="store.editMode" #toolbar>
           <BaseEditableAreaButton
             :title="t('editor.barColumn.moveBack')"
-            @click="store.moveBarColumn(position, column.id, -1)"
+            @click="store.moveBarColumn(position, column.id, -1, viewId)"
           >
             <MdiIcon :icon="vertical ? 'mdi:chevron-up' : 'mdi:chevron-left'" :size="15" />
           </BaseEditableAreaButton>
           <BaseEditableAreaButton
             :title="t('editor.barColumn.moveForward')"
-            @click="store.moveBarColumn(position, column.id, 1)"
+            @click="store.moveBarColumn(position, column.id, 1, viewId)"
           >
             <MdiIcon :icon="vertical ? 'mdi:chevron-down' : 'mdi:chevron-right'" :size="15" />
           </BaseEditableAreaButton>
@@ -122,15 +124,15 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
             <MdiIcon icon="mdi:cog" :size="15" />
           </BaseEditableAreaButton>
           <BaseEditableAreaButton
-            v-if="bar.columns.length > 1"
+            v-if="columns.length > 1"
             :title="t('editor.barColumn.delete')"
-            @click="store.removeBarColumn(position, column.id)"
+            @click="store.removeBarColumn(position, column.id, viewId)"
           >
             <MdiIcon icon="mdi:delete-outline" :size="15" />
           </BaseEditableAreaButton>
         </template>
         <div class="bar-column-scroll" :style="columnScrollStyle(column)">
-          <BarColumnCards :bar="position" :column="column" :direction="direction" />
+          <BarColumnCards :bar="position" :column="column" :direction="direction" :view-id="viewId" />
         </div>
       </BaseEditableArea>
 
@@ -142,7 +144,7 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
         icon="mdi:table-column-plus-after"
         :label="t('editor.barColumn.add')"
         class="add-column"
-        @click="store.addBarColumn(position)"
+        @click="store.addBarColumn(position, viewId)"
       />
     </CardCss>
 
@@ -150,6 +152,7 @@ function columnScrollStyle(column: BarColumn): Record<string, string> {
       v-if="columnTarget"
       :position="position"
       :column-id="columnTarget"
+      :view-id="viewId"
       @close="columnTarget = null"
     />
   </component>

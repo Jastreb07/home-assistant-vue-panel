@@ -426,12 +426,69 @@ export const useDashboardStore = defineStore('dashboard', {
       }
       return this.config.bars![position]!
     },
-    barColumn(position: BarPosition, columnId: string): BarColumn | undefined {
-      return this.materializeBar(position).columns.find((column) => column.id === columnId)
+    /**
+     * Deterministic id for the first, auto-created column of a per-view bar
+     * override — shared between the render placeholder below and the real
+     * column `barColumnsContainer` materializes, so a card added to it
+     * before anything was persisted still resolves afterwards. Namespaced by
+     * view: every view can have its own 'header-default' column, and column
+     * ids must stay unique across the whole dashboard document.
+     */
+    defaultViewBarColumnId(position: BarPosition, viewId: string): string {
+      return `${viewId}-${position}-default`
     },
-    addBarColumn(position: BarPosition): BarColumn {
+    /**
+     * Read-only columns for rendering. A 'global' bar shares one array across
+     * every view; a 'perView' bar instead resolves the active view's own
+     * override — falling back to a single empty column until one is created.
+     */
+    barColumnsFor(position: BarPosition, viewId?: string): BarColumn[] {
+      const bar = this.bars[position]
+      if (bar.scope !== 'perView') return bar.columns
+      const columns = (viewId ? this.viewById(viewId) : undefined)?.barColumns?.[position]
+      if (columns?.length) return columns
+      return viewId ? [{ id: this.defaultViewBarColumnId(position, viewId), cards: [] }] : []
+    },
+    /**
+     * Resolves where a bar's columns actually live for mutation: the global
+     * bar, or — for a 'perView' bar — the given view's own `barColumns`.
+     * Every column/card action below goes through here so both storage
+     * locations behave identically to callers.
+     */
+    barColumnsContainer(
+      position: BarPosition,
+      viewId?: string,
+    ): { columns: BarColumn[]; replace: (columns: BarColumn[]) => void } {
+      if (this.bars[position].scope === 'perView') {
+        const view = viewId ? this.viewById(viewId) : undefined
+        if (!view) return { columns: [], replace: () => {} }
+        if (!view.barColumns) view.barColumns = {}
+        if (!view.barColumns[position]?.length) {
+          view.barColumns[position] = [{ id: this.defaultViewBarColumnId(position, viewId!), cards: [] }]
+        }
+        return {
+          columns: view.barColumns[position]!,
+          replace: (columns) => {
+            view.barColumns![position] = columns
+          },
+        }
+      }
+      const bar = this.materializeBar(position)
+      return {
+        columns: bar.columns,
+        replace: (columns) => {
+          bar.columns = columns
+        },
+      }
+    },
+    barColumn(position: BarPosition, columnId: string, viewId?: string): BarColumn | undefined {
+      return this.barColumnsContainer(position, viewId).columns.find(
+        (column) => column.id === columnId,
+      )
+    },
+    addBarColumn(position: BarPosition, viewId?: string): BarColumn {
       const column: BarColumn = { id: newId('barcol'), cards: [] }
-      this.materializeBar(position).columns.push(column)
+      this.barColumnsContainer(position, viewId).columns.push(column)
       this.save()
       return column
     },
@@ -439,21 +496,22 @@ export const useDashboardStore = defineStore('dashboard', {
       position: BarPosition,
       columnId: string,
       patch: Partial<Omit<BarColumn, 'id' | 'cards'>>,
+      viewId?: string,
     ) {
-      const column = this.barColumn(position, columnId)
+      const column = this.barColumn(position, columnId, viewId)
       if (!column) return
       Object.assign(column, patch)
       this.save()
     },
     /** The last column stays — a bar without a column cannot hold cards. */
-    removeBarColumn(position: BarPosition, columnId: string) {
-      const bar = this.materializeBar(position)
-      if (bar.columns.length < 2) return
-      bar.columns = bar.columns.filter((column) => column.id !== columnId)
+    removeBarColumn(position: BarPosition, columnId: string, viewId?: string) {
+      const container = this.barColumnsContainer(position, viewId)
+      if (container.columns.length < 2) return
+      container.replace(container.columns.filter((column) => column.id !== columnId))
       this.save()
     },
-    moveBarColumn(position: BarPosition, columnId: string, direction: -1 | 1) {
-      const columns = this.materializeBar(position).columns
+    moveBarColumn(position: BarPosition, columnId: string, direction: -1 | 1, viewId?: string) {
+      const columns = this.barColumnsContainer(position, viewId).columns
       const index = columns.findIndex((column) => column.id === columnId)
       const target = index + direction
       if (index < 0 || target < 0 || target >= columns.length) return
@@ -463,8 +521,13 @@ export const useDashboardStore = defineStore('dashboard', {
     },
 
     // ── Bar cards ────────────────────────────────────────────
-    addBarCard(position: BarPosition, columnId: string, card: Omit<CardConfig, 'id'>) {
-      this.barColumn(position, columnId)?.cards.push({ ...card, id: newId('barcard') })
+    addBarCard(
+      position: BarPosition,
+      columnId: string,
+      card: Omit<CardConfig, 'id'>,
+      viewId?: string,
+    ) {
+      this.barColumn(position, columnId, viewId)?.cards.push({ ...card, id: newId('barcard') })
       this.save()
     },
     updateBarCardConfig(
@@ -473,35 +536,44 @@ export const useDashboardStore = defineStore('dashboard', {
       cardId: string,
       config: Record<string, unknown>,
       css?: string,
+      viewId?: string,
     ) {
-      const card = this.barColumn(position, columnId)?.cards.find((entry) => entry.id === cardId)
+      const card = this.barColumn(position, columnId, viewId)?.cards.find(
+        (entry) => entry.id === cardId,
+      )
       if (!card) return
       card.config = config
       card.css = css
       this.save()
     },
-    removeBarCard(position: BarPosition, columnId: string, cardId: string) {
-      const cards = this.barColumn(position, columnId)?.cards
+    removeBarCard(position: BarPosition, columnId: string, cardId: string, viewId?: string) {
+      const cards = this.barColumn(position, columnId, viewId)?.cards
       const index = cards?.findIndex((card) => card.id === cardId) ?? -1
       if (!cards || index < 0) return
       cards.splice(index, 1)
       this.save()
     },
-    duplicateBarCard(position: BarPosition, columnId: string, cardId: string) {
-      const cards = this.barColumn(position, columnId)?.cards
+    duplicateBarCard(position: BarPosition, columnId: string, cardId: string, viewId?: string) {
+      const cards = this.barColumn(position, columnId, viewId)?.cards
       const index = cards?.findIndex((card) => card.id === cardId) ?? -1
       if (!cards || index < 0) return
       cards.splice(index + 1, 0, duplicateCardConfig(cards[index]!, 'barcard'))
       this.save()
     },
     /** Reorder within a column or move a card between the columns of one bar. */
-    moveBarCard(position: BarPosition, cardId: string, targetColumnId: string, toIndex: number) {
-      const bar = this.materializeBar(position)
-      for (const column of bar.columns) {
+    moveBarCard(
+      position: BarPosition,
+      cardId: string,
+      targetColumnId: string,
+      toIndex: number,
+      viewId?: string,
+    ) {
+      const columns = this.barColumnsContainer(position, viewId).columns
+      for (const column of columns) {
         const index = column.cards.findIndex((card) => card.id === cardId)
         if (index < 0) continue
         const [card] = column.cards.splice(index, 1)
-        const destination = this.barColumn(position, targetColumnId)
+        const destination = this.barColumn(position, targetColumnId, viewId)
         if (!destination) {
           column.cards.splice(index, 0, card!)
           return

@@ -24,7 +24,8 @@ _VIEW_PATH_PATTERN = re.compile(
 )
 _LAYOUTS = {"sections", "flex", "panel", "sidebar", "grid"}
 _BAR_POSITIONS = {"sidebar-left", "sidebar-right", "header", "bottom"}
-_BAR_FIELDS = {"id", "size", "placement", "css", "visibility", "columns"}
+_BAR_FIELDS = {"id", "size", "placement", "css", "visibility", "columns", "scope", "enabled"}
+_BAR_SCOPES = {"global", "perView"}
 _RESPONSIVE_VISIBILITY_FIELDS = {
     "mobile",
     "tablet",
@@ -227,6 +228,10 @@ def _validate_bar(
         raise DashboardFileError("Bar CSS must be a string")
     if "visibility" in bar:
         _validate_responsive_visibility(bar["visibility"], "Bar visibility")
+    if "scope" in bar and bar["scope"] not in _BAR_SCOPES:
+        raise DashboardFileError("Unsupported bar scope")
+    if "enabled" in bar and not isinstance(bar["enabled"], bool):
+        raise DashboardFileError("Bar enabled must be a boolean")
 
     columns = bar.get("columns")
     if not isinstance(columns, list) or not columns:
@@ -296,6 +301,18 @@ def _validate_bar_column(column: Any, identifiers: set[str]) -> None:
         raise DashboardFileError("Bar column cards must be an array")
     for card in cards:
         _validate_card(card, identifiers)
+
+
+def _validate_view_bar_columns(value: Any, identifiers: set[str]) -> None:
+    """Validate one view's per-bar column override (only used for `scope: perView` bars)."""
+
+    if not isinstance(value, dict) or not set(value).issubset(_BAR_POSITIONS):
+        raise DashboardFileError("View bar columns contain an unsupported position")
+    for columns in value.values():
+        if not isinstance(columns, list) or not columns:
+            raise DashboardFileError("View bar columns require at least one column")
+        for column in columns:
+            _validate_bar_column(column, identifiers)
 
 
 def _validate_sections(sections: Any, identifiers: set[str]) -> None:
@@ -397,6 +414,8 @@ def validate_dashboard(document: Any) -> dict[str, Any]:
             raise DashboardFileError("View paths must be unique")
         view_paths.add(view_path)
         _validate_sections(view.get("sections"), identifiers)
+        if "barColumns" in view:
+            _validate_view_bar_columns(view["barColumns"], identifiers)
 
     popups = document.get("popups", [])
     if not isinstance(popups, list):

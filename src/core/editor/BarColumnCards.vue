@@ -26,6 +26,7 @@ const props = defineProps<{
   bar: BarPosition
   column: BarColumn
   direction: 'column' | 'row'
+  viewId?: string
 }>()
 
 const FLEX_ALIGN: Record<BarAlign, string> = {
@@ -105,7 +106,7 @@ const configTarget = ref<
 function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
   pickerOpen.value = false
   if (copiedCard) {
-    store.addBarCard(props.bar, props.column.id, copiedCard)
+    store.addBarCard(props.bar, props.column.id, copiedCard, props.viewId)
     return
   }
   configTarget.value = { mode: 'new', cardType }
@@ -115,9 +116,9 @@ function onConfigSave(config: Record<string, unknown>, css?: string) {
   const target = configTarget.value
   if (!target) return
   if (target.mode === 'new') {
-    store.addBarCard(props.bar, props.column.id, { type: target.cardType, config, css })
+    store.addBarCard(props.bar, props.column.id, { type: target.cardType, config, css }, props.viewId)
   } else {
-    store.updateBarCardConfig(props.bar, props.column.id, target.cardId, config, css)
+    store.updateBarCardConfig(props.bar, props.column.id, target.cardId, config, css, props.viewId)
   }
   configTarget.value = null
 }
@@ -138,7 +139,7 @@ function copyCard(card: CardConfig) {
 
 async function cutCard(card: CardConfig) {
   await copyCardToClipboard(card)
-  store.removeBarCard(props.bar, props.column.id, card.id)
+  store.removeBarCard(props.bar, props.column.id, card.id, props.viewId)
 }
 
 // ── Drag & drop (reorder inside a column, move between columns) ──
@@ -158,7 +159,13 @@ function onDrop(event: DragEvent) {
   event.preventDefault()
   const cardId = event.dataTransfer!.getData('text/plain')
   if (cardId) {
-    store.moveBarCard(props.bar, cardId, props.column.id, dropIndex.value ?? cards.value.length)
+    store.moveBarCard(
+      props.bar,
+      cardId,
+      props.column.id,
+      dropIndex.value ?? cards.value.length,
+      props.viewId,
+    )
   }
   dropIndex.value = null
 }
@@ -195,10 +202,10 @@ function onDrop(event: DragEvent) {
         <BaseCardEditOverlay
           v-if="store.editMode"
           @edit="editCard(card)"
-          @duplicate="store.duplicateBarCard(bar, column.id, card.id)"
+          @duplicate="store.duplicateBarCard(bar, column.id, card.id, viewId)"
           @copy="copyCard(card)"
           @cut="cutCard(card)"
-          @delete="store.removeBarCard(bar, column.id, card.id)"
+          @delete="store.removeBarCard(bar, column.id, card.id, viewId)"
         />
       </div>
     </div>

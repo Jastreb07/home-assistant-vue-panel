@@ -11,13 +11,15 @@ import BaseBoxInput from '@/core/ui/BaseBoxInput.vue'
 import { normalizeBox, type BoxValue } from '@/core/ui/boxInput'
 
 /** Spacing, size and alignment of one bar column — the bar's counterpart to the view dialog. */
-const props = defineProps<{ position: BarPosition; columnId: string }>()
+const props = defineProps<{ position: BarPosition; columnId: string; viewId?: string }>()
 const emit = defineEmits<{ close: [] }>()
 
 const { t } = useI18n()
 const store = useDashboardStore()
 
-const column = computed(() => store.bars[props.position].columns.find((c) => c.id === props.columnId))
+const column = computed(() =>
+  store.barColumnsFor(props.position, props.viewId).find((c) => c.id === props.columnId),
+)
 const vertical = computed(() => isSidebar(props.position))
 
 const sizeMode = ref<BarSizeMode>(column.value ? barColumnSizeMode(column.value) : 'fit')
@@ -47,14 +49,19 @@ function options(axis: 'along' | 'across') {
 }
 
 function save() {
-  store.updateBarColumn(props.position, props.columnId, {
-    sizeMode: sizeMode.value,
-    size: sizeMode.value === 'fixed' ? Math.max(1, Math.round(size.value) || 1) : undefined,
-    padding: normalizeBox(padding.value),
-    margin: normalizeBox(margin.value),
-    align: align.value,
-    crossAlign: crossAlign.value,
-  })
+  store.updateBarColumn(
+    props.position,
+    props.columnId,
+    {
+      sizeMode: sizeMode.value,
+      size: sizeMode.value === 'fixed' ? Math.max(1, Math.round(size.value) || 1) : undefined,
+      padding: normalizeBox(padding.value),
+      margin: normalizeBox(margin.value),
+      align: align.value,
+      crossAlign: crossAlign.value,
+    },
+    props.viewId,
+  )
   emit('close')
 }
 </script>

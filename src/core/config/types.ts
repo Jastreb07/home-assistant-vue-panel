@@ -48,6 +48,12 @@ export interface ViewConfig {
   margin?: BoxValue
   width?: ViewWidth
   align?: ViewAlign
+  /**
+   * Columns for a bar whose `scope` is 'perView' — kept separate per view
+   * instead of sharing the bar's global `columns`. Unused (and ignored) for
+   * bars that stay global.
+   */
+  barColumns?: Partial<Record<BarPosition, BarColumn[]>>
   sections: SectionConfig[]
 }
 
@@ -171,6 +177,14 @@ export interface CustomCardDefinition {
 
 export type BarPosition = 'sidebar-left' | 'sidebar-right' | 'header' | 'bottom'
 
+/**
+ * 'global' shares one set of columns/cards across every view (the default).
+ * 'perView' instead keeps a separate set per view, stored in that view's own
+ * `barColumns` — editing the bar while a view is active then only changes
+ * that view.
+ */
+export type BarScope = 'global' | 'perView'
+
 /** Alignment of the cards inside a bar column — 'stretch' fills the axis. */
 export type BarAlign = 'start' | 'center' | 'end' | 'stretch'
 
@@ -216,6 +230,14 @@ export interface BarEntry {
    * them. Both sidebars are desktop-only by default.
    */
   visibility?: ResponsiveVisibility
+  /** Whether `columns` is shared globally or each view keeps its own — defaults to 'global' */
+  scope?: BarScope
+  /**
+   * Master switch for a 'global' bar — hides it dashboard-wide regardless of
+   * any view's own show/hide toggle. Meaningless (and ignored) for 'perView'
+   * bars, where each view already decides for itself. Defaults to true.
+   */
+  enabled?: boolean
   columns: BarColumn[]
 }
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BarConfig, BarPosition, DashboardSettings } from '@/core/config/types'
+import type { BarConfig, BarPosition, BarScope, DashboardSettings } from '@/core/config/types'
 import { barPositions, barSizeLimits, isSidebar, useDashboardStore } from '@/core/config/dashboardStore'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
@@ -35,6 +35,10 @@ const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
 const placementOptions = computed(() => (['view', 'full'] as const).map((value) => ({
   value,
   label: t('editor.barPlacement.' + value),
+})))
+const scopeOptions = computed(() => (['global', 'perView'] as const).map((value) => ({
+  value,
+  label: t('settings.barScope.' + value),
 })))
 
 function setSize(position: BarPosition, value: number) {
@@ -210,6 +214,26 @@ function save() {
                 @update:model-value="barDrafts[position].placement = $event as 'view' | 'full'"
               />
             </label>
+            <label>
+              <span>{{ t('settings.barScope.label') }}</span>
+              <BaseSelectMenu
+                :model-value="barDrafts[position].scope ?? 'global'"
+                :options="scopeOptions"
+                @update:model-value="barDrafts[position].scope = $event as BarScope"
+              />
+            </label>
+          </div>
+          <p class="bar-field-hint">{{ t('settings.barScopeHint') }}</p>
+
+          <div v-if="(barDrafts[position].scope ?? 'global') === 'global'" class="device-row">
+            <div class="device-label">
+              <span>{{ t('settings.barEnabled.label') }}</span>
+              <small>{{ t('settings.barEnabled.hint') }}</small>
+            </div>
+            <BaseCheckbox
+              :model-value="barDrafts[position].enabled !== false"
+              @update:model-value="barDrafts[position].enabled = $event"
+            />
           </div>
 
           <h4>{{ t('editor.visibility.responsiveDesign') }}</h4>

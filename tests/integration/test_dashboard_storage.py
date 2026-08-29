@@ -251,6 +251,81 @@ class DashboardStorageTests(unittest.TestCase):
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.validate_dashboard(document)
 
+    def test_bar_scope_accepts_global_and_per_view(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+
+        document["bars"]["sidebar-left"]["scope"] = "perView"
+        dashboard_storage.validate_dashboard(document)
+
+        document["bars"]["sidebar-left"]["scope"] = "global"
+        dashboard_storage.validate_dashboard(document)
+
+        document["bars"]["sidebar-left"]["scope"] = "everywhere"
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+    def test_bar_enabled_must_be_boolean(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+
+        document["bars"]["header"]["enabled"] = False
+        dashboard_storage.validate_dashboard(document)
+
+        document["bars"]["header"]["enabled"] = "no"
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+    def test_view_bar_columns_are_validated_like_global_bar_columns(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+        document["bars"]["header"]["scope"] = "perView"
+        document["views"][0]["barColumns"] = {
+            "header": [
+                {
+                    "id": "view-header-col",
+                    "align": "center",
+                    "crossAlign": "center",
+                    "cards": [
+                        {"id": "view-header-clock", "type": "vue-panel/clock", "config": {}}
+                    ],
+                }
+            ]
+        }
+        dashboard_storage.validate_dashboard(document)
+
+        # Same rules as a global bar: at least one column, unsupported field rejected.
+        document["views"][0]["barColumns"]["header"] = []
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+        document["views"][0]["barColumns"]["header"] = [{"id": "x", "cards": [], "bogus": True}]
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+        # An unsupported bar position is rejected too.
+        document["views"][0]["barColumns"] = {"unknown": []}
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
+    def test_view_bar_card_ids_share_the_dashboard_id_namespace(self) -> None:
+        document = deepcopy(dashboard_storage.default_dashboard())
+        document["bars"]["header"]["scope"] = "perView"
+        document["views"][0]["barColumns"] = {
+            "header": [
+                {
+                    "id": "view-header-col",
+                    "cards": [
+                        {
+                            "id": "bar-sidebar-left-clock",
+                            "type": "vue-panel/clock",
+                            "config": {},
+                        }
+                    ],
+                }
+            ]
+        }
+
+        with self.assertRaises(dashboard_storage.DashboardFileError):
+            dashboard_storage.validate_dashboard(document)
+
     def test_unsafe_dashboard_names_are_rejected(self) -> None:
         with self.assertRaises(dashboard_storage.DashboardFileError):
             dashboard_storage.ensure_dashboard(self.private_root, "../outside")
