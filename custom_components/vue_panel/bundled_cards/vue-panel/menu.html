@@ -70,6 +70,40 @@
         "default": "icon_text"
       },
       {
+        "key": "iconPosition",
+        "label": "translation.variables.iconPosition.label",
+        "group": "translation.groups.parentMenu",
+        "type": "select",
+        "required": false,
+        "options": [
+          "before",
+          "after"
+        ],
+        "optionLabels": {
+          "before": "translation.variables.iconPosition.options.before",
+          "after": "translation.variables.iconPosition.options.after"
+        },
+        "default": "after"
+      },
+      {
+        "key": "itemSize",
+        "label": "translation.variables.itemSize.label",
+        "group": "translation.groups.parentMenu",
+        "type": "select",
+        "required": false,
+        "options": [
+          "small",
+          "medium",
+          "large"
+        ],
+        "optionLabels": {
+          "small": "translation.variables.itemSize.options.small",
+          "medium": "translation.variables.itemSize.options.medium",
+          "large": "translation.variables.itemSize.options.large"
+        },
+        "default": "medium"
+      },
+      {
         "key": "submenuDisplay",
         "label": "translation.variables.submenuDisplay.label",
         "group": "translation.groups.submenu",
@@ -88,26 +122,56 @@
         "default": "icon_text"
       },
       {
-        "key": "dropdownDirection",
-        "label": "translation.variables.dropdownDirection.label",
+        "key": "submenuIconPosition",
+        "label": "translation.variables.submenuIconPosition.label",
         "group": "translation.groups.submenu",
         "type": "select",
         "required": false,
         "options": [
-          "auto",
-          "down",
-          "up"
+          "before",
+          "after"
         ],
         "optionLabels": {
-          "auto": "translation.variables.dropdownDirection.options.auto",
-          "down": "translation.variables.dropdownDirection.options.down",
-          "up": "translation.variables.dropdownDirection.options.up"
+          "before": "translation.variables.iconPosition.options.before",
+          "after": "translation.variables.iconPosition.options.after"
         },
-        "default": "auto",
-        "visibleIf": {
-          "key": "orientation",
-          "equals": "horizontal"
-        }
+        "default": "before"
+      },
+      {
+        "key": "submenuItemSize",
+        "label": "translation.variables.submenuItemSize.label",
+        "group": "translation.groups.submenu",
+        "type": "select",
+        "required": false,
+        "options": [
+          "small",
+          "medium",
+          "large"
+        ],
+        "optionLabels": {
+          "small": "translation.variables.itemSize.options.small",
+          "medium": "translation.variables.itemSize.options.medium",
+          "large": "translation.variables.itemSize.options.large"
+        },
+        "default": "medium"
+      },
+      {
+        "key": "submenuStyle",
+        "label": "translation.variables.submenuStyle.label",
+        "group": "translation.groups.submenu",
+        "type": "select",
+        "required": false,
+        "options": [
+          "flyout",
+          "compact",
+          "dialog"
+        ],
+        "optionLabels": {
+          "flyout": "translation.variables.submenuStyle.options.flyout",
+          "compact": "translation.variables.submenuStyle.options.compact",
+          "dialog": "translation.variables.submenuStyle.options.dialog"
+        },
+        "default": "flyout"
       },
       {
         "key": "submenuSide",
@@ -209,11 +273,20 @@
         "translation.variables.display.options.text": "Text only",
         "translation.groups.parentMenu": "Main entries",
         "translation.groups.submenu": "Submenus",
+        "translation.variables.iconPosition.label": "Icon position",
+        "translation.variables.iconPosition.options.before": "Before the text",
+        "translation.variables.iconPosition.options.after": "After the text",
+        "translation.variables.itemSize.label": "Button size",
+        "translation.variables.itemSize.options.small": "Small",
+        "translation.variables.itemSize.options.medium": "Medium",
+        "translation.variables.itemSize.options.large": "Large",
         "translation.variables.submenuDisplay.label": "Submenu display",
-        "translation.variables.dropdownDirection.label": "Dropdown direction",
-        "translation.variables.dropdownDirection.options.auto": "Automatic",
-        "translation.variables.dropdownDirection.options.down": "Downwards",
-        "translation.variables.dropdownDirection.options.up": "Upwards",
+        "translation.variables.submenuIconPosition.label": "Icon position",
+        "translation.variables.submenuItemSize.label": "Button size",
+        "translation.variables.submenuStyle.label": "Submenu style",
+        "translation.variables.submenuStyle.options.flyout": "Flyout",
+        "translation.variables.submenuStyle.options.compact": "Compact",
+        "translation.variables.submenuStyle.options.dialog": "Dialog",
         "translation.variables.submenuSide.label": "Flyout side",
         "translation.variables.submenuSide.options.auto": "Automatic",
         "translation.variables.submenuSide.options.right": "To the right",
@@ -242,11 +315,20 @@
         "translation.variables.display.options.text": "Nur Text",
         "translation.groups.parentMenu": "Hauptelemente",
         "translation.groups.submenu": "Untermenüs",
+        "translation.variables.iconPosition.label": "Icon-Position",
+        "translation.variables.iconPosition.options.before": "Vor dem Text",
+        "translation.variables.iconPosition.options.after": "Nach dem Text",
+        "translation.variables.itemSize.label": "Button-Größe",
+        "translation.variables.itemSize.options.small": "Klein",
+        "translation.variables.itemSize.options.medium": "Mittel",
+        "translation.variables.itemSize.options.large": "Groß",
         "translation.variables.submenuDisplay.label": "Darstellung der Untermenüs",
-        "translation.variables.dropdownDirection.label": "Aufklapp-Richtung",
-        "translation.variables.dropdownDirection.options.auto": "Automatisch",
-        "translation.variables.dropdownDirection.options.down": "Nach unten",
-        "translation.variables.dropdownDirection.options.up": "Nach oben",
+        "translation.variables.submenuIconPosition.label": "Icon-Position",
+        "translation.variables.submenuItemSize.label": "Button-Größe",
+        "translation.variables.submenuStyle.label": "Untermenü-Design",
+        "translation.variables.submenuStyle.options.flyout": "Ausklappend",
+        "translation.variables.submenuStyle.options.compact": "Kompakt",
+        "translation.variables.submenuStyle.options.dialog": "Dialog",
         "translation.variables.submenuSide.label": "Ausklapp-Seite",
         "translation.variables.submenuSide.options.auto": "Automatisch",
         "translation.variables.submenuSide.options.right": "Nach rechts",
@@ -333,7 +415,7 @@
          * Horizontal etwas kompakter,
          * damit mehrere Einträge nebeneinander passen.
          */
-        padding: 12px 14px;
+        padding: 10px 14px;
         gap: 8px;
     }
 
@@ -438,8 +520,9 @@
     }
 
     /*
-     * Untermenü-Einträge: Icon-Kachel links, Beschriftung rechts —
-     * unabhängig von der Reihenfolge in der Hauptleiste.
+     * Untermenü-Einträge: standardmäßig Icon-Kachel links, Beschriftung
+     * rechts — die tatsächliche Reihenfolge setzt `.icon-before`/`.icon-after`
+     * am Eintrag selbst, unabhängig von der Hauptleiste.
      */
     .submenu .item {
         width: 100%;
@@ -452,6 +535,89 @@
         /* Blendet gestaffelt ein; `backwards` haelt sie bis dahin unsichtbar */
         animation: vp-menu-item .2s ease-out backwards;
         animation-delay: var(--vp-item-delay, 0ms);
+    }
+
+    /*
+     * Untermenü-Design "Kompakt": engere Abstände statt der grosszügigen
+     * Flyout-Optik — für lange Listen oder wenn wenig Platz ist.
+     */
+    .submenu.compact {
+        padding: 2px;
+        gap: 0;
+        border-radius: 12px;
+    }
+
+    .submenu.compact .item {
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-size: 13px;
+    }
+
+    .submenu.compact .item img {
+        width: 18px;
+        height: 18px;
+        padding: 4px;
+    }
+
+    /*
+     * Untermenü-Design "Dialog": statt am Eltern-Eintrag aufzuklappen,
+     * erscheint das Untermenü zentriert wie ein eigener Dialog über dem
+     * Weichzeichner. Bewusst ohne Richtungsklasse — die Positionierung
+     * übernimmt vollständig das CSS, `positionSubmenu()` wird dafür
+     * übersprungen (siehe Skript).
+     */
+    .submenu.as-dialog {
+        top: 50%;
+        left: 50%;
+        bottom: auto;
+        transform: translate(-50%, -50%);
+        width: min(320px, calc(100vw - 32px));
+        max-height: min(480px, calc(100vh - 32px));
+        padding: 12px;
+        border-radius: 24px;
+        animation: vp-menu-dialog .18s ease-out;
+
+        /* Scrollt selbst nicht mehr — das übernimmt allein `.submenu-body` */
+        overflow-y: hidden;
+    }
+
+    /* Der Dialog selbst blendet schon ein — die Einträge müssen es nicht einzeln */
+    .submenu.as-dialog .item {
+        animation: none;
+    }
+
+    .submenu-header {
+        flex: 0 0 auto;
+        padding: 8px 10px 4px;
+        font: 700 13px/1.2 inherit;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+
+    /*
+     * Eigenes, scrollbares Feld für die Buttons im Dialog — getrennt von der
+     * Kopfzeile, damit die beim Scrollen sichtbar stehen bleibt.
+     */
+    .submenu-body {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 2px;
+        min-height: 0;
+        flex: 1 1 auto;
+        overflow-y: auto;
+    }
+
+    @keyframes vp-menu-dialog {
+        from {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.92);
+        }
+        to {
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
     }
 
     /* Nach oben aufklappen heisst: von unten einschweben */
@@ -478,7 +644,6 @@
     }
 
     .submenu .item img {
-        order: -1;
         width: 22px;
         height: 22px;
         padding: 8px;
@@ -655,6 +820,88 @@
 
         flex: 0 0 auto;
     }
+
+    /*
+     * Icon-Position: welches der beiden Kinder (Text, Icon) visuell zuerst
+     * kommt. Die DOM-Reihenfolge ist immer Text dann Icon; `order` dreht sie
+     * bei Bedarf um. `space-between` pinnt das erste Element an den Anfang,
+     * das letzte ans Ende — daher genügt es, jeweils ein Element vorzuziehen.
+     */
+    .item.icon-before img {
+        order: -1;
+    }
+
+    .item.icon-after span {
+        order: -1;
+    }
+
+
+    /* =========================
+       BUTTON-GRÖSSE: HAUPTELEMENTE
+       ========================= */
+
+    .menu-card > .item.size-small,
+    .menu-card > .item-group > .item.size-small {
+        padding: 8px 12px;
+    }
+
+    .menu-card > .item.size-small span,
+    .menu-card > .item-group > .item.size-small span {
+        font-size: 14px;
+    }
+
+    .menu-card > .item.size-small img,
+    .menu-card > .item-group > .item.size-small img {
+        width: 20px;
+        height: 20px;
+    }
+
+    .menu-card > .item.size-large,
+    .menu-card > .item-group > .item.size-large {
+        padding: 18px 22px;
+    }
+
+    .menu-card > .item.size-large span,
+    .menu-card > .item-group > .item.size-large span {
+        font-size: 22px;
+    }
+
+    .menu-card > .item.size-large img,
+    .menu-card > .item-group > .item.size-large img {
+        width: 32px;
+        height: 32px;
+    }
+
+
+    /* =========================
+       BUTTON-GRÖSSE: UNTERMENÜS
+       ========================= */
+
+    .submenu .item.size-small {
+        padding: 3px;
+    }
+
+    .submenu .item.size-small span {
+        font-size: 13px;
+    }
+
+    .submenu .item.size-small img {
+        width: 18px;
+        height: 18px;
+    }
+
+    .submenu .item.size-large {
+        padding: 6px;
+    }
+
+    .submenu .item.size-large span {
+        font-size: 18px;
+    }
+
+    .submenu .item.size-large img {
+        width: 26px;
+        height: 26px;
+    }
 </style>
 
 <script data-vue-panel-javascript>
@@ -802,15 +1049,16 @@
   }
 
   function repositionOpenSubmenu() {
-    if (!openSubmenu) return;
+    /* Der Dialog sitzt fest zentriert — dafür gibt es nichts nachzuführen */
+    if (!openSubmenu || openSubmenu.direction === 'dialog') return;
     positionSubmenu(openSubmenu.group, openSubmenu.submenu, openSubmenu.direction);
   }
 
   /*
    * Wohin ein Untermenü aufklappt. Horizontal nach unten oder oben, vertikal
-   * zur Seite. "auto" entscheidet jeweils nach dem verfügbaren Platz: eine
-   * Card in der unteren Bildschirmhälfte (typisch für die Bottom-Leiste)
-   * klappt nach oben, eine Sidebar am rechten Rand nach links.
+   * zur Seite. Richtet sich immer nach dem verfügbaren Platz: eine Card in
+   * der unteren Bildschirmhälfte (typisch für die Bottom-Leiste) klappt nach
+   * oben, eine Sidebar am rechten Rand nach links.
    */
   function resolveDirection(config, horizontal) {
     const bounds = menu.getBoundingClientRect();
@@ -827,10 +1075,6 @@
       return bounds.left + bounds.width / 2 > viewportWidth / 2 ? 'left' : 'right';
     }
 
-    const setting = String(config.dropdownDirection || 'auto');
-
-    if (setting === 'up' || setting === 'down') return setting;
-
     const viewportHeight = window.innerHeight || 0;
 
     if (!viewportHeight || !bounds.height) return 'down';
@@ -842,7 +1086,15 @@
    * `asTrigger` markiert den Eltern-Eintrag einer Gruppe: Er bleibt klickbar,
    * bekommt aber keine eigene Navigation — sein Klick öffnet das Dropdown.
    */
-  async function buildItem(entry, showText, showIcon, asTrigger = false) {
+  async function buildItem(entry, opts) {
+    const {
+      showText,
+      showIcon,
+      iconPosition = 'after',
+      size = 'medium',
+      asTrigger = false
+    } = opts;
+
     const view = entry.view;
 
     /*
@@ -871,6 +1123,7 @@
     if (interactive) element.type = 'button';
 
     element.className = 'item';
+    element.classList.add(`size-${size}`);
     element.dataset.depth = String(entry.depth);
 
     /*
@@ -947,6 +1200,7 @@
             .trim() || '#ffffff'
       });
 
+      element.classList.add(iconPosition === 'before' ? 'icon-before' : 'icon-after');
       element.append(icon);
     }
 
@@ -1000,12 +1254,13 @@
      * Hat der Eintrag Kinder, ist er selbst der Auslöser des Dropdowns und
      * navigiert deshalb nicht mehr — sonst bliebe sein Untermenü unerreichbar.
      */
-    const parentElement = await buildItem(
-      node.entry,
-      options.showText,
-      options.showIcon,
-      hasChildren
-    );
+    const parentElement = await buildItem(node.entry, {
+      showText: options.showText,
+      showIcon: options.showIcon,
+      iconPosition: options.iconPosition,
+      size: options.itemSize,
+      asTrigger: hasChildren
+    });
 
     if (!parentElement) return null;
 
@@ -1036,11 +1291,46 @@
       toggleGroup(key);
     });
 
+    /*
+     * "Dialog" ersetzt das Flyout durch ein zentriertes Fenster — dafür
+     * braucht es weder eine Richtung noch die daran hängende Positionierung.
+     */
+    const isDialog = options.submenuStyle === 'dialog';
+
     const submenu = document.createElement('div');
 
     submenu.className = 'submenu';
-    submenu.classList.add(options.direction);
+
+    if (isDialog) {
+      submenu.classList.add('as-dialog');
+    } else {
+      submenu.classList.add(options.direction);
+      if (options.submenuStyle === 'compact') submenu.classList.add('compact');
+    }
+
     submenu.hidden = !isOpen;
+
+    /* Im Dialog erinnert eine Kopfzeile daran, aus welchem Eintrag er stammt */
+    if (isDialog && node.entry.label) {
+      const header = document.createElement('div');
+
+      header.className = 'submenu-header';
+      header.textContent = node.entry.label;
+
+      submenu.append(header);
+    }
+
+    /*
+     * Im Dialog stehen die Buttons in einem eigenen scrollbaren Feld,
+     * getrennt von der Kopfzeile — sonst würde die beim Scrollen mit
+     * verschwinden. Flyout und Kompakt scrollen weiterhin als Ganzes.
+     */
+    const itemsContainer = isDialog ? document.createElement('div') : submenu;
+
+    if (isDialog) {
+      itemsContainer.className = 'submenu-body';
+      submenu.append(itemsContainer);
+    }
 
     /*
      * Untermenüs haben ihre eigene Darstellung — unabhängig davon, ob die
@@ -1049,20 +1339,27 @@
     const childElements = [];
 
     for (const child of node.children) {
-      const childElement = await buildItem(child, options.submenuText, options.submenuIcon);
+      const childElement = await buildItem(child, {
+        showText: options.submenuText,
+        showIcon: options.submenuIcon,
+        iconPosition: options.submenuIconPosition,
+        size: options.submenuItemSize
+      });
 
       if (childElement) childElements.push(childElement);
     }
 
     /*
      * Die Einträge blenden nacheinander ein — beim Aufklappen nach oben
-     * beginnend beim untersten, also dem Eltern-Eintrag am nächsten.
+     * beginnend beim untersten, also dem Eltern-Eintrag am nächsten. Im
+     * Dialog blendet nur das Fenster selbst ein, die Reihenfolge ist egal.
      */
     childElements.forEach((element, index) => {
-      const step = options.direction === 'up' ? childElements.length - 1 - index : index;
+      const step =
+        !isDialog && options.direction === 'up' ? childElements.length - 1 - index : index;
 
       element.style.setProperty('--vp-item-delay', `${step * STAGGER_STEP}ms`);
-      submenu.append(element);
+      itemsContainer.append(element);
     });
 
     group.append(parentElement, submenu);
@@ -1087,7 +1384,7 @@
     return {
       element: group,
       backdrop,
-      open: isOpen ? { group, submenu, direction: options.direction } : null
+      open: isOpen ? { group, submenu, direction: isDialog ? 'dialog' : options.direction } : null
     };
   }
 
@@ -1196,6 +1493,12 @@
     const submenuText = submenuDisplay !== 'icon';
     const submenuIcon = submenuDisplay !== 'text';
 
+    const iconPosition = String(config.iconPosition || 'after');
+    const submenuIconPosition = String(config.submenuIconPosition || 'before');
+    const itemSize = String(config.itemSize || 'medium');
+    const submenuItemSize = String(config.submenuItemSize || 'medium');
+    const submenuStyle = String(config.submenuStyle || 'flyout');
+
     /*
      * Views ebenfalls neu laden, damit neu angelegte oder umbenannte
      * Ansichten beim erneuten Rendern sofort auftauchen.
@@ -1282,6 +1585,11 @@
         showIcon,
         submenuText,
         submenuIcon,
+        iconPosition,
+        submenuIconPosition,
+        itemSize,
+        submenuItemSize,
+        submenuStyle,
         direction,
         /*
          * Nur vertikal: der Eltern-Eintrag öffnet nicht nur, sondern
@@ -1311,7 +1619,11 @@
 
     if (pendingOpen) {
       openSubmenu = pendingOpen;
-      positionSubmenu(pendingOpen.group, pendingOpen.submenu, pendingOpen.direction);
+
+      /* Der Dialog sitzt fest zentriert per CSS — keine Positionierung nötig */
+      if (pendingOpen.direction !== 'dialog') {
+        positionSubmenu(pendingOpen.group, pendingOpen.submenu, pendingOpen.direction);
+      }
     }
   }
 
