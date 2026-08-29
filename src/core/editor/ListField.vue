@@ -56,6 +56,17 @@ const viewKey = computed(() => itemFields.value.find((f) => f.type === 'view')?.
 const entityKey = computed(() => itemFields.value.find((f) => f.type === 'entity')?.key)
 const entityDomain = computed(() => itemFields.value.find((f) => f.type === 'entity')?.domain)
 
+/**
+ * Some lists (the menu card's items) offer an `action` field with a 'back'
+ * option — a self-contained entry that needs no view or url. Offering a
+ * dedicated quick-add for it saves setting the action by hand and dragging
+ * the entry to the top, where a back entry conventionally belongs.
+ */
+const actionKey = computed(() => itemFields.value.find((f) => f.key === 'action')?.key)
+const hasBackAction = computed(() =>
+  itemFields.value.find((f) => f.key === 'action')?.options?.includes('back') ?? false,
+)
+
 const viewOptions = computed<SelectOption[]>(() =>
   store.config.views.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
 )
@@ -133,6 +144,14 @@ function addEntry() {
   expandedId.value = entry.id
 }
 
+/** Inserted at the top — a back entry conventionally leads the menu. */
+function addBackEntry() {
+  const entry = blankEntry()
+  if (actionKey.value) entry[actionKey.value] = 'back'
+  setItems([entry, ...items.value])
+  expandedId.value = entry.id
+}
+
 /** Quick add for entity based lists, mirroring the view picker. */
 function addEntity(entityId: string) {
   pendingEntity.value = ''
@@ -200,6 +219,9 @@ function isHeading(entry: ListEntry): boolean {
         @update:model-value="addEntity($event)"
       />
       <BaseButton size="sm" @click="addEntry">{{ t('editor.list.addEntry') }}</BaseButton>
+      <BaseButton v-if="hasBackAction" size="sm" @click="addBackEntry">
+        {{ t('editor.list.addBack') }}
+      </BaseButton>
       <BaseButton v-if="viewKey && items.length === 0" size="sm" @click="addAllViews">
         {{ t('editor.list.addAllViews') }}
       </BaseButton>

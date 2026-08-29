@@ -144,6 +144,7 @@ export default {
       addView: 'Ansicht hinzufügen…',
       addEntry: 'Eintrag hinzufügen',
       addAllViews: 'Alle Ansichten hinzufügen',
+      addBack: 'Zurück hinzufügen',
       newEntry: 'Neuer Eintrag',
       entry: 'Eintrag',
       empty: 'Noch keine Einträge — es werden automatisch alle Ansichten gelistet.',

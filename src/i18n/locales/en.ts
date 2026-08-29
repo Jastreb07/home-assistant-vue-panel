@@ -144,6 +144,7 @@ export default {
       addView: 'Add view…',
       addEntry: 'Add entry',
       addAllViews: 'Add all views',
+      addBack: 'Add back entry',
       newEntry: 'New entry',
       entry: 'Entry',
       empty: 'No entries yet — all views are listed automatically.',

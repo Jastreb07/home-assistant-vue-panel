@@ -69,7 +69,8 @@ input.vp-select-search:focus {
 }
 .vp-select-dropdown {
   position: absolute;
-  z-index: 3;
+  /* Always above dialogs, popups and any card content it opens over */
+  z-index: 9999999;
   top: calc(100% + 4px);
   left: 0;
   right: 0;
