@@ -18,3 +18,19 @@ export function reportSidebarHidden(hidden: boolean): void {
   reported = hidden
   window.parent.postMessage({ type: 'vue-panel:sidebar', hidden }, location.origin)
 }
+
+/** Home Assistant destinations a card may ask the host page to open. */
+export type HostTarget = 'settings' | 'notifications'
+
+/**
+ * Open one of Home Assistant's own screens. Only the host page can do this:
+ * its config panel lies outside the panel route, and the notification drawer
+ * is a component of the HA shell, not of this engine.
+ */
+export function openHostTarget(target: HostTarget): void {
+  if (!embedded) {
+    console.warn(`[vue-panel] Cannot open "${target}" outside the Home Assistant panel.`)
+    return
+  }
+  window.parent.postMessage({ type: 'vue-panel:host-open', target }, location.origin)
+}

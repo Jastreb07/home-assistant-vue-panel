@@ -156,6 +156,8 @@ export interface CustomCardDefinition {
     | 'dashboard:context'
     | 'shell:events'
     | 'dialog:open'
+    | 'host:navigate'
+    | 'host:badges'
   >
   html: string
   css: string

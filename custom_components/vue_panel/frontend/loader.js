@@ -93,6 +93,42 @@ function blockToggleMenu(event) {
 }
 
 /**
+ * Open one of Home Assistant's own screens on behalf of the engine.
+ *
+ * The settings page is a normal HA route, so it goes through the same
+ * 'location-changed' hand-off the panel's own navigation uses. The
+ * notification drawer is not a route at all — HA's sidebar opens it by
+ * firing 'hass-show-notifications', which `home-assistant-main` listens for.
+ */
+function openHostTarget(target) {
+  const { main } = haShell();
+
+  if (target === 'notifications') {
+    if (!main) {
+      console.warn('[Vue Panel] Home Assistant shell not found — cannot open notifications.');
+      return;
+    }
+    main.dispatchEvent(
+      new CustomEvent('hass-show-notifications', { bubbles: true, composed: true }),
+    );
+    return;
+  }
+
+  if (target !== 'settings') return;
+
+  if (location.pathname !== '/config/dashboard') {
+    window.history.pushState(null, '', '/config/dashboard');
+    window.dispatchEvent(
+      new CustomEvent('location-changed', {
+        detail: { replace: false },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
+}
+
+/**
  * Collapse or restore the sidebar. Stylesheets rather than inline styles: HA
  * re-renders the drawer on its own (narrow/wide changes, navigation), which
  * would drop inline styles but keeps an appended <style>. Restoring removes
@@ -312,6 +348,10 @@ class VuePanelElement extends HTMLElement {
     }
     if (event.data?.type === 'vue-panel:navigate') {
       this._applyEnginePath(event.data.path, event.data.replace === true);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:host-open') {
+      openHostTarget(event.data.target);
       return;
     }
     if (event.data?.type === 'vue-panel:sidebar') {

@@ -3,6 +3,8 @@ import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CardTranslations, PortableCardCapability } from '@/core/registry/portableCardTypes'
 import { cardTranslation } from '@/core/registry/cardTranslations'
 import { callService, useEntities } from '@/core/ha'
+import { useHostBadges } from '@/core/ha/hostBadges'
+import { openHostTarget } from '@/core/router/hostSidebar'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
@@ -75,8 +77,17 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   emitAction: 'shell:events',
   showDetail: 'dialog:open',
   openPopup: 'dialog:open',
+  openHostTarget: 'host:navigate',
+  subscribeHostBadges: 'host:badges',
 }
-const PREVIEW_DENIED = ['callService', 'navigate', 'emitAction', 'showDetail', 'openPopup']
+const PREVIEW_DENIED = [
+  'callService',
+  'navigate',
+  'emitAction',
+  'showDetail',
+  'openPopup',
+  'openHostTarget',
+]
 
 const scope = runtimeId('card')
 const root = ref<HTMLElement | null>(null)
@@ -100,6 +111,8 @@ const cardConfig = computed<Record<string, unknown>>(() => {
 
 const entitySubscriptions = new Map<string, { entityId: string; callback: (entity: unknown) => void }>()
 const navigationSubscriptions = new Map<string, (view: unknown) => void>()
+const badgeSubscriptions = new Map<string, (badges: unknown) => void>()
+const hostBadges = useHostBadges()
 
 let styleElement: HTMLStyleElement | null = null
 let teardown: Array<() => void> = []
@@ -237,6 +250,33 @@ function buildApi(capabilities: PortableCardCapability[]) {
       navigationSubscriptions.set(subscriptionId, callback)
       callback(viewSnapshot(store.viewByRoute(routePath.value)))
       return () => navigationSubscriptions.delete(subscriptionId)
+    },
+
+    /**
+     * Open one of Home Assistant's own screens — its config page or its
+     * notification drawer. Both live outside this panel, so the host page
+     * performs the actual navigation.
+     */
+    async openHostTarget(target: unknown) {
+      guard('openHostTarget')
+      const value = String(target)
+      if (value !== 'settings' && value !== 'notifications') {
+        throw new Error('Unknown host target.')
+      }
+      openHostTarget(value)
+      return null
+    },
+
+    /**
+     * The counters Home Assistant shows on its own sidebar. Reports the
+     * current values immediately and on every change.
+     */
+    subscribeHostBadges(callback: (badges: unknown) => void) {
+      guard('subscribeHostBadges')
+      const subscriptionId = `badges-${++sequence}`
+      badgeSubscriptions.set(subscriptionId, callback)
+      callback({ settings: hostBadges.settings.value, notifications: hostBadges.notifications.value })
+      return () => badgeSubscriptions.delete(subscriptionId)
     },
 
     async getDashboardContext() {
@@ -418,6 +458,7 @@ function disposeRuntime() {
   teardown = []
   entitySubscriptions.clear()
   navigationSubscriptions.clear()
+  badgeSubscriptions.clear()
   if (root.value) root.value.replaceChildren()
 }
 
@@ -510,6 +551,14 @@ watch(navigationSignature, () => {
   const view = viewSnapshot(store.viewByRoute(routePath.value))
   for (const callback of navigationSubscriptions.values()) callback(view)
 })
+
+/** Home Assistant's sidebar counters, pushed to every subscribed card. */
+watch(
+  () => [hostBadges.settings.value, hostBadges.notifications.value] as const,
+  ([settings, notifications]) => {
+    for (const callback of badgeSubscriptions.values()) callback({ settings, notifications })
+  },
+)
 
 onMounted(render)
 onBeforeUnmount(() => {

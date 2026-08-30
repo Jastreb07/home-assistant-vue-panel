@@ -56,6 +56,11 @@ _CAPABILITIES = {
     "dashboard:context",
     "shell:events",
     "dialog:open",
+    # Reaching out of the panel into Home Assistant itself: opening its
+    # config panel or notification drawer, and reading the counters its
+    # own sidebar shows next to them.
+    "host:navigate",
+    "host:badges",
 }
 _GESTURES = ("tap", "double_tap", "hold")
 _ACTIONS = (

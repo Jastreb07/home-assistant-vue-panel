@@ -44,6 +44,41 @@ const open = ref(false)
 const query = ref('')
 const activeIndex = ref(0)
 
+/** Gap between field and dropdown, and the margin kept to the viewport edge. */
+const DROPDOWN_GAP = 4
+const DROPDOWN_EDGE = 8
+const dropdownStyle = ref<Record<string, string>>({})
+
+/**
+ * The dropdown hangs off the viewport rather than the field, because the
+ * dialogs and panes it opens inside scroll and therefore clip their content —
+ * an absolutely positioned menu would be cut off at the pane's edge no matter
+ * its z-index. Fixed positioning escapes any ancestor `overflow`; the exact
+ * spot is computed here, and re-computed whenever something moves.
+ */
+function positionDropdown() {
+  const field = root.value
+  if (!field) return
+
+  const bounds = field.getBoundingClientRect()
+  const viewportHeight = window.innerHeight || 0
+  const below = viewportHeight - bounds.bottom - DROPDOWN_GAP - DROPDOWN_EDGE
+  const above = bounds.top - DROPDOWN_GAP - DROPDOWN_EDGE
+
+  // Flip up only when that genuinely offers more room than staying below.
+  const flip = below < 180 && above > below
+
+  dropdownStyle.value = {
+    position: 'fixed',
+    left: `${bounds.left}px`,
+    width: `${bounds.width}px`,
+    maxHeight: `${Math.max(120, Math.floor(flip ? above : below))}px`,
+    ...(flip
+      ? { bottom: `${viewportHeight - bounds.top + DROPDOWN_GAP}px`, top: 'auto' }
+      : { top: `${bounds.bottom + DROPDOWN_GAP}px`, bottom: 'auto' }),
+  }
+}
+
 const selected = computed(() => props.options.find((o) => o.value === props.modelValue))
 
 /** Custom values (free text) have no option — show them verbatim. */
@@ -74,16 +109,32 @@ watch(results, () => {
   activeIndex.value = 0
 })
 
+/**
+ * Results split into headed sections, keeping the flat `results` order so
+ * keyboard navigation and `activeIndex` stay untouched. Each entry carries
+ * its index in that flat list, which is what the markup highlights against.
+ */
+const sections = computed(() => {
+  const groups: { group: string; options: { option: SelectOption; index: number }[] }[] = []
+  results.value.forEach((option, index) => {
+    const group = option.group ?? ''
+    const last = groups[groups.length - 1]
+    if (last && last.group === group) last.options.push({ option, index })
+    else groups.push({ group, options: [{ option, index }] })
+  })
+  return groups
+})
+
 async function openList() {
   if (open.value) return
   query.value = ''
+  positionDropdown()
   open.value = true
   // Start on the current value so ↑/↓ continues from there
   await nextTick()
   if (props.searchable) searchInput.value?.focus()
   const index = results.value.findIndex((o) => o.value === props.modelValue)
   activeIndex.value = index >= 0 ? index : 0
-  listEl.value?.scrollIntoView({ block: 'nearest' })
   scrollActiveIntoView()
 }
 
@@ -143,8 +194,31 @@ async function scrollActiveIntoView() {
 function onDocumentPointerDown(e: PointerEvent) {
   if (open.value && root.value && !root.value.contains(e.target as Node)) open.value = false
 }
-onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
+
+/**
+ * The dropdown sits at fixed viewport coordinates, so anything that moves its
+ * field has to move it too. `true` also catches scrolling of the panes it is
+ * nested in, which is what shifts the field in practice.
+ */
+function onViewportChange() {
+  if (open.value) positionDropdown()
+}
+
+/** Filtering changes the list height, which can flip it above the field. */
+watch(results, () => {
+  if (open.value) positionDropdown()
+})
+
+onMounted(() => {
+  document.addEventListener('pointerdown', onDocumentPointerDown)
+  window.addEventListener('resize', onViewportChange)
+  window.addEventListener('scroll', onViewportChange, true)
+})
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onDocumentPointerDown)
+  window.removeEventListener('resize', onViewportChange)
+  window.removeEventListener('scroll', onViewportChange, true)
+})
 </script>
 
 <template>
@@ -189,18 +263,21 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
       </button>
     </div>
 
-    <div v-if="open" ref="listEl" class="vp-select-dropdown">
-      <button
-        v-for="(option, index) in results"
-        :key="option.value"
-        type="button"
-        class="vp-select-option"
-        :class="{ active: index === activeIndex, selected: option.value === modelValue }"
-        @click="select(option)"
-      >
-        <MdiIcon v-if="option.icon" :icon="option.icon" :size="iconSize - 2" />
-        <span class="vp-select-label">{{ option.label }}</span>
-      </button>
+    <div v-if="open" ref="listEl" class="vp-select-dropdown" :style="dropdownStyle">
+      <template v-for="section in sections" :key="section.group">
+        <p v-if="section.group" class="vp-select-group">{{ section.group }}</p>
+        <button
+          v-for="{ option, index } in section.options"
+          :key="option.value"
+          type="button"
+          class="vp-select-option"
+          :class="{ active: index === activeIndex, selected: option.value === modelValue }"
+          @click="select(option)"
+        >
+          <MdiIcon v-if="option.icon" :icon="option.icon" :size="iconSize - 2" />
+          <span class="vp-select-label">{{ option.label }}</span>
+        </button>
+      </template>
       <p v-if="results.length === 0" class="vp-select-empty">
         {{ $t('common.selectMenu.noResults') }}
       </p>

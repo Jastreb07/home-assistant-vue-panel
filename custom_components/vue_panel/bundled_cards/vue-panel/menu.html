@@ -18,7 +18,9 @@
     "capabilities": [
       "navigation:read",
       "navigation:write",
-      "icon:render"
+      "icon:render",
+      "host:navigate",
+      "host:badges"
     ],
     "defaultSize": {
       "cols": 1,
@@ -222,11 +224,15 @@
             "required": false,
             "options": [
               "navigate",
-              "back"
+              "back",
+              "settings",
+              "notifications"
             ],
             "optionLabels": {
               "navigate": "translation.variables.items.items.action.navigate",
-              "back": "translation.variables.items.items.action.back"
+              "back": "translation.variables.items.items.action.back",
+              "settings": "translation.variables.items.items.action.settings",
+              "notifications": "translation.variables.items.items.action.notifications"
             },
             "default": "navigate"
           },
@@ -239,6 +245,20 @@
             "visibleIf": {
               "key": "action",
               "equals": "back"
+            }
+          },
+          {
+            "key": "showBadge",
+            "label": "translation.variables.items.items.showBadge",
+            "type": "boolean",
+            "required": false,
+            "default": true,
+            "visibleIf": {
+              "key": "action",
+              "in": [
+                "settings",
+                "notifications"
+              ]
             }
           },
           {
@@ -311,8 +331,13 @@
         "translation.variables.items.items.action": "Entry type",
         "translation.variables.items.items.action.navigate": "Open a view or link",
         "translation.variables.items.items.action.back": "Go back",
+        "translation.variables.items.items.action.settings": "Home Assistant settings",
+        "translation.variables.items.items.action.notifications": "Home Assistant notifications",
         "translation.variables.items.items.hideWhenEmpty": "Hide while there is nothing to go back to",
-        "translation.back": "Back"
+        "translation.variables.items.items.showBadge": "Show counter badge",
+        "translation.back": "Back",
+        "translation.settings": "Settings",
+        "translation.notifications": "Notifications"
       },
       "de": {
         "translation.name": "Navigation",
@@ -354,8 +379,13 @@
         "translation.variables.items.items.action": "Art des Eintrags",
         "translation.variables.items.items.action.navigate": "Ansicht oder Link öffnen",
         "translation.variables.items.items.action.back": "Zurück navigieren",
+        "translation.variables.items.items.action.settings": "Home-Assistant-Einstellungen",
+        "translation.variables.items.items.action.notifications": "Home-Assistant-Benachrichtigungen",
         "translation.variables.items.items.hideWhenEmpty": "Ausblenden, solange es kein Ziel zum Zurückgehen gibt",
-        "translation.back": "Zurück"
+        "translation.variables.items.items.showBadge": "Zähler-Badge anzeigen",
+        "translation.back": "Zurück",
+        "translation.settings": "Einstellungen",
+        "translation.notifications": "Benachrichtigungen"
       }
     }
   };
@@ -721,6 +751,39 @@
     }
 
 
+    /*
+     * Zähler wie in der Home-Assistant-Seitenleiste. Steht als letztes
+     * Element am Zeilenende — `space-between` am Eintrag schiebt es dorthin.
+     */
+    .item-badge {
+        flex: 0 0 auto;
+        min-width: 20px;
+        padding: 0 6px;
+        border-radius: 10px;
+        background: var(--accent);
+        color: var(--text-on-accent, #fff);
+        font-size: 12px;
+        font-weight: 700;
+        line-height: 20px;
+        text-align: center;
+    }
+
+    /* Ohne Text sitzt der Zähler als kleine Blase auf dem Icon */
+    .item.icon-only {
+        position: relative;
+    }
+
+    .item.icon-only .item-badge {
+        position: absolute;
+        top: 4px;
+        inset-inline-end: 4px;
+        min-width: 16px;
+        padding: 0 4px;
+        font-size: 10px;
+        line-height: 16px;
+    }
+
+
     /* =========================
        NUR ICON
        ========================= */
@@ -959,7 +1022,23 @@
     return length;
   }
 
+  /*
+   * The counters Home Assistant paints on its own sidebar. Kept in a local
+   * mirror so a render can read them synchronously; the subscription pushes
+   * every change and re-renders.
+   */
+  const hostBadges = { settings: 0, notifications: 0 };
+
+  /* Actions that reach out into Home Assistant rather than this dashboard */
+  const HOST_ACTIONS = ['settings', 'notifications'];
+
+  const HOST_DEFAULTS = {
+    settings: { icon: 'mdi:cog', label: 'translation.settings' },
+    notifications: { icon: 'mdi:bell', label: 'translation.notifications' }
+  };
+
   function keyOf(entry, index) {
+    if (HOST_ACTIONS.includes(entry.action)) return `host:${entry.action}:${index}`;
     if (entry.action === 'back') return `back:${index}`;
     if (entry.view) return `view:${entry.view.id}`;
     if (entry.url) return `url:${index}`;
@@ -1116,6 +1195,7 @@
      */
     const url = entry.url;
     const isBack = entry.action === 'back';
+    const hostAction = HOST_ACTIONS.includes(entry.action) ? entry.action : '';
 
     /*
      * Ein Zurück-Eintrag kann sich ausblenden, solange der Verlauf leer ist —
@@ -1124,7 +1204,7 @@
      */
     if (isBack && entry.hideWhenEmpty && viewHistory.length === 0) return null;
 
-    const hasTarget = Boolean(view) || Boolean(url) || isBack;
+    const hasTarget = Boolean(view) || Boolean(url) || isBack || Boolean(hostAction);
 
     /* Ein Gruppen-Auslöser ist auch ohne eigenes Ziel bedienbar */
     const interactive = hasTarget || asTrigger;
@@ -1181,9 +1261,13 @@
     element.classList.toggle('icon-only', !showText);
 
     /*
-     * Ein Zurück-Eintrag beschriftet sich selbst, wenn nichts angegeben ist.
+     * Zurück- und System-Einträge beschriften sich selbst, wenn nichts
+     * angegeben ist.
      */
-    const label = entry.label || (isBack ? vuePanel.t('translation.back') : '');
+    const label =
+      entry.label
+      || (isBack ? vuePanel.t('translation.back') : '')
+      || (hostAction ? vuePanel.t(HOST_DEFAULTS[hostAction].label) : '');
 
     /*
      * Ohne Text erklärt ein Tooltip den Eintrag.
@@ -1205,7 +1289,11 @@
      * Icon. Ohne Text braucht jeder Eintrag ein Icon,
      * sonst bliebe die Schaltfläche leer.
      */
-    const fallbackIcon = isBack ? 'mdi:arrow-left' : (showText ? '' : 'mdi:circle-outline');
+    const fallbackIcon = isBack
+      ? 'mdi:arrow-left'
+      : hostAction
+        ? HOST_DEFAULTS[hostAction].icon
+        : (showText ? '' : 'mdi:circle-outline');
     const iconName = entry.icon || fallbackIcon;
 
     if (showIcon && iconName) {
@@ -1226,6 +1314,19 @@
     }
 
     /*
+     * Zähler wie in der Home-Assistant-Seitenleiste. Bei 0 bleibt er weg —
+     * ein leeres Abzeichen wäre nur Rauschen.
+     */
+    if (hostAction && entry.showBadge !== false && hostBadges[hostAction] > 0) {
+      const badge = document.createElement('span');
+
+      badge.className = 'item-badge';
+      badge.textContent = String(hostBadges[hostAction]);
+
+      element.append(badge);
+    }
+
+    /*
      * Navigation. Eine Ansicht gewinnt gegen einen eigenen Link, damit ein
      * versehentlich gefülltes URL-Feld die Navigation nicht überschreibt.
      */
@@ -1234,6 +1335,11 @@
     } else if (isBack) {
       element.addEventListener('click', () => {
         navigateBack();
+        closeOpenGroup();
+      });
+    } else if (hostAction) {
+      element.addEventListener('click', () => {
+        vuePanel.openHostTarget(hostAction);
         closeOpenGroup();
       });
     } else if (view) {
@@ -1553,8 +1659,12 @@
             view: target,
             url:
               (item && typeof item.url === 'string' && item.url.trim()) || '',
-            action: item && item.action === 'back' ? 'back' : 'navigate',
+            action:
+              item && ['back', 'settings', 'notifications'].includes(item.action)
+                ? item.action
+                : 'navigate',
             hideWhenEmpty: item ? item.hideWhenEmpty === true : false,
+            showBadge: item ? item.showBadge !== false : true,
             depth:
               item && Number(item.depth) > 0
                 ? Math.min(Math.floor(Number(item.depth)), 2)
@@ -1654,6 +1764,22 @@
   vuePanel.subscribeNavigation(view => {
     rememberVisit(active, view);
     active = view;
+    render();
+  });
+
+  /*
+   * Die Zähler von Home Assistant. Der erste Aufruf kommt sofort, deshalb
+   * wird nur neu gezeichnet, wenn sich tatsächlich etwas geändert hat —
+   * sonst liefe direkt nach dem ersten `render()` ein zweiter Lauf.
+   */
+  vuePanel.subscribeHostBadges(badges => {
+    const settings = Number(badges?.settings) || 0;
+    const notifications = Number(badges?.notifications) || 0;
+
+    if (settings === hostBadges.settings && notifications === hostBadges.notifications) return;
+
+    hostBadges.settings = settings;
+    hostBadges.notifications = notifications;
     render();
   });
 

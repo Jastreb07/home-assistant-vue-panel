@@ -14,6 +14,10 @@ export type PortableCardCapability =
   | 'dashboard:context'
   | 'shell:events'
   | 'dialog:open'
+  /** Open Home Assistant's own panels — its config page, its notifications */
+  | 'host:navigate'
+  /** Read the counters HA shows on its sidebar (updates/repairs, notifications) */
+  | 'host:badges'
 
 export type PortableCardVariableType =
   | 'action'

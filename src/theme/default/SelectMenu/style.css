@@ -67,14 +67,18 @@ input.vp-select-search:focus {
 .vp-select-clear:hover {
   color: var(--text-primary);
 }
+/*
+ * Position, width and max-height are set by the script: the dropdown is
+ * pinned to the viewport so the scrolling dialogs and panes it opens inside
+ * cannot clip it. Without that, no z-index would help — `overflow` cuts
+ * regardless of stacking.
+ */
 .vp-select-dropdown {
-  position: absolute;
+  position: fixed;
   /* Always above dialogs, popups and any card content it opens over */
   z-index: 9999999;
-  top: calc(100% + 4px);
-  left: 0;
-  right: 0;
-  max-height: 260px;
+  /* The script sets the field's own width — padding must fit inside it */
+  box-sizing: border-box;
   overflow-y: auto;
   background: var(--nav-bg);
   border: 1px solid var(--divider);
@@ -115,4 +119,17 @@ input.vp-select-search:focus {
   padding: 12px 10px;
   color: var(--text-secondary);
   font-size: 13px;
+}
+.vp-select-group {
+  margin: 0;
+  padding: 10px 10px 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* No gap above the very first heading — the dropdown already has padding. */
+.vp-select-group:first-child {
+  padding-top: 4px;
 }

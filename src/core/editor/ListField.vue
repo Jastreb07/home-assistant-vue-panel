@@ -57,19 +57,51 @@ const entityKey = computed(() => itemFields.value.find((f) => f.type === 'entity
 const entityDomain = computed(() => itemFields.value.find((f) => f.type === 'entity')?.domain)
 
 /**
- * Some lists (the menu card's items) offer an `action` field with a 'back'
- * option — a self-contained entry that needs no view or url. Offering a
- * dedicated quick-add for it saves setting the action by hand and dragging
- * the entry to the top, where a back entry conventionally belongs.
+ * Some lists (the menu card's items) offer an `action` field whose options go
+ * beyond opening a view — a back step, Home Assistant's own screens. Those
+ * are self-contained entries needing neither view nor url, so the add menu
+ * offers them directly instead of making people pick an action by hand.
  */
-const actionKey = computed(() => itemFields.value.find((f) => f.key === 'action')?.key)
-const hasBackAction = computed(() =>
-  itemFields.value.find((f) => f.key === 'action')?.options?.includes('back') ?? false,
-)
+const actionField = computed(() => itemFields.value.find((f) => f.key === 'action'))
+const actionKey = computed(() => actionField.value?.key)
 
-const viewOptions = computed<SelectOption[]>(() =>
-  store.config.views.map((v) => ({ value: v.id, label: v.title, icon: v.icon })),
-)
+/** Action values the add menu offers as ready-made entries, in this order. */
+const SYSTEM_ACTIONS = ['custom', 'back', 'settings', 'notifications'] as const
+const SYSTEM_ICONS: Record<string, string> = {
+  custom: 'mdi:link-variant',
+  back: 'mdi:arrow-left',
+  settings: 'mdi:cog',
+  notifications: 'mdi:bell',
+}
+
+const systemActions = computed(() => {
+  const available = actionField.value?.options ?? []
+  return SYSTEM_ACTIONS.filter((action) => action === 'custom' || available.includes(action))
+})
+
+/**
+ * Views first, then the system entries — the split the dropdown shows as two
+ * headed sections. Values are prefixed so a system entry can never collide
+ * with a view id.
+ */
+const viewOptions = computed<SelectOption[]>(() => {
+  const views: SelectOption[] = store.config.views.map((v) => ({
+    value: `view:${v.id}`,
+    label: v.title,
+    icon: v.icon,
+    group: t('editor.list.groupViews'),
+  }))
+  if (!actionField.value) return views
+  return [
+    ...views,
+    ...systemActions.value.map((action) => ({
+      value: `system:${action}`,
+      label: t(`editor.list.systemEntries.${action}`),
+      icon: SYSTEM_ICONS[action] ?? 'mdi:cog',
+      group: t('editor.list.groupSystem'),
+    })),
+  ]
+})
 
 const pendingView = ref('')
 const pendingEntity = ref('')
@@ -124,10 +156,30 @@ function entryForView(viewId: string): ListEntry | null {
   return entry
 }
 
-function addView(viewId: string) {
+/**
+ * One dropdown, two kinds of entry: a view to link to, or a ready-made
+ * system entry. A back step goes to the top of the list, where it belongs;
+ * everything else is appended.
+ */
+function addFromMenu(value: string) {
   pendingView.value = ''
-  const entry = entryForView(viewId)
-  if (entry) setItems([...items.value, entry])
+
+  if (value.startsWith('view:')) {
+    const entry = entryForView(value.slice('view:'.length))
+    if (entry) setItems([...items.value, entry])
+    return
+  }
+  if (!value.startsWith('system:')) return
+
+  const action = value.slice('system:'.length)
+  const entry = blankEntry()
+
+  // 'custom' is a plain entry the user fills in — it needs no stored action.
+  if (actionKey.value && action !== 'custom') entry[actionKey.value] = action
+  if (labelKey.value && action === 'custom') entry[labelKey.value] = t('editor.list.newEntry')
+
+  setItems(action === 'back' ? [entry, ...items.value] : [...items.value, entry])
+  expandedId.value = entry.id
 }
 
 function addAllViews() {
@@ -144,13 +196,6 @@ function addEntry() {
   expandedId.value = entry.id
 }
 
-/** Inserted at the top — a back entry conventionally leads the menu. */
-function addBackEntry() {
-  const entry = blankEntry()
-  if (actionKey.value) entry[actionKey.value] = 'back'
-  setItems([entry, ...items.value])
-  expandedId.value = entry.id
-}
 
 /** Quick add for entity based lists, mirroring the view picker. */
 function addEntity(entityId: string) {
@@ -192,8 +237,7 @@ function isHeading(entry: ListEntry): boolean {
     const value = key ? entry[key] : undefined
     return typeof value === 'string' && value.trim() !== ''
   }
-  const actionKey = itemFields.value.find((f) => f.key === 'action')?.key
-  const action = actionKey ? entry[actionKey] : undefined
+  const action = actionKey.value ? entry[actionKey.value] : undefined
   if (typeof action === 'string' && action && action !== 'navigate') return false
   const urlKey = itemFields.value.find((f) => f.key === 'url')?.key
   return !filled(viewKey.value) && !filled(urlKey)
@@ -210,7 +254,7 @@ function isHeading(entry: ListEntry): boolean {
         searchable
         size="sm"
         :placeholder="t('editor.list.addView')"
-        @update:model-value="addView($event)"
+        @update:model-value="addFromMenu($event)"
       />
       <EntityPicker
         v-else-if="entityKey"
@@ -219,9 +263,6 @@ function isHeading(entry: ListEntry): boolean {
         @update:model-value="addEntity($event)"
       />
       <BaseButton size="sm" @click="addEntry">{{ t('editor.list.addEntry') }}</BaseButton>
-      <BaseButton v-if="hasBackAction" size="sm" @click="addBackEntry">
-        {{ t('editor.list.addBack') }}
-      </BaseButton>
       <BaseButton v-if="viewKey && items.length === 0" size="sm" @click="addAllViews">
         {{ t('editor.list.addAllViews') }}
       </BaseButton>
