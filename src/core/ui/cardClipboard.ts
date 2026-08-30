@@ -37,6 +37,7 @@ export async function copyCardToClipboard(card: CardConfig): Promise<void> {
       type: card.type,
       config: JSON.parse(JSON.stringify(card.config)) as Record<string, unknown>,
       css: card.css,
+      visibility: card.visibility ? { ...card.visibility } : undefined,
       size: card.size ? { ...card.size } : undefined,
     },
   }

@@ -117,13 +117,18 @@ const defaultCss = ref('')
 const cssDraft = ref(store.settings.customCss ?? '')
 
 onMounted(async () => {
-  defaultCss.value = await themeMainCss()
+  // Normalized to \n — CodeMirror always round-trips to \n, so comparing
+  // against a CRLF source file would make every reset look like an override.
+  defaultCss.value = (await themeMainCss()).replace(/\r\n/g, '\n')
   if (!store.settings.customCss) cssDraft.value = defaultCss.value
 })
 
 function resetCss() {
   cssDraft.value = defaultCss.value
 }
+
+// Blurred over the CSS tab until acknowledged once per dialog session
+const cssWarningAcknowledged = ref(false)
 
 function save() {
   const uiThemeChanged = uiTheme.value !== store.settings.uiTheme
@@ -314,9 +319,19 @@ function save() {
 
     <div v-show="tab === 'css'" class="css-tab">
       <p class="css-hint">{{ t('settings.cssHint') }}</p>
-      <BaseCodeEditor v-model="cssDraft" language="css" min-height="340px" />
-      <div class="css-actions">
-        <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
+      <div class="css-guarded" :class="{ 'css-guarded--locked': !cssWarningAcknowledged }">
+        <div class="css-editor-scroll">
+          <BaseCodeEditor v-model="cssDraft" language="css" min-height="340px" />
+        </div>
+        <div class="css-actions">
+          <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
+        </div>
+        <div v-if="!cssWarningAcknowledged" class="css-warning-overlay">
+          <p>{{ t('common.cssWarning') }}</p>
+          <BaseButton variant="primary" size="sm" @click="cssWarningAcknowledged = true">
+            {{ t('common.ok') }}
+          </BaseButton>
+        </div>
       </div>
     </div>
     <template #footer>
@@ -430,5 +445,45 @@ label small,
 .css-actions {
   display: flex;
   justify-content: flex-end;
+}
+.css-guarded {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.css-editor-scroll {
+  max-height: 340px;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+.css-guarded--locked {
+  overflow: hidden;
+}
+.css-guarded--locked > :not(.css-warning-overlay) {
+  overflow: hidden !important;
+  pointer-events: none;
+}
+.css-warning-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: color-mix(in srgb, var(--nav-bg) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 8px;
+}
+.css-warning-overlay p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 </style>

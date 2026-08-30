@@ -121,6 +121,7 @@ function duplicateCardConfig(card: CardConfig, prefix: string): CardConfig {
     type: card.type,
     config: JSON.parse(JSON.stringify(card.config)) as Record<string, unknown>,
     css: card.css,
+    visibility: card.visibility ? { ...card.visibility } : undefined,
     size: card.size ? { ...card.size } : undefined,
   }
 }
@@ -538,6 +539,7 @@ export const useDashboardStore = defineStore('dashboard', {
       cardId: string,
       config: Record<string, unknown>,
       css?: string,
+      visibility?: CardConfig['visibility'],
       viewId?: string,
     ) {
       const card = this.barColumn(position, columnId, viewId)?.cards.find(
@@ -546,6 +548,7 @@ export const useDashboardStore = defineStore('dashboard', {
       if (!card) return
       card.config = config
       card.css = css
+      card.visibility = visibility
       this.save()
     },
     removeBarCard(position: BarPosition, columnId: string, cardId: string, viewId?: string) {
@@ -764,7 +767,13 @@ export const useDashboardStore = defineStore('dashboard', {
       }
       this.save()
     },
-    updateCardConfig(hostId: string, cardId: string, config: Record<string, unknown>, css?: string) {
+    updateCardConfig(
+      hostId: string,
+      cardId: string,
+      config: Record<string, unknown>,
+      css?: string,
+      visibility?: CardConfig['visibility'],
+    ) {
       const host = this.sectionHost(hostId)
       if (!host) return
       for (const section of host.sections) {
@@ -772,6 +781,7 @@ export const useDashboardStore = defineStore('dashboard', {
         if (card) {
           card.config = config
           card.css = css
+          card.visibility = visibility
         }
       }
       this.save()

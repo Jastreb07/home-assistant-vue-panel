@@ -20,6 +20,7 @@ export type ConfigTarget =
       config: Record<string, unknown>
       css?: string
       size?: CardConfig['size']
+      visibility?: CardConfig['visibility']
     }
   | null
 
@@ -49,7 +50,12 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
     configTarget.value = { mode: 'new', sectionId, cardType, initialConfig }
   }
 
-  function onConfigSave(config: Record<string, unknown>, css?: string, size?: CardConfig['size']) {
+  function onConfigSave(
+    config: Record<string, unknown>,
+    css?: string,
+    size?: CardConfig['size'],
+    visibility?: CardConfig['visibility'],
+  ) {
     const target = configTarget.value
     if (!target) return
     if (target.mode === 'new') {
@@ -57,10 +63,11 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
         type: target.cardType,
         config,
         css,
+        visibility,
         size: size ?? cardRegistry[target.cardType]?.defaultSize,
       })
     } else {
-      store.updateCardConfig(getView().id, target.cardId, config, css)
+      store.updateCardConfig(getView().id, target.cardId, config, css, visibility)
       if (size) store.updateCardSize(getView().id, target.cardId, size)
     }
     configTarget.value = null
@@ -74,6 +81,7 @@ export function useSectionEditing(view: Ref<ViewConfig> | (() => ViewConfig)) {
       config: card.config,
       css: card.css,
       size: card.size,
+      visibility: card.visibility,
     }
   }
 

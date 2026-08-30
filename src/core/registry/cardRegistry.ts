@@ -19,7 +19,7 @@ import type { VisibleIf } from './cardConditions'
 import type { CardAction, CardGesture } from '@/core/ui/cardActions'
 import {
   defaultResponsiveVisibility,
-  withResponsiveCss,
+  normalizeVisibility,
   type ResponsiveVisibility,
 } from '@/core/ui/responsiveCss'
 
@@ -178,16 +178,12 @@ export async function syncPortableCardCatalog(): Promise<void> {
   invalidatePortableCardCatalog()
 }
 
-function applyResponsiveDefaults(manifest: CardManifest | undefined, css: string): string {
-  if (!manifest?.defaultResponsive) return css
-  return withResponsiveCss(css, {
+/** A card type's default screen-size gate — the fallback when an instance has no override. */
+export function cardDefaultVisibility(type: string): ResponsiveVisibility {
+  return normalizeVisibility({
     ...defaultResponsiveVisibility,
-    ...manifest.defaultResponsive,
+    ...cardRegistry[type]?.defaultResponsive,
   })
-}
-
-export function cardAreaCss(type: string, _area: CardCssArea = 'default'): string {
-  return applyResponsiveDefaults(cardRegistry[type], '')
 }
 
 export async function cardDefaultCss(
@@ -197,7 +193,7 @@ export async function cardDefaultCss(
   const manifest = cardRegistry[type]
   if (!manifest) return ''
   const document = await getPortableCard(type)
-  return applyResponsiveDefaults(manifest, document.css)
+  return document.css
 }
 
 export function cardsForArea(area: CardArea): CardManifest[] {

@@ -4,6 +4,7 @@ import { useI18n } from 'vue-i18n'
 import {
   cardRegistry,
   cardDefaultCss,
+  cardDefaultVisibility,
   cardDisplayName,
   resolveCardComponent,
   type CardSchemaField,
@@ -19,11 +20,7 @@ import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import BaseSplitter from '@/core/ui/BaseSplitter.vue'
-import {
-  defaultResponsiveVisibility,
-  responsiveVisibilityFromCss,
-  withResponsiveCss,
-} from '@/core/ui/responsiveCss'
+import { visibilityMediaCss, type ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -33,6 +30,8 @@ const props = withDefaults(
     initialConfig: Record<string, unknown>
     /** Saved per-card CSS override, if any */
     initialCss?: string
+    /** Saved per-card visibility override, if any */
+    initialVisibility?: ResponsiveVisibility
     /** Where the card sits — decides which default CSS is loaded */
     area?: CardCssArea
     /** Offer the size tab — only layouts with fixed px sizes (flex) do */
@@ -44,7 +43,12 @@ const props = withDefaults(
 )
 const emit = defineEmits<{
   close: []
-  save: [config: Record<string, unknown>, css?: string, size?: { width?: number; height?: number }]
+  save: [
+    config: Record<string, unknown>,
+    css?: string,
+    size?: { width?: number; height?: number },
+    visibility?: ResponsiveVisibility,
+  ]
 }>()
 
 const { t, locale } = useI18n()
@@ -112,16 +116,10 @@ function sizeValue(raw: number | ''): number | undefined {
 const defaultCss = ref('')
 // Pre-filled with the card's full default CSS so users can tweak it
 const cssDraft = ref(props.initialCss ?? '')
-const visibility = ref({ ...defaultResponsiveVisibility })
-const mobileBreakpointDraft = ref<string | number>(defaultResponsiveVisibility.mobileMax)
-const tabletBreakpointDraft = ref<string | number>(defaultResponsiveVisibility.tabletMax)
-const responsiveReady = ref(false)
-
-function readResponsiveCss() {
-  visibility.value = responsiveVisibilityFromCss(cssDraft.value)
-  mobileBreakpointDraft.value = visibility.value.mobileMax
-  tabletBreakpointDraft.value = visibility.value.tabletMax
-}
+const cardDefaultVisibilityValue = cardDefaultVisibility(props.cardType)
+const visibility = ref({ ...(props.initialVisibility ?? cardDefaultVisibilityValue) })
+const mobileBreakpointDraft = ref<string | number>(visibility.value.mobileMax)
+const tabletBreakpointDraft = ref<string | number>(visibility.value.tabletMax)
 
 function commitMobileBreakpoint() {
   const raw = mobileBreakpointDraft.value
@@ -148,36 +146,42 @@ function commitTabletBreakpoint() {
 }
 
 onMounted(async () => {
-  defaultCss.value = await cardDefaultCss(props.cardType, props.area)
+  // Normalized to \n — CodeMirror always round-trips to \n, so comparing
+  // against a CRLF source file would make every reset look like an override.
+  defaultCss.value = (await cardDefaultCss(props.cardType, props.area)).replace(/\r\n/g, '\n')
   if (!props.initialCss) cssDraft.value = defaultCss.value
-  readResponsiveCss()
-  responsiveReady.value = true
 })
 
-watch(visibility, (value) => {
-  if (responsiveReady.value) cssDraft.value = withResponsiveCss(cssDraft.value, value)
-}, { deep: true })
-
-watch(tab, (value) => {
-  if (value === 'visibility' && responsiveReady.value) readResponsiveCss()
-})
+function visibilityEquals(a: ResponsiveVisibility, b: ResponsiveVisibility): boolean {
+  return a.mobile === b.mobile && a.tablet === b.tablet && a.desktop === b.desktop
+    && a.mobileMax === b.mobileMax && a.tabletMax === b.tabletMax
+}
 
 function onSave() {
   saveAttempted.value = true
   if (missingRequiredVariables.value) return
   // Only store an override when it actually differs from the card default
   const css = cssDraft.value.trim()
-  const isOverride = css !== '' && css !== defaultCss.value.trim()
+  const isCssOverride = css !== '' && css !== defaultCss.value.trim()
+  const isVisibilityOverride = !visibilityEquals(visibility.value, cardDefaultVisibilityValue)
   const size = props.sizable
     ? { width: sizeValue(cardWidth.value), height: sizeValue(cardHeight.value) }
     : undefined
-  emit('save', draft.value, isOverride ? cssDraft.value : undefined, size)
+  emit(
+    'save',
+    draft.value,
+    isCssOverride ? cssDraft.value : undefined,
+    size,
+    isVisibilityOverride ? { ...visibility.value } : undefined,
+  )
 }
 
 function resetCss() {
   cssDraft.value = defaultCss.value
-  readResponsiveCss()
 }
+
+// Blurred over the CSS tab until acknowledged once per dialog session
+const cssWarningAcknowledged = ref(false)
 
 /** The preview mirrors the fixed size so typed values are visible right away. */
 const previewStyle = computed(() => {
@@ -188,6 +192,13 @@ const previewStyle = computed(() => {
   const height = sizeValue(cardHeight.value) ?? defaultSize?.height
   if (height) style.height = `${height}px`
   return style
+})
+
+/** Mirrors real rendering: the user's CSS plus the generated visibility rules. */
+const previewCss = computed(() => {
+  const base = cssDraft.value
+  const vis = visibilityMediaCss(visibility.value)
+  return vis ? `${base}${base.trim() ? '\n\n' : ''}${vis}` : base
 })
 
 // ── Resizable preview ────────────────────────────────────────
@@ -314,14 +325,23 @@ const previewArea = computed<CardArea>(() =>
               />
             </div>
           </div>
-          <small class="css-write-hint">{{ t('editor.visibility.cssHint') }}</small>
         </BaseCollapsible>
       </div>
       <div v-show="tab === 'css'" class="form-col css-col">
         <p class="css-hint">{{ t('editor.cssHint') }}</p>
-        <BaseCodeEditor v-model="cssDraft" language="css" min-height="300px" />
-        <div class="css-actions">
-          <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
+        <div class="css-guarded" :class="{ 'css-guarded--locked': !cssWarningAcknowledged }">
+          <div class="css-editor-scroll">
+            <BaseCodeEditor v-model="cssDraft" language="css" min-height="300px" />
+          </div>
+          <div class="css-actions">
+            <BaseButton size="sm" @click="resetCss">{{ t('editor.cssReset') }}</BaseButton>
+          </div>
+          <div v-if="!cssWarningAcknowledged" class="css-warning-overlay">
+            <p>{{ t('common.cssWarning') }}</p>
+            <BaseButton variant="primary" size="sm" @click="cssWarningAcknowledged = true">
+              {{ t('common.ok') }}
+            </BaseButton>
+          </div>
         </div>
       </div>
       <BaseSplitter
@@ -337,7 +357,7 @@ const previewArea = computed<CardArea>(() =>
         </div>
         <!-- Always applied: this is exactly what the area renders with -->
         <div class="preview-stage" :class="{ 'on-bar': isBarArea }">
-          <CardCss card-id="__preview__" :css="cssDraft">
+          <CardCss card-id="__preview__" :css="previewCss" :content-css="cssDraft">
             <div data-vp-card="__preview__" class="preview-card" :style="previewStyle">
               <component
                 :is="previewComponent"
@@ -430,6 +450,46 @@ const previewArea = computed<CardArea>(() =>
   display: flex;
   justify-content: flex-end;
 }
+.css-guarded {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.css-editor-scroll {
+  max-height: 300px;
+  overflow-y: auto;
+  border-radius: 10px;
+}
+.css-guarded--locked {
+  overflow: hidden;
+}
+.css-guarded--locked > :not(.css-warning-overlay) {
+  overflow: hidden !important;
+  pointer-events: none;
+}
+.css-warning-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  text-align: center;
+  background: color-mix(in srgb, var(--nav-bg) 92%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 8px;
+}
+.css-warning-overlay p {
+  max-width: 420px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
 .visibility-hint {
   margin: 0;
   color: var(--text-secondary);
@@ -458,8 +518,7 @@ const previewArea = computed<CardArea>(() =>
   color: var(--text-primary);
   font-size: 13px;
 }
-.device-label > small,
-.css-write-hint {
+.device-label > small {
   color: var(--text-secondary);
   font-size: 11px;
 }

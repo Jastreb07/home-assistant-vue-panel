@@ -190,6 +190,8 @@ def _validate_card(card: Any, identifiers: set[str]) -> None:
         raise DashboardFileError("Card config must be an object")
     if "css" in card and not isinstance(card["css"], str):
         raise DashboardFileError("Card CSS must be a string")
+    if "visibility" in card:
+        _validate_responsive_visibility(card["visibility"], "Card visibility")
     if "size" in card and not isinstance(card["size"], dict):
         raise DashboardFileError("Card size must be an object")
 

@@ -17,10 +17,14 @@ import { cardCssContextKey } from './cardCssContext'
  */
 const props = defineProps<{
   cardId: string
+  /** Full CSS applied to the card, including the generated visibility rules. */
   css: string
+  /** The user's own CSS only, without visibility rules — passed to nested
+   *  portable cards. Defaults to `css` when not given. */
+  contentCss?: string
 }>()
 
-provide(cardCssContextKey, computed(() => props.css))
+provide(cardCssContextKey, computed(() => props.contentCss ?? props.css))
 
 const el = document.createElement('style')
 el.setAttribute('data-vp-card-css', props.cardId)

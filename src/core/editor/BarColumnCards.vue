@@ -5,7 +5,7 @@ import type { BarAlign, BarColumn, BarPosition, CardConfig } from '@/core/config
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import {
   barCardArea,
-  cardAreaCss,
+  cardDefaultVisibility,
   cardRegistry,
   resolveCardComponent,
   type CardCssArea,
@@ -16,7 +16,7 @@ import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import { copyCardToClipboard } from '@/core/ui/cardClipboard'
-import { editableCardCss } from '@/core/ui/responsiveCss'
+import { visibilityMediaCss } from '@/core/ui/responsiveCss'
 
 /**
  * The cards of one bar column. The column itself — spacing, alignment and
@@ -42,8 +42,15 @@ const store = useDashboardStore()
 const cards = computed<CardConfig[]>(() => props.column.cards)
 const cssArea = computed<CardCssArea>(() => `bar_${barCardArea(props.bar)}`)
 
+function userCssFor(card: CardConfig): string {
+  return card.css ?? ''
+}
+
 function cssFor(card: CardConfig): string {
-  return editableCardCss(card.css ?? cardAreaCss(card.type, cssArea.value), store.editMode)
+  const base = userCssFor(card)
+  if (store.editMode) return base
+  const vis = visibilityMediaCss(card.visibility ?? cardDefaultVisibility(card.type))
+  return vis ? `${base}${base.trim() ? '\n\n' : ''}${vis}` : base
 }
 
 /**
@@ -99,7 +106,14 @@ function styleFor(card: CardConfig): Record<string, string> {
 const pickerOpen = ref(false)
 const configTarget = ref<
   | { mode: 'new'; cardType: string }
-  | { mode: 'edit'; cardId: string; cardType: string; config: Record<string, unknown>; css?: string }
+  | {
+      mode: 'edit'
+      cardId: string
+      cardType: string
+      config: Record<string, unknown>
+      css?: string
+      visibility?: CardConfig['visibility']
+    }
   | null
 >(null)
 
@@ -112,13 +126,23 @@ function onPick(cardType: string, copiedCard?: Omit<CardConfig, 'id'>) {
   configTarget.value = { mode: 'new', cardType }
 }
 
-function onConfigSave(config: Record<string, unknown>, css?: string) {
+function onConfigSave(
+  config: Record<string, unknown>,
+  css?: string,
+  _size?: CardConfig['size'],
+  visibility?: CardConfig['visibility'],
+) {
   const target = configTarget.value
   if (!target) return
   if (target.mode === 'new') {
-    store.addBarCard(props.bar, props.column.id, { type: target.cardType, config, css }, props.viewId)
+    store.addBarCard(
+      props.bar,
+      props.column.id,
+      { type: target.cardType, config, css, visibility },
+      props.viewId,
+    )
   } else {
-    store.updateBarCardConfig(props.bar, props.column.id, target.cardId, config, css, props.viewId)
+    store.updateBarCardConfig(props.bar, props.column.id, target.cardId, config, css, visibility, props.viewId)
   }
   configTarget.value = null
 }
@@ -130,6 +154,7 @@ function editCard(card: CardConfig) {
     cardType: card.type,
     config: card.config,
     css: card.css,
+    visibility: card.visibility,
   }
 }
 
@@ -190,7 +215,7 @@ function onDrop(event: DragEvent) {
         @dragstart="onDragStart($event, card.id)"
         @dragover="store.editMode && onDragOver($event, index)"
       >
-        <CardCss :card-id="card.id" :css="cssFor(card)">
+        <CardCss :card-id="card.id" :css="cssFor(card)" :content-css="userCssFor(card)">
           <component
             :is="resolveCardComponent(card.type)"
             v-if="resolveCardComponent(card.type)"
@@ -232,6 +257,7 @@ function onDrop(event: DragEvent) {
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : {}"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
+      :initial-visibility="configTarget.mode === 'edit' ? configTarget.visibility : undefined"
       :area="cssArea"
       @close="configTarget = null"
       @save="onConfigSave"

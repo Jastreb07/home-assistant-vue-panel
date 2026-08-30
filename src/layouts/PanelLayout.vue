@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { ViewConfig } from '@/core/config/types'
-import { cardAreaCss, resolveCardComponent } from '@/core/registry/cardRegistry'
-import { editableCardCss } from '@/core/ui/responsiveCss'
+import { cardDefaultVisibility, resolveCardComponent } from '@/core/registry/cardRegistry'
+import { visibilityMediaCss } from '@/core/ui/responsiveCss'
 import CardPicker from '@/core/editor/CardPicker.vue'
 import CardConfigDialog from '@/core/editor/CardConfigDialog.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
@@ -35,10 +35,16 @@ const { t } = useI18n()
 const firstSection = computed(() => props.view.sections[0])
 const panelCard = computed(() => firstSection.value?.cards[0])
 
-/** Instance override wins, otherwise the card's default CSS for the dashboard. */
+/** The user's own CSS only — never mixed with the generated visibility rules. */
+const panelUserCss = computed(() => panelCard.value?.css ?? '')
+
+/** Adds the visibility media-query rules, unless the card is being edited. */
 const panelCss = computed(() => {
   if (!panelCard.value) return ''
-  return editableCardCss(panelCard.value.css ?? cardAreaCss(panelCard.value.type), store.editMode)
+  const base = panelUserCss.value
+  if (store.editMode) return base
+  const vis = visibilityMediaCss(panelCard.value.visibility ?? cardDefaultVisibility(panelCard.value.type))
+  return vis ? `${base}${base.trim() ? '\n\n' : ''}${vis}` : base
 })
 </script>
 
@@ -46,7 +52,7 @@ const panelCss = computed(() => {
   <div class="panel-layout">
     <template v-if="panelCard">
       <div class="panel-slot" :data-vp-card="panelCss ? panelCard.id : undefined">
-        <CardCss :card-id="panelCard.id" :css="panelCss">
+        <CardCss :card-id="panelCard.id" :css="panelCss" :content-css="panelUserCss">
           <component
             :is="resolveCardComponent(panelCard.type)"
             v-if="resolveCardComponent(panelCard.type)"
@@ -82,6 +88,7 @@ const panelCss = computed(() => {
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : (configTarget.initialConfig ?? {})"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
+      :initial-visibility="configTarget.mode === 'edit' ? configTarget.visibility : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />

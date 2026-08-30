@@ -4,7 +4,6 @@ import { getPortableCard, usePortableCardCatalogRevision } from '@/core/ha'
 import type { PortableCardDocument } from '@/core/registry/portableCardTypes'
 import type { CardArea } from '@/core/registry/cardRegistry'
 import { cardCssContextKey } from '@/core/ui/cardCssContext'
-import { withoutResponsiveCss } from '@/core/ui/responsiveCss'
 import CardRuntime from './CardRuntime.vue'
 
 const props = defineProps<{
@@ -24,9 +23,8 @@ const cardCss = inject(cardCssContextKey, null)
 const runtimeDefinition = computed(() => {
   if (!definition.value) return null
   const override = cardCss?.value.trim()
-  const contentOverride = override ? withoutResponsiveCss(override) : ''
-  return contentOverride.trim()
-    ? { ...definition.value, css: contentOverride }
+  return override
+    ? { ...definition.value, css: override }
     : definition.value
 })
 let loadVersion = 0

@@ -3,12 +3,12 @@ import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
 import {
-  cardAreaCss,
+  cardDefaultVisibility,
   cardRegistry,
   resolveCardComponent,
   type CardArea,
 } from '@/core/registry/cardRegistry'
-import { editableCardCss } from '@/core/ui/responsiveCss'
+import { visibilityMediaCss } from '@/core/ui/responsiveCss'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
@@ -133,9 +133,17 @@ function canResize(card: CardConfig): boolean {
   return props.resizable === true && props.editMode && !isFullRow(card)
 }
 
-/** Instance override wins, otherwise the card's default CSS for the dashboard. */
+/** The user's own CSS only — never mixed with the generated visibility rules. */
+function userCssFor(card: CardConfig): string {
+  return card.css ?? ''
+}
+
+/** Adds the visibility media-query rules, unless a card is being edited (always shown then). */
 function cssFor(card: CardConfig): string {
-  return editableCardCss(card.css ?? cardAreaCss(card.type), props.editMode)
+  const base = userCssFor(card)
+  if (props.editMode) return base
+  const vis = visibilityMediaCss(card.visibility ?? cardDefaultVisibility(card.type))
+  return vis ? `${base}${base.trim() ? '\n\n' : ''}${vis}` : base
 }
 
 // ── Resize (flex layout) ─────────────────────────────────────
@@ -214,7 +222,7 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
           @dragover="editMode && emit('dragover-card', $event, section.id, index)"
           @dragend="emit('dragend')"
         >
-          <CardCss :card-id="card.id" :css="cssFor(card)">
+          <CardCss :card-id="card.id" :css="cssFor(card)" :content-css="userCssFor(card)">
             <component
               :is="resolveCardComponent(card.type)"
               v-if="resolveCardComponent(card.type)"

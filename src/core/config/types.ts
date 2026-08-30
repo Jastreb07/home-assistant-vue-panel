@@ -54,6 +54,8 @@ export interface CardConfig {
   type: string
   config: Record<string, unknown>
   css?: string
+  /** Screen-size gate — undefined falls back to the card type's default. */
+  visibility?: ResponsiveVisibility
   size?: { cols?: number; rows?: number; width?: number; height?: number }
 }
 

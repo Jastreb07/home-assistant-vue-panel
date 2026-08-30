@@ -6,6 +6,8 @@ export default {
     close: 'Close',
     preview: 'Preview',
     ok: 'OK',
+    cssWarning:
+      'Custom CSS is applied on top of the theme and may break after future updates. Only continue if you know what you are doing.',
     selectMenu: {
       search: 'Search…',
       empty: 'Not set',
@@ -100,7 +102,6 @@ export default {
       desktopRange: 'From {min}px',
       mobileBreakpoint: 'Phone up to (px)',
       tabletBreakpoint: 'Tablet up to (px)',
-      cssHint: 'The selection is written directly to the card CSS as a marked media-query block.',
     },
     size: {
       width: 'Width (px)',

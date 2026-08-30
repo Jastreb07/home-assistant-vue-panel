@@ -156,6 +156,7 @@ const containerStyle = computed(() => {
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : (configTarget.initialConfig ?? {})"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
+      :initial-visibility="configTarget.mode === 'edit' ? configTarget.visibility : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />

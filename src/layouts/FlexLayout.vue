@@ -147,6 +147,7 @@ function onResizeCard(cardId: string, width: number, height: number) {
       :card-type="configTarget.cardType"
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : (configTarget.initialConfig ?? {})"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
+      :initial-visibility="configTarget.mode === 'edit' ? configTarget.visibility : undefined"
       :initial-size="configTarget.mode === 'edit' ? cardById(configTarget.cardId)?.size : undefined"
       sizable
       @close="configTarget = null"

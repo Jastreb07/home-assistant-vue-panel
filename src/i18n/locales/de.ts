@@ -6,6 +6,8 @@ export default {
     close: 'Schließen',
     preview: 'Vorschau',
     ok: 'OK',
+    cssWarning:
+      'Benutzerdefiniertes CSS wird über das Theme gelegt und kann nach zukünftigen Updates fehlerhaft werden. Nur fortfahren, wenn du weißt, was du tust.',
     selectMenu: {
       search: 'Suchen…',
       empty: 'Nicht gesetzt',
@@ -100,7 +102,6 @@ export default {
       desktopRange: 'Ab {min} px',
       mobileBreakpoint: 'Smartphone bis (px)',
       tabletBreakpoint: 'Tablet bis (px)',
-      cssHint: 'Die Auswahl wird direkt als markierter Media-Query-Block in das Card-CSS geschrieben.',
     },
     size: {
       width: 'Breite (px)',

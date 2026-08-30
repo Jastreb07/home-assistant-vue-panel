@@ -28,15 +28,11 @@ export function matchesViewport(
   value: ResponsiveVisibility | undefined,
   width: number,
 ): boolean {
-  const visibility = normalized({ ...defaultResponsiveVisibility, ...value })
+  const visibility = normalizeVisibility({ ...defaultResponsiveVisibility, ...value })
   return visibility[deviceForWidth(width, visibility)]
 }
 
-const START = '/* vue-panel:responsive:start'
-const END = '/* vue-panel:responsive:end */'
-const BLOCK_RE = /\/\* vue-panel:responsive:start\s*\n([\s\S]*?)\n\*\/[\s\S]*?\/\* vue-panel:responsive:end \*\//g
-
-function normalized(value: ResponsiveVisibility): ResponsiveVisibility {
+export function normalizeVisibility(value: ResponsiveVisibility): ResponsiveVisibility {
   const mobileMax = Math.min(Math.max(Math.round(Number(value.mobileMax) || 767), 320), 2000)
   const tabletMax = Math.min(
     Math.max(Math.round(Number(value.tabletMax) || 1023), mobileMax + 1),
@@ -51,38 +47,18 @@ function normalized(value: ResponsiveVisibility): ResponsiveVisibility {
   }
 }
 
-export function responsiveVisibilityFromCss(css: string): ResponsiveVisibility {
-  const match = [...css.matchAll(BLOCK_RE)][0]
-  if (!match?.[1]) return { ...defaultResponsiveVisibility }
-  try {
-    const saved = JSON.parse(match[1]) as Partial<ResponsiveVisibility>
-    return normalized({ ...defaultResponsiveVisibility, ...saved })
-  } catch {
-    return { ...defaultResponsiveVisibility }
-  }
-}
-
-export function withoutResponsiveCss(css: string): string {
-  return css.replace(BLOCK_RE, '').trimEnd()
-}
-
 /**
- * A card hidden on the current device would otherwise vanish while editing
- * it — strip its responsive-visibility rules (and only those; any other
- * custom CSS in the same string is left untouched) so edit mode always shows
- * every card.
+ * The `@media` rules that hide a card/bar outside its visible device
+ * classes — generated at render time from the structured visibility field,
+ * never mixed into the user's own CSS. Relies on native CSS nesting (`&`)
+ * referring to the selector it gets embedded into (see CardCss.vue).
  */
-export function editableCardCss(css: string, editMode: boolean): string {
-  return editMode ? withoutResponsiveCss(css) : css
-}
-
-export function withResponsiveCss(css: string, value: ResponsiveVisibility): string {
-  const visibility = normalized(value)
-  const base = withoutResponsiveCss(css)
+export function visibilityMediaCss(value: ResponsiveVisibility | undefined): string {
+  const visibility = normalizeVisibility({ ...defaultResponsiveVisibility, ...value })
   const usesDefaults = visibility.mobile && visibility.tablet && visibility.desktop
     && visibility.mobileMax === defaultResponsiveVisibility.mobileMax
     && visibility.tabletMax === defaultResponsiveVisibility.tabletMax
-  if (usesDefaults) return base
+  if (usesDefaults) return ''
 
   const rules: string[] = []
   if (!visibility.mobile) {
@@ -96,8 +72,5 @@ export function withResponsiveCss(css: string, value: ResponsiveVisibility): str
   if (!visibility.desktop) {
     rules.push(`@media (min-width: ${visibility.tabletMax + 1}px) {\n  & { display: none !important; }\n}`)
   }
-
-  const metadata = JSON.stringify(visibility)
-  const block = `${START}\n${metadata}\n*/${rules.length ? `\n${rules.join('\n')}` : ''}\n${END}`
-  return `${base}${base ? '\n\n' : ''}${block}`
+  return rules.join('\n')
 }
