@@ -3,6 +3,7 @@ import {
   h,
   shallowReactive,
   type Component,
+  type PropType,
 } from 'vue'
 import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
 import type { BarPosition } from '@/core/config/types'
@@ -123,12 +124,17 @@ function portableField(variable: PortableCardVariable): CardSchemaField {
 function portableComponent(type: string): Component {
   return defineComponent({
     name: `PortableCard-${type.replace(/[^a-z0-9]/g, '-')}`,
-    props: { config: { type: Object, required: true } },
+    props: {
+      config: { type: Object, required: true },
+      /** Where this instance sits — every renderer passes its own area */
+      area: { type: String as PropType<CardArea>, default: 'dashboard' },
+    },
     emits: ['action'],
     setup(props, { emit }) {
       return () => h(PortableCardHost, {
         cardType: type,
         config: props.config as Record<string, unknown>,
+        area: props.area,
         onAction: (action: string, detail: Record<string, unknown>) => emit('action', action, detail),
       })
     },

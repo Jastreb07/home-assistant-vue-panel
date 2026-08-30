@@ -2,6 +2,7 @@
 import { computed, inject, onMounted, ref, watch } from 'vue'
 import { getPortableCard, usePortableCardCatalogRevision } from '@/core/ha'
 import type { PortableCardDocument } from '@/core/registry/portableCardTypes'
+import type { CardArea } from '@/core/registry/cardRegistry'
 import { cardCssContextKey } from '@/core/ui/cardCssContext'
 import { withoutResponsiveCss } from '@/core/ui/responsiveCss'
 import CardRuntime from './CardRuntime.vue'
@@ -9,6 +10,8 @@ import CardRuntime from './CardRuntime.vue'
 const props = defineProps<{
   cardType: string
   config: Record<string, unknown>
+  /** Where this instance sits — handed to the card so it can adapt to it */
+  area?: CardArea
 }>()
 const emit = defineEmits<{
   action: [action: string, detail: Record<string, unknown>]
@@ -55,6 +58,7 @@ watch([() => props.cardType, catalogRevision], load)
     v-if="runtimeDefinition"
     :definition="runtimeDefinition"
     :config="config"
+    :area="area"
     @action="forwardAction"
   />
   <div v-else-if="loadError" class="portable-card-error" :title="loadError">

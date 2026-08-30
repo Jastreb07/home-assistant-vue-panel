@@ -195,6 +195,7 @@ function onDrop(event: DragEvent) {
             :is="resolveCardComponent(card.type)"
             v-if="resolveCardComponent(card.type)"
             :config="card.config"
+            :area="barCardArea(bar)"
           />
           <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
         </CardCss>

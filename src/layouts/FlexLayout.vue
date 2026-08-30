@@ -105,6 +105,7 @@ function onResizeCard(cardId: string, width: number, height: number) {
       :slot-style="flexSlotStyle"
       :section-dragging="draggingSectionId === section.id"
       :section-drop-target="sectionDropId === section.id"
+      :area="area"
       resizable
       @pick="pickerSectionId = $event"
       @edit-card="editCard"

@@ -11,6 +11,7 @@ import { useI18n } from 'vue-i18n'
 import { mdiIconDataUrl } from '@/core/ui/mdiIconNames'
 import { runtimeId } from '@/core/utils/runtimeId'
 import type { CardDetailConfig } from '@/core/config/types'
+import type { CardArea } from '@/core/registry/cardRegistry'
 import { popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
 import { openDetail, openPopup } from '@/core/popups/popupService'
 
@@ -27,7 +28,13 @@ const props = withDefaults(defineProps<{
   definition: CardDefinition
   config?: Record<string, unknown>
   preview?: boolean
-}>(), { config: () => ({}) })
+  /**
+   * Where this instance sits. Cards read it through `vuePanel.area` and can
+   * style against it via `&[data-vp-area='sidebar']`, so one card can bring
+   * its own variant per placement instead of asking the user to configure one.
+   */
+  area?: CardArea
+}>(), { config: () => ({}), area: 'dashboard' })
 const emit = defineEmits<{
   action: [action: string, detail: Record<string, unknown>]
 }>()
@@ -182,6 +189,14 @@ function buildApi(capabilities: PortableCardCapability[]) {
 
     /** Values of the popup or detail view this card runs in — empty otherwise. */
     context: deepFreeze(snapshot(popupContext?.value ?? {})),
+
+    /**
+     * Where this card instance sits: 'dashboard', 'sidebar', 'header',
+     * 'bottom' or 'dialog'. Fixed for the lifetime of an instance — moving a
+     * card elsewhere creates a new one — so a plain value is enough.
+     * The same value is on the card root as `data-vp-area` for CSS.
+     */
+    area: props.area,
 
     /** Language the panel currently runs in — cards render text for it. */
     language: locale.value,
@@ -625,7 +640,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="card-runtime">
-    <div ref="root" class="card-runtime-content" :data-vp-card-scope="scope" />
+    <div ref="root" class="card-runtime-content" :data-vp-card-scope="scope" :data-vp-area="area" />
     <div v-if="runtimeError" class="card-runtime-error" :title="runtimeError">
       {{ runtimeError }}
     </div>

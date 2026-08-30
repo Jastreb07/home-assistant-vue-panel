@@ -8,6 +8,7 @@ import {
   resolveCardComponent,
   type CardSchemaField,
   type CardCssArea,
+  type CardArea,
 } from '@/core/registry/cardRegistry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
@@ -196,6 +197,15 @@ const layoutStyle = computed(() => ({ '--config-form-share': `${formShare.value}
 
 /** Bar areas sit on the nav background, not the dashboard background. */
 const isBarArea = computed(() => props.area !== 'default')
+
+/**
+ * The preview mirrors the real placement, so a card that styles itself per
+ * area is previewed the way it will actually look. `CardCssArea` names the
+ * CSS bucket ('bar_sidebar'), the card wants the placement ('sidebar').
+ */
+const previewArea = computed<CardArea>(() =>
+  props.area === 'default' ? 'dashboard' : (props.area.replace('bar_', '') as CardArea),
+)
 </script>
 
 <template>
@@ -329,7 +339,12 @@ const isBarArea = computed(() => props.area !== 'default')
         <div class="preview-stage" :class="{ 'on-bar': isBarArea }">
           <CardCss card-id="__preview__" :css="cssDraft">
             <div data-vp-card="__preview__" class="preview-card" :style="previewStyle">
-              <component :is="previewComponent" v-if="previewComponent" :config="draft" />
+              <component
+                :is="previewComponent"
+                v-if="previewComponent"
+                :config="draft"
+                :area="previewArea"
+              />
             </div>
           </CardCss>
         </div>

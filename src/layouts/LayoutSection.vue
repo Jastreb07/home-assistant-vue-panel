@@ -2,7 +2,12 @@
 import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { CardConfig, SectionConfig } from '@/core/config/types'
-import { cardAreaCss, cardRegistry, resolveCardComponent } from '@/core/registry/cardRegistry'
+import {
+  cardAreaCss,
+  cardRegistry,
+  resolveCardComponent,
+  type CardArea,
+} from '@/core/registry/cardRegistry'
 import { editableCardCss } from '@/core/ui/responsiveCss'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
@@ -36,6 +41,8 @@ const props = defineProps<{
   sectionDropTarget?: boolean
   /** Width in grid columns — only meaningful in a column-based parent */
   columnSpan?: number
+  /** Where these cards sit — 'dialog' for popups, 'dashboard' for views */
+  area?: CardArea
 }>()
 
 const emit = defineEmits<{
@@ -212,6 +219,7 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
               :is="resolveCardComponent(card.type)"
               v-if="resolveCardComponent(card.type)"
               :config="card.config"
+              :area="area ?? 'dashboard'"
             />
             <div v-else class="unknown-card">{{ t('editor.unknownCard', { type: card.type }) }}</div>
           </CardCss>

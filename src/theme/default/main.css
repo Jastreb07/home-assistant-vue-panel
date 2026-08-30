@@ -155,6 +155,24 @@ button {
   background: transparent;
 }
 
+/*
+ * Touch devices — phones and tablets — hide their scrollbars natively and
+ * scroll by dragging, so a permanently visible bar only eats space and looks
+ * out of place. Keyed on the input method rather than the viewport width: a
+ * narrow desktop window still has a mouse and still needs its scrollbar.
+ * Scrolling itself is untouched, only the indicator goes away.
+ */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* legacy Edge */
+  }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
 /* ── Base form styles (editor dialogs) ── */
 input[type='text'],
 input[type='number'],

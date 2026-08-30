@@ -154,7 +154,10 @@
   <article class="tile weather-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span>
     <div class="numbers" id="numbers">
       <div class="temperature" id="temperature"></div>
-      <div class="details" id="details"><span id="humidity"></span><span id="wind"></span></div>
+      <div class="details" id="details">
+        <span class="detail"><img class="detail__icon" id="humidityIcon" alt=""><span class="detail__text" id="humidityText"></span></span>
+        <span class="detail"><img class="detail__icon" id="windIcon" alt=""><span class="detail__text" id="windText"></span></span>
+      </div>
     </div>
     <div class="tile__info">
       <div class="tile__name" id="name"></div>
@@ -180,16 +183,28 @@
         overflow: hidden
     }
 
+    /*
+     * In einer Seitenleiste gibt die Card ihre Kachel-Optik auf und fügt sich
+     * in den Hintergrund der Leiste ein. `data-vp-area` setzt die Engine auf
+     * das Wurzelelement der Card, `&` bindet die Regel daran statt an ein
+     * Kind — ohne das würde sie ins Leere greifen.
+     */
+    &[data-vp-area='sidebar'] .tile {
+        background: transparent;
+        box-shadow: none;
+        padding: 8px 4px
+    }
+
     .tile__icon {
-        width: 38px;
-        height: 38px;
+        width: 44px;
+        height: 44px;
         display: grid;
         place-items: center
     }
 
     .tile__icon img {
-        width: 32px;
-        height: 32px
+        width: 38px;
+        height: 38px
     }
 
     .tile__info {
@@ -205,7 +220,7 @@
     }
 
     .tile__name {
-        font-size: 14px;
+        font-size: 17px;
         font-weight: 600;
         line-height: 1.2
     }
@@ -213,7 +228,7 @@
     .tile__state {
         margin-top: 3px;
         color: #666;
-        font-size: 11px;
+        font-size: 14px;
         line-height: 1.2
     }
 
@@ -221,25 +236,42 @@
         position: absolute;
         top: 13px;
         right: 14px;
-        max-width: 64px;
+        max-width: 76px;
         text-align: right
     }
 
     .temperature {
-        font-size: 15px;
+        font-size: 19px;
         font-weight: 600
     }
 
     .details {
         display: flex;
         flex-direction: column;
+        align-items: flex-end;
         margin-top: 2px;
         color: #666;
-        font-size: 8px
+        font-size: 12px
+    }
+
+    .detail {
+        display: flex;
+        align-items: center;
+        gap: 3px
+    }
+
+    .detail__icon {
+        width: 14px;
+        height: 14px
     }
 
     /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
     .details[hidden] {
+        display: none;
+    }
+
+    /* Ebenso fuer die einzelnen Eintraege, wenn nur einer von beiden fehlt */
+    .detail[hidden] {
         display: none;
     }
 
@@ -383,8 +415,10 @@
   const icon = document.getElementById('icon');
   const temperature = document.getElementById('temperature');
   const details = document.getElementById('details');
-  const humidity = document.getElementById('humidity');
-  const wind = document.getElementById('wind');
+  const humidityIcon = document.getElementById('humidityIcon');
+  const humidityText = document.getElementById('humidityText');
+  const windIcon = document.getElementById('windIcon');
+  const windText = document.getElementById('windText');
   const icons = {
     'clear-night': 'mdi:weather-night',
     cloudy: 'mdi:weather-cloudy',
@@ -421,18 +455,42 @@
 
   async function render(entity) {
     const condition = String(entity?.state || '');
-    card.className = `tile weather-card${config.animation === true ? ` animated ${condition}` : ''}`;
+    /*
+     * In der Seitenleiste ist die Card flächenlos — eine animierte Farbfläche
+     * widerspräche dem, also bleibt sie dort aus.
+     */
+    const animated = vuePanel.area !== 'sidebar' && config.animation === true;
+    card.className = `tile weather-card${animated ? ` animated ${condition}` : ''}`;
     name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
     state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : labels[condition] || condition;
     const temp = Number(entity?.attributes?.temperature);
     temperature.textContent = Number.isFinite(temp) ? `${config.roundTemperature === false ? temp : Math.round(temp)} ${entity.attributes?.temperature_unit || '°C'}` : '–';
     details.hidden = config.showDetails === false || !entity;
-    humidity.textContent = entity?.attributes?.humidity != null ? `💧 ${entity.attributes.humidity} %` : '';
+
+    const detailColor = animated ? '#ffffff' : '#737373';
+
+    const humidity = entity?.attributes?.humidity;
+    const hasHumidity = humidity != null;
+
+    /* `hidden` blendet den ganzen Eintrag samt Icon aus, nicht nur den Text */
+    humidityIcon.parentElement.hidden = !hasHumidity;
+    if (hasHumidity) {
+      humidityIcon.src = await vuePanel.getIcon('mdi:water-percent', { size: 40, color: detailColor });
+      humidityText.textContent = `${humidity} %`;
+    }
+
     const speed = Number(entity?.attributes?.wind_speed);
-    wind.textContent = Number.isFinite(speed) ? `≋ ${Math.round(speed)} ${entity.attributes?.wind_speed_unit || 'km/h'}` : '';
+    const hasWind = Number.isFinite(speed);
+
+    windIcon.parentElement.hidden = !hasWind;
+    if (hasWind) {
+      windIcon.src = await vuePanel.getIcon('mdi:weather-windy', { size: 40, color: detailColor });
+      windText.textContent = `${Math.round(speed)} ${entity.attributes?.wind_speed_unit || 'km/h'}`;
+    }
+
     icon.src = await vuePanel.getIcon(icons[condition] || 'mdi:weather-partly-cloudy', {
       size: 84,
-      color: config.animation === true ? '#ffffff' : '#737373'
+      color: detailColor
     });
   }
 

@@ -385,6 +385,11 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - **Cards in Bars**: `areas` enthält `sidebar`, `header` und/oder `bottom`; beide Seitenleisten
   teilen sich den Bereich `sidebar` (`barCardArea()`). `ShellBarHost.vue` rendert die Spalten, pro
   View schalten `showSidebarLeft/showSidebarRight/showHeader/showBottom` die Bars.
+- **Platzierung zur Laufzeit**: Jede Card erfährt ihren Bereich (`dashboard`, `sidebar`, `header`,
+  `bottom`, `dialog`) über `vuePanel.area` und als `data-vp-area` auf ihrem Scope-Element. Damit
+  bringt eine Card ihre eigene Variante pro Platzierung mit, statt sie konfigurieren zu lassen —
+  im CSS über `&[data-vp-area='sidebar'] …` (das `&` ist Pflicht, das Attribut sitzt am
+  Scope-Element selbst). Der Wert ist je Instanz fest; Umhängen erzeugt eine neue Instanz.
 - `fullRow: true` belegt eine ganze Abschnittszeile und ist im Flex-Layout nicht resizebar.
 - **Per-Card-CSS**: `cardDefaultCss()` lädt bei portablen Cards das Stylesheet aus dem privaten
   Card-Dokument. Abweichungen liegen als `CardConfig.css` an der Instanz. Responsive-Regeln wirken
