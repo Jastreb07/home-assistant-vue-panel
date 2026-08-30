@@ -241,6 +241,10 @@ Aktueller Stand:
   `vue-panel:ha-more-info` an den Loader weiter; dieser öffnet im HA-Elterndokument den nativen
   Mehr-Info-Dialog über das zusammengesetzte `hass-more-info`-Event. `more-info` bleibt davon
   getrennt und öffnet weiterhin die Vue-Panel-Detailansicht;
+- ab `2.2.10`/Engine `2.2.31` besitzt „Card hinzufügen“ eine lokalisierte Suchleiste mit
+  Löschschalter. Sie filtert live über Card-Name, Beschreibung, technischen Typ und Gruppe,
+  blendet leere Gruppen aus und unterscheidet zwischen einem leeren Bereich und einer Suche ohne
+  Treffer; die separate Zwischenablage-Aktion bleibt dabei immer erreichbar;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit

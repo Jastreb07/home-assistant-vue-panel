@@ -14,6 +14,7 @@ import { getPortableCard } from '@/core/ha'
 import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
 import { editorDefinitionFromDocument } from '@/core/custom-cards/cardEditorModel'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
+import BaseInput from '@/core/ui/BaseInput.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { readCardFromClipboard } from '@/core/ui/cardClipboard'
 import { alertDialog } from '@/core/ui/dialogService'
@@ -30,16 +31,33 @@ const emit = defineEmits<{
 
 const { t, locale } = useI18n()
 const definitionTarget = ref<CustomCardDefinition | null>(null)
+const searchQuery = ref('')
 
 // Native group first, everything else alphabetically
-const groups = computed(() => groupedCardsForArea(props.area, t, locale.value))
+const availableGroups = computed(() => groupedCardsForArea(props.area, t, locale.value))
+const groups = computed(() => {
+  const query = searchQuery.value.trim().toLocaleLowerCase(locale.value)
+  if (!query) return availableGroups.value
+
+  return availableGroups.value.flatMap((group) => {
+    const groupLabel = group.literalLabel ? group.label : t(group.label)
+    const cards = group.cards.filter((card) => [
+      cardDisplayName(card, t, locale.value),
+      card.portable ? cardDescription(card, locale.value) : '',
+      card.type,
+      groupLabel,
+    ].some((value) => value.toLocaleLowerCase(locale.value).includes(query)))
+    return cards.length ? [{ ...group, cards }] : []
+  })
+})
 const clipboardCard = readCardFromClipboard()
 const clipboardManifest = computed(() => {
   if (!clipboardCard) return null
   const manifest = cardRegistry[clipboardCard.type]
   return manifest && (manifest.areas ?? ['dashboard']).includes(props.area) ? manifest : null
 })
-const isEmpty = computed(() => groups.value.length === 0 && !clipboardManifest.value)
+const isEmpty = computed(() => availableGroups.value.length === 0 && !clipboardManifest.value)
+const noSearchResults = computed(() => Boolean(searchQuery.value.trim()) && groups.value.length === 0)
 
 async function editPortableCard(manifest: CardManifest) {
   if (!manifest.portable) return
@@ -53,7 +71,26 @@ async function editPortableCard(manifest: CardManifest) {
 
 <template>
   <BaseDialog :title="t('editor.cardPickerTitle')" size="lg" @close="emit('close')">
+    <label class="picker-search">
+      <span class="visually-hidden">{{ t('editor.searchCards') }}</span>
+      <MdiIcon icon="mdi:magnify" :size="20" />
+      <BaseInput
+        v-model="searchQuery"
+        :placeholder="t('editor.searchCards')"
+        :spellcheck="false"
+      />
+      <button
+        v-if="searchQuery"
+        type="button"
+        :aria-label="t('editor.clearCardSearch')"
+        @click="searchQuery = ''"
+      >
+        <MdiIcon icon="mdi:close" :size="18" />
+      </button>
+    </label>
+
     <p v-if="isEmpty" class="no-cards">{{ t('editor.noCardsForArea') }}</p>
+    <p v-else-if="noSearchResults" class="no-cards">{{ t('editor.noCardsFound') }}</p>
 
     <section v-if="clipboardManifest && clipboardCard" class="group clipboard-group">
       <h4 class="group-title">{{ t('editor.clipboard') }}</h4>
@@ -105,6 +142,59 @@ async function editPortableCard(manifest: CardManifest) {
 </template>
 
 <style scoped>
+.picker-search {
+  position: relative;
+  display: block;
+  margin-bottom: 22px;
+}
+.picker-search > .mdi {
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  z-index: 1;
+  color: var(--text-secondary);
+  pointer-events: none;
+  transform: translateY(-50%);
+}
+.picker-search :deep(input.vp-input) {
+  padding-right: 42px;
+  padding-left: 40px;
+}
+.picker-search > button {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.picker-search > button:hover {
+  background: var(--nav-item-hover);
+  color: var(--text-primary);
+}
+.picker-search > button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 .group + .group {
   margin-top: 22px;
 }
