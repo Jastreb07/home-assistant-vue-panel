@@ -1,11 +1,24 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BarPosition, SectionConfig, ViewAlign, ViewConfig, ViewLayout, ViewWidth } from '@/core/config/types'
+import type {
+  BarPosition,
+  SectionConfig,
+  ViewAlign,
+  ViewBackgroundAlignment,
+  ViewBackgroundAttachment,
+  ViewBackgroundConfig,
+  ViewBackgroundMedia,
+  ViewBackgroundRepeat,
+  ViewBackgroundSize,
+  ViewConfig,
+  ViewLayout,
+  ViewWidth,
+} from '@/core/config/types'
 import { newId, slugify, slugifyPath, useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
-import { confirmDialog } from '@/core/ui/dialogService'
+import { alertDialog, confirmDialog } from '@/core/ui/dialogService'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
@@ -14,6 +27,9 @@ import BaseBoxInput from '@/core/ui/BaseBoxInput.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import { normalizeBox, type BoxValue } from '@/core/ui/boxInput'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
+import MdiIcon from '@/core/ui/MdiIcon.vue'
+import { pickHostImage, uploadHostImage } from '@/core/router/hostMedia'
+import { resolveMediaSourceUrl } from '@/core/ha/mediaSource'
 
 const props = defineProps<{
   /** Edit an existing view — or undefined to create a new one */
@@ -72,7 +88,83 @@ const layout = ref<ViewLayout>(
   // 'tiles' is a legacy value — it was replaced by the flex layout
   (props.view?.layout as string) === 'tiles' ? 'flex' : (props.view?.layout ?? 'sections'),
 )
-const background = ref(props.view?.background ?? '')
+function initialBackground(value: ViewConfig['background']): ViewBackgroundConfig {
+  if (value && typeof value === 'object') return value
+  if (typeof value === 'string' && value) {
+    const url = value.match(/url\(['"]?([^'"]+)['"]?\)/)?.[1] ?? value
+    return { image: url, opacity: 100, attachment: 'scroll', size: 'cover', alignment: 'center', repeat: 'no-repeat' }
+  }
+  return { opacity: 33, attachment: 'fixed', size: 'cover', alignment: 'center', repeat: 'repeat' }
+}
+
+const initialBackgroundConfig = initialBackground(props.view?.background)
+const backgroundImage = ref<string | ViewBackgroundMedia | undefined>(initialBackgroundConfig.image)
+const backgroundOpacity = ref(initialBackgroundConfig.opacity ?? 100)
+const backgroundAttachment = ref<ViewBackgroundAttachment>(initialBackgroundConfig.attachment ?? 'scroll')
+const backgroundSize = ref<ViewBackgroundSize>(initialBackgroundConfig.size ?? 'cover')
+const backgroundAlignment = ref<ViewBackgroundAlignment>(initialBackgroundConfig.alignment ?? 'center')
+const backgroundRepeat = ref<ViewBackgroundRepeat>(initialBackgroundConfig.repeat ?? 'no-repeat')
+const backgroundPreview = ref('')
+const mediaInput = ref<HTMLInputElement>()
+const mediaBusy = ref(false)
+const draggingMedia = ref(false)
+let previewRequest = 0
+
+function backgroundSource(): string {
+  return typeof backgroundImage.value === 'string'
+    ? backgroundImage.value
+    : (backgroundImage.value?.media_content_id ?? '')
+}
+
+watch(backgroundImage, async () => {
+  const request = ++previewRequest
+  const source = backgroundSource()
+  backgroundPreview.value = ''
+  if (!source) return
+  try {
+    const url = await resolveMediaSourceUrl(source)
+    if (request === previewRequest) backgroundPreview.value = url
+  } catch {
+    if (request === previewRequest) {
+      backgroundPreview.value = typeof backgroundImage.value === 'object'
+        ? (backgroundImage.value.metadata?.thumbnail ?? '')
+        : source
+    }
+  }
+}, { immediate: true, deep: true })
+
+async function chooseMedia() {
+  try {
+    const current = typeof backgroundImage.value === 'object' ? backgroundImage.value : undefined
+    const selected = await pickHostImage(current)
+    if (selected) backgroundImage.value = selected
+  } catch (error) {
+    await alertDialog(t('editor.view.backgroundMediaError', { message: String(error) }))
+  }
+}
+
+async function uploadMedia(file?: File) {
+  if (!file) return
+  mediaBusy.value = true
+  try {
+    const uploaded = await uploadHostImage(file)
+    if (uploaded) backgroundImage.value = uploaded
+  } catch (error) {
+    await alertDialog(t('editor.view.backgroundUploadError', { message: String(error) }))
+  } finally {
+    mediaBusy.value = false
+    if (mediaInput.value) mediaInput.value.value = ''
+  }
+}
+
+function dropMedia(event: DragEvent) {
+  draggingMedia.value = false
+  uploadMedia(event.dataTransfer?.files?.[0])
+}
+
+function clampBackgroundOpacity() {
+  backgroundOpacity.value = Math.min(100, Math.max(0, Number(backgroundOpacity.value) || 0))
+}
 const showSidebarLeft = ref(props.view?.showSidebarLeft !== false)
 // A new view starts without the right sidebar
 const showSidebarRight = ref(props.view?.showSidebarRight === true)
@@ -104,6 +196,7 @@ const layouts: ViewLayout[] = ['sections', 'flex', 'panel', 'sidebar', 'grid']
 const tab = ref('general')
 const tabItems = computed(() => [
   { value: 'general', label: t('editor.view.tabGeneral'), icon: 'mdi:tune' },
+  { value: 'background', label: t('editor.view.tabBackground'), icon: 'mdi:image-outline' },
   { value: 'bars', label: t('editor.view.tabBars'), icon: 'mdi:dock-window' },
   { value: 'advanced', label: t('editor.view.tabAdvanced'), icon: 'mdi:page-layout-body' },
 ])
@@ -141,7 +234,14 @@ function save() {
     icon: icon.value.trim() || 'mdi:view-dashboard',
     path: finalPath.value,
     layout: layout.value,
-    background: background.value.trim() || undefined,
+    background: backgroundImage.value ? {
+      image: backgroundImage.value,
+      opacity: backgroundOpacity.value,
+      attachment: backgroundAttachment.value,
+      size: backgroundSize.value,
+      alignment: backgroundAlignment.value,
+      repeat: backgroundRepeat.value,
+    } satisfies ViewBackgroundConfig : undefined,
     showSidebarLeft: showSidebarLeft.value,
     showSidebarRight: showSidebarRight.value,
     showHeader: showHeader.value,
@@ -245,14 +345,123 @@ function remove() {
         />
       </div>
 
-      <div class="field">
-        <span>{{ t('editor.view.background') }}</span>
-        <BaseInput
-          v-model="background"
-          :placeholder="t('editor.view.backgroundPlaceholder')"
-          :spellcheck="false"
+    </div>
+
+    <div v-show="tab === 'background'" class="view-form background-form">
+      <div
+        v-if="!backgroundImage"
+        class="media-drop-zone"
+        :class="{ dragging: draggingMedia, busy: mediaBusy }"
+        @dragenter.prevent="draggingMedia = true"
+        @dragover.prevent="draggingMedia = true"
+        @dragleave.prevent="draggingMedia = false"
+        @drop.prevent="dropMedia"
+      >
+        <input
+          ref="mediaInput"
+          class="visually-hidden"
+          type="file"
+          accept="image/png,image/jpeg,image/gif"
+          @change="uploadMedia(($event.target as HTMLInputElement).files?.[0])"
         />
+        <BaseButton variant="primary" :disabled="mediaBusy" @click="mediaInput?.click()">
+          <MdiIcon icon="mdi:image-plus" :size="19" />
+          {{ mediaBusy ? t('editor.view.backgroundUploading') : t('editor.view.backgroundAddImage') }}
+        </BaseButton>
+        <span>
+          {{ t('editor.view.backgroundDrop') }}
+          <button type="button" class="media-link" @click="chooseMedia">
+            {{ t('editor.view.backgroundChooseMedia') }}
+          </button>
+        </span>
+        <small>{{ t('editor.view.backgroundFormats') }}</small>
       </div>
+
+      <div v-else class="media-preview">
+        <img v-if="backgroundPreview" :src="backgroundPreview" :alt="t('editor.view.backgroundPreview')" />
+        <div class="media-preview-info">
+          <span>{{ typeof backgroundImage === 'object' ? (backgroundImage.metadata?.title || backgroundImage.media_content_id) : backgroundImage }}</span>
+          <div class="media-preview-actions">
+            <BaseButton size="sm" @click="chooseMedia">{{ t('editor.view.backgroundChooseMediaShort') }}</BaseButton>
+            <BaseButton size="sm" variant="danger" @click="backgroundImage = undefined">
+              {{ t('common.delete') }}
+            </BaseButton>
+          </div>
+        </div>
+      </div>
+
+      <BaseCollapsible
+        :title="t('editor.view.backgroundSettings')"
+        icon="mdi:image-edit-outline"
+        default-open
+      >
+        <div class="field">
+          <span>{{ t('editor.view.backgroundOpacity') }}</span>
+          <div class="slider-row background-opacity-row">
+            <input
+              v-model.number="backgroundOpacity"
+              type="range"
+              min="0"
+              max="100"
+              step="1"
+              @change="clampBackgroundOpacity"
+            />
+            <BaseInput
+              v-model.number="backgroundOpacity"
+              class="opacity-input"
+              type="number"
+              :min="0"
+              :max="100"
+              @blur="clampBackgroundOpacity"
+            />
+          </div>
+        </div>
+
+        <div class="attachment-row">
+          <span>{{ t('editor.view.backgroundAttachment') }}</span>
+          <div class="segmented-control">
+            <button
+              type="button"
+              :class="{ active: backgroundAttachment === 'scroll' }"
+              @click="backgroundAttachment = 'scroll'"
+            >
+              {{ t('editor.view.backgroundAttachments.scroll') }}
+            </button>
+            <button
+              type="button"
+              :class="{ active: backgroundAttachment === 'fixed' }"
+              @click="backgroundAttachment = 'fixed'"
+            >
+              {{ t('editor.view.backgroundAttachments.fixed') }}
+            </button>
+          </div>
+        </div>
+
+        <div class="field select-field">
+          <span>{{ t('editor.view.backgroundSize') }}</span>
+          <BaseSelectMenu
+            :model-value="backgroundSize"
+            :options="(['auto', 'cover', 'contain'] as ViewBackgroundSize[]).map(value => ({ value, label: t('editor.view.backgroundSizes.' + value) }))"
+            @update:model-value="backgroundSize = $event as ViewBackgroundSize"
+          />
+        </div>
+        <div class="field select-field">
+          <span>{{ t('editor.view.backgroundAlignment') }}</span>
+          <BaseSelectMenu
+            :model-value="backgroundAlignment"
+            :options="(['top left', 'top center', 'top right', 'center left', 'center', 'center right', 'bottom left', 'bottom center', 'bottom right'] as ViewBackgroundAlignment[]).map(value => ({ value, label: t('editor.view.backgroundAlignments.' + value.replaceAll(' ', '_')) }))"
+            @update:model-value="backgroundAlignment = $event as ViewBackgroundAlignment"
+          />
+        </div>
+        <div class="field select-field">
+          <span>{{ t('editor.view.backgroundRepeat') }}</span>
+          <BaseSelectMenu
+            :model-value="backgroundRepeat"
+            :options="(['repeat', 'no-repeat'] as ViewBackgroundRepeat[]).map(value => ({ value, label: t('editor.view.backgroundRepeats.' + value) }))"
+            @update:model-value="backgroundRepeat = $event as ViewBackgroundRepeat"
+          />
+        </div>
+      </BaseCollapsible>
     </div>
 
     <div v-show="tab === 'bars'" class="view-form">
@@ -358,6 +567,136 @@ function remove() {
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+.background-form {
+  min-height: 460px;
+}
+.media-drop-zone {
+  min-height: 176px;
+  box-sizing: border-box;
+  border: 1px dashed var(--divider);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px;
+  text-align: center;
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.media-drop-zone.dragging {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.media-drop-zone.busy {
+  opacity: 0.68;
+  pointer-events: none;
+}
+.media-drop-zone > span {
+  font-size: 14px;
+  color: var(--text-primary);
+}
+.media-drop-zone > small {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.media-link {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent);
+  background: transparent;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.media-preview {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 104px;
+  padding: 10px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+}
+.media-preview img {
+  width: 132px;
+  height: 88px;
+  flex: 0 0 auto;
+  object-fit: cover;
+  border-radius: 7px;
+}
+.media-preview-info {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-direction: column;
+  gap: 12px;
+}
+.media-preview-info > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+}
+.media-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.background-opacity-row {
+  margin-bottom: 22px;
+}
+.opacity-input {
+  width: 72px;
+  flex: 0 0 72px;
+}
+.attachment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.attachment-row > span {
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.segmented-control {
+  display: inline-flex;
+  border-radius: 999px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--accent) 12%, var(--card-bg));
+}
+.segmented-control button {
+  border: 0;
+  min-height: 40px;
+  padding: 0 18px;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.segmented-control button.active {
+  background: var(--accent);
+  color: var(--text-on-accent, white);
+}
+.select-field {
+  margin-top: 8px;
 }
 label,
 .field {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, watchEffect, type CSSProperties } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { useTheme } from '@/core/composables/useTheme'
@@ -11,7 +11,8 @@ import DashboardUpdatedDialog from '@/core/config/DashboardUpdatedDialog.vue'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
 import { useViewportWidth } from '@/core/composables/useViewportWidth'
 import { matchesViewport } from '@/core/ui/responsiveCss'
-import type { BarPosition } from '@/core/config/types'
+import type { BarPosition, ViewBackgroundConfig } from '@/core/config/types'
+import { resolveMediaSourceUrl } from '@/core/ha/mediaSource'
 import Screensaver from '@/core/kiosk/Screensaver.vue'
 import EditFab from '@/core/editor/EditFab.vue'
 import ViewSettingsDialog from '@/core/editor/ViewSettingsDialog.vue'
@@ -44,6 +45,43 @@ const activeView = computed(() => {
   const path = routePath.value
   return (path ? store.viewByRoute(path) : undefined) ?? defaultView.value
 })
+
+const resolvedBackground = ref('')
+let backgroundRequest = 0
+const structuredBackground = computed<ViewBackgroundConfig | undefined>(() => {
+  const value = activeView.value?.background
+  return value && typeof value === 'object' ? value : undefined
+})
+const backgroundSource = computed(() => {
+  const image = structuredBackground.value?.image
+  return typeof image === 'string' ? image : (image?.media_content_id ?? '')
+})
+
+watch(backgroundSource, async (source) => {
+  const request = ++backgroundRequest
+  resolvedBackground.value = ''
+  if (!source) return
+  try {
+    const url = await resolveMediaSourceUrl(source)
+    if (request === backgroundRequest) resolvedBackground.value = url
+  } catch (error) {
+    console.warn('[vue-panel] View background could not be resolved.', error)
+  }
+}, { immediate: true })
+
+const backgroundStyle = computed<CSSProperties | undefined>(() => {
+  const background = structuredBackground.value
+  if (!background || !resolvedBackground.value) return undefined
+  const escapedUrl = resolvedBackground.value.replaceAll('\\', '\\\\').replaceAll("'", "\\'")
+  return {
+    backgroundImage: `url('${escapedUrl}')`,
+    backgroundPosition: background.alignment ?? 'center',
+    backgroundSize: background.size ?? 'cover',
+    backgroundRepeat: background.repeat ?? 'no-repeat',
+    opacity: `${Math.min(100, Math.max(0, background.opacity ?? 100)) / 100}`,
+  }
+})
+const fixedBackground = computed(() => structuredBackground.value?.attachment === 'fixed')
 
 /**
  * The URL always carries the path of the active view, so every view stays
@@ -208,8 +246,23 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
       <ShellBarHost v-if="showSidebarLeft" position="sidebar-left" :view-id="activeView?.id" />
       <div class="view-column">
         <ShellBarHost v-if="showHeader && headerInViewArea" position="header" :view-id="activeView?.id" />
-        <main class="view-area" :style="activeView?.background ? { background: activeView.background } : undefined">
+        <main
+          class="view-area"
+          :style="typeof activeView?.background === 'string' ? { background: activeView.background } : undefined"
+        >
+          <div
+            v-if="backgroundStyle && fixedBackground"
+            class="view-background view-background-fixed"
+            :style="backgroundStyle"
+          />
           <div class="view-scroll">
+            <div class="view-scroll-content">
+              <div
+                v-if="backgroundStyle && !fixedBackground"
+                class="view-background view-background-scroll"
+                :style="backgroundStyle"
+              />
+              <div class="view-foreground">
             <div v-if="store.editMode && activeView" class="edit-toolbar">
               <MdiIcon icon="mdi:pencil" :size="16" />
               <div class="view-picker">
@@ -287,6 +340,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <ViewRenderer v-if="activeView" :key="activeView.id" :view="activeView" />
               <div v-else class="empty">{{ t('shell.noView') }}</div>
             </Transition>
+              </div>
+            </div>
           </div>
           <EditFab />
         </main>
@@ -344,6 +399,18 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   min-height: 0;
   overflow: hidden;
 }
+.view-background {
+  pointer-events: none;
+  z-index: 0;
+}
+.view-background-fixed {
+  position: absolute;
+  inset: 0;
+}
+.view-background-scroll {
+  position: absolute;
+  inset: 0;
+}
 .view-column {
   flex: 1;
   display: flex;
@@ -355,7 +422,16 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   height: 100%;
   box-sizing: border-box;
   overflow-y: auto;
+}
+.view-scroll-content {
+  position: relative;
+  min-height: 100%;
+  box-sizing: border-box;
   padding: 16px;
+}
+.view-foreground {
+  position: relative;
+  z-index: 1;
 }
 .empty {
   display: grid;

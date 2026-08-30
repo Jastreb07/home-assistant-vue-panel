@@ -10,6 +10,45 @@ export type ViewWidth = 'default' | 'full'
 export type ViewAlign = 'left' | 'center' | 'right'
 export type PopupSize = 'sm' | 'md' | 'lg' | 'full'
 
+export type ViewBackgroundAttachment = 'scroll' | 'fixed'
+export type ViewBackgroundSize = 'auto' | 'cover' | 'contain'
+export type ViewBackgroundAlignment =
+  | 'top left'
+  | 'top center'
+  | 'top right'
+  | 'center left'
+  | 'center'
+  | 'center right'
+  | 'bottom left'
+  | 'bottom center'
+  | 'bottom right'
+export type ViewBackgroundRepeat = 'repeat' | 'no-repeat'
+
+export interface ViewBackgroundMedia {
+  media_content_id: string
+  media_content_type?: string
+  metadata?: {
+    title?: string
+    thumbnail?: string
+    media_class?: string
+    children_media_class?: string | null
+    navigateIds?: Array<{
+      media_content_id?: string
+      media_content_type?: string
+    }>
+  }
+}
+
+/** Same shape Home Assistant uses for Lovelace view backgrounds. */
+export interface ViewBackgroundConfig {
+  image?: string | ViewBackgroundMedia
+  opacity?: number
+  attachment?: ViewBackgroundAttachment
+  size?: ViewBackgroundSize
+  alignment?: ViewBackgroundAlignment
+  repeat?: ViewBackgroundRepeat
+}
+
 export interface CardConfig {
   id: string
   type: string
@@ -38,7 +77,7 @@ export interface ViewConfig {
   layout: ViewLayout
   layoutOptions?: Record<string, unknown>
   subview?: boolean
-  background?: string
+  background?: string | ViewBackgroundConfig
   /** Global bars on this view — the right sidebar is off unless enabled */
   showSidebarLeft?: boolean
   showSidebarRight?: boolean

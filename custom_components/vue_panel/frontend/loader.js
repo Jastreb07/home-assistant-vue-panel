@@ -330,6 +330,120 @@ class VuePanelElement extends HTMLElement {
     else location.assign(parsed.href);
   }
 
+  _sendMediaResult(requestId, value, error) {
+    const target = this._iframe?.contentWindow;
+    if (!target || typeof requestId !== 'string' || !requestId) return;
+    target.postMessage(
+      {
+        type: 'vue-panel:media-result',
+        requestId,
+        value,
+        error: error ? String(error) : undefined,
+      },
+      location.origin,
+    );
+  }
+
+  /**
+   * Use HA's own media selector in the parent document. The selector lazily
+   * imports the native browser and supplies its private dialog loader, which a
+   * custom panel cannot import through a stable public URL itself.
+   */
+  async _pickMedia(requestId, current) {
+    let selector;
+    let cleanupTimer;
+    try {
+      if (!customElements.get('ha-selector') && typeof window.loadCardHelpers === 'function') {
+        await window.loadCardHelpers();
+      }
+      await Promise.race([
+        customElements.whenDefined('ha-selector'),
+        new Promise((_, reject) => window.setTimeout(
+          () => reject(new Error('Home Assistant media selector is unavailable.')),
+          5000,
+        )),
+      ]);
+
+      selector = document.createElement('ha-selector');
+      selector.style.cssText = 'position:fixed;width:1px;height:1px;left:-10000px;overflow:hidden;';
+      selector.hass = this._hass;
+      selector.required = false;
+      selector.selector = {
+        media: {
+          accept: ['image/*'],
+          hide_content_type: true,
+        },
+      };
+      selector.value = current && typeof current.media_content_id === 'string' ? current : undefined;
+
+      const finish = (value, error) => {
+        window.clearTimeout(cleanupTimer);
+        selector?.remove();
+        this._sendMediaResult(requestId, value, error);
+      };
+      selector.addEventListener('value-changed', (event) => {
+        event.stopPropagation();
+        const value = event.detail?.value;
+        if (!value?.media_content_id) return;
+        finish(JSON.parse(JSON.stringify(value)));
+      }, { once: true });
+      document.body.appendChild(selector);
+
+      // Lit first renders the dynamic selector and then its lazily imported
+      // media implementation. Wait for both update cycles before clicking.
+      await selector.updateComplete;
+      await customElements.whenDefined('ha-selector-media');
+      await selector.updateComplete;
+      const mediaSelector = selector.shadowRoot?.querySelector('ha-selector-media');
+      await mediaSelector?.updateComplete;
+      const picker = mediaSelector?.shadowRoot?.querySelector('ha-card');
+      if (!picker) throw new Error('Home Assistant media selector did not render.');
+      picker.click();
+
+      // A closed picker has no callback. Avoid retaining the hidden bridge
+      // forever; a later click simply creates a fresh request.
+      cleanupTimer = window.setTimeout(() => selector?.remove(), 10 * 60_000);
+    } catch (error) {
+      selector?.remove();
+      this._sendMediaResult(requestId, undefined, error instanceof Error ? error.message : error);
+    }
+  }
+
+  /** Upload to HA's native image media source and return its stable id. */
+  async _uploadMedia(requestId, file) {
+    try {
+      if (!(file instanceof File) || !['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
+        throw new Error('Only JPEG, PNG and GIF images are supported.');
+      }
+      if (!this._hass?.fetchWithAuth) throw new Error('Home Assistant is not ready.');
+
+      const form = new FormData();
+      form.append('file', file);
+      const response = await this._hass.fetchWithAuth('/api/image/upload', {
+        method: 'POST',
+        body: form,
+      });
+      if (!response.ok) {
+        throw new Error(response.status === 413
+          ? `Image "${file.name}" is too large.`
+          : `Image upload failed (${response.status}).`);
+      }
+      const image = await response.json();
+      if (!image?.id) throw new Error('Home Assistant returned an invalid image.');
+      this._sendMediaResult(requestId, {
+        media_content_id: `media-source://image_upload/${image.id}`,
+        media_content_type: image.content_type || file.type,
+        metadata: {
+          title: image.name || file.name,
+          thumbnail: `/api/image/serve/${image.id}/256x256`,
+          media_class: 'image',
+        },
+      });
+    } catch (error) {
+      this._sendMediaResult(requestId, undefined, error instanceof Error ? error.message : error);
+    }
+  }
+
   _upgradeProperty(property) {
     if (!Object.prototype.hasOwnProperty.call(this, property)) return;
     const value = this[property];
@@ -385,6 +499,14 @@ class VuePanelElement extends HTMLElement {
           composed: true,
         }),
       );
+      return;
+    }
+    if (event.data?.type === 'vue-panel:pick-media') {
+      this._pickMedia(event.data.requestId, event.data.current);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:upload-media') {
+      this._uploadMedia(event.data.requestId, event.data.file);
       return;
     }
     if (event.data?.type === 'vue-panel:reload') {

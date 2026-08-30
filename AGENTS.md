@@ -245,6 +245,13 @@ Aktueller Stand:
   Löschschalter. Sie filtert live über Card-Name, Beschreibung, technischen Typ und Gruppe,
   blendet leere Gruppen aus und unterscheidet zwischen einem leeren Bereich und einer Suche ohne
   Treffer; die separate Zwischenablage-Aktion bleibt dabei immer erreichbar;
+- ab `2.2.11`/Engine `2.2.32` besitzt „View bearbeiten“ direkt hinter „Allgemein“ den Tab
+  „Hintergrund“. Bilder werden per Drag & Drop über Home Assistants Image-Upload-Medienquelle
+  gespeichert oder über den nativen HA-Medienbrowser ausgewählt; im Dashboard bleibt die stabile
+  `media-source://`-ID erhalten und wird zur Anzeige in eine signierte URL aufgelöst. Deckkraft,
+  mitscrollende/feste Verbindung, Größe, Ausrichtung und Wiederholung entsprechen dem nativen
+  Lovelace-Hintergrundmodell. Der Loader vermittelt Medienauswahl und Upload zwischen Engine-iframe
+  und HA-Elterndokument;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit
@@ -332,7 +339,7 @@ src/
 ```
 
 ### Datenmodell (`core/config/types.ts`)
-`DashboardConfig { format, formatVersion, revision, settings?, bars?, views[] }` → `BarConfig` je Position (`sidebar-left|sidebar-right|header|bottom`) → `BarEntry { id, size, placement?, css?, columns[] }` → `BarColumn { id, sizeMode?, size?, padding?, margin?, align?, crossAlign?, cards[] }`; `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebarLeft?, showSidebarRight?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `vue-panel/section-title`) → `CardConfig { id, type, config, css?, size? }`.
+`DashboardConfig { format, formatVersion, revision, settings?, bars?, views[] }` → `BarConfig` je Position (`sidebar-left|sidebar-right|header|bottom`) → `BarEntry { id, size, placement?, css?, columns[] }` → `BarColumn { id, sizeMode?, size?, padding?, margin?, align?, crossAlign?, cards[] }`; `ViewConfig { id, title, icon, path?, layout, layoutOptions?, subview?, background?, showSidebarLeft?, showSidebarRight?, showHeader?, showBottom?, padding?, margin?, width?, sections[] }` → `SectionConfig { id, columnSpan?, cardOrientation?, cardsPerRow?, padding?, margin?, cards[] }` (Abschnitte haben **kein** `title`/`icon` — Überschriften sind Cards vom Typ `vue-panel/section-title`) → `CardConfig { id, type, config, css?, size? }`. `ViewConfig.background` verwendet Home Assistants Hintergrundform mit `image` (vorzugsweise stabile `media-source://`-Referenz), `opacity`, `attachment`, `size`, `alignment` und `repeat`; alte String-Werte werden bis zum nächsten Speichern weiterhin dargestellt.
 Portable Card-Definitionen sind kein Teil des Dashboard-JSON. Eine Instanz referenziert direkt den
 unveränderlichen Runtime-Typ `<manufacturer>/<cardName>` und speichert nur Variablenwerte, CSS und
 Größe. Das Card-Dokument liegt separat als private HTML-Datei.

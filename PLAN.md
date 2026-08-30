@@ -38,6 +38,12 @@ Ab `2.2.9`/Engine `2.2.30` kann eine Card-Tipp-Aktion neben der Vue-Panel-Detail
 Home Assistants nativen Mehr-Info-Dialog öffnen. Die Engine sendet dafür ausschließlich die
 validierte Entity-ID an den Loader; erst das HA-seitige Custom Element löst `hass-more-info` aus.
 
+Ab `2.2.11`/Engine `2.2.32` konfiguriert ein eigener View-Tab Hintergründe im nativen
+Home-Assistant-Datenmodell. Der Loader öffnet den HA-Medienbrowser beziehungsweise lädt Bilder in
+die HA-Image-Medienquelle hoch; gespeichert wird die stabile Medienquellen-ID. Die Engine löst sie
+zur Laufzeit auf und rendert Deckkraft, Attachment, Größe, Ausrichtung und Wiederholung auf einer
+separaten Hintergrundebene, sodass die Deckkraft den View-Inhalt nicht beeinflusst.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.
