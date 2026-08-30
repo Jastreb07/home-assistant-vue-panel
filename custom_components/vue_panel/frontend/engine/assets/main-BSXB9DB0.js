@@ -12,10 +12,10 @@ var e=`/* ───────────────────────�
   --nav-bg: #1b1e24;\r
   --card-bg: #23272f;\r
   --card-bg-active: #f5b82e;\r
-  --card-radius: 18px;
-  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --tile-icon-offset-x: -4px;
-  --tile-icon-offset-y: -4px;
+  --card-radius: 28px;\r
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);\r
+  --tile-icon-offset-x: -4px;\r
+  --tile-icon-offset-y: -4px;\r
   --text-primary: #eceff4;\r
   --text-secondary: #9aa3b2;\r
   --text-on-active: #1b1e24;\r
@@ -130,16 +130,16 @@ body,\r
   overscroll-behavior: none;\r
 }\r
 \r
-button {
-  font-family: inherit;
-}
-
-/* Keep the leading tile icon aligned consistently across portable cards. */
-[data-vp-card-scope] .tile__icon {
-  translate: var(--tile-icon-offset-x) var(--tile-icon-offset-y);
-}
-
-/* ── Scrollbars (match the theme design) ── */
+button {\r
+  font-family: inherit;\r
+}\r
+\r
+/* Keep the leading tile icon aligned consistently across portable cards. */\r
+[data-vp-card-scope] .tile__icon {\r
+  translate: var(--tile-icon-offset-x) var(--tile-icon-offset-y);\r
+}\r
+\r
+/* ── Scrollbars (match the theme design) ── */\r
 * {\r
   scrollbar-width: thin; /* Firefox */\r
   scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);\r
