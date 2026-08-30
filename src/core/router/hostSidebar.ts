@@ -49,6 +49,19 @@ export function openHostUrl(url: string, newTab: boolean): void {
 }
 
 /**
+ * Reload the whole page, not just the panel iframe: the engine bundle and
+ * the loader are versioned separately, and only a top-level reload picks up
+ * both. Falls back to a local reload outside the panel.
+ */
+export function reloadHost(): void {
+  if (!embedded) {
+    window.location.reload()
+    return
+  }
+  window.parent.postMessage({ type: 'vue-panel:reload' }, location.origin)
+}
+
+/**
  * Open a dashboard view in a new tab. Only the host knows the panel's URL
  * prefix, and only its URL loads the full Home Assistant shell — the engine's
  * own document would open without it.

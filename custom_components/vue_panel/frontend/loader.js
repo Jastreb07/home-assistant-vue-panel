@@ -375,6 +375,11 @@ class VuePanelElement extends HTMLElement {
       openHostTarget(event.data.target);
       return;
     }
+    if (event.data?.type === 'vue-panel:reload') {
+      // The whole page, so a new loader and engine version are picked up too.
+      location.reload();
+      return;
+    }
     if (event.data?.type === 'vue-panel:open-url') {
       this._openUrl(event.data.url, event.data.newTab === true);
       return;

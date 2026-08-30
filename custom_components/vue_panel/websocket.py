@@ -25,6 +25,7 @@ from .const import (
     DATA_REPOSITORY,
     DEFAULT_REQUIRE_ADMIN,
     DOMAIN,
+    EVENT_DASHBOARD_UPDATED,
     SUBENTRY_TYPE_DASHBOARD,
 )
 from .dashboard_files import (
@@ -94,6 +95,28 @@ def _send_card_error(
         connection.send_error(message_id, "read_only", "Card is read-only")
     else:
         connection.send_error(message_id, "invalid_card", "Card validation failed")
+
+
+def _announce_dashboard_update(
+    hass: HomeAssistant,
+    dashboard_name: str,
+    document: dict[str, Any],
+    client_id: str | None,
+) -> None:
+    """Tell every open panel that this dashboard now has a newer revision.
+
+    `client_id` identifies the panel that wrote it, so that one can ignore
+    its own change instead of offering to reload over it.
+    """
+
+    hass.bus.async_fire(
+        EVENT_DASHBOARD_UPDATED,
+        {
+            "dashboard_name": dashboard_name,
+            "revision": document.get("revision"),
+            "client_id": client_id,
+        },
+    )
 
 
 def _can_read_dashboard(
@@ -182,6 +205,7 @@ async def websocket_dashboard_export(
         vol.Required("dashboard_name"): str,
         vol.Required("expected_revision"): _positive_integer,
         vol.Required("document"): dict,
+        vol.Optional("client_id"): str,
     }
 )
 async def websocket_dashboard_save(
@@ -213,6 +237,12 @@ async def websocket_dashboard_save(
             msg["id"], "invalid_dashboard", "Dashboard validation failed"
         )
         return
+    _announce_dashboard_update(
+        hass,
+        msg["dashboard_name"],
+        document,
+        msg.get("client_id"),
+    )
     connection.send_result(msg["id"], document)
 
 
@@ -224,6 +254,7 @@ async def websocket_dashboard_save(
         vol.Required("dashboard_name"): str,
         vol.Required("expected_revision"): _positive_integer,
         vol.Required("document"): dict,
+        vol.Optional("client_id"): str,
     }
 )
 async def websocket_dashboard_import(
@@ -255,6 +286,12 @@ async def websocket_dashboard_import(
             msg["id"], "invalid_dashboard", "Dashboard validation failed"
         )
         return
+    _announce_dashboard_update(
+        hass,
+        msg["dashboard_name"],
+        document,
+        msg.get("client_id"),
+    )
     connection.send_result(msg["id"], document)
 
 

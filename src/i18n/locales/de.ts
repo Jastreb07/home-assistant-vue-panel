@@ -40,6 +40,13 @@ export default {
     saveCopy: 'Als Kopie speichern',
     reload: 'Neu laden',
   },
+  updates: {
+    title: 'Dashboard aktualisiert',
+    message: 'Dieses Dashboard wurde auf einem anderen Gerät geändert.',
+    countdown: 'Wird in {seconds} Sekunden automatisch neu geladen …',
+    holdHint: 'Solange du bearbeitest, wird nicht automatisch neu geladen.',
+    reloadNow: 'Jetzt neu laden',
+  },
   shell: {
     noView: 'Keine View konfiguriert.',
     editing: 'Bearbeiten: {title}',

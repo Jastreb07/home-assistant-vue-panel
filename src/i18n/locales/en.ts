@@ -40,6 +40,13 @@ export default {
     saveCopy: 'Save as copy',
     reload: 'Reload',
   },
+  updates: {
+    title: 'Dashboard updated',
+    message: 'This dashboard was changed on another device.',
+    countdown: 'Reloading automatically in {seconds} seconds …',
+    holdHint: 'No automatic reload while you are editing.',
+    reloadNow: 'Reload now',
+  },
   shell: {
     noView: 'No view configured.',
     editing: 'Editing: {title}',

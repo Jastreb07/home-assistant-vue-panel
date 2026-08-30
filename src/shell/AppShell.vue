@@ -6,6 +6,8 @@ import { useTheme } from '@/core/composables/useTheme'
 import { useHaAdministrator } from '@/core/ha'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { reportSidebarHidden } from '@/core/router/hostSidebar'
+import { useDashboardOutdated, watchDashboardUpdates } from '@/core/config/dashboardUpdates'
+import DashboardUpdatedDialog from '@/core/config/DashboardUpdatedDialog.vue'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
 import { useViewportWidth } from '@/core/composables/useViewportWidth'
 import { matchesViewport } from '@/core/ui/responsiveCss'
@@ -112,6 +114,15 @@ const showHeader = computed(() => barVisible('header', activeView.value?.showHea
 const showBottom = computed(() => barVisible('bottom', activeView.value?.showBottom, true))
 const headerInViewArea = computed(() => store.bars.header.placement === 'view')
 const bottomInViewArea = computed(() => store.bars.bottom.placement === 'view')
+
+/**
+ * The same dashboard being edited elsewhere. Watching starts once the
+ * document is loaded, so the revision it compares against is the real one.
+ */
+const dashboardOutdated = useDashboardOutdated()
+watch(() => store.loaded, (loaded) => {
+  if (loaded) watchDashboardUpdates(() => store.dashboardName, () => store.config.revision)
+}, { immediate: true })
 
 /**
  * Animating the view switch. Off when the setting says so, and always off
@@ -288,6 +299,9 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 
     <DevSidebar v-if="showDevSidebar" />
     <Screensaver v-if="screensaverActive" />
+
+    <!-- Edited elsewhere: offer to catch up, but never reload over an edit. -->
+    <DashboardUpdatedDialog v-if="dashboardOutdated" :hold="store.editMode" />
 
     <ViewSettingsDialog
       v-if="viewDialog !== 'closed'"

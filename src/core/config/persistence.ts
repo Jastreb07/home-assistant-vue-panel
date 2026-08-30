@@ -17,6 +17,13 @@ export function isRevisionConflict(error: unknown): error is HomeAssistantComman
     && (error as HomeAssistantCommandError).code === 'revision_conflict'
 }
 
+/**
+ * Identifies this panel among all open ones. The backend echoes it in its
+ * "dashboard updated" event, so the device that wrote a change can tell its
+ * own save apart from someone else's and skip offering a reload.
+ */
+export const clientId = `vp-${Math.random().toString(36).slice(2)}-${Date.now().toString(36)}`
+
 export async function loadRemote(dashboardName: string): Promise<DashboardConfig> {
   const connection = getConnection()
   if (!connection) throw new Error('No Home Assistant connection is available.')
@@ -38,6 +45,7 @@ export async function saveRemote(
     dashboard_name: dashboardName,
     expected_revision: config.revision,
     document,
+    client_id: clientId,
   })
 }
 
@@ -62,5 +70,6 @@ export async function importRemote(
     dashboard_name: dashboardName,
     expected_revision: expectedRevision,
     document: JSON.parse(JSON.stringify(document)) as DashboardConfig,
+    client_id: clientId,
   })
 }
