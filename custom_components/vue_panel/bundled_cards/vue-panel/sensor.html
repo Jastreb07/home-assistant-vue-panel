@@ -181,7 +181,8 @@
    * Tipp-Aktionen: Tippen, Doppeltippen und Halten. "default" behält die
    * eingebaute Aktion der Card und öffnet beim Halten ohne eigene Aktion die
    * automatische Detailansicht; "more-info" öffnet die Detailansicht (Ziel ist
-   * optional eine bestimmte Dialog-Card), "popup" ein eigenes Popup. "assist"
+   * optional eine bestimmte Dialog-Card), "ha-more-info" das native
+   * Home-Assistant-Popup und "popup" ein eigenes Vue-Panel-Popup. "assist"
    * braucht einen Home-Assistant-Dialog, den das Panel nicht öffnen kann.
    */
   function bindGestures(element, settings, handlers) {
@@ -196,6 +197,9 @@
       if (action === 'none' || action === 'assist') return;
       if (action === 'more-info') {
         return vuePanel.showDetail(target ? {card: target, entity: handlers.entityId} : {entity: handlers.entityId});
+      }
+      if (action === 'ha-more-info') {
+        return handlers.entityId ? vuePanel.showNativeDetail(handlers.entityId) : undefined;
       }
       if (action === 'popup') return target ? vuePanel.openPopup(target) : undefined;
       if (action === 'default') {

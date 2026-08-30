@@ -34,6 +34,10 @@ per `vue-panel:auth` übertragen; das Shadow-Root-Mount und dessen Portal entfal
 Ab `2.0.0-alpha.17` sind die dafür nicht mehr benötigten Dialog- und Bar-Workarounds entfernt;
 Dialoge, Card-Menüs und lazy Bar-Komponenten verwenden wieder ihre ursprüngliche iframe-Logik.
 
+Ab `2.2.9`/Engine `2.2.30` kann eine Card-Tipp-Aktion neben der Vue-Panel-Detailansicht auch
+Home Assistants nativen Mehr-Info-Dialog öffnen. Die Engine sendet dafür ausschließlich die
+validierte Entity-ID an den Loader; erst das HA-seitige Custom Element löst `hass-more-info` aus.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

@@ -207,8 +207,10 @@ narrows the choices down:
 ```
 
 `gestures` and `actions` are optional — without them every gesture (`tap`, `double_tap`, `hold`)
-and every action (`default`, `more-info`, `toggle`, `navigate`, `url`, `perform-action`, `assist`,
-`none`) is offered. The stored value is one entry per gesture:
+and every action (`default`, `more-info`, `ha-more-info`, `toggle`, `navigate`, `url`,
+`perform-action`, `popup`, `assist`, `none`) is offered. `more-info` opens Vue Panel's detail
+view, while `ha-more-info` asks the surrounding Home Assistant frontend to show its native
+more-info dialog for the card's entity. The stored value is one entry per gesture:
 
 ```json
 { "tap": { "action": "navigate", "target": "living-room" } }
@@ -217,8 +219,8 @@ and every action (`default`, `more-info`, `toggle`, `navigate`, `url`, `perform-
 `default` uses the same shape and is the only variable type whose default is an object. `default`
 as an action means "whatever the card does by itself". For `hold` a card usually does nothing on
 its own, so the bundled cards fall back to the automatic detail view of the card's entity — a
-plain `hold` slot therefore behaves like `more-info` without a target. `assist` needs a Home
-Assistant dialog the panel cannot open yet.
+plain `hold` slot therefore behaves like `more-info` without a target. `ha-more-info` has no
+target field because the card supplies its configured entity. `assist` is not implemented.
 
 A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used
 when `nestable` is true) and one value per item field:

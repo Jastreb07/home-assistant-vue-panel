@@ -236,6 +236,11 @@ Aktueller Stand:
   Inhaltsabstand und ein nahezu viewportfüllendes responsives Layout. Der Dialog unterstützt
   zusätzlich einen optionalen Kontexttitel und Header-Aktionen, besitzt ARIA-Dialogsemantik,
   fokussiert beim Öffnen den Schließen-Button und lässt sich mit Escape schließen;
+- ab `2.2.9`/Engine `2.2.30` bietet der Tipp-Aktionseditor zusätzlich `ha-more-info`
+  („Natives Home-Assistant-Popup“) an. Die Card-Runtime reicht die Entity über `showNativeDetail()` und
+  `vue-panel:ha-more-info` an den Loader weiter; dieser öffnet im HA-Elterndokument den nativen
+  Mehr-Info-Dialog über das zusammengesetzte `hass-more-info`-Event. `more-info` bleibt davon
+  getrennt und öffnet weiterhin die Vue-Panel-Detailansicht;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit

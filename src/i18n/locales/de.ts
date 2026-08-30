@@ -131,6 +131,7 @@ export default {
     cardActionOptions: {
       default: 'Standard (Card-Aktion)',
       'more-info': 'Detailansicht',
+      'ha-more-info': 'Natives Home-Assistant-Popup',
       toggle: 'Umschalten',
       navigate: 'Navigieren',
       url: 'URL',

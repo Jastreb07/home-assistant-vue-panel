@@ -524,6 +524,25 @@ class CardStorageTests(unittest.TestCase):
             parsed["metadata"]["variables"][-1]["default"]["tap"]["action"], "popup"
         )
 
+    def test_native_home_assistant_tap_action_is_accepted(self) -> None:
+        metadata = card_metadata()
+        metadata["variables"].append(
+            {
+                "key": "actions",
+                "label": "Tap actions",
+                "type": "action",
+                "required": False,
+                "default": {"hold": {"action": "ha-more-info"}},
+            }
+        )
+
+        parsed = card_storage.parse_card_document(card_document(metadata))
+
+        self.assertEqual(
+            parsed["metadata"]["variables"][-1]["default"]["hold"]["action"],
+            "ha-more-info",
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

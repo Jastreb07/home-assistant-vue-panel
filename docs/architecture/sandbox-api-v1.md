@@ -49,6 +49,7 @@ interface VuePanelCardApiV1 {
     entity?: string
     variables?: readonly string[]
   }): Promise<null>
+  showNativeDetail(entityId: string): Promise<null>
   openPopup(popupId: string, context?: Record<string, unknown>): Promise<null>
 }
 ```
@@ -63,6 +64,8 @@ the original type, mixed text is interpolated as a string, and unknown keys stay
 
 `showDetail()` opens the detail view of this card: the requested `card`, otherwise the card's own
 `detail.card`, otherwise the default card of the entity's domain, otherwise a built-in dialog.
+`showNativeDetail()` forwards the entity ID to the integration loader, which dispatches Home
+Assistant's `hass-more-info` event in the host document. It is unavailable in standalone preview.
 `openPopup()` opens a popup defined in the dashboard and hands over all instance values unless an
 explicit context object is passed.
 
@@ -80,7 +83,7 @@ Calls are denied unless the card declares the matching capability:
 | `navigation:write` | `navigate` |
 | `dashboard:context` | `getDashboardContext` |
 | `shell:events` | `emitAction` |
-| `dialog:open` | `showDetail`, `openPopup` |
+| `dialog:open` | `showDetail`, `showNativeDetail`, `openPopup` |
 
 Configuration access does not require a capability because only the current instance values are
 provided. The same holds for `language` and `t()`: they only expose the card's own translation

@@ -66,6 +66,7 @@ _GESTURES = ("tap", "double_tap", "hold")
 _ACTIONS = (
     "default",
     "more-info",
+    "ha-more-info",
     "toggle",
     "navigate",
     "url",

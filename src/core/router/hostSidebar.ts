@@ -35,6 +35,15 @@ export function openHostTarget(target: HostTarget): void {
   window.parent.postMessage({ type: 'vue-panel:host-open', target }, location.origin)
 }
 
+/** Ask Home Assistant to open its native more-info dialog for an entity. */
+export function openHostMoreInfo(entityId: string): void {
+  if (!embedded) {
+    console.warn('[vue-panel] Cannot open Home Assistant more-info outside the panel.')
+    return
+  }
+  window.parent.postMessage({ type: 'vue-panel:ha-more-info', entityId }, location.origin)
+}
+
 /**
  * Follow a link that leaves the dashboard. A new tab could be opened from
  * here, but the same-tab case must replace the whole page rather than just

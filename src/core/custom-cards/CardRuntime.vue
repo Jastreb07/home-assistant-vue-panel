@@ -4,7 +4,7 @@ import type { CardTranslations, PortableCardCapability } from '@/core/registry/p
 import { cardTranslation } from '@/core/registry/cardTranslations'
 import { callService, useEntities } from '@/core/ha'
 import { useHostBadges } from '@/core/ha/hostBadges'
-import { openHostTarget, openHostUrl, openHostView } from '@/core/router/hostSidebar'
+import { openHostMoreInfo, openHostTarget, openHostUrl, openHostView } from '@/core/router/hostSidebar'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
@@ -84,6 +84,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   subscribeDashboardContext: 'dashboard:context',
   emitAction: 'shell:events',
   showDetail: 'dialog:open',
+  showNativeDetail: 'dialog:open',
   openPopup: 'dialog:open',
   openHostTarget: 'host:navigate',
   subscribeHostBadges: 'host:badges',
@@ -94,6 +95,7 @@ const PREVIEW_DENIED = [
   'navigate',
   'emitAction',
   'showDetail',
+  'showNativeDetail',
   'openPopup',
   'openHostTarget',
   'openUrl',
@@ -374,6 +376,15 @@ function buildApi(capabilities: PortableCardCapability[]) {
         entityId: payload.entity === undefined ? undefined : String(payload.entity),
         variables,
       })
+      return null
+    },
+
+    /** Open Home Assistant's native more-info dialog in the host document. */
+    async showNativeDetail(entityId: string) {
+      guard('showNativeDetail')
+      const value = String(entityId)
+      if (!/^[a-z0-9_]+\.[a-z0-9_]+$/.test(value)) throw new Error('Invalid entity ID.')
+      openHostMoreInfo(value)
       return null
     },
 

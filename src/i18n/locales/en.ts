@@ -131,6 +131,7 @@ export default {
     cardActionOptions: {
       default: 'Default (card action)',
       'more-info': 'More info',
+      'ha-more-info': 'Native Home Assistant popup',
       toggle: 'Toggle',
       navigate: 'Navigate',
       url: 'URL',

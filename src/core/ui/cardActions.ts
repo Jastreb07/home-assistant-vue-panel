@@ -9,6 +9,7 @@ export type CardGesture = (typeof CARD_GESTURES)[number]
 export const CARD_ACTIONS = [
   'default',
   'more-info',
+  'ha-more-info',
   'toggle',
   'navigate',
   'url',
@@ -23,7 +24,8 @@ export interface CardActionValue {
   action: CardAction
   /**
    * View id, URL, `domain.service`, popup id or — for `more-info` — the card
-   * type of a detail view that overrides the card's own default.
+   * type of a detail view that overrides the card's own default. The native
+   * `ha-more-info` action uses the card's entity and needs no target.
    */
   target?: string
 }

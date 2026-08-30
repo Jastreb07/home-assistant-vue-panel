@@ -375,6 +375,18 @@ class VuePanelElement extends HTMLElement {
       openHostTarget(event.data.target);
       return;
     }
+    if (event.data?.type === 'vue-panel:ha-more-info') {
+      const entityId = String(event.data.entityId || '');
+      if (!/^[a-z0-9_]+\.[a-z0-9_]+$/.test(entityId)) return;
+      this.dispatchEvent(
+        new CustomEvent('hass-more-info', {
+          detail: { entityId },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      return;
+    }
     if (event.data?.type === 'vue-panel:reload') {
       // The whole page, so a new loader and engine version are picked up too.
       location.reload();
