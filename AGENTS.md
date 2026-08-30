@@ -231,6 +231,11 @@ Aktueller Stand:
   ausgeschaltetes Licht bleibt vollständig neutral (kein Akzent), der doppelte Card-Titel unter den
   Kacheln entfällt und `PopupFrame` zeigt eine Detailansicht in einem schmalen Dialog mit
   zentrierter Card statt in einem breiten, linksbündigen;
+- ab `2.2.8`/Engine `2.2.29` folgt der Default-Dialog der Home-Assistant-Popup-Geometrie: 28px
+  Radius, eine 64px hohe Kopfzeile mit führendem Schließen-Button, Material-Elevation, 24px
+  Inhaltsabstand und ein nahezu viewportfüllendes responsives Layout. Der Dialog unterstützt
+  zusätzlich einen optionalen Kontexttitel und Header-Aktionen, besitzt ARIA-Dialogsemantik,
+  fokussiert beim Öffnen den Schließen-Button und lässt sich mit Escape schließen;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit

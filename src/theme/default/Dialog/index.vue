@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 
 const props = withDefaults(
@@ -8,6 +9,8 @@ const props = withDefaults(
     size?: 'md' | 'lg' | 'xl' | 'full'
     /** Optional icon in front of the title */
     icon?: string
+    /** Optional HA-style context label above the title */
+    subtitle?: string
     /** Explicit dialog width in px — beats the size preset */
     width?: number
     /** Explicit body height in px — the content decides when unset */
@@ -17,20 +20,57 @@ const props = withDefaults(
 )
 const emit = defineEmits<{ close: [] }>()
 
+const titleId = `vp-dialog-title-${useId()}`
+const closeButton = ref<HTMLButtonElement | null>(null)
 const dialogStyle = () => (props.width ? { width: `min(${props.width}px, 100%)` } : undefined)
 const bodyStyle = () => (props.bodyHeight ? { height: `${props.bodyHeight}px` } : undefined)
+
+function onKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  emit('close')
+}
+
+onMounted(async () => {
+  window.addEventListener('keydown', onKeydown)
+  await nextTick()
+  closeButton.value?.focus({ preventScroll: true })
+})
+
+onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
 </script>
 
 <template>
   <Teleport to="body">
     <div class="vp-dialog-backdrop" @click.self="emit('close')">
-      <div class="vp-dialog" :class="`vp-dialog--${size}`" :style="dialogStyle()">
+      <div
+        class="vp-dialog"
+        :class="`vp-dialog--${size}`"
+        :style="dialogStyle()"
+        role="dialog"
+        aria-modal="true"
+        :aria-labelledby="titleId"
+      >
         <header class="vp-dialog-header">
-          <h3>
-            <MdiIcon v-if="icon" :icon="icon" :size="18" />
-            {{ title }}
-          </h3>
-          <button class="vp-dialog-close" :aria-label="$t('common.close')" @click="emit('close')">✕</button>
+          <button
+            ref="closeButton"
+            class="vp-dialog-close"
+            type="button"
+            :aria-label="$t('common.close')"
+            @click="emit('close')"
+          >
+            <MdiIcon icon="mdi:close" :size="24" />
+          </button>
+          <div class="vp-dialog-heading">
+            <span v-if="subtitle" class="vp-dialog-subtitle">{{ subtitle }}</span>
+            <h3 :id="titleId">
+              <MdiIcon v-if="icon" :icon="icon" :size="20" />
+              <span>{{ title }}</span>
+            </h3>
+          </div>
+          <div v-if="$slots.actions" class="vp-dialog-actions">
+            <slot name="actions" />
+          </div>
         </header>
         <div class="vp-dialog-body" :style="bodyStyle()">
           <slot />

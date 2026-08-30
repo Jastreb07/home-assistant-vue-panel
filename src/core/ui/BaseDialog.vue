@@ -10,6 +10,8 @@ defineProps<{
   size?: 'md' | 'lg' | 'xl' | 'full'
   /** Optional icon in front of the title */
   icon?: string
+  /** Optional HA-style context label above the title */
+  subtitle?: string
   /** Explicit dialog width in px — beats the size preset */
   width?: number
   /** Explicit body height in px — the content decides when unset */
@@ -24,11 +26,15 @@ const emit = defineEmits<{ close: [] }>()
     :title="title"
     :size="size"
     :icon="icon"
+    :subtitle="subtitle"
     :width="width"
     :body-height="bodyHeight"
     @close="emit('close')"
   >
     <slot />
+    <template v-if="$slots.actions" #actions>
+      <slot name="actions" />
+    </template>
     <template v-if="$slots.footer" #footer>
       <slot name="footer" />
     </template>
