@@ -49,6 +49,37 @@ Ab `2.2.12`/Engine `2.2.33` serialisiert die iframe-Bridge bestehende Medienwert
 Damit ist der Wert strukturiert klonbar und das native `show-dialog`-Event erreicht den
 Home-Assistant-Dialog-Host.
 
+Ab `2.2.15`/Engine `2.2.35` zeigt die portable Thermostat-Card den kompakten Gerätestatus als
+140×108-Kachel mit Thermostat-Icon, aktueller Temperatur, optionaler Luftfeuchtigkeit, Name und
+lokalisiertem Betriebszustand. Die Sollwert-Tasten und ihre Schrittweitenkonfiguration entfallen;
+die konfigurierbaren Tipp-Aktionen bleiben auf der gesamten Card erhalten.
+
+Ab `2.2.16`/Engine `2.2.35` steht die Solltemperatur zusätzlich oben rechts. Ist- und
+Solltemperatur können ihre Position über eine Instanzoption tauschen; Icon, Isttemperatur,
+Solltemperatur, Luftfeuchtigkeit, Name und Betriebszustand besitzen jeweils einen eigenen
+Sichtbarkeitsschalter.
+
+Ab `2.2.17`/Engine `2.2.35` besitzen alle numerischen Thermostatwerte 0–3 konfigurierbare
+Nachkommastellen (Standard 2). Ein geöffnetes Fenster wird automatisch über Better Thermostats
+`window_open`-Attribut oder vorrangig über einen optional ausgewählten `binary_sensor` erkannt und
+als blaues Fenstericon in der Kennzahlenzeile dargestellt. Die Thermostat-Kachel nutzt wieder
+dieselben Theme-Flächen und dieselben 38px-/24px-Iconmaße wie die übrigen Core-Cards.
+
+Ab `2.2.18`/Engine `2.2.35` stehen Heiz- und AC-Sollwert getrennt oben rechts: der Heizwert aus
+`target_temp_low` beziehungsweise `temperature` mit Feuersymbol und darunter der Kühlwert aus
+`target_temp_high` mit Schneeflocke. Die aktive Heizzeile wird orange, die aktive Kühlzeile blau.
+Die bestehende Tauschoption bezieht sich auf Ist- und Heiztemperatur; der AC-Wert bleibt separat
+und kann unabhängig ausgeblendet werden.
+
+Ab `2.2.19`/Engine `2.2.36` positioniert das Default-Theme `.tile__icon` in allen portablen Cards
+über die gemeinsamen Tokens `--tile-icon-offset-x` und `--tile-icon-offset-y` jeweils 4px weiter
+links und oben. `translate` hält den Layoutplatz des Icons und kollidiert nicht mit bestehenden
+`transform`-Animationen der Card.
+
+Ab `2.2.20`/Engine `2.2.36` verwendet die Thermostat-Card für neue beziehungsweise noch nicht
+konfigurierte Instanzen standardmäßig eine Nachkommastelle. Explizit gespeicherte Werte bleiben
+erhalten; weiterhin sind null bis drei Nachkommastellen wählbar.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

@@ -257,6 +257,31 @@ Aktueller Stand:
   Kind des Panel-Custom-Elements eingehängt, damit sein zusammengesetztes `show-dialog`-Event durch
   den HA-Komponentenbaum zum Dialog-Host aufsteigt; direkt unter `document.body` blieb das Event
   außerhalb dieses Baums und der Klick auf „aus Medien auswählen“ hatte keine sichtbare Wirkung;
+- ab `2.2.15`/Engine `2.2.35` verwendet `vue-panel/thermostat` das kompakte 140×108-Kacheldesign:
+  Thermostat-Icon oben, aktuelle Temperatur und optionale Luftfeuchtigkeit in einer Kennzahlenzeile
+  sowie Name und lokalisierter Betriebszustand darunter. Die früheren Sollwert-Schaltflächen und
+  die dafür benötigte Schrittweitenvariable sind entfernt; Tipp-Aktionen gelten für die ganze Card;
+- ab `2.2.16`/Engine `2.2.35` ergänzt die Thermostat-Card die Solltemperatur oben rechts. Eine
+  Instanzoption vertauscht die Position von Ist- und Solltemperatur; Icon, beide Temperaturen,
+  Luftfeuchtigkeit, Name und Betriebszustand lassen sich jeweils unabhängig ausblenden;
+- ab `2.2.17`/Engine `2.2.35` formatiert die Thermostat-Card ihre Messwerte mit konfigurierbaren
+  0–3 Nachkommastellen (Standard 2). Better Thermostat wird über dessen `window_open`-Attribut
+  automatisch erkannt; alternativ überschreibt ein frei gewählter `binary_sensor` den
+  Fensterzustand. Bei geöffnetem Fenster erscheint in der Kennzahlenzeile ein blaues Fenstericon.
+  Kachel, 38px-Iconkreis und 24px-Haupticon verwenden wieder die gemeinsamen Core-Card-Maße und
+  Theme-Variablen;
+- ab `2.2.18`/Engine `2.2.35` zeigt die Thermostat-Card oben rechts getrennte Heiz- und
+  AC-Sollwerte: `target_temp_low`/`temperature` mit Feuersymbol sowie darunter `target_temp_high`
+  mit Schneeflocke. Während `hvac_action: heating` wird die Heizzeile orange, während
+  `hvac_action: cooling` die Kühlzeile blau. Die Tauschoption tauscht Ist- und Heiztemperatur;
+  die AC-Zeile bleibt separat und besitzt einen eigenen Sichtbarkeitsschalter;
+- ab `2.2.19`/Engine `2.2.36` verschiebt das Default-Theme jeden `.tile__icon` innerhalb einer
+  portablen Card einheitlich um 4px nach links und oben. Die Theme-Tokens
+  `--tile-icon-offset-x`/`--tile-icon-offset-y` und die CSS-`translate`-Eigenschaft verändern nur
+  die optische Position, nicht den Layoutfluss oder bestehende Transform-Animationen;
+- ab `2.2.20`/Engine `2.2.36` verwendet die Thermostat-Card standardmäßig eine statt zwei
+  Nachkommastellen. Explizit konfigurierte Instanzwerte bleiben unverändert; die Auswahl von
+  null bis drei Stellen bleibt erhalten;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit

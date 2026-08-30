@@ -52,15 +52,96 @@
         "default": ""
       },
       {
-        "key": "step",
-        "label": "translation.variables.step.label",
-        "group": "translation.groups.behavior",
+        "key": "swapTemperatures",
+        "label": "translation.variables.swapTemperatures.label",
+        "group": "translation.groups.appearance",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
+        "key": "decimalPlaces",
+        "label": "translation.variables.decimalPlaces.label",
+        "group": "translation.groups.appearance",
         "type": "number",
         "required": false,
-        "default": 0.5,
-        "min": 0.1,
-        "max": 5,
-        "step": 0.1
+        "default": 1,
+        "min": 0,
+        "max": 3,
+        "step": 1
+      },
+      {
+        "key": "windowSensor",
+        "label": "translation.variables.windowSensor.label",
+        "group": "translation.groups.window",
+        "type": "entity",
+        "required": false,
+        "domain": "binary_sensor",
+        "default": ""
+      },
+      {
+        "key": "showIcon",
+        "label": "translation.variables.showIcon.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showCurrentTemperature",
+        "label": "translation.variables.showCurrentTemperature.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showTargetTemperature",
+        "label": "translation.variables.showTargetTemperature.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showCoolingTemperature",
+        "label": "translation.variables.showCoolingTemperature.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showHumidity",
+        "label": "translation.variables.showHumidity.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showWindowOpen",
+        "label": "translation.variables.showWindowOpen.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showName",
+        "label": "translation.variables.showName.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "showState",
+        "label": "translation.variables.showState.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
       },
       {
         "key": "actions",
@@ -78,32 +159,68 @@
     "languages": {
       "en": {
         "translation.name": "Thermostat",
-        "translation.description": "Shows room and target temperature and changes the setpoint",
+        "translation.description": "Compact thermostat status with temperature and humidity",
         "translation.variables.entity.label": "Thermostat entity",
         "translation.variables.name.label": "Display name",
         "translation.groups.appearance": "Appearance",
-        "translation.variables.step.label": "Step size",
-        "translation.groups.behavior": "Behavior",
+        "translation.variables.swapTemperatures.label": "Swap current and heating temperature",
+        "translation.variables.decimalPlaces.label": "Displayed decimal places",
+        "translation.groups.window": "Open window detection",
+        "translation.variables.windowSensor.label": "Window sensor (optional override)",
+        "translation.groups.visibility": "Visible elements",
+        "translation.variables.showIcon.label": "Show thermostat icon",
+        "translation.variables.showCurrentTemperature.label": "Show current temperature",
+        "translation.variables.showTargetTemperature.label": "Show heating temperature",
+        "translation.variables.showCoolingTemperature.label": "Show AC temperature",
+        "translation.variables.showHumidity.label": "Show humidity",
+        "translation.variables.showWindowOpen.label": "Show open-window indicator",
+        "translation.variables.showName.label": "Show name",
+        "translation.variables.showState.label": "Show operating state",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.defaultName": "Thermostat",
         "translation.states.off": "Off",
         "translation.heating": "Heating",
+        "translation.states.cooling": "Cooling",
+        "translation.states.idle": "Idle",
+        "translation.states.auto": "Automatic",
+        "translation.states.dry": "Drying",
+        "translation.states.fanOnly": "Fan only",
+        "translation.states.heatCool": "Heat/Cool",
+        "translation.windowOpen": "Window open",
         "translation.variables.actions.label": "Tap actions"
       },
       "de": {
         "translation.name": "Thermostat",
-        "translation.description": "Zeigt Raum- und Zieltemperatur und ändert den Sollwert",
+        "translation.description": "Kompakter Thermostatstatus mit Temperatur und Luftfeuchtigkeit",
         "translation.variables.entity.label": "Thermostat-Entity",
         "translation.variables.name.label": "Anzeigename",
         "translation.groups.appearance": "Darstellung",
-        "translation.variables.step.label": "Schrittweite",
-        "translation.groups.behavior": "Verhalten",
+        "translation.variables.swapTemperatures.label": "Ist- und Heiztemperatur tauschen",
+        "translation.variables.decimalPlaces.label": "Angezeigte Nachkommastellen",
+        "translation.groups.window": "Fenster-offen-Erkennung",
+        "translation.variables.windowSensor.label": "Fenstersensor (optionale Überschreibung)",
+        "translation.groups.visibility": "Sichtbare Elemente",
+        "translation.variables.showIcon.label": "Thermostat-Icon anzeigen",
+        "translation.variables.showCurrentTemperature.label": "Isttemperatur anzeigen",
+        "translation.variables.showTargetTemperature.label": "Heiztemperatur anzeigen",
+        "translation.variables.showCoolingTemperature.label": "AC-Temperatur anzeigen",
+        "translation.variables.showHumidity.label": "Luftfeuchtigkeit anzeigen",
+        "translation.variables.showWindowOpen.label": "Fenster-offen-Symbol anzeigen",
+        "translation.variables.showName.label": "Name anzeigen",
+        "translation.variables.showState.label": "Betriebszustand anzeigen",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.defaultName": "Thermostat",
         "translation.states.off": "Aus",
         "translation.heating": "Heizen",
+        "translation.states.cooling": "Kühlen",
+        "translation.states.idle": "Bereit",
+        "translation.states.auto": "Automatisch",
+        "translation.states.dry": "Trocknen",
+        "translation.states.fanOnly": "Nur Lüfter",
+        "translation.states.heatCool": "Heizen/Kühlen",
+        "translation.windowOpen": "Fenster geöffnet",
         "translation.variables.actions.label": "Tipp-Aktionen"
       }
     }
@@ -111,12 +228,32 @@
 </script>
 
 <template data-vue-panel-html>
-  <article class="tile thermostat-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span>
-    <div class="target" id="target"><span id="target-value"></span>
-      <button data-direction="-1"><img id="minus" alt=""></button>
-      <button data-direction="1"><img id="plus" alt=""></button>
+  <article class="tile thermostat-card" id="card">
+    <span class="tile__icon" id="icon-wrap"><img id="icon" alt=""></span>
+    <div class="tile__targets" id="targets">
+      <span class="temperature-display" id="top-primary-row">
+        <img id="top-primary-icon" alt="">
+        <span id="top-primary-temperature"></span>
+      </span>
+      <span class="temperature-display" id="cooling-target-row">
+        <img id="cooling-target-icon" alt="">
+        <span id="cooling-target-temperature"></span>
+      </span>
     </div>
-    <div class="tile__info">
+    <div class="tile__metrics" id="metrics">
+      <span class="metric" id="main-temperature-metric">
+        <img id="temperature-icon" alt="">
+        <span id="main-temperature"></span>
+      </span>
+      <span class="metric" id="humidity-metric">
+        <img id="humidity-icon" alt="">
+        <span id="humidity"></span>
+      </span>
+      <span class="metric metric--window" id="window-metric" hidden>
+        <img id="window-icon" alt="">
+      </span>
+    </div>
+    <div class="tile__info" id="info">
       <div class="tile__name" id="name"></div>
       <div class="tile__state" id="state"></div>
     </div>
@@ -137,31 +274,120 @@
         background: var(--card-bg);
         box-shadow: var(--card-shadow);
         color: var(--text-primary);
+        font: inherit;
         overflow: hidden;
-        transition: background .2s
+        cursor: pointer;
+        user-select: none;
+        transition: background .2s, transform .1s
     }
 
-    .tile.active {
-        background: #f6d36b;
-        color: #111
+    .tile:active {
+        transform: scale(.98)
     }
 
     .tile__icon {
         width: 38px;
         height: 38px;
+        flex: none;
         border-radius: 50%;
         display: grid;
         place-items: center;
         background: rgb(215 215 215 / 35%)
     }
 
-    .tile.active .tile__icon {
-        background: rgb(255 255 255 / 40%)
-    }
-
     .tile__icon img {
         width: 24px;
         height: 24px
+    }
+
+    .tile__targets {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        max-width: calc(100% - 70px);
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 3px
+    }
+
+    .temperature-display {
+        max-width: 100%;
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 3px;
+        overflow: hidden;
+        color: currentColor;
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1.1;
+        white-space: nowrap
+    }
+
+    .temperature-display img {
+        width: 11px;
+        height: 11px;
+        flex: 0 0 auto
+    }
+
+    .temperature-display span {
+        overflow: hidden;
+        text-overflow: ellipsis
+    }
+
+    .temperature-display.is-heating {
+        color: #f57c00
+    }
+
+    .temperature-display.is-cooling {
+        color: #039be5
+    }
+
+    .tile__metrics {
+        width: 100%;
+        min-width: 0;
+        margin-top: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 4px
+    }
+
+    .metric {
+        min-width: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+        color: currentColor;
+        font-size: 9px;
+        font-weight: 500;
+        line-height: 1;
+        white-space: nowrap
+    }
+
+    .metric[hidden] {
+        display: none
+    }
+
+    .metric img {
+        width: 10px;
+        height: 10px;
+        flex: 0 0 auto
+    }
+
+    .metric--window {
+        flex: 0 0 auto
+    }
+
+    .metric--window img {
+        width: 12px;
+        height: 12px
+    }
+
+    .metric.is-heating {
+        color: #f57c00
     }
 
     .tile__info {
@@ -189,45 +415,18 @@
         line-height: 1.2
     }
 
-    .target {
-        position: absolute;
-        top: 11px;
-        right: 14px;
+    .tile__icon[hidden] {
         display: grid;
-        grid-template-columns:repeat(2, 22px);
-        gap: 1px 2px;
-        place-items: center
+        visibility: hidden
     }
 
-    .target[hidden] {
+    .tile__targets[hidden],
+    .temperature-display[hidden],
+    .tile__metrics[hidden],
+    .tile__info[hidden],
+    .tile__name[hidden],
+    .tile__state[hidden] {
         display: none
-    }
-
-    .target span {
-        grid-column: 1/-1;
-        font-size: 11px;
-        font-weight: 600
-    }
-
-    .target button {
-        width: 22px;
-        height: 22px;
-        padding: 0;
-        border: 0;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        background: transparent;
-        cursor: pointer
-    }
-
-    .target button:hover {
-        background: rgb(215 215 215 / 35%)
-    }
-
-    .target img {
-        width: 18px;
-        height: 18px
     }
 </style>
 
@@ -329,48 +528,136 @@
   }
 
   const entityId = String(config.entity || '');
+  const windowSensorId = String(config.windowSensor || '');
   const card = document.getElementById('card');
   const name = document.getElementById('name');
   const state = document.getElementById('state');
   const icon = document.getElementById('icon');
-  const target = document.getElementById('target');
-  const targetValue = document.getElementById('target-value');
-  let entity = null;
-  document.getElementById('minus').src = await vuePanel.getIcon('mdi:minus', {size: 48, color: '#111111'});
-  document.getElementById('plus').src = await vuePanel.getIcon('mdi:plus', {size: 48, color: '#111111'});
+  const iconWrap = document.getElementById('icon-wrap');
+  const targets = document.getElementById('targets');
+  const topPrimaryRow = document.getElementById('top-primary-row');
+  const topPrimaryIcon = document.getElementById('top-primary-icon');
+  const topPrimaryTemperature = document.getElementById('top-primary-temperature');
+  const coolingTargetRow = document.getElementById('cooling-target-row');
+  const coolingTargetIcon = document.getElementById('cooling-target-icon');
+  const coolingTargetTemperature = document.getElementById('cooling-target-temperature');
+  const metrics = document.getElementById('metrics');
+  const mainTemperatureMetric = document.getElementById('main-temperature-metric');
+  const mainTemperatureIcon = document.getElementById('temperature-icon');
+  const mainTemperature = document.getElementById('main-temperature');
+  const humidity = document.getElementById('humidity');
+  const humidityMetric = document.getElementById('humidity-metric');
+  const windowMetric = document.getElementById('window-metric');
+  const info = document.getElementById('info');
+  let thermostatEntity = null;
+  let windowSensorEntity = null;
+  const [thermostatIcon, thermometerIcon, heatIcon, activeHeatIcon, coolIcon, activeCoolIcon] = await Promise.all([
+    vuePanel.getIcon('mdi:thermostat', {size: 64, color: '#737373'}),
+    vuePanel.getIcon('mdi:thermometer', {size: 32, color: '#3f3f3f'}),
+    vuePanel.getIcon('mdi:fire', {size: 32, color: '#737373'}),
+    vuePanel.getIcon('mdi:fire', {size: 32, color: '#f57c00'}),
+    vuePanel.getIcon('mdi:snowflake', {size: 32, color: '#737373'}),
+    vuePanel.getIcon('mdi:snowflake', {size: 32, color: '#039be5'})
+  ]);
+  icon.src = thermostatIcon;
+  mainTemperatureIcon.src = thermometerIcon;
+  document.getElementById('humidity-icon').src = await vuePanel.getIcon('mdi:water-percent', {size: 32, color: '#3f3f3f'});
+  document.getElementById('window-icon').src = await vuePanel.getIcon('mdi:window-open-variant', {size: 32, color: '#039be5'});
+  windowMetric.title = vuePanel.t('translation.windowOpen');
+  windowMetric.setAttribute('role', 'img');
+  windowMetric.setAttribute('aria-label', vuePanel.t('translation.windowOpen'));
 
-  async function render(value) {
-    entity = value;
-    const heating = value?.attributes?.hvac_action === 'heating';
-    card.classList.toggle('active', heating);
-    name.textContent = String(config.name || value?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
-    const current = Number(value?.attributes?.current_temperature);
-    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !value ? vuePanel.t('translation.entityNotFound') : `${Number.isFinite(current) ? `${current} °` : '–'}${value.state === 'off' ? ` · ${vuePanel.t('translation.states.off')}` : heating ? ` · ${vuePanel.t('translation.heating')}` : ''}`;
-    const desired = Number(value?.attributes?.temperature);
-    target.hidden = !Number.isFinite(desired);
-    targetValue.textContent = Number.isFinite(desired) ? `${desired} °` : '';
-    icon.src = await vuePanel.getIcon(heating ? 'mdi:fire' : 'mdi:thermostat', {
-      size: 64,
-      color: heating ? '#111111' : '#737373'
-    });
+  function isOpenValue(value) {
+    if (value === true || value === 1) return true;
+    return ['on', 'open', 'opened', 'true', '1'].includes(String(value ?? '').toLowerCase());
   }
 
-  target.addEventListener('click', async event => {
-    const button = event.target.closest('button');
-    const desired = Number(entity?.attributes?.temperature);
-    if (!button || !Number.isFinite(desired)) return;
-    const step = Number(config.step) || .5;
-    await vuePanel.callService('climate', 'set_temperature', {temperature: Math.round((desired + Number(button.dataset.direction) * step) * 10) / 10}, {entity_id: entityId});
-  });
+  async function render(value) {
+    thermostatEntity = value;
+    const hvacAction = String(value?.attributes?.hvac_action || '');
+    const heating = hvacAction === 'heating';
+    const cooling = hvacAction === 'cooling';
+    name.textContent = String(config.name || value?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
+    const numericAttribute = raw => raw === null || raw === undefined || raw === '' ? Number.NaN : Number(raw);
+    const current = numericAttribute(value?.attributes?.current_temperature);
+    const target = numericAttribute(value?.attributes?.temperature);
+    const targetLow = numericAttribute(value?.attributes?.target_temp_low);
+    const targetHigh = numericAttribute(value?.attributes?.target_temp_high);
+    const presetCoolingTarget = numericAttribute(value?.attributes?.bt_preset_cool_temperature);
+    const currentHumidity = numericAttribute(value?.attributes?.current_humidity ?? value?.attributes?.humidity);
+    const temperatureUnit = String(value?.attributes?.temperature_unit || '°C');
+    const configuredDecimals = Number(config.decimalPlaces);
+    const decimalPlaces = Number.isFinite(configuredDecimals) ? Math.min(3, Math.max(0, Math.round(configuredDecimals))) : 1;
+    const formatNumber = number => number.toFixed(decimalPlaces);
+    const currentText = Number.isFinite(current) ? `${formatNumber(current)}${temperatureUnit}` : '–';
+    const heatingTarget = Number.isFinite(targetLow) ? targetLow : target;
+    const coolingTarget = Number.isFinite(targetHigh) ? targetHigh : presetCoolingTarget;
+    const heatingText = Number.isFinite(heatingTarget) ? `${formatNumber(heatingTarget)}${temperatureUnit}` : '';
+    const coolingText = Number.isFinite(coolingTarget) ? `${formatNumber(coolingTarget)}${temperatureUnit}` : '';
+    const swapped = config.swapTemperatures === true;
+    const showCurrent = config.showCurrentTemperature !== false;
+    const showHeating = config.showTargetTemperature !== false;
+    const showCooling = config.showCoolingTemperature !== false;
+    const topPrimaryText = swapped ? currentText : heatingText;
+    const mainText = swapped ? heatingText : currentText;
+    const showTopPrimary = swapped ? showCurrent : showHeating;
+    const showMain = swapped ? showHeating : showCurrent;
+    topPrimaryTemperature.textContent = topPrimaryText;
+    topPrimaryRow.hidden = !showTopPrimary || !topPrimaryText;
+    topPrimaryRow.classList.toggle('is-heating', !swapped && heating);
+    topPrimaryIcon.src = swapped ? thermometerIcon : heating ? activeHeatIcon : heatIcon;
+    coolingTargetTemperature.textContent = coolingText;
+    coolingTargetRow.hidden = !showCooling || !coolingText;
+    coolingTargetRow.classList.toggle('is-cooling', cooling);
+    coolingTargetIcon.src = cooling ? activeCoolIcon : coolIcon;
+    targets.hidden = topPrimaryRow.hidden && coolingTargetRow.hidden;
+    mainTemperature.textContent = mainText;
+    mainTemperatureMetric.hidden = !showMain || !mainText;
+    mainTemperatureMetric.classList.toggle('is-heating', swapped && heating);
+    mainTemperatureIcon.src = swapped ? heating ? activeHeatIcon : heatIcon : thermometerIcon;
+    humidityMetric.hidden = config.showHumidity === false || !Number.isFinite(currentHumidity);
+    humidity.textContent = Number.isFinite(currentHumidity) ? `${formatNumber(currentHumidity)}%` : '';
+    const windowOpen = windowSensorId
+      ? isOpenValue(windowSensorEntity?.state)
+      : isOpenValue(value?.attributes?.window_open);
+    windowMetric.hidden = config.showWindowOpen === false || !windowOpen;
+    iconWrap.hidden = config.showIcon === false;
+    name.hidden = config.showName === false;
+    state.hidden = config.showState === false;
+    metrics.hidden = mainTemperatureMetric.hidden && humidityMetric.hidden && windowMetric.hidden;
+    info.hidden = name.hidden && state.hidden;
+    const stateLabels = {
+      off: vuePanel.t('translation.states.off'),
+      heating: vuePanel.t('translation.heating'),
+      cooling: vuePanel.t('translation.states.cooling'),
+      idle: vuePanel.t('translation.states.idle'),
+      auto: vuePanel.t('translation.states.auto'),
+      dry: vuePanel.t('translation.states.dry'),
+      fan_only: vuePanel.t('translation.states.fanOnly'),
+      heat_cool: vuePanel.t('translation.states.heatCool')
+    };
+    const status = hvacAction && hvacAction !== 'off' ? hvacAction : String(value?.state || '');
+    state.textContent = !entityId
+      ? vuePanel.t('translation.noEntity')
+      : !value
+        ? vuePanel.t('translation.entityNotFound')
+        : stateLabels[status] || status;
+  }
+  if (windowSensorId) windowSensorEntity = await vuePanel.getEntity(windowSensorId);
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));
     vuePanel.subscribeEntity(entityId, render);
   } else await render(null);
+  if (windowSensorId) {
+    vuePanel.subscribeEntity(windowSensorId, value => {
+      windowSensorEntity = value;
+      render(thermostatEntity);
+    });
+  }
 
-  /* Tipp-Aktionen auf der Card; die eigenen Bedienelemente bleiben unberührt */
+  /* Tap actions apply to the complete compact tile. */
   bindGestures(card, config, {
     entityId,
-    ignore: '#target',
     toggle: () => toggleEntity(entityId)
   });
 </script>
