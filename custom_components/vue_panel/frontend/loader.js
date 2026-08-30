@@ -19,6 +19,124 @@ frameUrl.searchParams.set('ver', version.engineVersion);
 
 const ELEMENT_NAME = 'vue-panel-panel';
 
+/** Marker for the style element that collapses Home Assistant's sidebar. */
+const SIDEBAR_STYLE_ID = 'vue-panel-hidden-sidebar';
+
+/**
+ * Home Assistant's sidebar lives in the shadow DOM of `home-assistant-main`,
+ * several closed-off levels above this panel. Reaching it means walking that
+ * chain by hand; every step is optional so a future HA layout can only make
+ * this a no-op, never an exception that breaks the panel.
+ */
+function haShell() {
+  const main = document
+    .querySelector('home-assistant')
+    ?.shadowRoot?.querySelector('home-assistant-main');
+  const mainRoot = main?.shadowRoot ?? null;
+  return {
+    main: main ?? null,
+    drawer: mainRoot?.querySelector('ha-drawer') ?? null,
+  };
+}
+
+/**
+ * Append a marked <style> to a node once; `css` empty removes it again.
+ * The target may be a shadow root or a plain element — appending to the
+ * element puts the rules in its surrounding shadow tree, which is exactly
+ * how the sidebar rules below need to be scoped.
+ */
+function setScopedStyle(target, css) {
+  if (!target) return;
+
+  const existing = target.querySelector(`#${SIDEBAR_STYLE_ID}`);
+
+  if (!css) {
+    existing?.remove();
+    return;
+  }
+  if (existing) {
+    existing.textContent = css;
+    return;
+  }
+
+  const style = document.createElement('style');
+  style.id = SIDEBAR_STYLE_ID;
+  style.textContent = css;
+  target.appendChild(style);
+}
+
+/*
+ * Rules taken from the kiosk-mode integration, which tracks Home Assistant's
+ * shifting internals. Two scopes are needed:
+ *
+ * - In the shell's tree (appended to the drawer element, so `:host` is
+ *   `home-assistant-main`): zero the sidebar width variable everything below
+ *   reads, hide the sidebar itself, and let the toolbar reclaim the space.
+ * - Inside the drawer's own shadow root: hide its container. Current HA
+ *   builds that from `wa-drawer` / `.sidebar-shell` — the older `.mdc-drawer`
+ *   is kept so this still works on installations that predate the switch.
+ */
+const SIDEBAR_SHELL_CSS = `
+  :host { --ha-sidebar-width: 0px !important; --kiosk-sidebar-width: 0px; }
+  partial-panel-resolver { --mdc-top-app-bar-width: 100% !important; }
+  ha-drawer > ha-sidebar { display: none !important; }
+  .header { width: 100% !important; }
+`;
+
+const SIDEBAR_DRAWER_CSS = `
+  wa-drawer, .sidebar-shell, .mdc-drawer { display: none !important; }
+`;
+
+/** Swallows the event HA fires when something asks to open the sidebar. */
+function blockToggleMenu(event) {
+  event.stopPropagation();
+}
+
+/**
+ * Collapse or restore the sidebar. Stylesheets rather than inline styles: HA
+ * re-renders the drawer on its own (narrow/wide changes, navigation), which
+ * would drop inline styles but keeps an appended <style>. Restoring removes
+ * them again, so nothing of ours survives leaving the panel.
+ */
+function setSidebarHidden(hidden) {
+  const { main, drawer } = haShell();
+
+  if (!main || !drawer) {
+    if (hidden) {
+      console.warn('[Vue Panel] Home Assistant sidebar not found — cannot hide it.');
+    }
+    return;
+  }
+
+  main.removeEventListener('hass-toggle-menu', blockToggleMenu, true);
+
+  if (!hidden) {
+    setScopedStyle(drawer, '');
+    setScopedStyle(drawer.shadowRoot, '');
+    window.dispatchEvent(new Event('resize'));
+    return;
+  }
+
+  const hide = () => {
+    // Without this the menu button would still swing the sidebar back in.
+    main.addEventListener('hass-toggle-menu', blockToggleMenu, true);
+    setScopedStyle(drawer, SIDEBAR_SHELL_CSS);
+    setScopedStyle(drawer.shadowRoot, SIDEBAR_DRAWER_CSS);
+    window.dispatchEvent(new Event('resize'));
+  };
+
+  /*
+   * On narrow screens the sidebar is a modal overlay. Hiding it mid-animation
+   * leaves the backdrop behind, so wait for it to finish closing first.
+   */
+  if (drawer.type === 'modal' && drawer.open) {
+    drawer.addEventListener('hass-drawer-closed', hide, { once: true });
+    return;
+  }
+
+  hide();
+}
+
 /** Panel sub-path of a HA route object: '/vue-test/overview' → 'overview'. */
 function routeSubPath(route) {
   const path = typeof route?.path === 'string' ? route.path : '';
@@ -36,6 +154,8 @@ class VuePanelElement extends HTMLElement {
     this._readyVersion = '';
     /** Last path exchanged with the engine — guards against ping-pong updates. */
     this._enginePath = null;
+    /** Whether this panel currently asks for HA's sidebar to be collapsed. */
+    this._sidebarHidden = false;
     this._onFrameLoad = () => this._sendContext();
     this._onWindowMessage = (event) => this._handleMessage(event);
 
@@ -48,6 +168,9 @@ class VuePanelElement extends HTMLElement {
     this.style.cssText =
       'display:block;width:100%;height:100vh;height:100dvh;overflow:hidden;';
     window.addEventListener('message', this._onWindowMessage);
+    // Re-entering the panel: the engine only reports changes, so restore the
+    // state we already know instead of waiting for a message that never comes.
+    if (this._sidebarHidden) setSidebarHidden(true);
     if (this._iframe) return;
 
     this._iframe = document.createElement('iframe');
@@ -61,6 +184,11 @@ class VuePanelElement extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('message', this._onWindowMessage);
+    // Leaving the panel must never leave the rest of HA without its sidebar.
+    if (this._sidebarHidden) {
+      this._sidebarHidden = false;
+      setSidebarHidden(false);
+    }
   }
 
   set hass(value) {
@@ -184,6 +312,11 @@ class VuePanelElement extends HTMLElement {
     }
     if (event.data?.type === 'vue-panel:navigate') {
       this._applyEnginePath(event.data.path, event.data.replace === true);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:sidebar') {
+      this._sidebarHidden = event.data.hidden === true;
+      setSidebarHidden(this._sidebarHidden);
       return;
     }
     if (event.data?.type !== 'vue-panel:ready') return;

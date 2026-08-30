@@ -43,11 +43,23 @@ interface CardDefinition {
   translations?: CardTranslations
 }
 
-/** Sizing the card can rely on; everything else comes from the theme. */
+/**
+ * Sizing the card can rely on; everything else comes from the theme.
+ *
+ * Clipping keeps a card's DOM contained, but plain `overflow: hidden` sits
+ * flush with the card's edge and cut off the `box-shadow` almost every
+ * bundled card paints on its own root. `overflow: clip` does the same
+ * containment while `overflow-clip-margin` grants a bleed area for exactly
+ * that shadow — and, unlike sizing or positioning tricks, it changes no
+ * layout at all, so cards that derive their height from their content
+ * (every bar-hosted card) are unaffected. Browsers without
+ * `overflow-clip-margin` simply clip at the edge again, as before.
+ */
 const BASE_CSS = `box-sizing: border-box;
 width: 100%;
 height: 100%;
-overflow: hidden;
+overflow: clip;
+overflow-clip-margin: 16px;
 & *, & *::before, & *::after { box-sizing: inherit; }`
 
 const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {

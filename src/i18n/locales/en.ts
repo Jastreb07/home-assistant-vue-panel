@@ -504,10 +504,18 @@ export default {
       light: 'Light',
       auto: 'Auto (system)',
     },
+    viewTransition: 'Animate view switch',
+    viewTransitionHint:
+      'Fades the new view in when switching. Always skipped when the system asks for reduced motion.',
     kiosk: 'Kiosk',
+    kioskHint:
+      'Settings for unattended, always-on operation — a wall tablet, for example.',
     screensaverMinutes: 'Screensaver after (minutes)',
     autoReturnSeconds: 'Return to start view after (seconds)',
     zeroDisables: '0 = disabled',
+    hideHaSidebar: "Hide Home Assistant's sidebar",
+    hideHaSidebarHint:
+      "Collapses the Home Assistant sidebar while this dashboard is open. It always stays visible in edit mode.",
     bars: 'Bars',
     barsHint: 'Every bar has three slots that hold cards added in edit mode. Each bar can either share one set of cards for the whole dashboard or keep a separate set per view.',
     barPositions: {

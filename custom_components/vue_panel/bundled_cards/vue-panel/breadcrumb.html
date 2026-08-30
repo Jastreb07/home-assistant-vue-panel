@@ -1,0 +1,304 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "breadcrumb",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:chevron-right",
+    "group": "Vue Panel",
+    "areas": [
+      "header",
+      "bottom"
+    ],
+    "capabilities": [
+      "navigation:read",
+      "navigation:write",
+      "icon:render"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 320,
+      "height": 48
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "showIcon",
+        "label": "translation.variables.showIcon.label",
+        "group": "translation.groups.appearance",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "iconPosition",
+        "label": "translation.variables.iconPosition.label",
+        "group": "translation.groups.appearance",
+        "type": "select",
+        "required": false,
+        "options": [
+          "before",
+          "after"
+        ],
+        "optionLabels": {
+          "before": "translation.variables.iconPosition.options.before",
+          "after": "translation.variables.iconPosition.options.after"
+        },
+        "default": "before",
+        "visibleIf": {
+          "key": "showIcon",
+          "equals": true
+        }
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Breadcrumb",
+        "translation.description": "Path from the top-level view down to the current one",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.showIcon.label": "Show icon",
+        "translation.variables.iconPosition.label": "Icon position",
+        "translation.variables.iconPosition.options.before": "Before the text",
+        "translation.variables.iconPosition.options.after": "After the text"
+      },
+      "de": {
+        "translation.name": "Breadcrumb",
+        "translation.description": "Pfad von der obersten View bis zur aktuellen",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.showIcon.label": "Icon anzeigen",
+        "translation.variables.iconPosition.label": "Icon-Position",
+        "translation.variables.iconPosition.options.before": "Vor dem Text",
+        "translation.variables.iconPosition.options.after": "Nach dem Text"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <nav class="breadcrumb-card" id="card"></nav>
+</template>
+
+<style data-vue-panel-css>
+    .breadcrumb-card {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        flex-wrap: nowrap;
+        gap: 6px;
+        min-width: 0;
+        min-height: 0;
+        color: var(--text-primary);
+    }
+
+    .breadcrumb-card__crumb {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        flex: 0 1 auto;
+        padding: 6px 10px;
+        border: 0;
+        border-radius: 14px;
+        background: transparent;
+        color: var(--text-secondary);
+        font: 600 16px/1.2 inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .breadcrumb-card__crumb:hover {
+        background: var(--nav-item-hover);
+    }
+
+    /*
+     * The last crumb is the view you are already on — it stays a label, not
+     * a link, so it is neither clickable nor styled like one.
+     */
+    .breadcrumb-card__crumb.current {
+        color: var(--text-primary);
+        font-weight: 700;
+        cursor: default;
+    }
+
+    .breadcrumb-card__crumb.current:hover {
+        background: transparent;
+    }
+
+    .breadcrumb-card__icon {
+        width: 20px;
+        height: 20px;
+        flex: 0 0 auto;
+    }
+
+    /*
+     * `display: flex` above beats the browser rule for [hidden] — without
+     * this the icon would stay visible once switched off.
+     */
+    .breadcrumb-card__icon[hidden] {
+        display: none;
+    }
+
+    /*
+     * The DOM order is text then icon; `order` pulls the icon in front so it
+     * can sit on either side without rebuilding the markup.
+     */
+    .breadcrumb-card:not(.icon-after) .breadcrumb-card__icon {
+        order: -1;
+    }
+
+    .breadcrumb-card__text {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    .breadcrumb-card__separator {
+        flex: 0 0 auto;
+        color: var(--text-secondary);
+        opacity: .6;
+        font-size: 16px;
+        line-height: 1;
+        user-select: none;
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const card = document.getElementById('card');
+
+  /*
+   * Navigating rebuilds the trail while the icon requests of the previous
+   * run may still be pending. Only the newest run may swap the DOM, and it
+   * does so in one go — otherwise two runs would append side by side.
+   */
+  let renderToken = 0;
+
+  /*
+   * The trail comes from the view path: "rooms/kitchen" sits below "rooms".
+   * Only views that really exist become crumbs, so a gap in the hierarchy
+   * shortens the trail instead of producing a dead link.
+   */
+  function trailFor(view, views) {
+    if (!view || typeof view.path !== 'string') return [];
+
+    const segments = view.path.split('/').filter(Boolean);
+    const trail = [];
+
+    for (let index = 0; index < segments.length; index++) {
+      const path = segments.slice(0, index + 1).join('/');
+      const match = views.find(other => other?.path === path);
+
+      if (match) trail.push(match);
+    }
+
+    /* The current view always ends the trail, even without a stored path */
+    if (!trail.some(entry => entry.path === view.path)) trail.push(view);
+
+    return trail;
+  }
+
+  async function buildCrumb(view, isCurrent, options) {
+    const element = document.createElement(isCurrent ? 'span' : 'button');
+
+    if (!isCurrent) element.type = 'button';
+
+    element.className = 'breadcrumb-card__crumb';
+    element.classList.toggle('current', isCurrent);
+
+    const label = document.createElement('span');
+
+    label.className = 'breadcrumb-card__text';
+    label.textContent = view?.title || '';
+
+    element.append(label);
+
+    if (options.showIcon && view?.icon) {
+      const icon = document.createElement('img');
+
+      icon.className = 'breadcrumb-card__icon';
+      icon.alt = '';
+      icon.src = await vuePanel.getIcon(String(view.icon), {
+        size: 40,
+        color: options.iconColor
+      });
+
+      element.append(icon);
+    }
+
+    if (!isCurrent) {
+      element.addEventListener('click', () => vuePanel.navigate(view.id));
+    }
+
+    return element;
+  }
+
+  async function render(view) {
+    const token = ++renderToken;
+    const config = vuePanel.config;
+
+    const showIcon = config.showIcon !== false;
+    const iconPosition = String(config.iconPosition || 'before');
+
+    const iconColor =
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--text-primary')
+        .trim() || '#ffffff';
+
+    const views = await vuePanel.listViews();
+
+    /* A newer run took over — discard this one */
+    if (token !== renderToken) return;
+
+    const trail = trailFor(view, views);
+    const children = [];
+
+    for (let index = 0; index < trail.length; index++) {
+      if (index > 0) {
+        const separator = document.createElement('span');
+
+        separator.className = 'breadcrumb-card__separator';
+        separator.textContent = '›';
+
+        children.push(separator);
+      }
+
+      const crumb = await buildCrumb(trail[index], index === trail.length - 1, {
+        showIcon,
+        iconColor
+      });
+
+      /* A newer run took over — discard this one */
+      if (token !== renderToken) return;
+
+      children.push(crumb);
+    }
+
+    card.classList.toggle('icon-after', iconPosition === 'after');
+    card.replaceChildren(...children);
+  }
+
+  await render(await vuePanel.currentView());
+
+  vuePanel.subscribeNavigation(view => {
+    render(view);
+  });
+</script>

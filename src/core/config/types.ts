@@ -248,6 +248,14 @@ export interface DashboardSettings {
   uiTheme: string
   screensaverMinutes: number
   autoReturnSeconds: number
+  /**
+   * Collapse Home Assistant's own sidebar while this panel is open — for
+   * wall tablets that should show nothing but the dashboard. Ignored in
+   * edit mode, where the sidebar stays reachable.
+   */
+  hideHaSidebar?: boolean
+  /** Animate the switch from one view to the next — on unless turned off */
+  viewTransition?: boolean
   customCss?: string
 }
 

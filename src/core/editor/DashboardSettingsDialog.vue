@@ -23,6 +23,8 @@ const theme = ref<DashboardSettings['theme']>(store.settings.theme)
 const uiTheme = ref(store.settings.uiTheme)
 const screensaverMinutes = ref(store.settings.screensaverMinutes)
 const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
+const hideHaSidebar = ref(store.settings.hideHaSidebar === true)
+const viewTransition = ref(store.settings.viewTransition !== false)
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
@@ -105,6 +107,7 @@ const tab = ref('settings')
 const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
   { value: 'bars', label: t('settings.bars'), icon: 'mdi:dock-window' },
+  { value: 'kiosk', label: t('settings.kiosk'), icon: 'mdi:monitor-dashboard' },
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
 
@@ -132,6 +135,8 @@ function save() {
     uiTheme: uiTheme.value,
     screensaverMinutes: Math.max(0, Number(screensaverMinutes.value) || 0),
     autoReturnSeconds: Math.max(0, Number(autoReturnSeconds.value) || 0),
+    hideHaSidebar: hideHaSidebar.value,
+    viewTransition: viewTransition.value,
     customCss: isOverride ? cssDraft.value : undefined,
   }, JSON.parse(JSON.stringify(barDrafts.value)) as BarConfig)
   emit('close')
@@ -158,8 +163,17 @@ function save() {
         <BaseSelectMenu v-model="uiTheme" :options="uiThemeOptions" />
         <small>{{ t('settings.uiThemeHint') }}</small>
       </div>
+      <div class="device-row">
+        <div class="device-label">
+          <span>{{ t('settings.viewTransition') }}</span>
+          <small>{{ t('settings.viewTransitionHint') }}</small>
+        </div>
+        <BaseCheckbox v-model="viewTransition" />
+      </div>
+    </div>
 
-      <h3>{{ t('settings.kiosk') }}</h3>
+    <div v-show="tab === 'kiosk'" class="settings-form">
+      <p class="tab-hint">{{ t('settings.kioskHint') }}</p>
       <div class="field">
         <span>{{ t('settings.screensaverMinutes') }}</span>
         <BaseInput
@@ -182,10 +196,17 @@ function save() {
         />
         <small>{{ t('settings.zeroDisables') }}</small>
       </div>
+      <div class="device-row">
+        <div class="device-label">
+          <span>{{ t('settings.hideHaSidebar') }}</span>
+          <small>{{ t('settings.hideHaSidebarHint') }}</small>
+        </div>
+        <BaseCheckbox v-model="hideHaSidebar" />
+      </div>
     </div>
 
     <div v-show="tab === 'bars'" class="bars-form">
-      <p class="bars-hint">{{ t('settings.barsHint') }}</p>
+      <p class="tab-hint">{{ t('settings.barsHint') }}</p>
       <BaseCollapsible
         v-for="(position, index) in barPositions"
         :key="position"
@@ -317,7 +338,7 @@ function save() {
   flex-direction: column;
   gap: 8px;
 }
-.bars-hint {
+.tab-hint {
   margin: 0;
   font-size: 12px;
   color: var(--text-secondary);
@@ -392,13 +413,6 @@ label small,
   font-size: 11px;
   color: var(--text-secondary);
   opacity: 0.8;
-}
-h3 {
-  margin: 8px 0 0;
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-secondary);
 }
 .dialog-tabs {
   margin-bottom: 18px;

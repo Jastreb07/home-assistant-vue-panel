@@ -231,6 +231,17 @@
             "default": "navigate"
           },
           {
+            "key": "hideWhenEmpty",
+            "label": "translation.variables.items.items.hideWhenEmpty",
+            "type": "boolean",
+            "required": false,
+            "default": false,
+            "visibleIf": {
+              "key": "action",
+              "equals": "back"
+            }
+          },
+          {
             "key": "view",
             "label": "translation.variables.items.items.view",
             "type": "view",
@@ -300,6 +311,7 @@
         "translation.variables.items.items.action": "Entry type",
         "translation.variables.items.items.action.navigate": "Open a view or link",
         "translation.variables.items.items.action.back": "Go back",
+        "translation.variables.items.items.hideWhenEmpty": "Hide while there is nothing to go back to",
         "translation.back": "Back"
       },
       "de": {
@@ -342,6 +354,7 @@
         "translation.variables.items.items.action": "Art des Eintrags",
         "translation.variables.items.items.action.navigate": "Ansicht oder Link öffnen",
         "translation.variables.items.items.action.back": "Zurück navigieren",
+        "translation.variables.items.items.hideWhenEmpty": "Ausblenden, solange es kein Ziel zum Zurückgehen gibt",
         "translation.back": "Zurück"
       }
     }
@@ -1103,6 +1116,14 @@
      */
     const url = entry.url;
     const isBack = entry.action === 'back';
+
+    /*
+     * Ein Zurück-Eintrag kann sich ausblenden, solange der Verlauf leer ist —
+     * sonst stünde am Einstiegspunkt eine Schaltfläche, die nichts tut. Das
+     * Neuzeichnen nach jeder Navigation lässt ihn dann von selbst auftauchen.
+     */
+    if (isBack && entry.hideWhenEmpty && viewHistory.length === 0) return null;
+
     const hasTarget = Boolean(view) || Boolean(url) || isBack;
 
     /* Ein Gruppen-Auslöser ist auch ohne eigenes Ziel bedienbar */
@@ -1533,6 +1554,7 @@
             url:
               (item && typeof item.url === 'string' && item.url.trim()) || '',
             action: item && item.action === 'back' ? 'back' : 'navigate',
+            hideWhenEmpty: item ? item.hideWhenEmpty === true : false,
             depth:
               item && Number(item.depth) > 0
                 ? Math.min(Math.floor(Number(item.depth)), 2)

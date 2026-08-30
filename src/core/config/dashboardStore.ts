@@ -36,6 +36,8 @@ export const defaultSettings: DashboardSettings = {
   uiTheme: 'default',
   screensaverMinutes: 0,
   autoReturnSeconds: 0,
+  hideHaSidebar: false,
+  viewTransition: true,
 }
 
 export const barPositions: BarPosition[] = [

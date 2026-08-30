@@ -1,0 +1,194 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "view-title",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:format-header-1",
+    "group": "Vue Panel",
+    "areas": [
+      "header",
+      "bottom"
+    ],
+    "capabilities": [
+      "navigation:read",
+      "icon:render"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 220,
+      "height": 48
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": false,
+    "variables": [
+      {
+        "key": "showIcon",
+        "label": "translation.variables.showIcon.label",
+        "group": "translation.groups.appearance",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "iconPosition",
+        "label": "translation.variables.iconPosition.label",
+        "group": "translation.groups.appearance",
+        "type": "select",
+        "required": false,
+        "options": [
+          "before",
+          "after"
+        ],
+        "optionLabels": {
+          "before": "translation.variables.iconPosition.options.before",
+          "after": "translation.variables.iconPosition.options.after"
+        },
+        "default": "before",
+        "visibleIf": {
+          "key": "showIcon",
+          "equals": true
+        }
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "View title",
+        "translation.description": "Shows the title of the current view",
+        "translation.groups.appearance": "Appearance",
+        "translation.variables.showIcon.label": "Show icon",
+        "translation.variables.iconPosition.label": "Icon position",
+        "translation.variables.iconPosition.options.before": "Before the text",
+        "translation.variables.iconPosition.options.after": "After the text"
+      },
+      "de": {
+        "translation.name": "View-Titel",
+        "translation.description": "Zeigt den Titel der aktuellen View",
+        "translation.groups.appearance": "Darstellung",
+        "translation.variables.showIcon.label": "Icon anzeigen",
+        "translation.variables.iconPosition.label": "Icon-Position",
+        "translation.variables.iconPosition.options.before": "Vor dem Text",
+        "translation.variables.iconPosition.options.after": "Nach dem Text"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <div class="view-title-card" id="card"><img class="view-title-card__icon" id="icon" alt="">
+    <span class="view-title-card__text" id="title"></span></div>
+</template>
+
+<style data-vue-panel-css>
+    .view-title-card {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 10px;
+        min-width: 0;
+        min-height: 0;
+        color: var(--text-primary);
+    }
+
+    .view-title-card__icon {
+        width: 24px;
+        height: 24px;
+        flex: 0 0 auto;
+    }
+
+    /*
+     * `display: flex` above beats the browser rule for [hidden] — without
+     * this the icon would stay visible once switched off.
+     */
+    .view-title-card__icon[hidden] {
+        display: none;
+    }
+
+    /*
+     * The DOM order is icon then text; `order` flips it so the icon can sit
+     * on either side without rebuilding the markup.
+     */
+    .view-title-card.icon-after .view-title-card__icon {
+        order: 1;
+    }
+
+    .view-title-card__text {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 20px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const card = document.getElementById('card');
+  const iconElement = document.getElementById('icon');
+  const titleElement = document.getElementById('title');
+
+  /*
+   * Only the newest run may write: switching views re-renders while the
+   * previous icon request is still pending, and the older answer must not
+   * overwrite the newer title.
+   */
+  let renderToken = 0;
+
+  async function render(view) {
+    const token = ++renderToken;
+    const config = vuePanel.config;
+
+    const showIcon = config.showIcon !== false;
+    const iconPosition = String(config.iconPosition || 'before');
+
+    card.classList.toggle('icon-after', iconPosition === 'after');
+
+    titleElement.textContent = view?.title || '';
+
+    const iconName = showIcon ? view?.icon : '';
+
+    if (!iconName) {
+      iconElement.hidden = true;
+      return;
+    }
+
+    const source = await vuePanel.getIcon(String(iconName), {
+      size: 48,
+      color:
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--text-primary')
+          .trim() || '#ffffff'
+    });
+
+    /* A newer run took over — discard this one */
+    if (token !== renderToken) return;
+
+    iconElement.src = source;
+    iconElement.hidden = false;
+  }
+
+  await render(await vuePanel.currentView());
+
+  vuePanel.subscribeNavigation(view => {
+    render(view);
+  });
+</script>

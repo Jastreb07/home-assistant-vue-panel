@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { useTheme } from '@/core/composables/useTheme'
 import { useHaAdministrator } from '@/core/ha'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
+import { reportSidebarHidden } from '@/core/router/hostSidebar'
 import { useIdleSeconds } from '@/core/kiosk/useIdleSeconds'
 import { useViewportWidth } from '@/core/composables/useViewportWidth'
 import { matchesViewport } from '@/core/ui/responsiveCss'
@@ -111,6 +112,25 @@ const showHeader = computed(() => barVisible('header', activeView.value?.showHea
 const showBottom = computed(() => barVisible('bottom', activeView.value?.showBottom, true))
 const headerInViewArea = computed(() => store.bars.header.placement === 'view')
 const bottomInViewArea = computed(() => store.bars.bottom.placement === 'view')
+
+/**
+ * Animating the view switch. Off when the setting says so, and always off
+ * when the system asks for reduced motion — that preference outranks a
+ * dashboard default.
+ */
+const prefersReducedMotion = typeof window !== 'undefined'
+  && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches === true
+const viewTransition = computed(
+  () => store.settings.viewTransition !== false && !prefersReducedMotion,
+)
+
+/**
+ * Home Assistant's own sidebar. Edit mode always keeps it reachable —
+ * otherwise a kiosk dashboard could lock the user out of the rest of HA.
+ */
+watchEffect(() => {
+  reportSidebarHidden(store.settings.hideHaSidebar === true && !store.editMode)
+})
 
 /** Views are addressed by id everywhere — the URL uses their path. */
 function navigate(viewId: string) {
@@ -247,8 +267,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                 </button>
               </div>
             </div>
-            <ViewRenderer v-if="activeView" :view="activeView" />
-            <div v-else class="empty">{{ t('shell.noView') }}</div>
+            <!--
+              Keyed on the view so the animation runs on a real view switch,
+              not on every edit. `:css` off skips the classes entirely, which
+              is what the setting (and a reduced-motion preference) turns off.
+            -->
+            <Transition name="view-switch" mode="out-in" :css="viewTransition">
+              <ViewRenderer v-if="activeView" :key="activeView.id" :view="activeView" />
+              <div v-else class="empty">{{ t('shell.noView') }}</div>
+            </Transition>
           </div>
           <EditFab />
         </main>
@@ -321,6 +348,26 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   place-items: center;
   height: 100%;
   color: var(--text-secondary);
+}
+/*
+ * View switch: the old view fades out, the new one fades in slightly offset
+ * (`mode="out-in"`, so they never overlap and the scroll position cannot
+ * jump). Leaving is quicker than entering — waiting for a slow fade-out is
+ * what makes a transition feel sluggish.
+ */
+.view-switch-enter-active {
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+.view-switch-leave-active {
+  transition: opacity 0.12s ease, transform 0.12s ease;
+}
+.view-switch-enter-from {
+  opacity: 0;
+  transform: translateY(8px);
+}
+.view-switch-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 .edit-toolbar {
   /* Own stacking context above the cards so the view dropdown can never be

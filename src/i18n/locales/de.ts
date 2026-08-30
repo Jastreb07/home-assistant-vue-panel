@@ -505,10 +505,18 @@ export default {
       light: 'Hell',
       auto: 'Automatisch (System)',
     },
+    viewTransition: 'Übergang beim View-Wechsel',
+    viewTransitionHint:
+      'Blendet die neue View beim Wechsel sanft ein. Ist im System „Bewegung reduzieren“ aktiv, wird der Übergang immer übersprungen.',
     kiosk: 'Kiosk',
+    kioskHint:
+      'Einstellungen für den unbeaufsichtigten Dauerbetrieb, etwa auf einem Wandtablet.',
     screensaverMinutes: 'Bildschirmschoner nach (Minuten)',
     autoReturnSeconds: 'Zur Start-View zurück nach (Sekunden)',
     zeroDisables: '0 = deaktiviert',
+    hideHaSidebar: 'Home-Assistant-Seitenleiste ausblenden',
+    hideHaSidebarHint:
+      'Blendet die Seitenleiste von Home Assistant aus, solange dieses Dashboard geöffnet ist. Im Bearbeitungsmodus bleibt sie immer sichtbar.',
     bars: 'Bars',
     barsHint: 'Jede Leiste hat drei Bereiche, in die im Bearbeitungsmodus Cards eingefügt werden. Jede Leiste kann entweder ein gemeinsames Set an Cards für das gesamte Dashboard nutzen oder pro View ein eigenes.',
     barPositions: {
