@@ -4,7 +4,7 @@ import type { CardTranslations, PortableCardCapability } from '@/core/registry/p
 import { cardTranslation } from '@/core/registry/cardTranslations'
 import { callService, useEntities } from '@/core/ha'
 import { useHostBadges } from '@/core/ha/hostBadges'
-import { openHostTarget } from '@/core/router/hostSidebar'
+import { openHostTarget, openHostUrl, openHostView } from '@/core/router/hostSidebar'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
 import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
@@ -79,6 +79,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   openPopup: 'dialog:open',
   openHostTarget: 'host:navigate',
   subscribeHostBadges: 'host:badges',
+  openUrl: 'navigation:write',
 }
 const PREVIEW_DENIED = [
   'callService',
@@ -87,6 +88,7 @@ const PREVIEW_DENIED = [
   'showDetail',
   'openPopup',
   'openHostTarget',
+  'openUrl',
 ]
 
 const scope = runtimeId('card')
@@ -226,11 +228,33 @@ function buildApi(capabilities: PortableCardCapability[]) {
       return () => entitySubscriptions.delete(subscriptionId)
     },
 
-    async navigate(viewId: string) {
+    /**
+     * Open a view. `newTab` hands the job to the host page: only it knows the
+     * panel's URL prefix, and only a top-level tab shows the whole shell
+     * rather than the bare engine document.
+     */
+    async navigate(viewId: string, options: Record<string, unknown> = {}) {
       guard('navigate')
       const view = store.viewById(String(viewId))
       if (!view) throw new Error('Unknown view ID.')
+      if (recordPayload(options, 'Navigate options').newTab === true) {
+        openHostView(viewPath(view))
+        return null
+      }
       navigatePanel(viewPath(view))
+      return null
+    },
+
+    /**
+     * Follow a link that leaves the dashboard. In the same tab the host page
+     * has to navigate — the card lives in an iframe, and replacing only that
+     * would strand the link inside the panel frame.
+     */
+    async openUrl(url: unknown, options: Record<string, unknown> = {}) {
+      guard('openUrl')
+      const target = String(url).trim()
+      if (!target) throw new Error('A URL is required.')
+      openHostUrl(target, recordPayload(options, 'Open options').newTab === true)
       return null
     },
 

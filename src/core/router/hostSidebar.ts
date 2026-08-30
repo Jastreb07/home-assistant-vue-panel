@@ -34,3 +34,29 @@ export function openHostTarget(target: HostTarget): void {
   }
   window.parent.postMessage({ type: 'vue-panel:host-open', target }, location.origin)
 }
+
+/**
+ * Follow a link that leaves the dashboard. A new tab could be opened from
+ * here, but the same-tab case must replace the whole page rather than just
+ * the panel iframe — so both go through the host for consistent behaviour.
+ */
+export function openHostUrl(url: string, newTab: boolean): void {
+  if (!embedded) {
+    window.open(url, newTab ? '_blank' : '_self', 'noopener')
+    return
+  }
+  window.parent.postMessage({ type: 'vue-panel:open-url', url, newTab }, location.origin)
+}
+
+/**
+ * Open a dashboard view in a new tab. Only the host knows the panel's URL
+ * prefix, and only its URL loads the full Home Assistant shell — the engine's
+ * own document would open without it.
+ */
+export function openHostView(path: string): void {
+  if (!embedded) {
+    window.open(`${location.pathname}#/${path}`, '_blank', 'noopener')
+    return
+  }
+  window.parent.postMessage({ type: 'vue-panel:open-view', path }, location.origin)
+}

@@ -309,6 +309,27 @@ class VuePanelElement extends HTMLElement {
     );
   }
 
+  /**
+   * Follow a link a card asked to open. Only http(s) is allowed through:
+   * a card is authored content, and `javascript:` or `data:` URLs would run
+   * in the Home Assistant page itself, outside the panel's boundary.
+   */
+  _openUrl(url, newTab) {
+    let parsed;
+    try {
+      parsed = new URL(String(url), location.href);
+    } catch {
+      console.warn('[Vue Panel] Ignoring malformed link:', url);
+      return;
+    }
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+      console.warn('[Vue Panel] Ignoring unsupported link protocol:', parsed.protocol);
+      return;
+    }
+    if (newTab) window.open(parsed.href, '_blank', 'noopener');
+    else location.assign(parsed.href);
+  }
+
   _upgradeProperty(property) {
     if (!Object.prototype.hasOwnProperty.call(this, property)) return;
     const value = this[property];
@@ -352,6 +373,19 @@ class VuePanelElement extends HTMLElement {
     }
     if (event.data?.type === 'vue-panel:host-open') {
       openHostTarget(event.data.target);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:open-url') {
+      this._openUrl(event.data.url, event.data.newTab === true);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:open-view') {
+      const path = String(event.data.path || '').replace(/^\/+|\/+$/g, '');
+      window.open(
+        `${this._routePrefix()}${path ? `/${path}` : ''}`,
+        '_blank',
+        'noopener',
+      );
       return;
     }
     if (event.data?.type === 'vue-panel:sidebar') {

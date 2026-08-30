@@ -280,6 +280,25 @@
               "key": "action",
               "equals": "navigate"
             }
+          },
+          {
+            "key": "openIn",
+            "label": "translation.variables.items.items.openIn",
+            "type": "select",
+            "required": false,
+            "options": [
+              "same",
+              "new"
+            ],
+            "optionLabels": {
+              "same": "translation.variables.items.items.openIn.same",
+              "new": "translation.variables.items.items.openIn.new"
+            },
+            "default": "same",
+            "visibleIf": {
+              "key": "action",
+              "equals": "navigate"
+            }
           }
         ]
       }
@@ -335,6 +354,9 @@
         "translation.variables.items.items.action.notifications": "Home Assistant notifications",
         "translation.variables.items.items.hideWhenEmpty": "Hide while there is nothing to go back to",
         "translation.variables.items.items.showBadge": "Show counter badge",
+        "translation.variables.items.items.openIn": "Open in",
+        "translation.variables.items.items.openIn.same": "Same tab",
+        "translation.variables.items.items.openIn.new": "New tab",
         "translation.back": "Back",
         "translation.settings": "Settings",
         "translation.notifications": "Notifications"
@@ -383,6 +405,9 @@
         "translation.variables.items.items.action.notifications": "Home-Assistant-Benachrichtigungen",
         "translation.variables.items.items.hideWhenEmpty": "Ausblenden, solange es kein Ziel zum Zurückgehen gibt",
         "translation.variables.items.items.showBadge": "Zähler-Badge anzeigen",
+        "translation.variables.items.items.openIn": "Öffnen in",
+        "translation.variables.items.items.openIn.same": "Gleichem Tab",
+        "translation.variables.items.items.openIn.new": "Neuem Tab",
         "translation.back": "Zurück",
         "translation.settings": "Einstellungen",
         "translation.notifications": "Benachrichtigungen"
@@ -1344,12 +1369,12 @@
       });
     } else if (view) {
       element.addEventListener('click', () => {
-        vuePanel.navigate(view.id);
+        vuePanel.navigate(view.id, { newTab: entry.newTab === true });
         closeOpenGroup();
       });
     } else if (url) {
       element.addEventListener('click', () => {
-        window.open(url, '_blank', 'noopener');
+        vuePanel.openUrl(url, { newTab: entry.newTab === true });
         closeOpenGroup();
       });
     }
@@ -1665,6 +1690,7 @@
                 : 'navigate',
             hideWhenEmpty: item ? item.hideWhenEmpty === true : false,
             showBadge: item ? item.showBadge !== false : true,
+            newTab: Boolean(item) && item.openIn === 'new',
             depth:
               item && Number(item.depth) > 0
                 ? Math.min(Math.floor(Number(item.depth)), 2)
