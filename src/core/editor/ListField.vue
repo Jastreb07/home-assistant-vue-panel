@@ -53,6 +53,7 @@ const itemSchema = computed<Record<string, CardSchemaField>>(() =>
 const labelKey = computed(() => itemFields.value.find((f) => f.type === 'string')?.key)
 const iconKey = computed(() => itemFields.value.find((f) => f.type === 'icon')?.key)
 const viewKey = computed(() => itemFields.value.find((f) => f.type === 'view')?.key)
+const popupKey = computed(() => itemFields.value.find((f) => f.type === 'popup')?.key)
 const entityKey = computed(() => itemFields.value.find((f) => f.type === 'entity')?.key)
 const entityDomain = computed(() => itemFields.value.find((f) => f.type === 'entity')?.domain)
 
@@ -79,10 +80,15 @@ const systemActions = computed(() => {
   return SYSTEM_ACTIONS.filter((action) => action === 'custom' || available.includes(action))
 })
 
+/** Popups can be opened as a system entry too — one per popup, not per action. */
+const offersPopups = computed(
+  () => Boolean(popupKey.value) && (actionField.value?.options ?? []).includes('popup'),
+)
+
 /**
- * Views first, then the system entries — the split the dropdown shows as two
- * headed sections. Values are prefixed so a system entry can never collide
- * with a view id.
+ * Views first, then the system entries (including one per available popup) —
+ * the split the dropdown shows as two headed sections. Values are prefixed
+ * so a system entry can never collide with a view or popup id.
  */
 const viewOptions = computed<SelectOption[]>(() => {
   const views: SelectOption[] = store.config.views.map((v) => ({
@@ -100,6 +106,14 @@ const viewOptions = computed<SelectOption[]>(() => {
       icon: SYSTEM_ICONS[action] ?? 'mdi:cog',
       group: t('editor.list.groupSystem'),
     })),
+    ...(offersPopups.value
+      ? store.popups.map((popup) => ({
+          value: `popup:${popup.id}`,
+          label: popup.title,
+          icon: popup.icon || 'mdi:card-text-outline',
+          group: t('editor.list.groupSystem'),
+        }))
+      : []),
   ]
 })
 
@@ -157,15 +171,36 @@ function entryForView(viewId: string): ListEntry | null {
 }
 
 /**
- * One dropdown, two kinds of entry: a view to link to, or a ready-made
- * system entry. A back step goes to the top of the list, where it belongs;
- * everything else is appended.
+ * Label and icon come from the popup itself, same as a view entry — the card
+ * has no way to look a popup up by id at render time, so the editor bakes
+ * them in once, here, editable afterwards like any other entry.
+ */
+function entryForPopup(popupId: string): ListEntry | null {
+  const popup = store.popupById(popupId)
+  if (!popup || !actionKey.value || !popupKey.value) return null
+  const entry = blankEntry()
+  entry[actionKey.value] = 'popup'
+  entry[popupKey.value] = popup.id
+  if (labelKey.value) entry[labelKey.value] = popup.title
+  if (iconKey.value) entry[iconKey.value] = popup.icon || 'mdi:card-text-outline'
+  return entry
+}
+
+/**
+ * One dropdown, several kinds of entry: a view to link to, a popup to open,
+ * or a ready-made system entry. A back step goes to the top of the list,
+ * where it belongs; everything else is appended.
  */
 function addFromMenu(value: string) {
   pendingView.value = ''
 
   if (value.startsWith('view:')) {
     const entry = entryForView(value.slice('view:'.length))
+    if (entry) setItems([...items.value, entry])
+    return
+  }
+  if (value.startsWith('popup:')) {
+    const entry = entryForPopup(value.slice('popup:'.length))
     if (entry) setItems([...items.value, entry])
     return
   }
@@ -215,6 +250,8 @@ function titleOf(entry: ListEntry): string {
   if (typeof label === 'string' && label.trim()) return label
   const view = viewKey.value ? entry[viewKey.value] : undefined
   if (typeof view === 'string' && view) return store.viewById(view)?.title ?? view
+  const popup = popupKey.value ? entry[popupKey.value] : undefined
+  if (typeof popup === 'string' && popup) return store.popupById(popup)?.title ?? popup
   const entity = entityKey.value ? entry[entityKey.value] : undefined
   if (typeof entity === 'string' && entity) return entity
   return t('editor.list.entry')

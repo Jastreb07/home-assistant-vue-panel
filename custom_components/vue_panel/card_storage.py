@@ -79,6 +79,7 @@ _VARIABLE_TYPES = {
     "entity",
     "icon",
     "view",
+    "popup",
     "select",
     "string",
     "number",

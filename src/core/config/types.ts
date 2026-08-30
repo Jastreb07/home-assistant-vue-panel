@@ -86,6 +86,7 @@ export type CustomCardVariableType =
   | 'boolean'
   | 'icon'
   | 'view'
+  | 'popup'
   | 'select'
   | 'list'
 

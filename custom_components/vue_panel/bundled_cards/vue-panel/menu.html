@@ -21,7 +21,8 @@
       "icon:render",
       "host:navigate",
       "host:badges",
-      "dashboard:context"
+      "dashboard:context",
+      "dialog:open"
     ],
     "defaultSize": {
       "cols": 1,
@@ -227,13 +228,15 @@
               "navigate",
               "back",
               "settings",
-              "notifications"
+              "notifications",
+              "popup"
             ],
             "optionLabels": {
               "navigate": "translation.variables.items.items.action.navigate",
               "back": "translation.variables.items.items.action.back",
               "settings": "translation.variables.items.items.action.settings",
-              "notifications": "translation.variables.items.items.action.notifications"
+              "notifications": "translation.variables.items.items.action.notifications",
+              "popup": "translation.variables.items.items.action.popup"
             },
             "default": "navigate"
           },
@@ -270,6 +273,16 @@
             "visibleIf": {
               "key": "action",
               "equals": "navigate"
+            }
+          },
+          {
+            "key": "popup",
+            "label": "translation.variables.items.items.popup",
+            "type": "popup",
+            "required": false,
+            "visibleIf": {
+              "key": "action",
+              "equals": "popup"
             }
           },
           {
@@ -353,6 +366,8 @@
         "translation.variables.items.items.action.back": "Go back",
         "translation.variables.items.items.action.settings": "Home Assistant settings",
         "translation.variables.items.items.action.notifications": "Home Assistant notifications",
+        "translation.variables.items.items.action.popup": "Open a popup",
+        "translation.variables.items.items.popup": "Popup",
         "translation.variables.items.items.hideWhenEmpty": "Hide while there is nothing to go back to",
         "translation.variables.items.items.showBadge": "Show counter badge",
         "translation.variables.items.items.openIn": "Open in",
@@ -404,6 +419,8 @@
         "translation.variables.items.items.action.back": "Zurück navigieren",
         "translation.variables.items.items.action.settings": "Home-Assistant-Einstellungen",
         "translation.variables.items.items.action.notifications": "Home-Assistant-Benachrichtigungen",
+        "translation.variables.items.items.action.popup": "Popup öffnen",
+        "translation.variables.items.items.popup": "Popup",
         "translation.variables.items.items.hideWhenEmpty": "Ausblenden, solange es kein Ziel zum Zurückgehen gibt",
         "translation.variables.items.items.showBadge": "Zähler-Badge anzeigen",
         "translation.variables.items.items.openIn": "Öffnen in",
@@ -1066,6 +1083,7 @@
   function keyOf(entry, index) {
     if (HOST_ACTIONS.includes(entry.action)) return `host:${entry.action}:${index}`;
     if (entry.action === 'back') return `back:${index}`;
+    if (entry.action === 'popup') return `popup:${entry.popup || index}`;
     if (entry.view) return `view:${entry.view.id}`;
     if (entry.url) return `url:${index}`;
     return `heading:${index}`;
@@ -1229,6 +1247,7 @@
     const url = entry.url;
     const isBack = entry.action === 'back';
     const hostAction = HOST_ACTIONS.includes(entry.action) ? entry.action : '';
+    const isPopup = entry.action === 'popup' && Boolean(entry.popup);
 
     /*
      * Ein Zurück-Eintrag kann sich ausblenden, solange der Verlauf leer ist —
@@ -1237,7 +1256,7 @@
      */
     if (isBack && entry.hideWhenEmpty && viewHistory.length === 0 && !editMode) return null;
 
-    const hasTarget = Boolean(view) || Boolean(url) || isBack || Boolean(hostAction);
+    const hasTarget = Boolean(view) || Boolean(url) || isBack || Boolean(hostAction) || isPopup;
 
     /* Ein Gruppen-Auslöser ist auch ohne eigenes Ziel bedienbar */
     const interactive = hasTarget || asTrigger;
@@ -1326,7 +1345,9 @@
       ? 'mdi:arrow-left'
       : hostAction
         ? HOST_DEFAULTS[hostAction].icon
-        : (showText ? '' : 'mdi:circle-outline');
+        : isPopup
+          ? 'mdi:card-text-outline'
+          : (showText ? '' : 'mdi:circle-outline');
     const iconName = entry.icon || fallbackIcon;
 
     if (showIcon && iconName) {
@@ -1373,6 +1394,11 @@
     } else if (hostAction) {
       element.addEventListener('click', () => {
         vuePanel.openHostTarget(hostAction);
+        closeOpenGroup();
+      });
+    } else if (isPopup) {
+      element.addEventListener('click', () => {
+        vuePanel.openPopup(entry.popup);
         closeOpenGroup();
       });
     } else if (view) {
@@ -1693,9 +1719,10 @@
             url:
               (item && typeof item.url === 'string' && item.url.trim()) || '',
             action:
-              item && ['back', 'settings', 'notifications'].includes(item.action)
+              item && ['back', 'settings', 'notifications', 'popup'].includes(item.action)
                 ? item.action
                 : 'navigate',
+            popup: (item && typeof item.popup === 'string' && item.popup) || '',
             hideWhenEmpty: item ? item.hideWhenEmpty === true : false,
             showBadge: item ? item.showBadge !== false : true,
             newTab: Boolean(item) && item.openIn === 'new',

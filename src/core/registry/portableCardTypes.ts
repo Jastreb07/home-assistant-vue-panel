@@ -24,6 +24,7 @@ export type PortableCardVariableType =
   | 'entity'
   | 'icon'
   | 'view'
+  | 'popup'
   | 'select'
   | 'string'
   | 'number'

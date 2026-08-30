@@ -35,7 +35,17 @@ export function barCardArea(position: BarPosition): Exclude<CardArea, 'dashboard
 export type CardCssArea = 'default' | 'bar_sidebar' | 'bar_header' | 'bar_bottom'
 
 export interface CardSchemaField {
-  type: 'entity' | 'string' | 'number' | 'boolean' | 'select' | 'view' | 'icon' | 'list' | 'action'
+  type:
+    | 'entity'
+    | 'string'
+    | 'number'
+    | 'boolean'
+    | 'select'
+    | 'view'
+    | 'popup'
+    | 'icon'
+    | 'list'
+    | 'action'
   label: string
   literalLabel?: boolean
   /** Collapsible box this field is shown in — entity fields are never grouped */

@@ -87,7 +87,7 @@ const selectOptions = computed<SelectOption[]>(() =>
  * wrapping either in a <label> would forward (and double) clicks.
  */
 const plainWrapper = computed(() =>
-  ['icon', 'select', 'view', 'boolean', 'list', 'action'].includes(props.field.type),
+  ['icon', 'select', 'view', 'popup', 'boolean', 'list', 'action'].includes(props.field.type),
 )
 
 /** Tap actions are stored as one object per gesture. */
@@ -161,6 +161,14 @@ const actionValue = computed<Partial<Record<CardGesture, CardActionValue>>>(() =
       :model-value="text"
       :options="viewOptions"
       :placeholder="t('editor.noViewTarget')"
+      @update:model-value="emit('update:value', $event)"
+    />
+
+    <BaseSelectMenu
+      v-else-if="field.type === 'popup'"
+      :model-value="text"
+      :options="popupOptions"
+      :placeholder="t('editor.noPopupTarget')"
       @update:model-value="emit('update:value', $event)"
     />
 
