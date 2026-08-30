@@ -20,7 +20,7 @@ import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import BaseSplitter from '@/core/ui/BaseSplitter.vue'
-import { visibilityMediaCss, type ResponsiveVisibility } from '@/core/ui/responsiveCss'
+import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -194,13 +194,6 @@ const previewStyle = computed(() => {
   return style
 })
 
-/** Mirrors real rendering: the user's CSS plus the generated visibility rules. */
-const previewCss = computed(() => {
-  const base = cssDraft.value
-  const vis = visibilityMediaCss(visibility.value)
-  return vis ? `${base}${base.trim() ? '\n\n' : ''}${vis}` : base
-})
-
 // ── Resizable preview ────────────────────────────────────────
 const formShare = ref(55)
 const splitterDragging = ref(false)
@@ -357,7 +350,7 @@ const previewArea = computed<CardArea>(() =>
         </div>
         <!-- Always applied: this is exactly what the area renders with -->
         <div class="preview-stage" :class="{ 'on-bar': isBarArea }">
-          <CardCss card-id="__preview__" :css="previewCss" :content-css="cssDraft">
+          <CardCss card-id="__preview__" :css="cssDraft">
             <div data-vp-card="__preview__" class="preview-card" :style="previewStyle">
               <component
                 :is="previewComponent"

@@ -41,6 +41,12 @@
 }
 
 .vp-card-edit-pencil {
+  /* Sticks to the middle of whatever is currently visible, even when the
+     card's own content scrolls and the card is taller than its viewport —
+     without this it would center on the full (unscrolled) card height. */
+  position: sticky;
+  top: 50%;
+  transform: translateY(-50%);
   display: grid;
   place-items: center;
   width: 38px;

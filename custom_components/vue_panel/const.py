@@ -21,7 +21,7 @@ INTEGRATION_VERSION: Final = "2.2.20"
 PANEL_WEBCOMPONENT_NAME: Final = "vue-panel-panel"
 STATIC_URL_BASE: Final = "/vue-panel-static"
 PANEL_MODULE_URL: Final = (f"{STATIC_URL_BASE}/loader.js?v={INTEGRATION_VERSION}")
-ENGINE_VERSION: Final = "2.2.37"
+ENGINE_VERSION: Final = "2.2.39"
 API_VERSION: Final = 1
 
 """Fired after a dashboard was written, so other open panels can catch up."""
