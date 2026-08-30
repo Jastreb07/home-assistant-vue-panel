@@ -387,7 +387,11 @@ class VuePanelElement extends HTMLElement {
         if (!value?.media_content_id) return;
         finish(JSON.parse(JSON.stringify(value)));
       }, { once: true });
-      document.body.appendChild(selector);
+      // Keep the bridge inside the panel element. Home Assistant's dialog
+      // manager listens above the panel in the composed element tree; an
+      // element appended directly to document.body is its sibling, so the
+      // selector's bubbling `show-dialog` event would never reach HA.
+      this.appendChild(selector);
 
       // Lit first renders the dynamic selector and then its lazily imported
       // media implementation. Wait for both update cycles before clicking.

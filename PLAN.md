@@ -44,6 +44,11 @@ die HA-Image-Medienquelle hoch; gespeichert wird die stabile Medienquellen-ID. D
 zur Laufzeit auf und rendert Deckkraft, Attachment, Größe, Ausrichtung und Wiederholung auf einer
 separaten Hintergrundebene, sodass die Deckkraft den View-Inhalt nicht beeinflusst.
 
+Ab `2.2.12`/Engine `2.2.33` serialisiert die iframe-Bridge bestehende Medienwerte vor dem
+`postMessage` und hängt den temporären HA-Medienselector innerhalb des Panel-Custom-Elements ein.
+Damit ist der Wert strukturiert klonbar und das native `show-dialog`-Event erreicht den
+Home-Assistant-Dialog-Host.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

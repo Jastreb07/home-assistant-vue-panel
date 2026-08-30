@@ -51,7 +51,12 @@ function hostRequest(message: Record<string, unknown>): Promise<ViewBackgroundMe
 
 /** Open Home Assistant's native media-source browser, restricted to images. */
 export function pickHostImage(current?: ViewBackgroundMedia): Promise<ViewBackgroundMedia | undefined> {
-  return hostRequest({ type: 'vue-panel:pick-media', current })
+  // Vue refs expose objects as reactive proxies, which the browser's
+  // structured-clone algorithm cannot transfer through postMessage.
+  const serializableCurrent = current
+    ? JSON.parse(JSON.stringify(current)) as ViewBackgroundMedia
+    : undefined
+  return hostRequest({ type: 'vue-panel:pick-media', current: serializableCurrent })
 }
 
 /** Upload through Home Assistant's native image media source. */

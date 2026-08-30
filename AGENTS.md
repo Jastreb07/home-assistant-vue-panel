@@ -252,6 +252,11 @@ Aktueller Stand:
   mitscrollende/feste Verbindung, Größe, Ausrichtung und Wiederholung entsprechen dem nativen
   Lovelace-Hintergrundmodell. Der Loader vermittelt Medienauswahl und Upload zwischen Engine-iframe
   und HA-Elterndokument;
+- ab `2.2.12`/Engine `2.2.33` überträgt die Engine eine bestehende Medienauswahl als plain JSON
+  statt als nicht klonbaren Vue-Proxy. Der temporäre native HA-Medienselector wird außerdem als
+  Kind des Panel-Custom-Elements eingehängt, damit sein zusammengesetztes `show-dialog`-Event durch
+  den HA-Komponentenbaum zum Dialog-Host aufsteigt; direkt unter `document.body` blieb das Event
+  außerhalb dieses Baums und der Klick auf „aus Medien auswählen“ hatte keine sichtbare Wirkung;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit
