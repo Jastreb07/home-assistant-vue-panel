@@ -209,6 +209,7 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
         <div
           class="card-slot"
           :class="{
+            editing: editMode,
             dragging: draggingId === card.id,
             'drop-before': dropTarget?.sectionId === section.id && dropTarget?.index === index,
             resizable: canResize(card),
@@ -274,6 +275,21 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
   /* Contain the edit overlay's z-index inside the card's own stacking
      context so it can never paint above unrelated elements. */
   isolation: isolate;
+}
+/* In edit mode the blur overlay covers the card, so anything scrolling under
+   it would move invisibly — freeze the card box and every scroller inside it
+   so the overlay has a fixed size and cannot be scrolled. */
+.card-slot.editing {
+  max-width: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+.card-slot.editing :deep(*) {
+  overflow: hidden !important;
+  scrollbar-width: none;
+}
+.card-slot.editing :deep(*::-webkit-scrollbar) {
+  display: none;
 }
 .card-slot.resizable {
   resize: both;

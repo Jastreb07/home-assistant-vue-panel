@@ -108,6 +108,8 @@ onBeforeUnmount(() => {
       class="vp-card-edit-surface"
       :aria-label="$t('editor.cardActions.edit')"
       @click.stop="emit('edit')"
+      @wheel.prevent
+      @touchmove.prevent
     >
       <span class="vp-card-edit-pencil">
         <MdiIcon icon="mdi:pencil" :size="20" />
