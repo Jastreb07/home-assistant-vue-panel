@@ -21,7 +21,7 @@ INTEGRATION_VERSION: Final = "2.2.4"
 PANEL_WEBCOMPONENT_NAME: Final = "vue-panel-panel"
 STATIC_URL_BASE: Final = "/vue-panel-static"
 PANEL_MODULE_URL: Final = (f"{STATIC_URL_BASE}/loader.js?v={INTEGRATION_VERSION}")
-ENGINE_VERSION: Final = "2.2.25"
+ENGINE_VERSION: Final = "2.2.26"
 API_VERSION: Final = 1
 
 PRIVATE_DIRECTORY: Final = "vue-panel"

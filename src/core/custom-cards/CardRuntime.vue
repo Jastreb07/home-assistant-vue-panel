@@ -74,6 +74,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   listViews: 'navigation:read',
   subscribeNavigation: 'navigation:read',
   getDashboardContext: 'dashboard:context',
+  subscribeDashboardContext: 'dashboard:context',
   emitAction: 'shell:events',
   showDetail: 'dialog:open',
   openPopup: 'dialog:open',
@@ -114,7 +115,18 @@ const cardConfig = computed<Record<string, unknown>>(() => {
 const entitySubscriptions = new Map<string, { entityId: string; callback: (entity: unknown) => void }>()
 const navigationSubscriptions = new Map<string, (view: unknown) => void>()
 const badgeSubscriptions = new Map<string, (badges: unknown) => void>()
+const contextSubscriptions = new Map<string, (context: unknown) => void>()
 const hostBadges = useHostBadges()
+
+/** What a card is told about the dashboard it runs in. */
+function dashboardContext() {
+  return {
+    theme: store.settings.theme,
+    uiTheme: store.settings.uiTheme,
+    language: locale.value,
+    editMode: store.editMode,
+  }
+}
 
 let styleElement: HTMLStyleElement | null = null
 let teardown: Array<() => void> = []
@@ -305,12 +317,20 @@ function buildApi(capabilities: PortableCardCapability[]) {
 
     async getDashboardContext() {
       guard('getDashboardContext')
-      return {
-        theme: store.settings.theme,
-        uiTheme: store.settings.uiTheme,
-        language: locale.value,
-        editMode: store.editMode,
-      }
+      return dashboardContext()
+    },
+
+    /**
+     * The same context, but pushed on every change — a card that adapts to
+     * edit mode would otherwise keep the value it read once at startup.
+     * Reports the current state immediately.
+     */
+    subscribeDashboardContext(callback: (context: unknown) => void) {
+      guard('subscribeDashboardContext')
+      const subscriptionId = `context-${++sequence}`
+      contextSubscriptions.set(subscriptionId, callback)
+      callback(dashboardContext())
+      return () => contextSubscriptions.delete(subscriptionId)
     },
 
     async emitAction(action: string, detail: Record<string, unknown> = {}) {
@@ -483,6 +503,7 @@ function disposeRuntime() {
   entitySubscriptions.clear()
   navigationSubscriptions.clear()
   badgeSubscriptions.clear()
+  contextSubscriptions.clear()
   if (root.value) root.value.replaceChildren()
 }
 
@@ -575,6 +596,15 @@ watch(navigationSignature, () => {
   const view = viewSnapshot(store.viewByRoute(routePath.value))
   for (const callback of navigationSubscriptions.values()) callback(view)
 })
+
+/** Edit mode, theme and language changes, pushed to every subscribed card. */
+watch(
+  () => [store.editMode, store.settings.theme, store.settings.uiTheme, locale.value] as const,
+  () => {
+    const context = dashboardContext()
+    for (const callback of contextSubscriptions.values()) callback(context)
+  },
+)
 
 /** Home Assistant's sidebar counters, pushed to every subscribed card. */
 watch(

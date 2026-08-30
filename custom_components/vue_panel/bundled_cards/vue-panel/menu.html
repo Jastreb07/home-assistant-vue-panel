@@ -20,7 +20,8 @@
       "navigation:write",
       "icon:render",
       "host:navigate",
-      "host:badges"
+      "host:badges",
+      "dashboard:context"
     ],
     "defaultSize": {
       "cols": 1,
@@ -1086,6 +1087,13 @@
   const viewHistory = [];
   let navigatingBack = false;
 
+  /*
+   * Im Bearbeitungsmodus bleibt ein Zurück-Eintrag immer sichtbar, auch wenn
+   * er sich sonst mangels Verlauf ausblenden würde — sonst ließe er sich
+   * genau dort nicht anfassen, wo man ihn einrichtet.
+   */
+  let editMode = false;
+
   function rememberVisit(previous, next) {
     if (navigatingBack) {
       navigatingBack = false;
@@ -1227,7 +1235,7 @@
      * sonst stünde am Einstiegspunkt eine Schaltfläche, die nichts tut. Das
      * Neuzeichnen nach jeder Navigation lässt ihn dann von selbst auftauchen.
      */
-    if (isBack && entry.hideWhenEmpty && viewHistory.length === 0) return null;
+    if (isBack && entry.hideWhenEmpty && viewHistory.length === 0 && !editMode) return null;
 
     const hasTarget = Boolean(view) || Boolean(url) || isBack || Boolean(hostAction);
 
@@ -1790,6 +1798,20 @@
   vuePanel.subscribeNavigation(view => {
     rememberVisit(active, view);
     active = view;
+    render();
+  });
+
+  /*
+   * Bearbeitungsmodus. Der erste Aufruf kommt sofort und trägt denselben
+   * Wert, mit dem gestartet wurde — deshalb wird nur bei einer echten
+   * Änderung neu gezeichnet.
+   */
+  vuePanel.subscribeDashboardContext(context => {
+    const next = context?.editMode === true;
+
+    if (next === editMode) return;
+
+    editMode = next;
     render();
   });
 
