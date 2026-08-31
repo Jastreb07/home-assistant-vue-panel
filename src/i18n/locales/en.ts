@@ -152,6 +152,20 @@ export default {
       detail: 'Detail view',
     },
     fieldGroupOther: 'More settings',
+    hassCards: {
+      tabVuePanel: 'Vue Panel',
+      tabHomeAssistant: 'Home Assistant',
+      cardName: 'Home Assistant card',
+      coreGroup: 'Built into Home Assistant',
+      customGroup: 'Installed custom cards',
+      hint: 'These cards are rendered by Home Assistant itself and laid over the dashboard.',
+      unavailable: 'Home Assistant cards are only available inside the Home Assistant panel.',
+      tabCode: 'Code',
+      noVisualEditor: 'This card has no visual editor — use the Code tab.',
+      configTitle: 'Card configuration (YAML/JSON)',
+      configHint: 'The Lovelace configuration of this card, exactly as Home Assistant expects it.',
+      invalidConfig: 'The configuration is not valid JSON.',
+    },
     color: {
       value: 'Colour value',
       hue: 'Hue',
@@ -618,6 +632,7 @@ export default {
     groups: {
       native: 'Built-in',
       other: 'Other',
+      hass: 'Home Assistant',
     },
     common: {
       noEntity: '⚠ No entity configured',

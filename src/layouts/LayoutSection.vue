@@ -9,6 +9,7 @@ import {
   type CardArea,
 } from '@/core/registry/cardRegistry'
 import { visibilityMediaCss } from '@/core/ui/responsiveCss'
+import { isHassCardType } from '@/core/registry/hassCards'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import BaseAddTile from '@/core/ui/BaseAddTile.vue'
 import BaseCardEditOverlay from '@/core/ui/BaseCardEditOverlay.vue'
@@ -120,9 +121,24 @@ function isFullRow(card: CardConfig): boolean {
   return cardRegistry[card.type]?.fullRow === true
 }
 
+/**
+ * Home Assistant cards bring no layout of their own, so they always carry a
+ * fixed pixel size like the flex layout's cards — in every layout, not just
+ * the one that sizes its slots itself.
+ */
+function hassSizeStyle(card: CardConfig): Record<string, string> | undefined {
+  if (!isHassCardType(card.type)) return undefined
+  const style: Record<string, string> = { flex: '0 0 auto' }
+  if (card.size?.width) style.width = `${card.size.width}px`
+  if (card.size?.height) style.height = `${card.size.height}px`
+  return style
+}
+
 function styleFor(card: CardConfig): Record<string, string> | undefined {
   // A full-row card keeps its width even where the layout sizes slots itself
   if (isFullRow(card)) return { gridColumn: '1 / -1', flexBasis: '100%', width: '100%' }
+  const hassSize = hassSizeStyle(card)
+  if (hassSize) return { ...props.slotStyle?.(card), ...hassSize }
   if (props.slotStyle) return props.slotStyle(card)
   if (props.cardsPerRow) return undefined
   return card.size?.cols ? { gridColumn: `span ${card.size.cols}` } : undefined
@@ -130,7 +146,8 @@ function styleFor(card: CardConfig): Record<string, string> | undefined {
 
 /** Full-row cards have no size of their own, so they cannot be resized. */
 function canResize(card: CardConfig): boolean {
-  return props.resizable === true && props.editMode && !isFullRow(card)
+  if (!props.editMode || isFullRow(card)) return false
+  return props.resizable === true || isHassCardType(card.type)
 }
 
 /** The user's own CSS only — never mixed with the generated visibility rules. */
@@ -279,8 +296,10 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
 /* In edit mode the blur overlay covers the card, so anything scrolling under
    it would move invisibly — clamp the card to its container so the overlay
    has a fixed size. Scrolling itself is blocked by the overlay (see
-   CardEditOverlay), which is why inner elements keep their own overflow. */
-.card-slot.editing {
+   CardEditOverlay), which is why inner elements keep their own overflow.
+   A resizable slot is exempt: the clamp would cap the drag at the container
+   and the size read back on release would never grow past it. */
+.card-slot.editing:not(.resizable) {
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;

@@ -11,10 +11,19 @@ import {
   type CardManifest,
 } from '@/core/registry/cardRegistry'
 import { getPortableCard } from '@/core/ha'
+import { useHassCustomCards } from '@/core/ha/hassCardBridge'
+import {
+  HASS_CARD_TYPE,
+  hassCardAreas,
+  hassCoreCards,
+  newHassCardConfig,
+  type HassCardType,
+} from '@/core/registry/hassCards'
 import CustomCardDialog from '@/core/custom-cards/CustomCardDialog.vue'
 import { editorDefinitionFromDocument } from '@/core/custom-cards/cardEditorModel'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
+import BaseTabs from '@/core/ui/BaseTabs.vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { readCardFromClipboard } from '@/core/ui/cardClipboard'
 import { alertDialog } from '@/core/ui/dialogService'
@@ -50,6 +59,44 @@ const groups = computed(() => {
     return cards.length ? [{ ...group, cards }] : []
   })
 })
+// ── Home Assistant cards ─────────────────────────────────────
+/** Only areas the overlay bridge can place a HA card in offer the tab. */
+const hassSupported = computed(() => hassCardAreas.includes(props.area))
+const customCards = useHassCustomCards()
+const tab = ref<'vue' | 'hass'>('vue')
+const tabItems = computed(() => [
+  { value: 'vue', label: t('editor.hassCards.tabVuePanel'), icon: 'mdi:view-dashboard-outline' },
+  { value: 'hass', label: t('editor.hassCards.tabHomeAssistant'), icon: 'mdi:home-assistant' },
+])
+
+/** Installed custom cards (HACS) shown next to the ones HA ships. */
+const hassCustomCards = computed<HassCardType[]>(() =>
+  customCards.value.map((card) => ({
+    type: `custom:${card.type}`,
+    name: card.name || card.type,
+    icon: 'mdi:puzzle-outline',
+  })),
+)
+
+function filterHassCards(cards: HassCardType[]): HassCardType[] {
+  const query = searchQuery.value.trim().toLocaleLowerCase(locale.value)
+  if (!query) return cards
+  return cards.filter((card) =>
+    [card.name, card.type].some((value) => value.toLocaleLowerCase(locale.value).includes(query)),
+  )
+}
+
+const hassGroups = computed(() => [
+  { id: 'core', label: t('editor.hassCards.coreGroup'), cards: filterHassCards(hassCoreCards) },
+  { id: 'custom', label: t('editor.hassCards.customGroup'), cards: filterHassCards(hassCustomCards.value) },
+].filter((group) => group.cards.length > 0))
+
+const noHassResults = computed(() => hassGroups.value.length === 0)
+
+function pickHassCard(card: HassCardType) {
+  emit('pick', HASS_CARD_TYPE, undefined, newHassCardConfig(card.type))
+}
+
 const clipboardCard = readCardFromClipboard()
 const clipboardManifest = computed(() => {
   if (!clipboardCard) return null
@@ -71,6 +118,8 @@ async function editPortableCard(manifest: CardManifest) {
 
 <template>
   <BaseDialog :title="t('editor.cardPickerTitle')" size="lg" @close="emit('close')">
+    <BaseTabs v-if="hassSupported" v-model="tab" :items="tabItems" class="picker-tabs" />
+
     <label class="picker-search">
       <span class="visually-hidden">{{ t('editor.searchCards') }}</span>
       <MdiIcon icon="mdi:magnify" :size="20" />
@@ -89,6 +138,27 @@ async function editPortableCard(manifest: CardManifest) {
       </button>
     </label>
 
+    <template v-if="hassSupported && tab === 'hass'">
+      <p class="hass-hint">{{ t('editor.hassCards.hint') }}</p>
+      <p v-if="noHassResults" class="no-cards">{{ t('editor.noCardsFound') }}</p>
+      <section v-for="group in hassGroups" :key="group.id" class="group">
+        <h4 class="group-title">{{ group.label }}</h4>
+        <div class="picker-grid">
+          <button
+            v-for="card in group.cards"
+            :key="card.type"
+            class="pick custom-pick"
+            @click="pickHassCard(card)"
+          >
+            <MdiIcon :icon="card.icon" :size="32" />
+            <span>{{ card.name }}</span>
+            <small>{{ card.type }}</small>
+          </button>
+        </div>
+      </section>
+    </template>
+
+    <template v-else>
     <p v-if="isEmpty" class="no-cards">{{ t('editor.noCardsForArea') }}</p>
     <p v-else-if="noSearchResults" class="no-cards">{{ t('editor.noCardsFound') }}</p>
 
@@ -132,6 +202,7 @@ async function editPortableCard(manifest: CardManifest) {
         </div>
       </div>
     </section>
+    </template>
   </BaseDialog>
 
   <CustomCardDialog
@@ -142,6 +213,14 @@ async function editPortableCard(manifest: CardManifest) {
 </template>
 
 <style scoped>
+.picker-tabs {
+  margin-bottom: 18px;
+}
+.hass-hint {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
 .picker-search {
   position: relative;
   display: block;

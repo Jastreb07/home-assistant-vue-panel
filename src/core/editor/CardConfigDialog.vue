@@ -21,6 +21,8 @@ import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import BaseSplitter from '@/core/ui/BaseSplitter.vue'
 import type { ResponsiveVisibility } from '@/core/ui/responsiveCss'
+import { HASS_CARD_TYPE, hassCardConfig } from '@/core/registry/hassCards'
+import HassCardEditor from '@/core/ha/HassCardEditor.vue'
 import SchemaForm from './SchemaForm.vue'
 
 const props = withDefaults(
@@ -62,6 +64,47 @@ const effectiveSchema = computed<Record<string, CardSchemaField>>(() => {
 })
 
 const hasSchema = computed(() => Object.keys(effectiveSchema.value).length > 0)
+
+// ── Home Assistant cards ─────────────────────────────────────
+/**
+ * HA cards have no Vue Panel schema. They are configured with Home
+ * Assistant's own form where the card provides one, and with a raw JSON
+ * editor otherwise (or while the panel runs outside Home Assistant).
+ */
+const isHassCard = computed(() => props.cardType === HASS_CARD_TYPE)
+/**
+ * Home Assistant cards bring no layout of their own, so they always offer the
+ * size tab — in every layout, not just the one that sizes its slots itself.
+ */
+const sizable = computed(() => props.sizable === true || isHassCard.value)
+const hassDraft = ref(JSON.stringify(hassCardConfig(props.initialConfig), null, 2))
+const hassError = ref('')
+/** null while Home Assistant has not answered whether it has an editor */
+const hassEditorAvailable = ref<boolean | null>(null)
+
+/** Config coming back from Home Assistant's own editor. */
+function onHassEditorConfig(config: Record<string, unknown>) {
+  hassError.value = ''
+  hassDraft.value = JSON.stringify(config, null, 2)
+  draft.value = { ...draft.value, hass: config }
+}
+
+function onHassConfig(value: string) {
+  hassDraft.value = value
+  try {
+    // Trailing commas are the usual slip while editing by hand — JSON rejects
+    // them, so they are dropped before parsing rather than shown as an error.
+    const parsed: unknown = JSON.parse(value.replace(/,(\s*[}\]])/g, '$1'))
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('not an object')
+    }
+    hassError.value = ''
+    draft.value = { ...draft.value, hass: parsed as Record<string, unknown> }
+  } catch {
+    // Keep the last valid config; saving is blocked until the text parses
+    hassError.value = t('editor.hassCards.invalidConfig')
+  }
+}
 const dialogName = computed(() =>
   manifest ? cardDisplayName(manifest, t, locale.value) : props.cardType,
 )
@@ -87,7 +130,11 @@ const missingRequiredVariables = computed(() => Object.entries(effectiveSchema.v
 const tab = ref('settings')
 const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
-  ...(props.sizable
+  // Home Assistant cards keep their raw Lovelace config on its own tab
+  ...(isHassCard.value
+    ? [{ value: 'hassCode', label: t('editor.hassCards.tabCode'), icon: 'mdi:code-braces' }]
+    : []),
+  ...(sizable.value
     ? [{ value: 'size', label: t('editor.tabSize'), icon: 'mdi:resize' }]
     : []),
   { value: 'visibility', label: t('editor.tabVisibility'), icon: 'mdi:eye-outline' },
@@ -160,11 +207,12 @@ function visibilityEquals(a: ResponsiveVisibility, b: ResponsiveVisibility): boo
 function onSave() {
   saveAttempted.value = true
   if (missingRequiredVariables.value) return
+  if (isHassCard.value && hassError.value) return
   // Only store an override when it actually differs from the card default
   const css = cssDraft.value.trim()
   const isCssOverride = css !== '' && css !== defaultCss.value.trim()
   const isVisibilityOverride = !visibilityEquals(visibility.value, cardDefaultVisibilityValue)
-  const size = props.sizable
+  const size = sizable.value
     ? { width: sizeValue(cardWidth.value), height: sizeValue(cardHeight.value) }
     : undefined
   emit(
@@ -185,7 +233,7 @@ const cssWarningAcknowledged = ref(false)
 
 /** The preview mirrors the fixed size so typed values are visible right away. */
 const previewStyle = computed(() => {
-  if (!props.sizable) return undefined
+  if (!sizable.value) return undefined
   const style: Record<string, string> = { maxWidth: 'none' }
   const defaultSize = effectiveDefaultSize.value
   style.width = `${sizeValue(cardWidth.value) ?? defaultSize?.width ?? 140}px`
@@ -226,19 +274,44 @@ const previewArea = computed<CardArea>(() =>
       :style="layoutStyle"
     >
       <div v-show="tab === 'settings'" class="form-col">
-        <SchemaForm
-          v-if="hasSchema"
-          v-model="draft"
-          :schema="effectiveSchema"
-          :translations="manifest?.translations"
-        />
-        <p v-if="saveAttempted && missingRequiredVariables" class="validation-error">
-          {{ t('customCards.variables.requiredError') }}
-        </p>
-        <p v-if="!hasSchema" class="no-options">
-          {{ t('editor.noOptions') }}
-        </p>
+        <template v-if="isHassCard">
+          <HassCardEditor
+            v-show="hassEditorAvailable !== false"
+            :config="hassCardConfig(draft)"
+            @update:config="onHassEditorConfig"
+            @available="hassEditorAvailable = $event"
+          />
+          <p v-if="hassEditorAvailable === false" class="no-options">
+            {{ t('editor.hassCards.noVisualEditor') }}
+          </p>
+        </template>
+
+        <template v-else>
+          <SchemaForm
+            v-if="hasSchema"
+            v-model="draft"
+            :schema="effectiveSchema"
+            :translations="manifest?.translations"
+          />
+          <p v-if="saveAttempted && missingRequiredVariables" class="validation-error">
+            {{ t('customCards.variables.requiredError') }}
+          </p>
+          <p v-if="!hasSchema" class="no-options">
+            {{ t('editor.noOptions') }}
+          </p>
+        </template>
       </div>
+      <div v-if="isHassCard" v-show="tab === 'hassCode'" class="form-col">
+        <p class="css-hint">{{ t('editor.hassCards.configHint') }}</p>
+        <BaseCodeEditor
+          :model-value="hassDraft"
+          language="json"
+          min-height="360px"
+          @update:model-value="onHassConfig"
+        />
+        <p v-if="hassError" class="validation-error">{{ hassError }}</p>
+      </div>
+
       <div v-show="tab === 'size'" class="form-col">
         <p class="css-hint">{{ t('editor.size.hint') }}</p>
         <div class="field">
@@ -357,6 +430,7 @@ const previewArea = computed<CardArea>(() =>
                 v-if="previewComponent"
                 :config="draft"
                 :area="previewArea"
+                :preview="true"
               />
             </div>
           </CardCss>

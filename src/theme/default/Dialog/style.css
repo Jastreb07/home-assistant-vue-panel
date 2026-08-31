@@ -1,7 +1,11 @@
 .vp-dialog-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.32);
+  /* Frosted rather than dimmed: a bright veil plus blur lifts the dashboard
+     behind the dialog instead of pushing it into the dark. */
+  background: var(--dialog-backdrop, rgba(255, 255, 255, 0.18));
+  -webkit-backdrop-filter: blur(3px) saturate(1.05);
+  backdrop-filter: blur(3px) saturate(1.05);
   display: grid;
   place-items: center;
   z-index: 100;

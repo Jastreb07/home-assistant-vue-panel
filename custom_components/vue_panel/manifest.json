@@ -1,7 +1,7 @@
 {
   "domain": "vue_panel",
   "name": "Vue Panel",
-  "version": "2.2.20",
+  "version": "2.2.29",
   "config_flow": true,
   "single_config_entry": true,
   "dependencies": ["frontend", "http", "panel_custom"],

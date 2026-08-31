@@ -179,10 +179,64 @@ function routeSubPath(route) {
   return path.replace(/^\/+|\/+$/g, '');
 }
 
+/**
+ * Home Assistant card helpers, loaded once. `loadCardHelpers` is a global the
+ * HA frontend installs on its own window; it resolves the module that knows
+ * how to turn a Lovelace config into an element.
+ */
+let cardHelpersPromise = null;
+
+function cardHelpers() {
+  if (!cardHelpersPromise) {
+    cardHelpersPromise = typeof window.loadCardHelpers === 'function'
+      ? window.loadCardHelpers()
+      : Promise.reject(new Error('Home Assistant card helpers are unavailable.'));
+  }
+  return cardHelpersPromise;
+}
+
+/** Custom element a Lovelace card type renders as. */
+function hassCardTag(type) {
+  const name = String(type || '');
+  return name.startsWith('custom:') ? name.slice('custom:'.length) : `hui-${name}-card`;
+}
+
+/**
+ * The element class behind a card type, needed for its static
+ * `getConfigElement()`. Building the card is only a way to make Home
+ * Assistant import and register it: a half-finished config (a light card
+ * without an entity, say) makes `setConfig` throw, and that is exactly the
+ * case the editor is opened for — so the throw is expected and the class is
+ * looked up from the custom element registry afterwards.
+ */
+async function hassCardClass(helpers, config) {
+  try {
+    const card = helpers.createCardElement(config);
+    if (typeof card?.constructor?.getConfigElement === 'function') return card.constructor;
+  } catch {
+    // Registered nonetheless — fall through to the registry lookup
+  }
+  const tag = hassCardTag(config?.type);
+  if (!customElements.get(tag)) {
+    await Promise.race([
+      customElements.whenDefined(tag),
+      new Promise((resolve) => window.setTimeout(resolve, 3000)),
+    ]);
+  }
+  return customElements.get(tag) ?? null;
+}
+
 class VuePanelElement extends HTMLElement {
   constructor() {
     super();
     this._iframe = null;
+    /**
+     * Native Home Assistant cards the engine asked for, by overlay id. The
+     * engine only renders a placeholder inside its iframe — the real card is
+     * created here and positioned over that placeholder.
+     */
+    this._hassCards = new Map();
+    this._hassLayer = null;
     this._hass = null;
     this._panel = null;
     this._narrow = false;
@@ -220,6 +274,9 @@ class VuePanelElement extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('message', this._onWindowMessage);
+    // Overlay cards belong to the engine's current DOM — it rebuilds them
+    // (and asks for fresh ones) when the panel is entered again.
+    this._clearHassCards();
     // Leaving the panel must never leave the rest of HA without its sidebar.
     if (this._sidebarHidden) {
       this._sidebarHidden = false;
@@ -230,6 +287,7 @@ class VuePanelElement extends HTMLElement {
   set hass(value) {
     this._hass = value;
     this._sendContext();
+    this._updateHassCards();
   }
 
   get hass() {
@@ -448,6 +506,215 @@ class VuePanelElement extends HTMLElement {
     }
   }
 
+  /**
+   * Container the overlay cards live in. It sits inside the panel element so
+   * HA's dialog manager still receives the events a card fires (more-info,
+   * service calls), and it never swallows clicks itself — only the cards do.
+   */
+  _hassOverlayLayer() {
+    if (this._hassLayer?.isConnected) return this._hassLayer;
+    const layer = document.createElement('div');
+    layer.style.cssText =
+      'position:fixed;inset:0;pointer-events:none;z-index:1;';
+    this.appendChild(layer);
+    this._hassLayer = layer;
+    return layer;
+  }
+
+  /** Create (or replace) the HA card element for one overlay id. */
+  async _createHassCard(id, config) {
+    if (typeof id !== 'string' || !id) return;
+    const previous = this._hassCards.get(id);
+    previous?.wrapper?.remove();
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText =
+      'position:absolute;pointer-events:auto;overflow:hidden;display:none;';
+    this._hassOverlayLayer().appendChild(wrapper);
+    // The rect may arrive before the element is built — remember it either way
+    const entry = { wrapper, element: null, rect: previous?.rect ?? null };
+    this._hassCards.set(id, entry);
+
+    try {
+      const helpers = await cardHelpers();
+      // A destroy could have arrived while the helpers were loading
+      if (this._hassCards.get(id) !== entry) return;
+      const element = helpers.createCardElement(config || { type: 'entities' });
+      element.hass = this._hass;
+      element.style.cssText = 'display:block;width:100%;height:100%;';
+      entry.element = element;
+      wrapper.appendChild(element);
+      if (entry.rect) this._placeHassCard(id, entry.rect);
+    } catch (error) {
+      if (this._hassCards.get(id) !== entry) return;
+      wrapper.textContent = String(error?.message || error);
+      wrapper.style.cssText +=
+        'padding:12px;border:2px dashed var(--divider,#888);border-radius:12px;'
+        + 'color:var(--secondary-text-color,#888);font-size:12px;';
+      if (entry.rect) this._placeHassCard(id, entry.rect);
+    }
+  }
+
+  /**
+   * Home Assistant's own settings form for a card. Every card class may expose
+   * one through the static `getConfigElement()`; cards without it (and every
+   * failure here) fall back to the engine's JSON editor, which is why the
+   * engine is told explicitly whether an editor could be built.
+   */
+  async _createHassEditor(id, config) {
+    if (typeof id !== 'string' || !id) return;
+    this._hassCards.get(id)?.wrapper.remove();
+
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText =
+      'position:absolute;pointer-events:auto;overflow:auto;display:none;';
+    this._hassOverlayLayer().appendChild(wrapper);
+    const entry = { wrapper, element: null, rect: null };
+    this._hassCards.set(id, entry);
+
+    try {
+      const helpers = await cardHelpers();
+      if (this._hassCards.get(id) !== entry) return;
+      const cardClass = await hassCardClass(helpers, config || { type: 'entities' });
+      const editor = await cardClass?.getConfigElement?.();
+      if (!editor) throw new Error('This card has no visual editor.');
+      if (this._hassCards.get(id) !== entry) return;
+
+      editor.hass = this._hass;
+      editor.setConfig(config || {});
+      editor.style.cssText = 'display:block;width:100%;';
+      editor.addEventListener('config-changed', (event) => {
+        event.stopPropagation();
+        const next = event.detail?.config;
+        if (!next) return;
+        /*
+         * Home Assistant's card editors are controlled components: they report
+         * a change but keep rendering their last `setConfig` value. In HA the
+         * surrounding `hui-card-element-editor` feeds the new config straight
+         * back — without that the field the user just filled in snaps empty
+         * again, so this bridge has to do the same.
+         */
+        try {
+          editor.setConfig(next);
+        } catch {
+          // A config the card rejects is still worth storing — the preview shows why
+        }
+        this._iframe?.contentWindow?.postMessage(
+          { type: 'vue-panel:hass-editor-config', id, config: JSON.parse(JSON.stringify(next)) },
+          location.origin,
+        );
+      });
+      entry.element = editor;
+      wrapper.appendChild(editor);
+      this._sendEditorReady(id, true);
+      if (entry.rect) this._placeHassCard(id, entry.rect);
+    } catch {
+      if (this._hassCards.get(id) !== entry) return;
+      this._destroyHassCard(id);
+      this._sendEditorReady(id, false);
+    }
+  }
+
+  _sendEditorReady(id, available) {
+    this._iframe?.contentWindow?.postMessage(
+      { type: 'vue-panel:hass-editor-ready', id, available },
+      location.origin,
+    );
+  }
+
+  /** Swap a card's configuration without rebuilding it where possible. */
+  async _configureHassCard(id, config) {
+    const entry = this._hassCards.get(id);
+    if (!entry) return;
+    /*
+     * A config Home Assistant rejected produced `hui-error-card`, and that
+     * element happily accepts any later config while still rendering the
+     * error. Once the user fixes the configuration the real card has to be
+     * built from scratch.
+     */
+    const isErrorCard = entry.element?.localName === 'hui-error-card';
+    if (isErrorCard || !entry.element || typeof entry.element.setConfig !== 'function') {
+      await this._createHassCard(id, config);
+      return;
+    }
+    try {
+      entry.element.setConfig(config);
+      entry.element.hass = this._hass;
+    } catch {
+      // Some cards reject a live config change — rebuild them instead
+      await this._createHassCard(id, config);
+    }
+  }
+
+  _placeHassCard(id, rect) {
+    const entry = this._hassCards.get(id);
+    if (!entry || !rect) return;
+    entry.rect = rect;
+    const frame = this._iframe?.getBoundingClientRect();
+    if (!frame) return;
+    const style = entry.wrapper.style;
+    if (!rect.visible) {
+      style.display = 'none';
+      return;
+    }
+    // The engine reports viewport coordinates of its own iframe document
+    style.display = 'block';
+    style.left = `${frame.left + rect.left}px`;
+    style.top = `${frame.top + rect.top}px`;
+    style.width = `${rect.width}px`;
+    style.height = `${rect.height}px`;
+    /*
+     * The card is painted outside the engine's document, so the scroll
+     * containers and dialogs its placeholder sits in cannot clip it. The
+     * engine measures how much of the placeholder those ancestors leave
+     * visible and that region is cut out here.
+     */
+    const clip = rect.clip;
+    style.clipPath = clip
+      ? `inset(${clip.top || 0}px ${clip.right || 0}px ${clip.bottom || 0}px ${clip.left || 0}px)`
+      : 'none';
+  }
+
+  _destroyHassCard(id) {
+    const entry = this._hassCards.get(id);
+    if (!entry) return;
+    this._hassCards.delete(id);
+    entry.wrapper.remove();
+  }
+
+  _clearHassCards() {
+    for (const entry of this._hassCards.values()) entry.wrapper.remove();
+    this._hassCards.clear();
+    this._hassLayer?.remove();
+    this._hassLayer = null;
+  }
+
+  /** Keep every overlay card fed with the current hass object. */
+  _updateHassCards() {
+    for (const entry of this._hassCards.values()) {
+      if (entry.element) entry.element.hass = this._hass;
+    }
+  }
+
+  /** Custom cards installed in HA register themselves in `window.customCards`. */
+  _sendCustomCards() {
+    const target = this._iframe?.contentWindow;
+    if (!target) return;
+    const list = Array.isArray(window.customCards) ? window.customCards : [];
+    target.postMessage(
+      {
+        type: 'vue-panel:hass-custom-cards',
+        cards: list.map((card) => ({
+          type: String(card?.type || ''),
+          name: card?.name ? String(card.name) : undefined,
+          description: card?.description ? String(card.description) : undefined,
+          preview: card?.preview === true,
+        })).filter((card) => card.type),
+      },
+      location.origin,
+    );
+  }
+
   _upgradeProperty(property) {
     if (!Object.prototype.hasOwnProperty.call(this, property)) return;
     const value = this[property];
@@ -511,6 +778,30 @@ class VuePanelElement extends HTMLElement {
     }
     if (event.data?.type === 'vue-panel:upload-media') {
       this._uploadMedia(event.data.requestId, event.data.file);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-card-create') {
+      this._createHassCard(event.data.id, event.data.config);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-editor-create') {
+      this._createHassEditor(event.data.id, event.data.config);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-card-config') {
+      this._configureHassCard(event.data.id, event.data.config);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-card-rect') {
+      this._placeHassCard(event.data.id, event.data.rect);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-card-destroy') {
+      this._destroyHassCard(event.data.id);
+      return;
+    }
+    if (event.data?.type === 'vue-panel:hass-custom-cards-request') {
+      this._sendCustomCards();
       return;
     }
     if (event.data?.type === 'vue-panel:reload') {

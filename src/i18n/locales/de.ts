@@ -152,6 +152,20 @@ export default {
       detail: 'Detailansicht',
     },
     fieldGroupOther: 'Weitere Einstellungen',
+    hassCards: {
+      tabVuePanel: 'Vue Panel',
+      tabHomeAssistant: 'Home Assistant',
+      cardName: 'Home-Assistant-Card',
+      coreGroup: 'In Home Assistant enthalten',
+      customGroup: 'Installierte Custom Cards',
+      hint: 'Diese Cards werden von Home Assistant selbst gerendert und über das Dashboard gelegt.',
+      unavailable: 'Home-Assistant-Cards sind nur innerhalb des Home-Assistant-Panels verfügbar.',
+      tabCode: 'Code',
+      noVisualEditor: 'Diese Card hat kein visuelles Formular — nutze den Code-Tab.',
+      configTitle: 'Card-Konfiguration (YAML/JSON)',
+      configHint: 'Die Lovelace-Konfiguration dieser Card, genau so wie Home Assistant sie erwartet.',
+      invalidConfig: 'Die Konfiguration ist kein gültiges JSON.',
+    },
     color: {
       value: 'Farbwert',
       hue: 'Farbton',
@@ -619,6 +633,7 @@ export default {
     groups: {
       native: 'Nativ',
       other: 'Sonstige',
+      hass: 'Home Assistant',
     },
     common: {
       noEntity: '⚠ Keine Entity konfiguriert',

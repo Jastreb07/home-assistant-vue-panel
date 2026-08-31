@@ -29,6 +29,7 @@ const {
   duplicateCard,
   copyCard,
   cutCard,
+  cardById,
   sectionTarget,
   addSection,
   editSection,
@@ -50,6 +51,11 @@ const {
   onDrop,
   onDragEnd,
 } = useSectionEditing(() => props.view)
+
+/** Home Assistant cards are resizable in every layout — see LayoutSection. */
+function onResizeCard(cardId: string, width: number, height: number) {
+  store.updateCardSize(props.view.id, cardId, { width, height })
+}
 
 const { t } = useI18n()
 
@@ -120,6 +126,7 @@ const containerStyle = computed(() => {
       :column-span="spanFor(section)"
       :cards-per-row="section.cardsPerRow"
       @pick="pickerSectionId = $event"
+      @resize-card="onResizeCard"
       @edit-card="editCard"
       @remove-card="removeCard"
       @duplicate-card="duplicateCard"
@@ -157,6 +164,7 @@ const containerStyle = computed(() => {
       :initial-config="configTarget.mode === 'edit' ? configTarget.config : (configTarget.initialConfig ?? {})"
       :initial-css="configTarget.mode === 'edit' ? configTarget.css : undefined"
       :initial-visibility="configTarget.mode === 'edit' ? configTarget.visibility : undefined"
+      :initial-size="configTarget.mode === 'edit' ? cardById(configTarget.cardId)?.size : undefined"
       @close="configTarget = null"
       @save="onConfigSave"
     />

@@ -22,3 +22,6 @@ export const NATIVE_GROUP: CardGroup = { id: 'native', label: 'cards.groups.nati
 
 /** Used for every card whose manifest declares no group. */
 export const OTHER_GROUP: CardGroup = { id: 'other', label: 'cards.groups.other' }
+
+/** Native Home Assistant cards, hosted through the overlay bridge. */
+export const HASS_GROUP: CardGroup = { id: 'hass', label: 'cards.groups.hass' }

@@ -12,6 +12,8 @@ var e=`/* ───────────────────────�
   --nav-bg: #1b1e24;\r
   --card-bg: #23272f;\r
   --card-bg-hover: #2a2f38;\r
+  /* Veil behind dialogs — brightens rather than dims, blur comes on top */\r
+  --dialog-backdrop: rgba(255, 255, 255, 0.12);\r
   --card-bg-active: #f5b82e;\r
   /* Circular icon backdrop on the tile cards */\r
   --tile-icon-bg: rgb(215 215 215 / 8%);\r
@@ -49,6 +51,7 @@ var e=`/* ───────────────────────�
   --nav-bg: #ffffff;\r
   --card-bg: #ffffff;\r
   --card-bg-hover: #fbfbfb;\r
+  --dialog-backdrop: rgba(255, 255, 255, 0.45);\r
   --card-bg-active: #ffffff;\r
   --tile-icon-bg: rgb(215 215 215 / 35%);\r
   --input-bg: #ffffff;\r

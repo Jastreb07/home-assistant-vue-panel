@@ -1,11 +1,13 @@
 import {
+  defineAsyncComponent,
   defineComponent,
   h,
   shallowReactive,
   type Component,
   type PropType,
 } from 'vue'
-import { NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
+import { HASS_GROUP, NATIVE_GROUP, OTHER_GROUP, type CardGroup } from './cardGroups'
+import { HASS_CARD_TYPE, hassCardAreas } from './hassCards'
 import type { BarPosition } from '@/core/config/types'
 import { getPortableCard, invalidatePortableCardCatalog, listPortableCards } from '@/core/ha/cardApi'
 import PortableCardHost from '@/core/custom-cards/PortableCardHost.vue'
@@ -93,7 +95,8 @@ export interface CardManifest {
   defaultResponsive?: Partial<ResponsiveVisibility>
   /** Catalogs behind every `translation.*` string of this card */
   translations: CardTranslations
-  portable: PortableCardCatalogEntry
+  /** Absent for engine-native cards such as the Home Assistant card host */
+  portable?: PortableCardCatalogEntry
 }
 
 export const cardRegistry = shallowReactive<Record<string, CardManifest>>({})
@@ -172,10 +175,28 @@ function portableManifest(entry: PortableCardCatalogEntry): CardManifest {
   }
 }
 
+/**
+ * Host manifest for native Home Assistant cards. One engine card type covers
+ * every Lovelace card — the HA config travels inside `config.hass`, so the
+ * dashboard file keeps the `manufacturer/card-name` shape.
+ */
+function hassCardManifest(): CardManifest {
+  return {
+    type: HASS_CARD_TYPE,
+    name: 'editor.hassCards.cardName',
+    icon: 'mdi:home-assistant',
+    group: HASS_GROUP,
+    component: defineAsyncComponent(() => import('@/core/ha/HassCardHost.vue')),
+    areas: [...hassCardAreas],
+    translations: emptyCardTranslations,
+  }
+}
+
 export async function syncPortableCardCatalog(): Promise<void> {
   const catalog = await listPortableCards()
   for (const type of Object.keys(cardRegistry)) delete cardRegistry[type]
   for (const entry of catalog) cardRegistry[entry.type] = portableManifest(entry)
+  cardRegistry[HASS_CARD_TYPE] = hassCardManifest()
   invalidatePortableCardCatalog()
 }
 
@@ -191,8 +212,9 @@ export async function cardDefaultCss(
   type: string,
   _area: CardCssArea = 'default',
 ): Promise<string> {
+  // Engine-native cards (the Home Assistant host) ship no editable CSS
   const manifest = cardRegistry[type]
-  if (!manifest) return ''
+  if (!manifest?.portable) return ''
   const document = await getPortableCard(type)
   return document.css
 }
@@ -225,7 +247,9 @@ export function cardDisplayName(
 
 /** Description of a card as shown in the picker and the card editor. */
 export function cardDescription(manifest: CardManifest, locale = 'en'): string {
-  return cardText(manifest.translations, manifest.portable.description, locale)
+  return manifest.portable
+    ? cardText(manifest.translations, manifest.portable.description, locale)
+    : ''
 }
 
 export function groupedCardsForArea(
