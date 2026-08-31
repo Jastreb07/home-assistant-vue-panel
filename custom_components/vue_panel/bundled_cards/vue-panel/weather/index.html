@@ -77,6 +77,14 @@
         "default": false
       },
       {
+        "key": "animatedIcon",
+        "label": "translation.variables.animatedIcon.label",
+        "group": "translation.groups.display",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
@@ -100,6 +108,7 @@
         "translation.groups.display": "Display",
         "translation.variables.roundTemperature.label": "Round temperature",
         "translation.variables.animation.label": "Animated background",
+        "translation.variables.animatedIcon.label": "Animated weather icon",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.defaultName": "Weather",
@@ -128,6 +137,7 @@
         "translation.groups.display": "Anzeige",
         "translation.variables.roundTemperature.label": "Temperatur runden",
         "translation.variables.animation.label": "Animierter Hintergrund",
+        "translation.variables.animatedIcon.label": "Animiertes Wetter-Icon",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.defaultName": "Wetter",
@@ -210,6 +220,32 @@
     .tile__icon img {
         width: 38px;
         height: 38px
+    }
+
+    /*
+     * A Meteocon is a full illustration with its own padding, so it carries
+     * less visual weight at the same box size — give it the whole tile icon.
+     */
+    .tile.has-animated-icon .tile__icon {
+        width: 54px;
+        height: 54px;
+        margin: -6px 0 -4px -6px
+    }
+
+    .tile.has-animated-icon .tile__icon img {
+        width: 100%;
+        height: 100%
+    }
+
+    /*
+     * In a sidebar the card drops its tile background, so the icon is the
+     * only thing carrying the weather — it may take considerably more room
+     * there than inside a dashboard tile.
+     */
+    &[data-vp-area='sidebar'] .tile.has-animated-icon .tile__icon {
+        width: 76px;
+        height: 76px;
+        margin: -10px 0 -8px -12px
     }
 
     .tile__info {
@@ -445,6 +481,30 @@
     'windy-variant': 'mdi:weather-windy-variant',
     exceptional: 'mdi:alert-circle-outline'
   };
+
+  /*
+   * Animated Meteocons shipped in this card's own assets folder (MIT, see
+   * assets/meteocons/LICENSE). They animate through native <animate>
+   * elements, so a plain <img> plays them without any script — and because
+   * they are local files the card also works on a panel without internet.
+   */
+  const animatedIcons = {
+    'clear-night': 'clear-night',
+    cloudy: 'cloudy',
+    fog: 'fog',
+    hail: 'hail',
+    lightning: 'thunderstorms',
+    'lightning-rainy': 'thunderstorms-rain',
+    partlycloudy: 'partly-cloudy-day',
+    pouring: 'extreme-rain',
+    rainy: 'rain',
+    snowy: 'snow',
+    'snowy-rainy': 'sleet',
+    sunny: 'clear-day',
+    windy: 'wind',
+    'windy-variant': 'wind',
+    exceptional: 'not-available'
+  };
   const labels = {
     'clear-night': vuePanel.t('translation.conditions.clearNight'),
     cloudy: vuePanel.t('translation.conditions.cloudy'),
@@ -497,6 +557,21 @@
       windText.textContent = `${Math.round(speed)} ${entity.attributes?.wind_speed_unit || 'km/h'}`;
     }
 
+    /*
+     * The animated icon is a full-colour illustration, so it replaces the
+     * flat one entirely instead of being tinted like it.
+     */
+    const animatedName = config.animatedIcon === true
+      ? animatedIcons[condition] || animatedIcons.exceptional
+      : '';
+    card.classList.toggle('has-animated-icon', Boolean(animatedName));
+    if (animatedName) {
+      icon.src = vuePanel.asset(`assets/meteocons/${animatedName}.svg`);
+      icon.alt = labels[condition] || condition;
+      return;
+    }
+
+    icon.alt = '';
     icon.src = await vuePanel.getIcon(icons[condition] || 'mdi:weather-partly-cloudy', {
       size: 84,
       color: detailColor

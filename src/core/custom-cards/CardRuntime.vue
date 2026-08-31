@@ -50,6 +50,8 @@ interface CardDefinition {
   detail?: CardDetailConfig
   /** Catalogs behind `vuePanel.t()` — a card without them shows its keys */
   translations?: CardTranslations
+  /** HTTP root of a folder card's own files — empty for a single-file card */
+  assetBase?: string
 }
 
 /**
@@ -202,6 +204,21 @@ function buildApi(capabilities: PortableCardCapability[]) {
 
     /** Language the panel currently runs in — cards render text for it. */
     language: locale.value,
+
+    /**
+     * URL of a file the card ships next to its own `index.html`, e.g.
+     * `vuePanel.asset('assets/sun.svg')`. Only cards stored as a folder have
+     * somewhere to put those files; a single-file card has not, and saying so
+     * beats handing back a URL that will 404.
+     */
+    asset(path: string) {
+      const base = props.definition.assetBase ?? ''
+      if (!base) throw new Error('This card has no asset folder — store it as a folder card.')
+      // A card must not reach outside its own folder
+      const clean = String(path ?? '').replace(/^\/+/, '')
+      if (!clean || clean.split('/').includes('..')) throw new Error(`Invalid asset path: ${path}`)
+      return new URL(base + clean, location.origin).href
+    },
 
     /**
      * Text from the card's own translation block. Missing texts fall back to

@@ -102,6 +102,11 @@ export interface PortableCardCatalogEntry extends PortableCardMetadata {
   writable: boolean
   contentHash: string
   resourceUrl: string
+  /**
+   * HTTP root of the files a folder card ships next to its index.html —
+   * empty for a single-file card, which has nowhere to keep assets.
+   */
+  assetBase: string
   sizeBytes: number
 }
 

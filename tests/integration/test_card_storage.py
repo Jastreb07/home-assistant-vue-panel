@@ -475,6 +475,50 @@ class CardStorageTests(unittest.TestCase):
         self.assertTrue(all(card["source"] == "bundled" for card in catalog))
         self.assertTrue(all(card["writable"] is False for card in catalog))
 
+    def test_folder_card_is_read_with_its_asset_base(self) -> None:
+        """A card may live in `<name>/index.html` and ship assets beside it."""
+
+        cards_root = self.private_root / "cards" / "acme"
+        card_root = cards_root / "widget"
+        (card_root / "assets").mkdir(parents=True)
+        (card_root / "assets" / "logo.svg").write_text("<svg/>", encoding="utf-8")
+        document = card_document(card_metadata(manufacturer="acme", card_name="widget"))
+        (card_root / "index.html").write_text(document, encoding="utf-8")
+
+        catalog = card_storage.list_cards(self.private_root, self.private_root / "missing")
+        entry = next(card for card in catalog if card["type"] == "acme/widget")
+        self.assertEqual(
+            entry["assetBase"],
+            f"{card_storage.CARD_ASSET_URL_BASE}/local/acme/widget/",
+        )
+
+        read = card_storage.read_card(
+            self.private_root, self.private_root / "missing", "acme", "widget"
+        )
+        self.assertEqual(read["assetBase"], entry["assetBase"])
+
+    def test_single_file_card_has_no_asset_base(self) -> None:
+        cards_root = self.private_root / "cards" / "acme"
+        cards_root.mkdir(parents=True)
+        document = card_document(card_metadata(manufacturer="acme", card_name="widget"))
+        (cards_root / "widget.html").write_text(document, encoding="utf-8")
+
+        catalog = card_storage.list_cards(self.private_root, self.private_root / "missing")
+        entry = next(card for card in catalog if card["type"] == "acme/widget")
+        self.assertEqual(entry["assetBase"], "")
+
+    def test_deleting_a_folder_card_removes_its_assets(self) -> None:
+        card_root = self.private_root / "cards" / "acme" / "widget"
+        (card_root / "assets").mkdir(parents=True)
+        (card_root / "assets" / "logo.svg").write_text("<svg/>", encoding="utf-8")
+        document = card_document(card_metadata(manufacturer="acme", card_name="widget"))
+        (card_root / "index.html").write_text(document, encoding="utf-8")
+
+        card_storage.delete_card(
+            self.private_root, "acme", "widget", card_storage.card_content_hash(document)
+        )
+        self.assertFalse(card_root.exists())
+
 
     def test_dialog_area_and_detail_metadata_round_trip(self) -> None:
         metadata = card_metadata()

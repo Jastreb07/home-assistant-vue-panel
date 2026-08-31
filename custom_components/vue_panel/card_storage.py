@@ -9,8 +9,13 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import tempfile
 from typing import Any
+
+#: Read-only HTTP root for the files a folder card ships beside its index.html.
+#: Defined here rather than in const.py so this module stays importable on its own.
+CARD_ASSET_URL_BASE = "/vue-panel-card-assets"
 
 CARD_FORMAT = "vue-panel-card"
 CARD_FORMAT_VERSION = 2
@@ -628,6 +633,10 @@ def _safe_directory(path: Path, label: str) -> None:
         raise CardFileError(f"{label} is not a directory")
 
 
+#: Card document inside a card folder, next to the card's own assets
+CARD_INDEX_FILE = "index.html"
+
+
 def _card_path(root: Path, manufacturer: str, card_name: str, create: bool) -> Path:
     _validate_identifier(manufacturer, "Card manufacturer")
     _validate_identifier(card_name, "Card name")
@@ -640,6 +649,19 @@ def _card_path(root: Path, manufacturer: str, card_name: str, create: bool) -> P
         _safe_directory(manufacturer_root, "Card manufacturer directory")
     elif not manufacturer_root.is_dir() or manufacturer_root.is_symlink():
         raise CardNotFound("Card manufacturer does not exist")
+
+    """
+    A card is either a single `<name>.html` or a `<name>/` folder holding
+    `index.html` next to its own assets. New cards are always written as a
+    single file; the folder form is picked up when it already exists.
+    """
+    folder = manufacturer_root / card_name
+    if not create and folder.is_dir() and not folder.is_symlink():
+        path = folder / CARD_INDEX_FILE
+        if path.is_symlink() or path.parent != folder:
+            raise CardFileError("Card path is unsafe")
+        return path
+
     path = manufacturer_root / f"{card_name}.html"
     if path.is_symlink() or path.parent != manufacturer_root:
         raise CardFileError("Card path is unsafe")
@@ -679,11 +701,23 @@ def _catalog_entry(
     parsed: dict[str, Any],
     source: str,
     writable: bool,
+    folder: bool = False,
 ) -> dict[str, Any]:
     metadata = deepcopy(parsed["metadata"])
     manufacturer = metadata["manufacturer"]
     card_name = metadata["cardName"]
+    """
+    Only a folder card can ship assets; a single-file card gets an empty base
+    so `vuePanel.asset()` can tell the difference and fail loudly.
+    """
+    asset_base = (
+        f"{CARD_ASSET_URL_BASE}/{'local' if writable else 'bundled'}"
+        f"/{manufacturer}/{card_name}/"
+        if folder
+        else ""
+    )
     return {
+        "assetBase": asset_base,
         **metadata,
         # The picker and the settings dialog translate labels without the document
         "translations": deepcopy(parsed["translations"]),
@@ -707,15 +741,31 @@ def _scan_root(root: Path, source: str, writable: bool) -> list[dict[str, Any]]:
             raise CardFileError("Card catalog contains an unsafe manufacturer entry")
         _validate_identifier(manufacturer_root.name, "Card manufacturer")
         for path in sorted(manufacturer_root.iterdir(), key=lambda item: item.name):
-            if path.is_symlink() or not path.is_file() or path.suffix != ".html":
+            if path.is_symlink():
                 raise CardFileError("Card catalog contains an unsupported entry")
-            card_name = path.stem
+            """
+            A card is either `<name>.html` or a `<name>/` folder whose
+            `index.html` is the card. Everything else inside such a folder is
+            the card's own assets and is not inspected here.
+            """
+            if path.is_dir():
+                card_name = path.name
+                document_path = path / CARD_INDEX_FILE
+                if document_path.is_symlink() or not document_path.is_file():
+                    raise CardFileError("Card folder has no index.html")
+            elif path.is_file() and path.suffix == ".html":
+                card_name = path.stem
+                document_path = path
+            else:
+                raise CardFileError("Card catalog contains an unsupported entry")
             _validate_identifier(card_name, "Card name")
-            document, parsed = _read_card(path)
+            document, parsed = _read_card(document_path)
             metadata = parsed["metadata"]
             if metadata["manufacturer"] != manufacturer_root.name or metadata["cardName"] != card_name:
                 raise CardFileError("Card metadata does not match its file location")
-            entries.append(_catalog_entry(document, parsed, source, writable))
+            entries.append(
+                _catalog_entry(document, parsed, source, writable, path.is_dir())
+            )
     return entries
 
 
@@ -748,7 +798,13 @@ def read_card(
     if metadata["manufacturer"] != manufacturer or metadata["cardName"] != card_name:
         raise CardFileError("Card metadata does not match its file location")
     return {
-        **_catalog_entry(document, parsed, "local" if writable else "bundled", writable),
+        **_catalog_entry(
+            document,
+            parsed,
+            "local" if writable else "bundled",
+            writable,
+            path.name == CARD_INDEX_FILE,
+        ),
         "document": document,
         "html": parsed["html"],
         "css": parsed["css"],
@@ -840,9 +896,19 @@ def delete_card(
     if expected_hash != current_hash:
         raise CardRevisionConflict(current_hash)
     _backup_card(private_root, manufacturer, card_name, current)
-    path.unlink()
-    if not any(path.parent.iterdir()):
-        path.parent.rmdir()
+    """
+    A folder card owns its assets, so the whole folder goes; a single-file
+    card only takes its own document with it.
+    """
+    if path.name == CARD_INDEX_FILE:
+        card_root = path.parent
+        shutil.rmtree(card_root)
+        manufacturer_root = card_root.parent
+    else:
+        path.unlink()
+        manufacturer_root = path.parent
+    if manufacturer_root.is_dir() and not any(manufacturer_root.iterdir()):
+        manufacturer_root.rmdir()
     return True
 
 
