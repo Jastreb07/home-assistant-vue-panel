@@ -522,6 +522,31 @@
     'windy-variant': vuePanel.t('translation.conditions.windy')
   };
 
+  /*
+   * Every <img> keeps the key of what it currently shows. A weather entity
+   * reports new readings constantly while its icon rarely changes, and each
+   * assignment to `src` makes the browser decode the image again — which
+   * restarts the animation of an animated SVG and shows as a flicker.
+   */
+  const iconKeys = new WeakMap();
+
+  async function setIconSource(key, resolveSource) {
+    if (iconKeys.get(icon) === key) return;
+    iconKeys.set(icon, key);
+    const source = await resolveSource();
+    /* A slower earlier call must not overwrite a newer icon */
+    if (iconKeys.get(icon) !== key) return;
+    icon.src = source;
+  }
+
+  async function setDetailIcon(element, key, resolveSource) {
+    if (iconKeys.get(element) === key) return;
+    iconKeys.set(element, key);
+    const source = await resolveSource();
+    if (iconKeys.get(element) !== key) return;
+    element.src = source;
+  }
+
   async function render(entity) {
     const condition = String(entity?.state || '');
     /*
@@ -544,7 +569,8 @@
     /* `hidden` blendet den ganzen Eintrag samt Icon aus, nicht nur den Text */
     humidityIcon.parentElement.hidden = !hasHumidity;
     if (hasHumidity) {
-      humidityIcon.src = await vuePanel.getIcon('mdi:water-percent', { size: 40, color: detailColor });
+      await setDetailIcon(humidityIcon, `humidity:${detailColor}`,
+        () => vuePanel.getIcon('mdi:water-percent', { size: 40, color: detailColor }));
       humidityText.textContent = `${humidity} %`;
     }
 
@@ -553,7 +579,8 @@
 
     windIcon.parentElement.hidden = !hasWind;
     if (hasWind) {
-      windIcon.src = await vuePanel.getIcon('mdi:weather-windy', { size: 40, color: detailColor });
+      await setDetailIcon(windIcon, `wind:${detailColor}`,
+        () => vuePanel.getIcon('mdi:weather-windy', { size: 40, color: detailColor }));
       windText.textContent = `${Math.round(speed)} ${entity.attributes?.wind_speed_unit || 'km/h'}`;
     }
 
@@ -566,16 +593,25 @@
       : '';
     card.classList.toggle('has-animated-icon', Boolean(animatedName));
     if (animatedName) {
-      icon.src = vuePanel.asset(`assets/meteocons/${animatedName}.svg`);
       icon.alt = labels[condition] || condition;
+      /*
+       * Assigning `src` restarts an SVG's animation even when the URL does
+       * not change — and a weather entity updates far more often than its
+       * condition does. Writing it only on a real change keeps the animation
+       * running instead of flickering back to its first frame.
+       */
+      setIconSource(`animated:${animatedName}`, () => vuePanel.asset(`assets/meteocons/${animatedName}.svg`));
       return;
     }
 
     icon.alt = '';
-    icon.src = await vuePanel.getIcon(icons[condition] || 'mdi:weather-partly-cloudy', {
-      size: 84,
-      color: detailColor
-    });
+    await setIconSource(
+      `mdi:${icons[condition] || 'mdi:weather-partly-cloudy'}:${detailColor}`,
+      () => vuePanel.getIcon(icons[condition] || 'mdi:weather-partly-cloudy', {
+        size: 84,
+        color: detailColor
+      }),
+    );
   }
 
   if (entityId) {

@@ -1747,6 +1747,10 @@
     if (event.target === codePanel && codePanel.classList.contains('is-popup')) closeCodePanel();
   });
 
+  /** Mode buttons kept across renders, keyed by mode — see renderModes(). */
+  const modeButtons = new Map();
+  let modeSignature = '';
+
   function renderModes() {
     const modes = [DISARM_MODE, ...supportedArmModes(currentEntity)];
     const state = knownState(currentEntity?.state);
@@ -1760,42 +1764,65 @@
     const armLocked = interactionLocked || ['pending', 'disarming', 'triggered'].includes(state);
     const activeKey = requestedMode || state;
 
-    modesElement.replaceChildren();
-    const buttons = modes.map(mode => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'alarm-mode';
-      button.classList.toggle('active', mode.key === activeKey);
-      button.classList.toggle('selected', mode.key === requestedMode);
-      button.disabled = mode.key === 'disarmed' ? interactionLocked : armLocked;
-      const img = document.createElement('img');
-      img.className = 'alarm-mode-icon';
-      img.alt = '';
-      const iconWrap = document.createElement('span');
-      iconWrap.className = 'alarm-mode-icon-wrap';
-      iconWrap.append(img);
-      const label = document.createElement('span');
-      label.className = 'alarm-mode-label';
-      label.textContent = vuePanel.t(mode.label);
-      button.append(iconWrap, label);
-      button.addEventListener('click', () => {
-        if (mode.key === 'disarmed') {
-          if (state === 'disarmed') return;
-          requestDisarm();
-        } else {
-          if (state === mode.key) return;
-          requestArm(mode);
-        }
-      });
-      modesElement.append(button);
-      return {button, img, icon: mode.icon};
-    });
+    /*
+     * The alarm entity reports often, and rebuilding the buttons every time
+     * threw away the hovered element and reloaded its icon — which read as a
+     * flicker under the pointer. The buttons are therefore built once per set
+     * of modes and only their state is refreshed afterwards.
+     */
+    const signature = modes.map(mode => mode.key).join('|');
+    if (signature !== modeSignature) {
+      modeSignature = signature;
+      modeButtons.clear();
+      modesElement.replaceChildren();
+      for (const mode of modes) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'alarm-mode';
+        const img = document.createElement('img');
+        img.className = 'alarm-mode-icon';
+        img.alt = '';
+        const iconWrap = document.createElement('span');
+        iconWrap.className = 'alarm-mode-icon-wrap';
+        iconWrap.append(img);
+        const label = document.createElement('span');
+        label.className = 'alarm-mode-label';
+        label.textContent = vuePanel.t(mode.label);
+        button.append(iconWrap, label);
+        button.addEventListener('click', () => {
+          /* Read the state now — the button outlives the render that made it */
+          const current = knownState(currentEntity?.state);
+          if (mode.key === 'disarmed') {
+            if (current === 'disarmed') return;
+            requestDisarm();
+          } else {
+            if (current === mode.key) return;
+            requestArm(mode);
+          }
+        });
+        modesElement.append(button);
+        modeButtons.set(mode.key, {button, img, icon: mode.icon, iconKey: ''});
+      }
+    }
 
-    Promise.all(buttons.map(async entry => {
-      entry.img.src = await vuePanel.getIcon(entry.icon, {
-        size: 48,
-        color: entry.button.classList.contains('active') ? '#ffffff' : '#202020'
-      });
+    for (const mode of modes) {
+      const entry = modeButtons.get(mode.key);
+      if (!entry) continue;
+      entry.button.classList.toggle('active', mode.key === activeKey);
+      entry.button.classList.toggle('selected', mode.key === requestedMode);
+      entry.button.disabled = mode.key === 'disarmed' ? interactionLocked : armLocked;
+    }
+
+    /* Only redraw an icon whose appearance actually changed */
+    Promise.all([...modeButtons.values()].map(async entry => {
+      const color = entry.button.classList.contains('active') ? '#ffffff' : '#202020';
+      const key = `${entry.icon}:${color}`;
+      if (entry.iconKey === key) return;
+      entry.iconKey = key;
+      const source = await vuePanel.getIcon(entry.icon, {size: 48, color});
+      /* A slower earlier call must not overwrite a newer icon */
+      if (entry.iconKey !== key) return;
+      entry.img.src = source;
     }));
   }
 
