@@ -158,6 +158,7 @@ export default {
       alpha: 'Transparency',
       switchFormat: 'Switch between HEX and RGB',
       pickFromScreen: 'Pick a colour from the screen',
+      open: 'Open the colour picker',
     },
     list: {
       addView: 'Add view…',

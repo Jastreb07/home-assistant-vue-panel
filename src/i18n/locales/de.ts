@@ -158,6 +158,7 @@ export default {
       alpha: 'Transparenz',
       switchFormat: 'Zwischen HEX und RGB wechseln',
       pickFromScreen: 'Farbe vom Bildschirm auswählen',
+      open: 'Farbwähler öffnen',
     },
     list: {
       addView: 'Ansicht hinzufügen…',

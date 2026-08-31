@@ -8,6 +8,7 @@ const ColorPicker = themed('ColorPicker')
 defineProps<{
   modelValue: string
   defaultFormat?: ColorFormat
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
@@ -18,6 +19,7 @@ const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
     :is="ColorPicker"
     :model-value="modelValue"
     :default-format="defaultFormat"
+    :placeholder="placeholder"
     @update:model-value="emit('update:modelValue', $event)"
   />
 </template>
