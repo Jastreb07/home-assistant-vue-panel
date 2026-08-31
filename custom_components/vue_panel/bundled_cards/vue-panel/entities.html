@@ -286,6 +286,11 @@
         overflow: hidden;
     }
 
+    /* Slight tint on hover — colour comes from the theme */
+    .entities-card:hover:not(.active) {
+        background: var(--card-bg-hover, var(--card-bg));
+    }
+
     .entities-card__header {
         display: flex;
         align-items: center;

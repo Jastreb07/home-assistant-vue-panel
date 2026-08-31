@@ -6,7 +6,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--card-bg);
+  background: var(--input-bg, var(--card-bg));
   border: 1px solid var(--divider);
   border-radius: var(--vp-control-radius);
   padding: 0 var(--vp-control-pad-x);

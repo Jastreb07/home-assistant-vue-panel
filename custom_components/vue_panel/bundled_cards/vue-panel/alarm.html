@@ -416,6 +416,11 @@
         transition: background .2s, box-shadow .2s;
     }
 
+    /* Slight tint on hover — colour comes from the theme */
+    .alarm-card:hover:not(.active) {
+        background: var(--card-bg-hover, var(--card-bg));
+    }
+
     .alarm-card.is-transparent {
         background: transparent;
         box-shadow: none;

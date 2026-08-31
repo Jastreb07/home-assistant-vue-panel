@@ -11,7 +11,12 @@ var e=`/* ───────────────────────�
   --bg: #14161a;\r
   --nav-bg: #1b1e24;\r
   --card-bg: #23272f;\r
+  --card-bg-hover: #2a2f38;\r
   --card-bg-active: #f5b82e;\r
+  /* Circular icon backdrop on the tile cards */\r
+  --tile-icon-bg: rgb(215 215 215 / 8%);\r
+  /* Editor inputs keep their own token so restyling cards leaves them alone */\r
+  --input-bg: #23272f;\r
   --card-radius: 28px;\r
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);\r
   --tile-icon-offset-x: -4px;\r
@@ -43,7 +48,10 @@ var e=`/* ───────────────────────�
   --bg: #f2f4f8;\r
   --nav-bg: #ffffff;\r
   --card-bg: #ffffff;\r
-  --card-bg-active: #f5b82e;\r
+  --card-bg-hover: #fbfbfb;\r
+  --card-bg-active: #ffffff;\r
+  --tile-icon-bg: rgb(215 215 215 / 35%);\r
+  --input-bg: #ffffff;\r
   --card-shadow: 0 2px 8px rgba(30, 40, 60, 0.1);\r
   --text-primary: #1c2330;\r
   --text-secondary: #5c6675;\r
@@ -185,7 +193,7 @@ input[type='text'],\r
 input[type='number'],\r
 input:not([type]),\r
 select {\r
-  background: var(--card-bg);\r
+  background: var(--input-bg, var(--card-bg));\r
   border: 1px solid var(--divider);\r
   border-radius: 10px;\r
   color: var(--text-primary);\r

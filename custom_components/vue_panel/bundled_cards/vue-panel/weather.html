@@ -183,6 +183,11 @@
         overflow: hidden
     }
 
+    /* Slight tint on hover — colour comes from the theme */
+    .tile:hover:not(.active) {
+        background: var(--card-bg-hover, var(--card-bg));
+    }
+
     /*
      * In einer Seitenleiste gibt die Card ihre Kachel-Optik auf und fügt sich
      * in den Hintergrund der Leiste ein. `data-vp-area` setzt die Engine auf

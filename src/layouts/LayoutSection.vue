@@ -277,19 +277,13 @@ function onSlotPointerUp(e: PointerEvent, card: CardConfig) {
   isolation: isolate;
 }
 /* In edit mode the blur overlay covers the card, so anything scrolling under
-   it would move invisibly — freeze the card box and every scroller inside it
-   so the overlay has a fixed size and cannot be scrolled. */
+   it would move invisibly — clamp the card to its container so the overlay
+   has a fixed size. Scrolling itself is blocked by the overlay (see
+   CardEditOverlay), which is why inner elements keep their own overflow. */
 .card-slot.editing {
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
-}
-.card-slot.editing :deep(*) {
-  overflow: hidden !important;
-  scrollbar-width: none;
-}
-.card-slot.editing :deep(*::-webkit-scrollbar) {
-  display: none;
 }
 .card-slot.resizable {
   resize: both;

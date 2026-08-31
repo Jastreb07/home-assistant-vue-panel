@@ -28,7 +28,7 @@ input.vp-checkbox-input {
   place-items: center;
   border: 1px solid var(--divider);
   border-radius: 6px;
-  background: var(--card-bg);
+  background: var(--input-bg, var(--card-bg));
   color: var(--text-on-active);
   transition: background 0.15s, border-color 0.15s;
 }

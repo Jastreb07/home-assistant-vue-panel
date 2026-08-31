@@ -11,6 +11,9 @@
   cursor: pointer;
   user-select: none;
 }
+.vp-card.clickable:hover:not(.active) {
+  background: var(--card-bg-hover, var(--card-bg));
+}
 .vp-card.clickable:active {
   transform: scale(0.98);
 }

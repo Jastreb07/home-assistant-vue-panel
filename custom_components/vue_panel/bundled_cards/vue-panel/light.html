@@ -107,6 +107,22 @@
         "default": true
       },
       {
+        "key": "showBrightnessRing",
+        "label": "translation.variables.showBrightnessRing.label",
+        "group": "translation.groups.cardSettings",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
+        "key": "brightnessSlider",
+        "label": "translation.variables.brightnessSlider.label",
+        "group": "translation.groups.cardSettings",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
         "key": "showAttribute",
         "label": "translation.variables.showAttribute.label",
         "group": "translation.groups.cardSettings",
@@ -152,6 +168,8 @@
         "translation.variables.name.label": "Display name",
         "translation.variables.icon.label": "Icon",
         "translation.variables.showBrightness.label": "Show brightness",
+        "translation.variables.showBrightnessRing.label": "Show brightness ring",
+        "translation.variables.brightnessSlider.label": "Brightness slider (drag vertically)",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.defaultName": "Light",
@@ -173,6 +191,8 @@
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.icon.label": "Icon",
         "translation.variables.showBrightness.label": "Helligkeit anzeigen",
+        "translation.variables.showBrightnessRing.label": "Helligkeits-Ring anzeigen",
+        "translation.variables.brightnessSlider.label": "Helligkeits-Slider (vertikal ziehen)",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.defaultName": "Licht",
@@ -193,7 +213,15 @@
 
 <template data-vue-panel-html>
   <button class="tile light-card" id="card" type="button">
+    <span class="tile__fill" id="fill"></span>
     <span class="tile__icon"><img id="icon" alt=""></span>
+    <span class="tile__ring" id="ring" hidden>
+      <svg viewBox="0 0 36 36" aria-hidden="true">
+        <circle class="tile__ring-track" cx="18" cy="18" r="16"></circle>
+        <circle class="tile__ring-value" id="ring-value" cx="18" cy="18" r="16"></circle>
+      </svg>
+      <span class="tile__ring-label" id="ring-label"></span>
+    </span>
     <span class="tile__info">
     <span class="tile__name" id="name"></span>
     <span class="tile__state" id="state"></span>
@@ -203,6 +231,7 @@
 
 <style data-vue-panel-css>
     .tile {
+        position: relative;
         width: 100%;
         height: 100%;
         min-height: 120px;
@@ -223,6 +252,11 @@
         overflow: hidden;
     }
 
+    /* Slight tint on hover — colour comes from the theme */
+    .tile:hover:not(.active) {
+        background: var(--card-bg-hover, var(--card-bg));
+    }
+
     .tile:active {
         transform: scale(.98);
     }
@@ -232,6 +266,76 @@
         color: #111;
     }
 
+    /* Fill level of the vertical brightness slider — sits behind the content */
+    .tile__fill {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 0;
+        z-index: 0;
+        background: rgb(255 255 255 / 32%);
+        pointer-events: none;
+        transition: height .15s ease;
+    }
+
+    .tile.is-sliding .tile__fill {
+        transition: none;
+    }
+
+    .tile__icon, .tile__ring, .tile__info {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Brightness ring in the top-right corner */
+    .tile__ring {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 38px;
+        height: 38px;
+        display: grid;
+        place-items: center;
+    }
+
+    .tile__ring[hidden] {
+        display: none;
+    }
+
+    .tile__ring svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        transform: rotate(-90deg);
+    }
+
+    .tile__ring circle {
+        fill: none;
+        stroke-width: 3.5;
+    }
+
+    .tile__ring-track {
+        stroke: rgb(0 0 0 / 12%);
+    }
+
+    .tile__ring-value {
+        stroke: #29a3dd;
+        stroke-linecap: round;
+        transition: stroke-dashoffset .2s ease;
+    }
+
+    .tile.is-sliding .tile__ring-value {
+        transition: none;
+    }
+
+    .tile__ring-label {
+        font-size: 10px;
+        font-weight: 600;
+        line-height: 1;
+    }
+
     .tile__icon {
         width: 38px;
         height: 38px;
@@ -239,7 +343,7 @@
         border-radius: 50%;
         display: grid;
         place-items: center;
-        background: rgb(215 215 215 / 35%);
+        background: var(--tile-icon-bg, rgb(215 215 215 / 35%));
     }
 
     .tile.active .tile__icon {
@@ -375,6 +479,8 @@
     };
 
     const ignored = event => Boolean(handlers.ignore) && Boolean(event.target.closest(handlers.ignore));
+    /* While the brightness slider is being dragged no gesture may fire */
+    const suppressed = () => Boolean(handlers.suppress) && handlers.suppress();
     let holdTimer = null;
     let held = false;
     let taps = 0;
@@ -384,6 +490,7 @@
       held = false;
       holdTimer = setTimeout(() => {
         holdTimer = null;
+        if (suppressed()) return;
         held = true;
         run('hold');
       }, 500);
@@ -397,7 +504,7 @@
     }
 
     element.addEventListener('click', event => {
-      if (ignored(event)) return;
+      if (ignored(event) || suppressed()) return;
       if (held) {
         held = false;
         return;
@@ -423,11 +530,44 @@
   const icon = document.getElementById('icon');
   const name = document.getElementById('name');
   const state = document.getElementById('state');
+  const fill = document.getElementById('fill');
+  const ring = document.getElementById('ring');
+  const ringValue = document.getElementById('ring-value');
+  const ringLabel = document.getElementById('ring-label');
+
+  const RING_LENGTH = 2 * Math.PI * 16;
+  ringValue.style.strokeDasharray = String(RING_LENGTH);
+
+  const sliderEnabled = config.brightnessSlider === true;
+  /* Percentage shown while dragging — the entity update lags behind the drag */
+  let dragPercent = null;
+  let lastEntity = null;
+
+  function brightnessPercent(entity) {
+    const brightness = Number(entity?.attributes?.brightness);
+    return Number.isFinite(brightness) ? Math.round(brightness / 255 * 100) : 0;
+  }
+
+  /* Ring and slider fill both follow the drag immediately, then the entity */
+  function paintLevel(entity) {
+    const isOn = entity?.state === 'on';
+    const percent = dragPercent !== null ? dragPercent : brightnessPercent(entity);
+    const hasLevel = dragPercent !== null || (isOn && percent > 0);
+    const showRing = config.showBrightnessRing === true && hasLevel;
+    ring.hidden = !showRing;
+    if (showRing) {
+      ringValue.style.strokeDashoffset = String(RING_LENGTH * (1 - Math.min(100, percent) / 100));
+      ringLabel.textContent = `${percent} %`;
+    }
+    fill.style.height = sliderEnabled && hasLevel ? `${Math.min(100, percent)}%` : '0';
+  }
 
   async function render(entity) {
+    lastEntity = entity;
     const isOn = entity?.state === 'on';
     const brightness = Number(entity?.attributes?.brightness);
     card.classList.toggle('active', isOn);
+    paintLevel(entity);
     name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
     name.hidden = config.showName === false;
     icon.parentElement.hidden = config.showIcon === false;
@@ -443,9 +583,88 @@
     });
   }
 
+  /*
+   * Vertical brightness slider: dragging up/down over the card sets the
+   * brightness directly. A drag only starts after a few pixels of movement so
+   * a plain tap still toggles the light; while dragging every gesture is
+   * suppressed. Service calls are throttled — the drag itself stays smooth
+   * because ring and fill are painted from the local drag value.
+   */
+  let dragging = false;
+  let dragPointerId = null;
+  let dragStartY = 0;
+  let dragStartPercent = 0;
+  let commitTimer = null;
+  /* Blocks the click that follows the drag's pointerup */
+  let suppressUntil = 0;
+
+  function percentFromDrag(event) {
+    const height = card.clientHeight || 1;
+    /* Dragging up brightens: the full card height covers the whole range */
+    const delta = (dragStartY - event.clientY) / height * 100;
+    return Math.max(1, Math.min(100, Math.round(dragStartPercent + delta)));
+  }
+
+  async function commitBrightness(percent) {
+    if (!entityId) return;
+    await vuePanel.callService('light', 'turn_on', {brightness_pct: percent}, {entity_id: entityId});
+  }
+
+  function queueCommit() {
+    if (commitTimer !== null || dragPercent === null) return;
+    commitTimer = setTimeout(() => {
+      commitTimer = null;
+      if (dragPercent !== null) commitBrightness(dragPercent).catch(() => {});
+    }, 180);
+  }
+
+  if (sliderEnabled) {
+    card.addEventListener('pointerdown', event => {
+      if (!entityId || event.button !== 0) return;
+      dragPointerId = event.pointerId;
+      dragStartY = event.clientY;
+      dragStartPercent = brightnessPercent(lastEntity) || (lastEntity?.state === 'on' ? 100 : 0);
+    });
+
+    card.addEventListener('pointermove', event => {
+      if (dragPointerId !== event.pointerId) return;
+      if (!dragging) {
+        if (Math.abs(event.clientY - dragStartY) < 6) return;
+        dragging = true;
+        card.classList.add('is-sliding');
+        card.setPointerCapture(event.pointerId);
+      }
+      dragPercent = percentFromDrag(event);
+      paintLevel(lastEntity);
+      queueCommit();
+    });
+
+    for (const eventName of ['pointerup', 'pointercancel']) {
+      card.addEventListener(eventName, event => {
+        if (dragPointerId !== event.pointerId) return;
+        dragPointerId = null;
+        if (!dragging) return;
+        dragging = false;
+        card.classList.remove('is-sliding');
+        suppressUntil = Date.now() + 350;
+        if (commitTimer !== null) {
+          clearTimeout(commitTimer);
+          commitTimer = null;
+        }
+        const percent = dragPercent;
+        /* The entity update repaints from the real value and clears the drag */
+        if (percent !== null) commitBrightness(percent).catch(() => {}).finally(() => {
+          dragPercent = null;
+          paintLevel(lastEntity);
+        });
+      });
+    }
+  }
+
   bindGestures(card, config, {
     entityId,
     toggle: () => toggleEntity(entityId),
+    suppress: () => dragging || Date.now() < suppressUntil,
     default: gesture => (gesture === 'tap' ? toggleEntity(entityId) : undefined)
   });
 

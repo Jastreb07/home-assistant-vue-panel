@@ -303,20 +303,14 @@ function onDrop(event: DragEvent) {
   min-height: 0;
 }
 /* In edit mode the blur overlay covers the card, so anything scrolling under
-   it would move invisibly. Clamp the card to the height its track actually
-   shows and freeze every scroller inside it, so the overlay has a fixed size
-   and neither it nor its content can be scrolled. */
+   it would move invisibly — clamp the card to the size its track actually
+   shows so the overlay has a fixed size. Scrolling itself is blocked by the
+   overlay (see CardEditOverlay), which is why inner elements keep their own
+   overflow. */
 .bar-card.editing {
   max-width: 100%;
   max-height: 100%;
   overflow: hidden;
-}
-.bar-card.editing :deep(*) {
-  overflow: hidden !important;
-  scrollbar-width: none;
-}
-.bar-card.editing :deep(*::-webkit-scrollbar) {
-  display: none;
 }
 /* A card never grows past the bar it sits in. */
 .row > .bar-cards-track > .bar-card {

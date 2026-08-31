@@ -141,6 +141,11 @@
         transition: background .2s
     }
 
+    /* Slight tint on hover — colour comes from the theme */
+    .tile:hover:not(.active) {
+        background: var(--card-bg-hover, var(--card-bg));
+    }
+
     .tile.active {
         background: #f6d36b;
         color: #111
@@ -152,7 +157,7 @@
         border-radius: 50%;
         display: grid;
         place-items: center;
-        background: rgb(215 215 215 / 35%)
+        background: var(--tile-icon-bg, rgb(215 215 215 / 35%))
     }
 
     .tile.active .tile__icon {

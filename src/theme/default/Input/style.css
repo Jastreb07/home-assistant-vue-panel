@@ -5,7 +5,7 @@ input.vp-input {
   padding: 0 var(--vp-control-pad-x);
   border: 1px solid var(--divider);
   border-radius: var(--vp-control-radius);
-  background: var(--card-bg);
+  background: var(--input-bg, var(--card-bg));
   color: var(--text-primary);
   font-family: inherit;
   font-size: var(--vp-control-font);
