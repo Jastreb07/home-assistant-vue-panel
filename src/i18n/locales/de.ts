@@ -152,6 +152,13 @@ export default {
       detail: 'Detailansicht',
     },
     fieldGroupOther: 'Weitere Einstellungen',
+    color: {
+      value: 'Farbwert',
+      hue: 'Farbton',
+      alpha: 'Transparenz',
+      switchFormat: 'Zwischen HEX und RGB wechseln',
+      pickFromScreen: 'Farbe vom Bildschirm auswählen',
+    },
     list: {
       addView: 'Ansicht hinzufügen…',
       addEntry: 'Eintrag hinzufügen',
@@ -488,6 +495,7 @@ export default {
         number: 'Zahl',
         boolean: 'An/Aus',
         icon: 'Icon',
+        color: 'Farbe',
         view: 'View',
         select: 'Auswahlliste',
         list: 'Liste',

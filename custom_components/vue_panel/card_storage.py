@@ -21,6 +21,12 @@ MAX_CARD_BYTES = 512 * 1024
 _IDENTIFIER_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _VARIABLE_KEY_PATTERN = re.compile(r"^[A-Za-z_$][A-Za-z0-9_$]*$")
 _ICON_PATTERN = re.compile(r"^mdi:[a-z0-9]+(?:-[a-z0-9]+)*$")
+# Hex (#rgb/#rgba/#rrggbb/#rrggbbaa) or functional rgb()/rgba() notation
+_COLOR_PATTERN = re.compile(
+    r"^(?:#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})"
+    r"|rgba?\([0-9.,%\s/]+\))$",
+    re.IGNORECASE,
+)
 _DOMAIN_PATTERN = re.compile(r"^[a-z0-9_]+$")
 _DOCUMENT_PATTERN = re.compile(
     r"^\s*<script\s+data-vue-panel-config>\s*"
@@ -85,6 +91,7 @@ _VARIABLE_TYPES = {
     "string",
     "number",
     "boolean",
+    "color",
     "list",
 }
 _FORBIDDEN_VARIABLE_KEYS = {"__proto__", "prototype", "constructor"}
@@ -242,6 +249,8 @@ def _validate_default(variable: dict[str, Any], index: int) -> None:
         _finite_number(value, f"Variable {index} default")
     if variable_type == "icon" and not _ICON_PATTERN.fullmatch(value):
         raise CardFileError(f"Variable {index} has an invalid icon default")
+    if variable_type == "color" and value and not _COLOR_PATTERN.fullmatch(value):
+        raise CardFileError(f"Variable {index} has an invalid colour default")
 
 
 def _validate_list_variable(variable: dict[str, Any], index: int) -> None:

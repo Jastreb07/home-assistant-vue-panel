@@ -44,6 +44,7 @@ export interface CardSchemaField {
     | 'view'
     | 'popup'
     | 'icon'
+    | 'color'
     | 'list'
     | 'action'
   label: string

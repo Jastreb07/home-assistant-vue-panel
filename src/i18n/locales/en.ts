@@ -152,6 +152,13 @@ export default {
       detail: 'Detail view',
     },
     fieldGroupOther: 'More settings',
+    color: {
+      value: 'Colour value',
+      hue: 'Hue',
+      alpha: 'Transparency',
+      switchFormat: 'Switch between HEX and RGB',
+      pickFromScreen: 'Pick a colour from the screen',
+    },
     list: {
       addView: 'Add view…',
       addEntry: 'Add entry',
@@ -487,6 +494,7 @@ export default {
         number: 'Number',
         boolean: 'On/off',
         icon: 'Icon',
+        color: 'Colour',
         view: 'View',
         select: 'Select',
         list: 'List',

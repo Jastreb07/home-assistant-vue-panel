@@ -29,6 +29,7 @@ export type PortableCardVariableType =
   | 'string'
   | 'number'
   | 'boolean'
+  | 'color'
   | 'list'
 
 export interface PortableCardVariable {

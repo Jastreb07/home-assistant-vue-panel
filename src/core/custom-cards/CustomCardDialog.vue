@@ -40,6 +40,7 @@ import {
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
+import BaseColorPicker from '@/core/ui/BaseColorPicker.vue'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
@@ -208,6 +209,7 @@ const variableTypeOptions = computed<SelectOption[]>(() => [
   {value: 'number', label: t('customCards.variables.types.number')},
   {value: 'boolean', label: t('customCards.variables.types.boolean')},
   {value: 'icon', label: t('customCards.variables.types.icon')},
+  {value: 'color', label: t('customCards.variables.types.color')},
   {value: 'view', label: t('customCards.variables.types.view')},
   {value: 'select', label: t('customCards.variables.types.select')},
   {value: 'list', label: t('customCards.variables.types.list')},
@@ -533,7 +535,7 @@ function parseVariablesJson(source: string): CustomCardVariable[] {
   if (!Array.isArray(parsed)) throw new Error(t('customCards.variables.jsonArrayError'))
 
   const allowedTypes: CustomCardVariableType[] = [
-    'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select', 'list',
+    'entity', 'string', 'number', 'boolean', 'icon', 'color', 'view', 'select', 'list',
   ]
   const existingIds = new Map(draft.value.variables.map((variable) => [variable.key, variable.id]))
   const keys = new Set<string>()
@@ -672,7 +674,7 @@ function parseItemFields(value: unknown, index: number): Array<Omit<CustomCardVa
     const label = field && typeof field.label === 'string' ? field.label.trim() : ''
     const type = field?.type as CustomCardVariableType
     const scalarTypes: CustomCardVariableType[] = [
-      'entity', 'string', 'number', 'boolean', 'icon', 'view', 'select',
+      'entity', 'string', 'number', 'boolean', 'icon', 'color', 'view', 'select',
     ]
     if (!/^[A-Za-z_$][A-Za-z0-9_$]*$/.test(key) || !label || !scalarTypes.includes(type)) {
       throw new Error(t('customCards.variables.jsonItemFieldsError', {index: index + 1}))
@@ -1389,6 +1391,11 @@ const previewStyle = computed(() => ({
                         allow-custom
                         custom-prefix="mdi:"
                         clearable
+                        @update:model-value="variable.default = $event"
+                    />
+                    <BaseColorPicker
+                        v-else-if="variable.type === 'color'"
+                        :model-value="String(variable.default ?? '')"
                         @update:model-value="variable.default = $event"
                     />
                     <BaseSelectMenu

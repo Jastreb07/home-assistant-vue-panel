@@ -9,6 +9,7 @@ import { useDashboardStore } from '@/core/config/dashboardStore'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
+import BaseColorPicker from '@/core/ui/BaseColorPicker.vue'
 import { mdiIconOptions } from '@/core/ui/mdiIconNames'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import BaseTapAction from '@/core/ui/BaseTapAction.vue'
@@ -87,7 +88,7 @@ const selectOptions = computed<SelectOption[]>(() =>
  * wrapping either in a <label> would forward (and double) clicks.
  */
 const plainWrapper = computed(() =>
-  ['icon', 'select', 'view', 'popup', 'boolean', 'list', 'action'].includes(props.field.type),
+  ['icon', 'select', 'view', 'popup', 'boolean', 'color', 'list', 'action'].includes(props.field.type),
 )
 
 /** Tap actions are stored as one object per gesture. */
@@ -141,6 +142,12 @@ const actionValue = computed<Partial<Record<CardGesture, CardActionValue>>>(() =
       :max="field.max"
       :step="field.step"
       @update:model-value="emit('update:value', Number($event))"
+    />
+
+    <BaseColorPicker
+      v-else-if="field.type === 'color'"
+      :model-value="text || (field.default as string | undefined) || ''"
+      @update:model-value="emit('update:value', $event)"
     />
 
     <BaseCheckbox
