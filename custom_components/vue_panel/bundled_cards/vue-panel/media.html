@@ -52,6 +52,14 @@
         "default": ""
       },
       {
+        "key": "dynamicBackground",
+        "label": "translation.variables.dynamicBackground.label",
+        "group": "translation.groups.appearance",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
         "key": "showVolume",
         "label": "translation.variables.showVolume.label",
         "group": "translation.groups.display",
@@ -78,6 +86,7 @@
         "translation.description": "Controls a media player",
         "translation.variables.entity.label": "Media player entity",
         "translation.variables.name.label": "Display name",
+        "translation.variables.dynamicBackground.label": "Dynamic background",
         "translation.groups.appearance": "Appearance",
         "translation.variables.showVolume.label": "Show volume",
         "translation.groups.display": "Display",
@@ -93,6 +102,7 @@
         "translation.description": "Steuert einen Media Player",
         "translation.variables.entity.label": "Media-Player-Entity",
         "translation.variables.name.label": "Anzeigename",
+        "translation.variables.dynamicBackground.label": "Dynamischer Hintergrund",
         "translation.groups.appearance": "Darstellung",
         "translation.variables.showVolume.label": "Lautstärke anzeigen",
         "translation.groups.display": "Anzeige",
@@ -108,7 +118,13 @@
 </script>
 
 <template data-vue-panel-html>
-  <article class="tile media-card" id="card"><span class="tile__icon"><img id="icon" alt=""></span>
+  <article class="tile media-card" id="card">
+    <div class="media-backdrop" aria-hidden="true">
+      <div class="media-backdrop__color"></div>
+      <div class="media-backdrop__artwork" id="artwork"></div>
+      <div class="media-backdrop__gradient"></div>
+    </div>
+    <span class="tile__icon"><img id="icon" alt=""></span>
     <div class="controls" id="controls">
       <button data-service="media_previous_track"><img id="previous" alt=""></button>
       <button data-service="media_play_pause"><img id="play" alt=""></button>
@@ -138,17 +154,66 @@
         box-shadow: var(--card-shadow);
         color: var(--text-primary);
         overflow: hidden;
-        transition: background .2s
+        transition: background-color .8s, color .4s
     }
 
     /* Slight tint on hover — colour comes from the theme */
-    .tile:hover:not(.active) {
+    .tile:hover:not(.active):not(.has-artwork) {
         background: var(--card-bg-hover, var(--card-bg));
     }
 
-    .tile.active {
+    .tile.active:not(.has-artwork) {
         background: #f6d36b;
         color: #111
+    }
+
+    .tile.has-artwork {
+        background: var(--media-background, var(--card-bg));
+        color: var(--media-foreground, #fff)
+    }
+
+    .media-backdrop {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity .8s
+    }
+
+    .has-artwork .media-backdrop {
+        opacity: 1
+    }
+
+    .media-backdrop__color {
+        position: absolute;
+        inset: 0;
+        background: var(--media-background, var(--card-bg));
+        transition: background-color .8s
+    }
+
+    .media-backdrop__artwork,
+    .media-backdrop__gradient {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: auto;
+        height: 100%;
+        aspect-ratio: 1;
+        transition: background-image .8s, opacity .8s
+    }
+
+    .media-backdrop__artwork {
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover
+    }
+
+    .media-backdrop__gradient {
+        background: linear-gradient(to right, var(--media-background, var(--card-bg)), transparent)
+    }
+
+    .tile > :not(.media-backdrop) {
+        z-index: 1
     }
 
     .tile__icon {
@@ -160,8 +225,9 @@
         background: var(--tile-icon-bg, rgb(215 215 215 / 35%))
     }
 
-    .tile.active .tile__icon {
-        background: rgb(255 255 255 / 40%)
+    .tile.active .tile__icon,
+    .tile.has-artwork .tile__icon {
+        background: var(--media-control-background, rgb(255 255 255 / 40%))
     }
 
     .tile__icon img {
@@ -189,7 +255,7 @@
 
     .tile__state {
         margin-top: 3px;
-        color: #666;
+        color: var(--media-secondary, #666);
         font-size: 11px;
         line-height: 1.2
     }
@@ -222,6 +288,10 @@
         height: 18px
     }
 
+    .has-artwork .controls button:hover {
+        background: var(--media-control-background, rgb(255 255 255 / 22%))
+    }
+
     .volume {
         width: 100%;
         display: flex;
@@ -236,7 +306,8 @@
 
     .volume input {
         min-width: 0;
-        flex: 1
+        flex: 1;
+        accent-color: currentColor
     }
 
     .volume span {
@@ -348,18 +419,152 @@
   const name = document.getElementById('name');
   const state = document.getElementById('state');
   const icon = document.getElementById('icon');
+  const artwork = document.getElementById('artwork');
   const controls = document.getElementById('controls');
   const volumeWrap = document.getElementById('volume-wrap');
   const volume = document.getElementById('volume');
   const volumeValue = document.getElementById('volume-value');
-  for (const [id, value] of [['previous', 'mdi:skip-previous'], ['next', 'mdi:skip-next'], ['volume-icon', 'mdi:volume-high']]) document.getElementById(id).src = await vuePanel.getIcon(value, {
-    size: 48,
-    color: '#111111'
-  });
+  const colorCache = new Map();
+  const iconCache = new Map();
+  let renderedArtwork = '';
+  let renderVersion = 0;
+
+  function relativeLuminance(red, green, blue) {
+    const channels = [red, green, blue].map(value => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+    });
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  }
+
+  function paletteFromPixels(pixels) {
+    const buckets = new Map();
+    for (let index = 0; index < pixels.length; index += 4) {
+      const red = pixels[index];
+      const green = pixels[index + 1];
+      const blue = pixels[index + 2];
+      if (pixels[index + 3] < 160) continue;
+
+      const maximum = Math.max(red, green, blue);
+      const minimum = Math.min(red, green, blue);
+      const saturation = maximum === 0 ? 0 : (maximum - minimum) / maximum;
+      const luminance = relativeLuminance(red, green, blue);
+      const usable = luminance > 0.025 && luminance < 0.94;
+      const key = `${usable ? 1 : 0}-${red >> 4}-${green >> 4}-${blue >> 4}`;
+      const bucket = buckets.get(key) || {red: 0, green: 0, blue: 0, count: 0, score: 0, usable};
+      bucket.red += red;
+      bucket.green += green;
+      bucket.blue += blue;
+      bucket.count += 1;
+      bucket.score += 1 + saturation * 0.35;
+      buckets.set(key, bucket);
+    }
+
+    const candidates = [...buckets.values()];
+    const usable = candidates.filter(candidate => candidate.usable);
+    const dominant = (usable.length ? usable : candidates).sort((left, right) => right.score - left.score)[0];
+    if (!dominant) throw new Error('Artwork does not contain visible pixels');
+
+    const red = Math.round(dominant.red / dominant.count);
+    const green = Math.round(dominant.green / dominant.count);
+    const blue = Math.round(dominant.blue / dominant.count);
+    const luminance = relativeLuminance(red, green, blue);
+    const blackContrast = (luminance + 0.05) / 0.05;
+    const whiteContrast = 1.05 / (luminance + 0.05);
+    const lightForeground = whiteContrast >= blackContrast;
+    return {
+      background: `rgb(${red} ${green} ${blue})`,
+      foreground: lightForeground ? '#ffffff' : '#111111',
+      secondary: lightForeground ? 'rgb(255 255 255 / 76%)' : 'rgb(17 17 17 / 72%)',
+      control: lightForeground ? 'rgb(255 255 255 / 22%)' : 'rgb(0 0 0 / 13%)'
+    };
+  }
+
+  function extractArtworkColors(source) {
+    if (colorCache.has(source)) return colorCache.get(source);
+    const result = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.decoding = 'async';
+      image.onload = () => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = 32;
+          canvas.height = 32;
+          const context = canvas.getContext('2d', {willReadFrequently: true});
+          if (!context) throw new Error('Canvas is unavailable');
+          context.drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(paletteFromPixels(context.getImageData(0, 0, canvas.width, canvas.height).data));
+        } catch (error) {
+          reject(error);
+        }
+      };
+      image.onerror = () => reject(new Error('Artwork could not be loaded'));
+      image.src = source;
+    });
+    colorCache.set(source, result);
+    if (colorCache.size > 16) colorCache.delete(colorCache.keys().next().value);
+    return result;
+  }
+
+  function getIcon(iconName, size, color) {
+    const key = `${iconName}-${size}-${color}`;
+    if (!iconCache.has(key)) iconCache.set(key, vuePanel.getIcon(iconName, {size, color}));
+    return iconCache.get(key);
+  }
+
+  async function renderIcons(playing, color, version) {
+    const sources = await Promise.all([
+      getIcon(playing ? 'mdi:speaker-play' : 'mdi:speaker', 64, color),
+      getIcon('mdi:skip-previous', 48, color),
+      getIcon(playing ? 'mdi:pause' : 'mdi:play', 48, color),
+      getIcon('mdi:skip-next', 48, color),
+      getIcon('mdi:volume-high', 48, color)
+    ]);
+    if (version !== renderVersion) return;
+    for (const [id, source] of [['icon', sources[0]], ['previous', sources[1]], ['play', sources[2]], ['next', sources[3]], ['volume-icon', sources[4]]]) {
+      document.getElementById(id).src = source;
+    }
+  }
+
+  async function applyArtwork(source, version) {
+    if (!source) {
+      renderedArtwork = '';
+      artwork.style.backgroundImage = '';
+      card.classList.remove('has-artwork');
+      for (const property of ['--media-background', '--media-foreground', '--media-secondary', '--media-control-background']) card.style.removeProperty(property);
+      return null;
+    }
+
+    if (source !== renderedArtwork) {
+      renderedArtwork = source;
+      artwork.style.backgroundImage = `url(${JSON.stringify(source)})`;
+    }
+    card.classList.add('has-artwork');
+    try {
+      const palette = await extractArtworkColors(source);
+      if (version !== renderVersion || source !== renderedArtwork) return null;
+      card.style.setProperty('--media-background', palette.background);
+      card.style.setProperty('--media-foreground', palette.foreground);
+      card.style.setProperty('--media-secondary', palette.secondary);
+      card.style.setProperty('--media-control-background', palette.control);
+      return palette;
+    } catch (error) {
+      if (version !== renderVersion || source !== renderedArtwork) return null;
+      card.style.setProperty('--media-background', 'var(--accent, #5f6368)');
+      card.style.setProperty('--media-foreground', '#ffffff');
+      card.style.setProperty('--media-secondary', 'rgb(255 255 255 / 76%)');
+      card.style.setProperty('--media-control-background', 'rgb(255 255 255 / 22%)');
+      return {foreground: '#ffffff'};
+    }
+  }
 
   async function render(entity) {
+    const version = ++renderVersion;
     const playing = entity?.state === 'playing';
     const idle = ['idle', 'off', 'standby'].includes(entity?.state) || !entity;
+    const picture = config.dynamicBackground !== false && !idle && (entity?.attributes?.entity_picture_local || entity?.attributes?.entity_picture);
+    const source = picture ? new URL(String(picture), window.location.origin).href : '';
     card.classList.toggle('active', playing);
     name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
     state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : idle ? vuePanel.t('translation.states.idle') : `${entity.attributes?.media_title || vuePanel.t('translation.unknownTitle')}${entity.attributes?.media_artist ? ` · ${entity.attributes.media_artist}` : ''}`;
@@ -368,14 +573,9 @@
     volumeWrap.hidden = config.showVolume === false || !Number.isFinite(level);
     volume.value = String(level || 0);
     volumeValue.textContent = `${level || 0} %`;
-    icon.src = await vuePanel.getIcon(playing ? 'mdi:speaker-play' : 'mdi:speaker', {
-      size: 64,
-      color: playing ? '#111111' : '#737373'
-    });
-    document.getElementById('play').src = await vuePanel.getIcon(playing ? 'mdi:pause' : 'mdi:play', {
-      size: 48,
-      color: '#111111'
-    });
+    const palette = await applyArtwork(source, version);
+    const foreground = palette?.foreground || (playing ? '#111111' : '#737373');
+    await renderIcons(playing, foreground, version);
   }
 
   controls.addEventListener('click', async event => {
