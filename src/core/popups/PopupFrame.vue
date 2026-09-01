@@ -3,6 +3,7 @@ import { computed, provide } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { PopupSize, ViewConfig } from '@/core/config/types'
 import { useDashboardStore } from '@/core/config/dashboardStore'
+import { useMediaQuery } from '@/core/composables/useMediaQuery'
 import { useEntity } from '@/core/ha'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import CardCss from '@/core/ui/CardCss.vue'
@@ -39,6 +40,76 @@ const DIALOG_SIZE: Record<PopupSize, 'md' | 'lg' | 'xl' | 'full'> = {
 }
 
 const entity = useEntity(() => props.request.entityId ?? '')
+const reduceMotion = useMediaQuery('(prefers-reduced-motion: reduce)')
+
+/*
+ * Temporary remote test footage for the bundled weather detail. Keeping the
+ * selection in the frame lets the media cover the header and body as one
+ * continuous scene; the portable card itself still owns only its content.
+ */
+const WEATHER_VIDEOS: Record<string, readonly string[]> = {
+  sunny: [
+    'https://cdn.flixel.com/flixel/hlhff0h8md4ev0kju5be.hd.mp4',
+    'https://cdn.flixel.com/flixel/zjqsoc6ecqhntpl5vacs.hd.mp4',
+    'https://cdn.flixel.com/flixel/jvw1avupguhfbo11betq.hd.mp4',
+    'https://cdn.flixel.com/flixel/8cmeusxf3pkanai43djs.hd.mp4',
+    'https://cdn.flixel.com/flixel/guwb10mfddctfvwioaex.hd.mp4',
+  ],
+  partlycloudy: [
+    'https://cdn.flixel.com/flixel/13e0s6coh6ayapvdyqnv.hd.mp4',
+    'https://cdn.flixel.com/flixel/aorl3skmssy7udwopk22.hd.mp4',
+    'https://cdn.flixel.com/flixel/qed6wvf2igukiioykg3r.hd.mp4',
+    'https://cdn.flixel.com/flixel/3rd72eezaj6d23ahlo7y.hd.mp4',
+    'https://cdn.flixel.com/flixel/9m11gd43m6qn3y93ntzp.hd.mp4',
+    'https://cdn.flixel.com/flixel/hrkw2m8eofib9sk7t1v2.hd.mp4',
+  ],
+  cloudy: [
+    'https://cdn.flixel.com/flixel/13e0s6coh6ayapvdyqnv.hd.mp4',
+    'https://cdn.flixel.com/flixel/aorl3skmssy7udwopk22.hd.mp4',
+    'https://cdn.flixel.com/flixel/qed6wvf2igukiioykg3r.hd.mp4',
+    'https://cdn.flixel.com/flixel/3rd72eezaj6d23ahlo7y.hd.mp4',
+    'https://cdn.flixel.com/flixel/9m11gd43m6qn3y93ntzp.hd.mp4',
+    'https://cdn.flixel.com/flixel/hrkw2m8eofib9sk7t1v2.hd.mp4',
+  ],
+  mostlycloudy: [
+    'https://cdn.flixel.com/flixel/e95h5cqyvhnrk4ytqt4q.hd.mp4',
+    'https://cdn.flixel.com/flixel/l2bjw34wnusyf5q2qq3p.hd.mp4',
+    'https://cdn.flixel.com/flixel/rrgta099ulami3zb9fd2.hd.mp4',
+  ],
+  'clear-night': [
+    'https://cdn.flixel.com/flixel/x9dr8caygivq5secll7i.hd.mp4',
+    'https://cdn.flixel.com/flixel/v26zyfd6yf0r33s46vpe.hd.mp4',
+    'https://cdn.flixel.com/flixel/ypy8bw9fgw1zv2b4htp2.hd.mp4',
+    'https://cdn.flixel.com/flixel/rosz2gi676xhkiw1ut6i.hd.mp4',
+  ],
+  fog: [
+    'https://cdn.flixel.com/flixel/vwqzlk4turo2449be9uf.hd.mp4',
+    'https://cdn.flixel.com/flixel/5363uhabodwwrzgnq6vx.hd.mp4',
+  ],
+  rainy: ['https://cdn.flixel.com/flixel/f0w23bd0enxur5ff0bxz.hd.mp4'],
+}
+
+const WEATHER_VIDEO_ALIASES: Record<string, string> = {
+  pouring: 'rainy',
+  'lightning-rainy': 'rainy',
+}
+
+function stableIndex(value: string, length: number): number {
+  let hash = 2166136261
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index)
+    hash = Math.imul(hash, 16777619)
+  }
+  return (hash >>> 0) % length
+}
+
+const weatherVideo = computed(() => {
+  if (reduceMotion.value || props.request.cardType !== 'vue-panel/weather-detail') return ''
+  const state = String(entity.value?.state ?? '')
+  const sources = WEATHER_VIDEOS[WEATHER_VIDEO_ALIASES[state] ?? state]
+  if (!sources?.length) return ''
+  return sources[stableIndex(`${props.request.key}:${props.request.entityId}:${state}`, sources.length)] ?? ''
+})
 
 const title = computed(() => {
   if (popup.value) return popup.value.title
@@ -92,6 +163,11 @@ const popupView = computed<ViewConfig | null>(() => {
     :body-height="popup?.height"
     @close="emit('close')"
   >
+    <template v-if="weatherVideo" #background>
+      <video :key="weatherVideo" autoplay muted loop playsinline preload="auto">
+        <source :src="weatherVideo" type="video/mp4">
+      </video>
+    </template>
     <template v-if="popupView">
       <CardCss :card-id="popupView.id" :css="popup?.css ?? ''">
         <div
@@ -110,7 +186,7 @@ const popupView = computed<ViewConfig | null>(() => {
       :class="{ 'is-full-bleed': isFullBleed }"
       :style="{ '--vp-detail-width': `${detailWidth}px` }"
     >
-      <PortableCardHost :card-type="request.cardType" :config="context" />
+      <PortableCardHost :card-type="request.cardType" :config="context" area="dialog" />
     </div>
     <EntityDetailFallback v-else :entity-id="request.entityId ?? ''" />
   </BaseDialog>

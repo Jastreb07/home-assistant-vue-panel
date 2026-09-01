@@ -45,12 +45,15 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
     <div class="vp-dialog-backdrop" @click.self="emit('close')">
       <div
         class="vp-dialog"
-        :class="`vp-dialog--${size}`"
+        :class="[`vp-dialog--${size}`, { 'vp-dialog--has-background': $slots.background }]"
         :style="dialogStyle()"
         role="dialog"
         aria-modal="true"
         :aria-labelledby="titleId"
       >
+        <div v-if="$slots.background" class="vp-dialog-background" aria-hidden="true">
+          <slot name="background" />
+        </div>
         <header class="vp-dialog-header">
           <button
             ref="closeButton"

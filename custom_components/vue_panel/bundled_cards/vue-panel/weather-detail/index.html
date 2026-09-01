@@ -227,6 +227,7 @@
         flex-direction: column;
         gap: 18px;
         width: 100%;
+        padding: 24px;
         color: var(--text-primary)
     }
 
@@ -289,7 +290,13 @@
         display: grid;
         grid-template-columns: auto 1fr auto;
         align-items: center;
-        gap: 12px 14px
+        gap: 12px 14px;
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 18px;
+        background: rgba(6, 18, 30, .34);
+        -webkit-backdrop-filter: blur(12px) saturate(1.1);
+        backdrop-filter: blur(12px) saturate(1.1)
     }
 
     .wd-attributes img {
@@ -322,6 +329,15 @@
         margin: 0 0 10px;
         font-size: 14px;
         font-weight: 400
+    }
+
+    .wd-forecast {
+        padding: 16px;
+        border: 1px solid rgba(255, 255, 255, .16);
+        border-radius: 18px;
+        background: rgba(6, 18, 30, .34);
+        -webkit-backdrop-filter: blur(12px) saturate(1.1);
+        backdrop-filter: blur(12px) saturate(1.1)
     }
 
     .wd-tabs {
@@ -446,6 +462,23 @@
         color: var(--text-secondary);
         font-size: 11px;
         line-height: 1.35
+    }
+
+    @media (max-width: 600px) {
+        .wd {
+            padding: 18px
+        }
+
+        .wd-attributes, .wd-forecast {
+            padding: 14px
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .wd-attributes, .wd-forecast {
+            -webkit-backdrop-filter: none;
+            backdrop-filter: none
+        }
     }
 </style>
 

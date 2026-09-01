@@ -31,6 +31,9 @@ const emit = defineEmits<{ close: [] }>()
     :body-height="bodyHeight"
     @close="emit('close')"
   >
+    <template v-if="$slots.background" #background>
+      <slot name="background" />
+    </template>
     <slot />
     <template v-if="$slots.actions" #actions>
       <slot name="actions" />
