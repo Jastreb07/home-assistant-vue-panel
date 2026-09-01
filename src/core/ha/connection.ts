@@ -236,3 +236,19 @@ export async function callService(
   if (!connection) throw new Error('No Home Assistant connection is available.')
   await haCallService(connection, domain, service, data, target)
 }
+
+/**
+ * Call a service that answers with data — `weather.get_forecasts` and the
+ * other "response" services Home Assistant added in 2023.7. The plain
+ * `callService` stays fire-and-forget so nothing has to opt out of it.
+ */
+export async function callServiceWithResponse(
+  domain: string,
+  service: string,
+  data?: Record<string, unknown>,
+  target?: HassServiceTarget,
+): Promise<unknown> {
+  if (!connection) throw new Error('No Home Assistant connection is available.')
+  const result = await haCallService(connection, domain, service, data, target, true)
+  return (result as { response?: unknown } | undefined)?.response ?? null
+}

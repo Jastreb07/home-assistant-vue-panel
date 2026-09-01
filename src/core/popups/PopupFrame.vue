@@ -8,6 +8,7 @@ import BaseDialog from '@/core/ui/BaseDialog.vue'
 import CardCss from '@/core/ui/CardCss.vue'
 import FlexLayout from '@/layouts/FlexLayout.vue'
 import PortableCardHost from '@/core/custom-cards/PortableCardHost.vue'
+import { cardRegistry } from '@/core/registry/cardRegistry'
 import EntityDetailFallback from './EntityDetailFallback.vue'
 import { popupContextKey } from './popupContext'
 import type { PopupRequest } from './popupService'
@@ -46,11 +47,24 @@ const title = computed(() => {
 })
 
 const icon = computed(() => popup.value?.icon)
-/* A detail view holds a single card, so it stays as narrow as that card */
-const isLargeDetail = computed(() => props.request.cardType === 'vue-panel/light-detail')
+/*
+ * A detail view holds a single card, so it is as wide as that card says it
+ * is — the manifest's `defaultSize.width`. A card that wants the whole
+ * dialog simply declares a width that large, which beats naming card types
+ * here whenever a new detail card shows up.
+ */
+const detailWidth = computed(
+  () => cardRegistry[props.request.cardType ?? '']?.defaultSize?.width ?? 340,
+)
 const size = computed(() => (
-  popup.value ? DIALOG_SIZE[popup.value.size ?? 'md'] : isLargeDetail.value ? 'lg' : 'md'
+  popup.value ? DIALOG_SIZE[popup.value.size ?? 'md'] : detailWidth.value >= 424 ? 'lg' : 'md'
 ))
+/*
+ * A card as wide as the dialog itself is meant to fill it edge to edge — it
+ * then paints its own background and brings its own padding. Narrower cards
+ * keep sitting inside the dialog's padding as before.
+ */
+const isFullBleed = computed(() => detailWidth.value >= 700)
 /**
  * A popup lays its cards out exactly like a flex view, so it is rendered
  * through the very same layout — including the whole edit-mode tooling.
@@ -93,7 +107,8 @@ const popupView = computed<ViewConfig | null>(() => {
     <div
       v-else-if="request.cardType"
       class="detail-body"
-      :class="{ 'is-large-detail': isLargeDetail }"
+      :class="{ 'is-full-bleed': isFullBleed }"
+      :style="{ '--vp-detail-width': `${detailWidth}px` }"
     >
       <PortableCardHost :card-type="request.cardType" :config="context" />
     </div>
@@ -126,9 +141,11 @@ const popupView = computed<ViewConfig | null>(() => {
 }
 .detail-body > :deep(*) {
   width: 100%;
-  max-width: 340px;
+  max-width: var(--vp-detail-width, 340px);
 }
-.detail-body.is-large-detail > :deep(*) {
-  max-width: 424px;
+/* Cancels the dialog's own padding so the card reaches the dialog edges */
+.detail-body.is-full-bleed {
+  margin: calc(var(--vp-dialog-padding, 24px) * -1);
+  padding: 0;
 }
 </style>

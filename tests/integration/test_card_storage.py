@@ -469,6 +469,7 @@ class CardStorageTests(unittest.TestCase):
             "vue-panel/thermostat",
             "vue-panel/view-title",
             "vue-panel/weather",
+            "vue-panel/weather-detail",
         }
 
         self.assertEqual({card["type"] for card in catalog}, expected)

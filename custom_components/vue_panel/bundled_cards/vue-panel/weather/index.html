@@ -13,6 +13,10 @@
       "dashboard",
       "sidebar"
     ],
+    "detail": {
+      "card": "vue-panel/weather-detail",
+      "entityKey": "entity"
+    },
     "capabilities": [
       "entity:read",
       "entity:subscribe",
@@ -88,7 +92,12 @@
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
-        "required": false
+        "required": false,
+        "default": {
+          "tap": {
+            "action": "more-info"
+          }
+        }
       }
     ]
   };

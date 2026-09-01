@@ -1,0 +1,889 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "weather-detail",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:weather-partly-cloudy",
+    "group": "Vue Panel",
+    "areas": [
+      "dialog"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 720,
+      "height": 560
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": true,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "translation.variables.entity.label",
+        "type": "entity",
+        "required": true,
+        "domain": "weather",
+        "default": ""
+      },
+      {
+        "key": "forecast",
+        "label": "translation.variables.forecast.label",
+        "group": "translation.groups.display",
+        "type": "select",
+        "required": false,
+        "options": [
+          "daily",
+          "hourly",
+          "none"
+        ],
+        "optionLabels": {
+          "daily": "translation.forecastTypes.daily",
+          "hourly": "translation.forecastTypes.hourly",
+          "none": "translation.forecastTypes.none"
+        },
+        "default": "daily"
+      },
+      {
+        "key": "forecastCount",
+        "label": "translation.variables.forecastCount.label",
+        "group": "translation.groups.display",
+        "type": "number",
+        "required": false,
+        "min": 1,
+        "max": 12,
+        "step": 1,
+        "default": 6,
+        "visibleIf": {
+          "key": "forecast",
+          "not": "none"
+        }
+      },
+      {
+        "key": "hourlyCount",
+        "label": "translation.variables.hourlyCount.label",
+        "group": "translation.groups.display",
+        "type": "number",
+        "required": false,
+        "min": 1,
+        "max": 48,
+        "step": 1,
+        "default": 24,
+        "visibleIf": {
+          "key": "forecast",
+          "not": "none"
+        }
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Weather detail",
+        "translation.description": "Detail view of a weather entity: current conditions and forecast",
+        "translation.variables.entity.label": "Weather entity",
+        "translation.groups.display": "Display",
+        "translation.variables.forecast.label": "Forecast",
+        "translation.variables.forecastCount.label": "Daily entries",
+        "translation.variables.hourlyCount.label": "Hourly entries",
+        "translation.forecastTypes.daily": "Daily",
+        "translation.forecastTypes.hourly": "Hourly",
+        "translation.forecastTypes.none": "None",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.defaultName": "Weather",
+        "translation.forecastUnavailable": "This weather entity provides no forecast.",
+        "translation.forecastHeading": "Forecast:",
+        "translation.updatedAgo": "{value} ago",
+        "translation.justNow": "Just now",
+        "translation.details.apparentTemperature": "Feels like",
+        "translation.details.humidity": "Humidity",
+        "translation.details.pressure": "Pressure",
+        "translation.details.wind": "Wind",
+        "translation.details.windGust": "Gusts",
+        "translation.details.visibility": "Visibility",
+        "translation.details.uvIndex": "UV index",
+        "translation.details.dewPoint": "Dew point",
+        "translation.details.cloudCoverage": "Cloud cover",
+        "translation.details.ozone": "Ozone",
+        "translation.details.precipitation": "Precipitation",
+        "translation.today": "Today",
+        "translation.conditions.clearNight": "Clear night",
+        "translation.conditions.cloudy": "Cloudy",
+        "translation.conditions.fog": "Fog",
+        "translation.conditions.hail": "Hail",
+        "translation.conditions.lightning": "Lightning",
+        "translation.conditions.lightningRainy": "Lightning and rain",
+        "translation.conditions.partlycloudy": "Partly cloudy",
+        "translation.conditions.pouring": "Pouring",
+        "translation.conditions.rainy": "Rainy",
+        "translation.conditions.snowy": "Snow",
+        "translation.conditions.snowyRainy": "Sleet",
+        "translation.conditions.sunny": "Sunny",
+        "translation.conditions.windy": "Windy",
+        "translation.conditions.exceptional": "Exceptional"
+      },
+      "de": {
+        "translation.name": "Wetter-Detail",
+        "translation.description": "Detailansicht einer Wetter-Entity: aktuelle Werte und Vorhersage",
+        "translation.variables.entity.label": "Wetter-Entity",
+        "translation.groups.display": "Anzeige",
+        "translation.variables.forecast.label": "Vorhersage",
+        "translation.variables.forecastCount.label": "Einträge der Tagesvorhersage",
+        "translation.variables.hourlyCount.label": "Einträge der Stundenvorhersage",
+        "translation.forecastTypes.daily": "Täglich",
+        "translation.forecastTypes.hourly": "Stündlich",
+        "translation.forecastTypes.none": "Keine",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.defaultName": "Wetter",
+        "translation.forecastUnavailable": "Diese Wetter-Entity liefert keine Vorhersage.",
+        "translation.forecastHeading": "Vorhersage:",
+        "translation.updatedAgo": "Vor {value}",
+        "translation.justNow": "Gerade eben",
+        "translation.details.apparentTemperature": "Gefühlt",
+        "translation.details.humidity": "Luftfeuchte",
+        "translation.details.pressure": "Luftdruck",
+        "translation.details.wind": "Wind",
+        "translation.details.windGust": "Böen",
+        "translation.details.visibility": "Sichtweite",
+        "translation.details.uvIndex": "UV-Index",
+        "translation.details.dewPoint": "Taupunkt",
+        "translation.details.cloudCoverage": "Bewölkung",
+        "translation.details.ozone": "Ozon",
+        "translation.details.precipitation": "Niederschlag",
+        "translation.today": "Heute",
+        "translation.conditions.clearNight": "Klare Nacht",
+        "translation.conditions.cloudy": "Bewölkt",
+        "translation.conditions.fog": "Nebel",
+        "translation.conditions.hail": "Hagel",
+        "translation.conditions.lightning": "Gewitter",
+        "translation.conditions.lightningRainy": "Gewitter mit Regen",
+        "translation.conditions.partlycloudy": "Teilweise bewölkt",
+        "translation.conditions.pouring": "Starkregen",
+        "translation.conditions.rainy": "Regnerisch",
+        "translation.conditions.snowy": "Schnee",
+        "translation.conditions.snowyRainy": "Schneeregen",
+        "translation.conditions.sunny": "Sonnig",
+        "translation.conditions.windy": "Windig",
+        "translation.conditions.exceptional": "Außergewöhnlich"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <article class="wd" id="card">
+    <header class="wd-head">
+      <img class="wd-icon" id="icon" alt="">
+      <div class="wd-headline">
+        <h3 class="wd-condition" id="condition"></h3>
+        <p class="wd-updated" id="updated"></p>
+      </div>
+      <div class="wd-temps">
+        <div class="wd-temperature" id="temperature"></div>
+        <div class="wd-range" id="range"></div>
+      </div>
+    </header>
+
+    <dl class="wd-attributes" id="attributes"></dl>
+
+    <section class="wd-forecast" id="forecast-section">
+      <h4 class="wd-forecast-title" id="forecast-title"></h4>
+      <div class="wd-tabs" id="tabs" role="tablist">
+        <button class="wd-tab" type="button" role="tab" data-type="daily" id="tab-daily"></button>
+        <button class="wd-tab" type="button" role="tab" data-type="hourly" id="tab-hourly"></button>
+      </div>
+      <div class="wd-forecast-grid" id="forecast"></div>
+      <p class="wd-empty" id="forecast-empty" hidden></p>
+    </section>
+
+    <p class="wd-attribution" id="attribution" hidden></p>
+  </article>
+</template>
+
+<style data-vue-panel-css>
+    .wd {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+        width: 100%;
+        color: var(--text-primary)
+    }
+
+    /* ── Current conditions ── */
+    .wd-head {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px;
+        min-width: 0
+    }
+
+    .wd-icon {
+        width: 64px;
+        height: 64px
+    }
+
+    .wd-headline {
+        min-width: 0
+    }
+
+    .wd-condition {
+        margin: 0;
+        font-size: 22px;
+        font-weight: 400;
+        line-height: 1.2;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis
+    }
+
+    .wd-updated {
+        margin: 2px 0 0;
+        color: var(--text-secondary);
+        font-size: 12px;
+        line-height: 1.2
+    }
+
+    .wd-temps {
+        text-align: right
+    }
+
+    .wd-temperature {
+        font-size: 26px;
+        font-weight: 400;
+        line-height: 1.15;
+        white-space: nowrap
+    }
+
+    .wd-range {
+        margin-top: 2px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        white-space: nowrap
+    }
+
+    /* ── Attribute rows ── */
+    .wd-attributes {
+        margin: 0;
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 12px 14px
+    }
+
+    .wd-attributes img {
+        width: 22px;
+        height: 22px
+    }
+
+    .wd-attribute-label {
+        min-width: 0;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 14px
+    }
+
+    .wd-attribute-value {
+        margin: 0;
+        text-align: right;
+        font-size: 14px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap
+    }
+
+    /* ── Forecast ── */
+    .wd-forecast[hidden], .wd-empty[hidden], .wd-attribution[hidden] {
+        display: none
+    }
+
+    .wd-forecast-title {
+        margin: 0 0 10px;
+        font-size: 14px;
+        font-weight: 400
+    }
+
+    .wd-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        border-bottom: 1px solid var(--divider);
+        margin-bottom: 14px
+    }
+
+    .wd-tab {
+        border: 0;
+        border-bottom: 2px solid transparent;
+        padding: 10px 4px;
+        background: transparent;
+        color: var(--text-secondary);
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        /* Sits on the container's own border so both share one line */
+        margin-bottom: -1px;
+        transition: color .15s, border-color .15s
+    }
+
+    .wd-tab:hover {
+        color: var(--text-primary)
+    }
+
+    .wd-tab.is-active {
+        color: var(--accent);
+        border-bottom-color: var(--accent)
+    }
+
+    /* One column per entry, so the row stays readable at any count */
+    .wd-forecast-grid {
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: minmax(0, 1fr);
+        gap: 4px
+    }
+
+    /*
+     * A whole day of hourly entries never fits the dialog. Rather than
+     * squeezing 24 columns into the width, the row keeps every entry legible
+     * and scrolls sideways.
+     */
+    .wd-forecast-grid.is-scrollable {
+        grid-auto-columns: 56px;
+        overflow-x: auto;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        padding-bottom: 6px
+    }
+
+    .wd-forecast-grid.is-scrollable .wd-forecast-entry {
+        scroll-snap-align: start
+    }
+
+    .wd-forecast-grid.is-scrollable {
+        cursor: grab
+    }
+
+    /* While dragging, the row must follow the pointer instead of snapping */
+    .wd-forecast-grid.is-dragging {
+        cursor: grabbing;
+        scroll-snap-type: none;
+        user-select: none
+    }
+
+    .wd-forecast-grid.is-dragging img {
+        pointer-events: none
+    }
+
+    /* Weekday above the first entry of each day — empty for the rest */
+    .wd-forecast-day {
+        min-height: 16px;
+        color: var(--text-primary);
+        font-size: 12px;
+        line-height: 16px;
+        align-self: flex-start
+    }
+
+    .wd-forecast-entry {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2px;
+        min-width: 0
+    }
+
+    .wd-forecast-when {
+        max-width: 100%;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        font-size: 13px
+    }
+
+    .wd-forecast-entry img {
+        width: 40px;
+        height: 40px
+    }
+
+    .wd-forecast-high {
+        font-size: 14px;
+        font-variant-numeric: tabular-nums
+    }
+
+    .wd-forecast-low {
+        color: var(--text-secondary);
+        font-size: 12px;
+        font-variant-numeric: tabular-nums
+    }
+
+    .wd-empty {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 12px
+    }
+
+    .wd-attribution {
+        margin: 0;
+        color: var(--text-secondary);
+        font-size: 11px;
+        line-height: 1.35
+    }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+  const entityId = String(config.entity || '');
+
+  const icon = document.getElementById('icon');
+  const condition = document.getElementById('condition');
+  const updated = document.getElementById('updated');
+  const temperature = document.getElementById('temperature');
+  const range = document.getElementById('range');
+  const attributesList = document.getElementById('attributes');
+  const forecastSection = document.getElementById('forecast-section');
+  const forecastTitle = document.getElementById('forecast-title');
+  const tabs = document.getElementById('tabs');
+  const forecastGrid = document.getElementById('forecast');
+  const forecastEmpty = document.getElementById('forecast-empty');
+  const attribution = document.getElementById('attribution');
+
+  /*
+   * Animated Meteocons shipped in this card's own assets folder (MIT, see
+   * assets/meteocons/LICENSE). They animate through native <animate>
+   * elements, so a plain <img> plays them without any script — and being
+   * local files they also work on a panel without internet access.
+   */
+  const animatedIcons = {
+    'clear-night': 'clear-night',
+    cloudy: 'cloudy',
+    fog: 'fog',
+    hail: 'hail',
+    lightning: 'thunderstorms',
+    'lightning-rainy': 'thunderstorms-rain',
+    partlycloudy: 'partly-cloudy-day',
+    pouring: 'extreme-rain',
+    rainy: 'rain',
+    snowy: 'snow',
+    'snowy-rainy': 'sleet',
+    sunny: 'clear-day',
+    windy: 'wind',
+    'windy-variant': 'wind',
+    exceptional: 'not-available'
+  };
+
+  const labels = {
+    'clear-night': vuePanel.t('translation.conditions.clearNight'),
+    cloudy: vuePanel.t('translation.conditions.cloudy'),
+    fog: vuePanel.t('translation.conditions.fog'),
+    hail: vuePanel.t('translation.conditions.hail'),
+    lightning: vuePanel.t('translation.conditions.lightning'),
+    'lightning-rainy': vuePanel.t('translation.conditions.lightningRainy'),
+    partlycloudy: vuePanel.t('translation.conditions.partlycloudy'),
+    pouring: vuePanel.t('translation.conditions.pouring'),
+    rainy: vuePanel.t('translation.conditions.rainy'),
+    snowy: vuePanel.t('translation.conditions.snowy'),
+    'snowy-rainy': vuePanel.t('translation.conditions.snowyRainy'),
+    sunny: vuePanel.t('translation.conditions.sunny'),
+    windy: vuePanel.t('translation.conditions.windy'),
+    'windy-variant': vuePanel.t('translation.conditions.windy'),
+    exceptional: vuePanel.t('translation.conditions.exceptional')
+  };
+
+  function iconUrl(state) {
+    const file = animatedIcons[String(state || '')] || animatedIcons.exceptional;
+    return vuePanel.asset('assets/meteocons/' + file + '.svg');
+  }
+
+  /*
+   * A weather entity reports far more often than its condition changes, and
+   * reassigning `src` restarts an animated SVG. Each <img> therefore keeps
+   * the icon it shows and is only rewritten on a real change.
+   */
+  const iconKeys = new WeakMap();
+
+  function setIcon(element, key, source) {
+    if (iconKeys.get(element) === key) return;
+    iconKeys.set(element, key);
+    element.src = source;
+  }
+
+  function number(value) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+
+  /* Locale-aware numbers — "1.021,6 hPa" in German, "1,021.6 hPa" in English */
+  function formatNumber(value, digits = 1) {
+    return value.toLocaleString(vuePanel.language, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: digits
+    });
+  }
+
+  function formatTemperature(value, unit, digits = 1) {
+    const parsed = number(value);
+    return parsed === null ? null : formatNumber(parsed, digits) + ' ' + unit;
+  }
+
+  /** "17 hours ago" — how long the entity has been reporting this state. */
+  function relativeTime(stamp) {
+    const time = stamp ? new Date(stamp).getTime() : Number.NaN;
+    if (!Number.isFinite(time)) return '';
+    const seconds = Math.round((Date.now() - time) / 1000);
+    if (seconds < 60) return vuePanel.t('translation.justNow');
+
+    const steps = [
+      ['minute', 60],
+      ['hour', 3600],
+      ['day', 86400],
+      ['week', 604800],
+      ['month', 2592000],
+      ['year', 31536000]
+    ];
+    let unit = 'minute';
+    let size = 60;
+    for (const [name, length] of steps) {
+      if (seconds < length) break;
+      unit = name;
+      size = length;
+    }
+    const amount = Math.floor(seconds / size);
+    /*
+     * `Intl.RelativeTimeFormat` phrases the distance itself, but only the
+     * bare amount is wanted here — the card's own string supplies the
+     * "… ago" wording so both languages read naturally.
+     */
+    const parts = new Intl.RelativeTimeFormat(vuePanel.language, {numeric: 'always'})
+      .formatToParts(-amount, unit);
+    const text = parts
+      .filter(part => part.type !== 'literal' || part.value.trim())
+      .map(part => part.value)
+      .join('')
+      .replace(/^(vor|in)\s+/i, '')
+      .replace(/\s+(ago|später)$/i, '')
+      .trim();
+    return vuePanel.t('translation.updatedAgo').replace('{value}', text);
+  }
+
+  /* Compass direction of a wind bearing, so the value reads as a direction */
+  const COMPASS = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+
+  function windDirection(bearing) {
+    const parsed = number(bearing);
+    if (parsed === null) return '';
+    const index = Math.round((((parsed % 360) + 360) % 360) / 45) % COMPASS.length;
+    return COMPASS[index];
+  }
+
+  /** One "icon — label — value" row; missing values are skipped entirely. */
+  async function attributeRow(iconName, label, value) {
+    if (!value) return [];
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = await vuePanel.getIcon(iconName, {size: 44, color: '#8a94a6'});
+
+    const caption = document.createElement('dt');
+    caption.className = 'wd-attribute-label';
+    caption.textContent = label;
+
+    const text = document.createElement('dd');
+    text.className = 'wd-attribute-value';
+    text.textContent = value;
+
+    return [image, caption, text];
+  }
+
+  async function renderAttributes(attributes) {
+    const pressure = number(attributes.pressure);
+    const humidity = number(attributes.humidity);
+    const wind = number(attributes.wind_speed);
+    const direction = windDirection(attributes.wind_bearing);
+
+    const rows = [
+      await attributeRow(
+        'mdi:gauge',
+        vuePanel.t('translation.details.pressure'),
+        pressure === null ? '' : formatNumber(pressure, 1) + ' ' + (attributes.pressure_unit || 'hPa')
+      ),
+      await attributeRow(
+        'mdi:water-percent',
+        vuePanel.t('translation.details.humidity'),
+        humidity === null ? '' : formatNumber(humidity, 0) + ' %'
+      ),
+      await attributeRow(
+        'mdi:weather-windy',
+        vuePanel.t('translation.details.wind'),
+        wind === null
+          ? ''
+          : formatNumber(wind, 1) + ' ' + (attributes.wind_speed_unit || 'km/h')
+            + (direction ? ' (' + direction + ')' : '')
+      )
+    ];
+
+    attributesList.replaceChildren(...rows.flat());
+  }
+
+  /* Weekday for a daily entry, time of day for an hourly one */
+  function entryDate(entry) {
+    const stamp = entry && entry.datetime ? new Date(entry.datetime) : null;
+    return stamp && !Number.isNaN(stamp.getTime()) ? stamp : null;
+  }
+
+  function weekday(stamp) {
+    return stamp ? stamp.toLocaleDateString(vuePanel.language, {weekday: 'short'}) : '';
+  }
+
+  function forecastWhen(entry, hourly) {
+    const stamp = entryDate(entry);
+    if (!stamp) return '';
+    return hourly
+      ? stamp.toLocaleTimeString(vuePanel.language, {hour: '2-digit', minute: '2-digit'})
+      : weekday(stamp);
+  }
+
+  function renderForecast(entries, unit, hourly) {
+    let previousDay = '';
+    const cells = entries.map(entry => {
+      const cell = document.createElement('div');
+      cell.className = 'wd-forecast-entry';
+
+      /*
+       * An hourly row runs past midnight, so the weekday is written above the
+       * first entry of each day. The element stays in place for every other
+       * entry — an empty label keeps all columns aligned.
+       */
+      if (hourly) {
+        const stamp = entryDate(entry);
+        const day = stamp ? stamp.toDateString() : '';
+        const marker = document.createElement('span');
+        marker.className = 'wd-forecast-day';
+        marker.textContent = day && day !== previousDay ? weekday(stamp) : '';
+        previousDay = day;
+        cell.append(marker);
+      }
+
+      const when = document.createElement('span');
+      when.className = 'wd-forecast-when';
+      when.textContent = forecastWhen(entry, hourly);
+
+      const image = document.createElement('img');
+      image.alt = labels[entry && entry.condition] || String((entry && entry.condition) || '');
+      image.src = iconUrl(entry && entry.condition);
+
+      cell.append(when, image);
+
+      const high = number(entry && entry.temperature);
+      if (high !== null) {
+        const value = document.createElement('span');
+        value.className = 'wd-forecast-high';
+        value.textContent = formatNumber(high, 1) + '°';
+        cell.append(value);
+      }
+      const low = number(entry && entry.templow);
+      if (low !== null) {
+        const value = document.createElement('span');
+        value.className = 'wd-forecast-low';
+        value.textContent = formatNumber(low, 1) + '°';
+        cell.append(value);
+      }
+      return cell;
+    });
+    forecastGrid.replaceChildren(...cells);
+    forecastGrid.hidden = cells.length === 0;
+    forecastGrid.classList.toggle('is-scrollable', hourly);
+    /* A fresh list starts at the beginning, not wherever the last one stood */
+    forecastGrid.scrollLeft = 0;
+  }
+
+  /* Which forecast the tabs currently show */
+  let forecastType = config.forecast === 'hourly' ? 'hourly' : 'daily';
+  let currentEntity = null;
+  /* Today's high and low, shown next to the current temperature */
+  let dailyRange = '';
+
+  function paintTabs() {
+    for (const tab of tabs.children) {
+      tab.classList.toggle('is-active', tab.dataset.type === forecastType);
+      tab.setAttribute('aria-selected', String(tab.dataset.type === forecastType));
+    }
+  }
+
+  /*
+   * Forecasts are no longer an attribute — Home Assistant serves them from
+   * `weather.get_forecasts`, which answers with data. An integration without
+   * forecast support returns nothing, which the card says instead of leaving
+   * an empty box behind.
+   */
+  async function fetchForecast(type) {
+    if (!entityId) return [];
+    try {
+      const response = await vuePanel.callServiceWithResponse(
+        'weather',
+        'get_forecasts',
+        {type},
+        {entity_id: entityId}
+      );
+      const forecast = response && response[entityId] && response[entityId].forecast;
+      return Array.isArray(forecast) ? forecast : [];
+    } catch {
+      return [];
+    }
+  }
+
+  async function loadForecast() {
+    if (config.forecast === 'none' || !entityId || !currentEntity) {
+      forecastSection.hidden = true;
+      return;
+    }
+    forecastSection.hidden = false;
+    const hourly = forecastType === 'hourly';
+    /* An hour-by-hour row scrolls, so it may hold a lot more than a daily one */
+    const count = hourly
+      ? Math.min(48, Math.max(1, Math.round(Number(config.hourlyCount) || 24)))
+      : Math.min(12, Math.max(1, Math.round(Number(config.forecastCount) || 6)));
+    const unit = (currentEntity.attributes && currentEntity.attributes.temperature_unit) || '°C';
+    const entries = await fetchForecast(forecastType);
+
+    forecastEmpty.hidden = entries.length > 0;
+    forecastEmpty.textContent = vuePanel.t('translation.forecastUnavailable');
+    renderForecast(entries.slice(0, count), unit, hourly);
+  }
+
+  /* The high/low pair beside the temperature always comes from today */
+  async function loadDailyRange() {
+    if (!entityId || !currentEntity) {
+      dailyRange = '';
+      range.textContent = '';
+      return;
+    }
+    const unit = (currentEntity.attributes && currentEntity.attributes.temperature_unit) || '°C';
+    const today = (await fetchForecast('daily'))[0];
+    const high = formatTemperature(today && today.temperature, unit);
+    const low = formatTemperature(today && today.templow, unit);
+    dailyRange = [high, low].filter(Boolean).join(' / ');
+    range.textContent = dailyRange;
+  }
+
+  function render(entity) {
+    const state = String((entity && entity.state) || '');
+    const attributes = (entity && entity.attributes) || {};
+
+    condition.textContent = !entityId
+      ? vuePanel.t('translation.noEntity')
+      : !entity
+        ? vuePanel.t('translation.entityNotFound')
+        : labels[state] || state;
+    updated.textContent = entity ? relativeTime(entity.last_changed || entity.last_updated) : '';
+
+    temperature.textContent = formatTemperature(
+      attributes.temperature,
+      attributes.temperature_unit || '°C'
+    ) || '–';
+    range.textContent = dailyRange;
+
+    setIcon(icon, state || 'unknown', iconUrl(state));
+
+    attribution.textContent = String(attributes.attribution || '');
+    attribution.hidden = !attribution.textContent;
+
+    forecastTitle.textContent = vuePanel.t('translation.forecastHeading');
+    document.getElementById('tab-daily').textContent = vuePanel.t('translation.forecastTypes.daily');
+    document.getElementById('tab-hourly').textContent = vuePanel.t('translation.forecastTypes.hourly');
+    paintTabs();
+  }
+
+  /*
+   * Dragging the row sideways is the natural gesture on a touch pad or with a
+   * mouse; a horizontal scrollbar alone is fiddly to hit. Snapping is turned
+   * off while dragging so the row follows the pointer exactly.
+   */
+  let dragPointer = null;
+  let dragStartX = 0;
+  let dragStartScroll = 0;
+  let dragging = false;
+
+  forecastGrid.addEventListener('pointerdown', event => {
+    if (!forecastGrid.classList.contains('is-scrollable') || event.button !== 0) return;
+    dragPointer = event.pointerId;
+    dragStartX = event.clientX;
+    dragStartScroll = forecastGrid.scrollLeft;
+    dragging = false;
+  });
+
+  forecastGrid.addEventListener('pointermove', event => {
+    if (dragPointer !== event.pointerId) return;
+    const moved = event.clientX - dragStartX;
+    /* A few pixels of slack, so a plain click is not read as a drag */
+    if (!dragging) {
+      if (Math.abs(moved) < 4) return;
+      dragging = true;
+      forecastGrid.classList.add('is-dragging');
+      forecastGrid.setPointerCapture(event.pointerId);
+    }
+    event.preventDefault();
+    forecastGrid.scrollLeft = dragStartScroll - moved;
+  });
+
+  for (const eventName of ['pointerup', 'pointercancel']) {
+    forecastGrid.addEventListener(eventName, event => {
+      if (dragPointer !== event.pointerId) return;
+      dragPointer = null;
+      if (!dragging) return;
+      dragging = false;
+      forecastGrid.classList.remove('is-dragging');
+    });
+  }
+
+  /* The images would otherwise be picked up by the browser's own drag */
+  forecastGrid.addEventListener('dragstart', event => event.preventDefault());
+
+  tabs.addEventListener('click', async event => {
+    const tab = event.target.closest('button');
+    if (!tab || tab.dataset.type === forecastType) return;
+    forecastType = tab.dataset.type;
+    paintTabs();
+    await loadForecast();
+  });
+
+  /* Attributes change constantly; the forecast only needs the state */
+  let lastForecastState = null;
+
+  async function refresh(entity) {
+    currentEntity = entity;
+    render(entity);
+    await renderAttributes((entity && entity.attributes) || {});
+
+    const state = String((entity && entity.state) || '');
+    if (state === lastForecastState) return;
+    lastForecastState = state;
+    await loadDailyRange();
+    await loadForecast();
+  }
+
+  if (entityId) {
+    await refresh(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, refresh);
+  } else {
+    render(null);
+    forecastSection.hidden = true;
+  }
+</script>

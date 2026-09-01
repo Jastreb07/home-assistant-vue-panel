@@ -1,6 +1,7 @@
 export {
   announceEmbeddedPanelReady,
   callService,
+  callServiceWithResponse,
   configureDevelopmentDashboard,
   connectForEmbeddedPanel,
   connectForDevelopment,

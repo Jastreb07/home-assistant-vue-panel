@@ -2,7 +2,7 @@
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CardTranslations, PortableCardCapability } from '@/core/registry/portableCardTypes'
 import { cardTranslation } from '@/core/registry/cardTranslations'
-import { callService, useEntities } from '@/core/ha'
+import { callService, callServiceWithResponse, useEntities } from '@/core/ha'
 import { useHostBadges } from '@/core/ha/hostBadges'
 import { openHostMoreInfo, openHostTarget, openHostUrl, openHostView } from '@/core/router/hostSidebar'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
@@ -78,6 +78,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   subscribeEntity: 'entity:subscribe',
   getIcon: 'icon:render',
   callService: 'service:call',
+  callServiceWithResponse: 'service:call',
   navigate: 'navigation:write',
   currentView: 'navigation:read',
   listViews: 'navigation:read',
@@ -94,6 +95,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
 }
 const PREVIEW_DENIED = [
   'callService',
+  'callServiceWithResponse',
   'navigate',
   'emitAction',
   'showDetail',
@@ -263,6 +265,31 @@ function buildApi(capabilities: PortableCardCapability[]) {
         recordPayload(target, 'Service target') as never,
       )
       return null
+    },
+
+    /**
+     * Call a service that answers with data, such as
+     * `weather.get_forecasts`. Same capability as `callService` — it is the
+     * same call, only the reply is handed back instead of dropped.
+     */
+    async callServiceWithResponse(
+      domain: string,
+      service: string,
+      data: Record<string, unknown> = {},
+      target: Record<string, unknown> = {},
+    ) {
+      guard('callServiceWithResponse')
+      if (!/^[a-z0-9_]+$/.test(String(domain)) || !/^[a-z0-9_]+$/.test(String(service))) {
+        throw new Error('Invalid service name.')
+      }
+      const response = await callServiceWithResponse(
+        domain,
+        service,
+        recordPayload(data, 'Service data'),
+        recordPayload(target, 'Service target') as never,
+      )
+      // The card gets a plain, frozen copy — never a live Home Assistant object
+      return deepFreeze(snapshot(response))
     },
 
     subscribeEntity(entityId: string, callback: (entity: unknown) => void) {
