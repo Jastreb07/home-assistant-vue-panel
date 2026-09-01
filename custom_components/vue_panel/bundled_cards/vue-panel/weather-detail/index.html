@@ -231,21 +231,33 @@
     .wd-head {
         position: relative;
         width: calc(100% + (2 * var(--wd-content-padding)));
-        height: clamp(140px, 26vw, 190px);
+        height: 150px;
         margin-inline: calc(var(--wd-content-padding) * -1);
         min-width: 0;
         overflow: hidden;
+        color: #fff;
+        isolation: isolate
+    }
+
+    .wd-head::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        z-index: 0;
         background-color: #7ecbd3;
+        background-image: var(--wd-background-image);
         background-position: center;
         background-repeat: no-repeat;
         background-size: cover;
-        color: #fff;
-        isolation: isolate
+        -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 64%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #000 0%, #000 64%, transparent 100%);
+        pointer-events: none
     }
 
     .wd-head-content {
         position: absolute;
         inset: 0;
+        z-index: 1;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
@@ -897,7 +909,10 @@
       attributes.temperature,
       attributes.temperature_unit || '°C'
     ) || '–';
-    weatherHead.style.backgroundImage = `url("${backgroundUrl(state, attributes)}")`;
+    weatherHead.style.setProperty(
+      '--wd-background-image',
+      `url("${backgroundUrl(state, attributes)}")`
+    );
 
     attribution.textContent = String(attributes.attribution || '');
     attribution.hidden = !attribution.textContent;
