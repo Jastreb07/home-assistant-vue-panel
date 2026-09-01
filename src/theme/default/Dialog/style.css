@@ -13,7 +13,6 @@
 }
 
 .vp-dialog {
-  position: relative;
   background: var(--nav-bg);
   color: var(--text-primary);
   border-radius: 28px;
@@ -26,55 +25,6 @@
     0 24px 38px 3px rgba(0, 0, 0, 0.14),
     0 9px 46px 8px rgba(0, 0, 0, 0.12),
     0 11px 15px -7px rgba(0, 0, 0, 0.2);
-}
-
-.vp-dialog-background {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.vp-dialog-background::after {
-  position: absolute;
-  inset: 0;
-  background:
-    linear-gradient(180deg, rgba(4, 12, 22, 0.7) 0, rgba(4, 12, 22, 0.26) 28%, rgba(4, 12, 22, 0.52) 100%),
-    linear-gradient(90deg, rgba(4, 12, 22, 0.22), transparent 45%, rgba(4, 12, 22, 0.12));
-  content: '';
-}
-
-.vp-dialog-background > video {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.vp-dialog--has-background {
-  color: #fff;
-}
-
-.vp-dialog--has-background > .vp-dialog-header {
-  background: var(--nav-bg);
-  color: var(--text-primary);
-}
-
-.vp-dialog--has-background > .vp-dialog-body,
-.vp-dialog--has-background > .vp-dialog-footer {
-  --text-primary: #fff;
-  --text-secondary: rgba(255, 255, 255, 0.76);
-  --divider: rgba(255, 255, 255, 0.24);
-  --nav-item-hover: rgba(255, 255, 255, 0.15);
-  color: #fff;
-}
-
-.vp-dialog--has-background > .vp-dialog-header,
-.vp-dialog--has-background > .vp-dialog-body,
-.vp-dialog--has-background > .vp-dialog-footer {
-  position: relative;
-  z-index: 1;
 }
 
 .vp-dialog--lg {

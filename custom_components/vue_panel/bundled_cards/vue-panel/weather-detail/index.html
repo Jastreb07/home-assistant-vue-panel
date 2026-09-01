@@ -68,7 +68,7 @@
         "min": 1,
         "max": 12,
         "step": 1,
-        "default": 6,
+        "default": 7,
         "visibleIf": {
           "key": "forecast",
           "not": "none"
@@ -208,7 +208,6 @@
     <dl class="wd-attributes" id="attributes"></dl>
 
     <section class="wd-forecast" id="forecast-section">
-      <h4 class="wd-forecast-title" id="forecast-title"></h4>
       <div class="wd-tabs" id="tabs" role="tablist">
         <button class="wd-tab" type="button" role="tab" data-type="daily" id="tab-daily"></button>
         <button class="wd-tab" type="button" role="tab" data-type="hourly" id="tab-hourly"></button>
@@ -292,11 +291,6 @@
         align-items: center;
         gap: 12px 14px;
         padding: 16px;
-        border: 1px solid rgba(255, 255, 255, .16);
-        border-radius: 18px;
-        background: rgba(6, 18, 30, .34);
-        -webkit-backdrop-filter: blur(12px) saturate(1.1);
-        backdrop-filter: blur(12px) saturate(1.1)
     }
 
     .wd-attributes img {
@@ -325,130 +319,168 @@
         display: none
     }
 
-    .wd-forecast-title {
-        margin: 0 0 10px;
-        font-size: 14px;
-        font-weight: 400
-    }
-
     .wd-forecast {
-        padding: 16px;
-        border: 1px solid rgba(255, 255, 255, .16);
-        border-radius: 18px;
-        background: rgba(6, 18, 30, .34);
-        -webkit-backdrop-filter: blur(12px) saturate(1.1);
-        backdrop-filter: blur(12px) saturate(1.1)
+        padding: 12px;
+        border: 1px solid var(--divider);
+        border-radius: 20px;
     }
 
     .wd-tabs {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        border-bottom: 1px solid var(--divider);
-        margin-bottom: 14px
+        display: inline-flex;
+        margin: 0 0 12px;
+        padding: 3px;
+        border: 1px solid var(--divider);
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--nav-bg) 88%, var(--text-primary));
     }
 
     .wd-tab {
+        margin: 0;
         border: 0;
-        border-bottom: 2px solid transparent;
-        padding: 10px 4px;
+        border-radius: 999px;
+        padding: 6px 12px;
         background: transparent;
         color: var(--text-secondary);
         font: inherit;
-        font-size: 13px;
+        font-size: 12px;
+        font-weight: 600;
         cursor: pointer;
-        /* Sits on the container's own border so both share one line */
-        margin-bottom: -1px;
-        transition: color .15s, border-color .15s
+        transition: color .15s, background-color .15s;
     }
 
     .wd-tab:hover {
-        color: var(--text-primary)
+        color: var(--text-primary);
     }
 
     .wd-tab.is-active {
-        color: var(--accent);
-        border-bottom-color: var(--accent)
+        background: #16a9f5;
+        color: #fff;
     }
 
-    /* One column per entry, so the row stays readable at any count */
     .wd-forecast-grid {
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: minmax(0, 1fr);
-        gap: 4px
-    }
-
-    /*
-     * A whole day of hourly entries never fits the dialog. Rather than
-     * squeezing 24 columns into the width, the row keeps every entry legible
-     * and scrolls sideways.
-     */
-    .wd-forecast-grid.is-scrollable {
-        grid-auto-columns: 56px;
+        display: block;
+        width: 100%;
         overflow-x: auto;
+        overflow-y: hidden;
         overscroll-behavior-x: contain;
-        scroll-snap-type: x proximity;
-        padding-bottom: 6px
+        scrollbar-width: thin;
+        cursor: grab;
     }
 
-    .wd-forecast-grid.is-scrollable .wd-forecast-entry {
-        scroll-snap-align: start
-    }
-
-    .wd-forecast-grid.is-scrollable {
-        cursor: grab
-    }
-
-    /* While dragging, the row must follow the pointer instead of snapping */
     .wd-forecast-grid.is-dragging {
         cursor: grabbing;
-        scroll-snap-type: none;
-        user-select: none
+        user-select: none;
     }
 
     .wd-forecast-grid.is-dragging img {
-        pointer-events: none
+        pointer-events: none;
     }
 
-    /* Weekday above the first entry of each day — empty for the rest */
-    .wd-forecast-day {
-        min-height: 16px;
-        color: var(--text-primary);
-        font-size: 12px;
-        line-height: 16px;
-        align-self: flex-start
+    .wd-forecast-track {
+        display: grid;
+        min-width: 100%;
+        grid-template-columns: repeat(var(--wd-count), minmax(var(--wd-column-width), 1fr));
     }
 
     .wd-forecast-entry {
-        display: flex;
-        flex-direction: column;
+        min-width: 0;
+        display: grid;
+        grid-template-rows: 34px 38px 24px auto 22px 34px;
+        justify-items: center;
         align-items: center;
+        padding: 0 4px;
+        color: var(--text-primary);
+        font-variant-numeric: tabular-nums;
+        scroll-snap-align: start;
+    }
+
+    .wd-forecast-entry.is-hourly {
+        grid-template-rows: 30px 38px 26px 38px;
         gap: 2px;
-        min-width: 0
+        padding: 0 6px;
     }
 
     .wd-forecast-when {
         max-width: 100%;
         overflow: hidden;
-        white-space: nowrap;
+        font-size: 13px;
+        line-height: 1.1;
         text-overflow: ellipsis;
-        font-size: 13px
+        white-space: nowrap;
+    }
+
+    .wd-forecast-date {
+        display: block;
+        margin-top: 3px;
+        color: var(--text-secondary);
+        font-size: 12px;
+        text-align: center;
+    }
+
+    .wd-forecast-when.is-day-boundary {
+        align-self: center;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #16a9f5;
+        color: #fff;
+        font-weight: 700;
+    }
+
+    .wd-forecast-when.is-current-time {
+        color: #9d79dc;
+        font-weight: 700;
     }
 
     .wd-forecast-entry img {
-        width: 40px;
-        height: 40px
+        width: 34px;
+        height: 34px;
     }
 
     .wd-forecast-high {
-        font-size: 14px;
-        font-variant-numeric: tabular-nums
+        font-size: 16px;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .wd-forecast-range {
+        position: relative;
+        width: 8px;
+        height: 64px;
+        overflow: hidden;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--text-secondary) 22%, transparent);
+    }
+
+    .wd-forecast-range::after {
+        position: absolute;
+        right: 0;
+        bottom: var(--wd-range-bottom);
+        left: 0;
+        height: max(8px, var(--wd-range-height));
+        border-radius: inherit;
+        background: color-mix(in srgb, var(--text-primary) 58%, var(--text-secondary));
+        content: '';
     }
 
     .wd-forecast-low {
         color: var(--text-secondary);
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .wd-forecast-rain {
+        min-height: 30px;
+        display: grid;
+        align-content: end;
+        justify-items: center;
+        color: #287bb5;
+        font-size: 13px;
+        line-height: 1.25;
+        white-space: nowrap;
+    }
+
+    .wd-forecast-rain-probability {
         font-size: 12px;
-        font-variant-numeric: tabular-nums
     }
 
     .wd-empty {
@@ -474,12 +506,6 @@
         }
     }
 
-    @media (prefers-reduced-motion: reduce) {
-        .wd-attributes, .wd-forecast {
-            -webkit-backdrop-filter: none;
-            backdrop-filter: none
-        }
-    }
 </style>
 
 <script data-vue-panel-javascript>
@@ -493,7 +519,6 @@
   const range = document.getElementById('range');
   const attributesList = document.getElementById('attributes');
   const forecastSection = document.getElementById('forecast-section');
-  const forecastTitle = document.getElementById('forecast-title');
   const tabs = document.getElementById('tabs');
   const forecastGrid = document.getElementById('forecast');
   const forecastEmpty = document.getElementById('forecast-empty');
@@ -685,65 +710,128 @@
     return stamp ? stamp.toLocaleDateString(vuePanel.language, {weekday: 'short'}) : '';
   }
 
-  function forecastWhen(entry, hourly) {
-    const stamp = entryDate(entry);
+  function dayLabel(stamp) {
+    const label = weekday(stamp);
+    return vuePanel.language.toLowerCase().startsWith('de') && label && !label.endsWith('.')
+      ? label + '.'
+      : label;
+  }
+
+  function hourLabel(stamp) {
     if (!stamp) return '';
-    return hourly
-      ? stamp.toLocaleTimeString(vuePanel.language, {hour: '2-digit', minute: '2-digit'})
-      : weekday(stamp);
+    const value = stamp.toLocaleTimeString(vuePanel.language, {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+    return value.replace(/:00(?:\s*Uhr)?$/i, '');
+  }
+
+  function isCurrentHour(stamp) {
+    if (!stamp) return false;
+    const now = new Date();
+    return stamp.getFullYear() === now.getFullYear()
+      && stamp.getMonth() === now.getMonth()
+      && stamp.getDate() === now.getDate()
+      && stamp.getHours() === now.getHours();
+  }
+
+  function forecastRain(entry, hourly) {
+    const container = document.createElement('span');
+    container.className = 'wd-forecast-rain';
+
+    const amount = document.createElement('span');
+    const precipitation = number(entry && entry.precipitation);
+    amount.textContent = formatNumber(precipitation === null ? 0 : precipitation, 1);
+
+    container.append(amount);
+    if (hourly) {
+      const probability = document.createElement('span');
+      probability.className = 'wd-forecast-rain-probability';
+      const parsed = number(entry && entry.precipitation_probability);
+      probability.textContent = formatNumber(parsed === null ? 0 : parsed, 0) + '%';
+      container.append(probability);
+    }
+    return container;
   }
 
   function renderForecast(entries, unit, hourly) {
-    let previousDay = '';
-    const cells = entries.map(entry => {
-      const cell = document.createElement('div');
-      cell.className = 'wd-forecast-entry';
+    const temperatures = entries.flatMap(entry => {
+      const high = number(entry && entry.temperature);
+      const low = number(entry && entry.templow);
+      return [high, low].filter(value => value !== null);
+    });
+    const scaleMinimum = temperatures.length ? Math.min(...temperatures) : 0;
+    const scaleMaximum = temperatures.length ? Math.max(...temperatures) : 1;
+    const scaleSpread = Math.max(1, scaleMaximum - scaleMinimum);
+    const track = document.createElement('div');
+    const columnWidth = hourly ? 48 : 62;
+    track.className = 'wd-forecast-track';
+    track.style.width = `max(100%, ${entries.length * columnWidth}px)`;
+    track.style.setProperty('--wd-count', String(entries.length));
+    track.style.setProperty('--wd-column-width', columnWidth + 'px');
 
-      /*
-       * An hourly row runs past midnight, so the weekday is written above the
-       * first entry of each day. The element stays in place for every other
-       * entry — an empty label keeps all columns aligned.
-       */
-      if (hourly) {
-        const stamp = entryDate(entry);
-        const day = stamp ? stamp.toDateString() : '';
-        const marker = document.createElement('span');
-        marker.className = 'wd-forecast-day';
-        marker.textContent = day && day !== previousDay ? weekday(stamp) : '';
-        previousDay = day;
-        cell.append(marker);
-      }
+    let previousDay = '';
+    entries.forEach((entry, index) => {
+      const stamp = entryDate(entry);
+      const day = stamp ? stamp.toDateString() : '';
+      const dayBoundary = hourly && day && (index === 0 || day !== previousDay);
+      previousDay = day;
+
+      const cell = document.createElement('div');
+      cell.className = 'wd-forecast-entry' + (hourly ? ' is-hourly' : '');
 
       const when = document.createElement('span');
       when.className = 'wd-forecast-when';
-      when.textContent = forecastWhen(entry, hourly);
+      if (hourly) {
+        when.textContent = dayBoundary ? dayLabel(stamp) : hourLabel(stamp);
+        when.classList.toggle('is-day-boundary', Boolean(dayBoundary));
+        when.classList.toggle('is-current-time', !dayBoundary && isCurrentHour(stamp));
+      } else {
+        when.textContent = dayLabel(stamp);
+        const date = document.createElement('span');
+        date.className = 'wd-forecast-date';
+        date.textContent = stamp ? String(stamp.getDate()).padStart(2, '0') : '';
+        when.append(date);
+      }
 
       const image = document.createElement('img');
       image.alt = labels[entry && entry.condition] || String((entry && entry.condition) || '');
       image.src = iconUrl(entry && entry.condition);
 
-      cell.append(when, image);
-
       const high = number(entry && entry.temperature);
-      if (high !== null) {
-        const value = document.createElement('span');
-        value.className = 'wd-forecast-high';
-        value.textContent = formatNumber(high, 1) + '°';
-        cell.append(value);
+      const highText = document.createElement('span');
+      highText.className = 'wd-forecast-high';
+      highText.textContent = high === null ? '–' : formatNumber(high, 0) + '°';
+
+      cell.append(when, image, highText);
+
+      if (hourly) {
+        cell.append(forecastRain(entry, true));
+      } else {
+        const low = number(entry && entry.templow);
+        const rangeBar = document.createElement('span');
+        rangeBar.className = 'wd-forecast-range';
+        const first = low ?? high ?? scaleMinimum;
+        const second = high ?? low ?? scaleMinimum;
+        const lower = Math.min(first, second);
+        const upper = Math.max(first, second);
+        const bottom = Math.max(0, Math.min(100, (lower - scaleMinimum) / scaleSpread * 100));
+        const height = Math.max(0, Math.min(100 - bottom, (upper - lower) / scaleSpread * 100));
+        rangeBar.style.setProperty('--wd-range-bottom', bottom + '%');
+        rangeBar.style.setProperty('--wd-range-height', height + '%');
+
+        const lowText = document.createElement('span');
+        lowText.className = 'wd-forecast-low';
+        lowText.textContent = low === null ? '–' : formatNumber(low, 0) + '°';
+
+        cell.append(rangeBar, lowText, forecastRain(entry, false));
       }
-      const low = number(entry && entry.templow);
-      if (low !== null) {
-        const value = document.createElement('span');
-        value.className = 'wd-forecast-low';
-        value.textContent = formatNumber(low, 1) + '°';
-        cell.append(value);
-      }
-      return cell;
+      track.append(cell);
     });
-    forecastGrid.replaceChildren(...cells);
-    forecastGrid.hidden = cells.length === 0;
-    forecastGrid.classList.toggle('is-scrollable', hourly);
-    /* A fresh list starts at the beginning, not wherever the last one stood */
+
+    forecastGrid.replaceChildren(track);
+    forecastGrid.hidden = entries.length === 0;
+    forecastGrid.classList.toggle('is-scrollable', hourly || entries.length * columnWidth > forecastGrid.clientWidth);
     forecastGrid.scrollLeft = 0;
   }
 
@@ -792,7 +880,7 @@
     /* An hour-by-hour row scrolls, so it may hold a lot more than a daily one */
     const count = hourly
       ? Math.min(48, Math.max(1, Math.round(Number(config.hourlyCount) || 24)))
-      : Math.min(12, Math.max(1, Math.round(Number(config.forecastCount) || 6)));
+      : Math.min(12, Math.max(1, Math.round(Number(config.forecastCount) || 7)));
     const unit = (currentEntity.attributes && currentEntity.attributes.temperature_unit) || '°C';
     const entries = await fetchForecast(forecastType);
 
@@ -838,7 +926,6 @@
     attribution.textContent = String(attributes.attribution || '');
     attribution.hidden = !attribution.textContent;
 
-    forecastTitle.textContent = vuePanel.t('translation.forecastHeading');
     document.getElementById('tab-daily').textContent = vuePanel.t('translation.forecastTypes.daily');
     document.getElementById('tab-hourly').textContent = vuePanel.t('translation.forecastTypes.hourly');
     paintTabs();

@@ -410,8 +410,12 @@ Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
 Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
 ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
-  room-tile, menu, entity und section-title, dazu die Dialog-Card light-detail. Die Bars sind
-  Engine-Komponenten und keine Cards mehr.
+  room-tile, menu, entity und section-title, dazu die Dialog-Cards light-detail und
+  weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
+  Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
+  Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills; beide zeigen Wettericon,
+  Temperatur und Niederschlag. Ein eigener Dialoghintergrund ist bewusst noch nicht vorhanden.
+  Die Bars sind Engine-Komponenten und keine Cards mehr.
 - **Cards in Popups und Detailansichten**: `areas` enthält `dialog`. Solche Cards laufen nicht auf
   dem Dashboard, sondern in einem Popup oder einer Detailansicht und erhalten deren Werte über
   `vuePanel.context` sowie über `${variable}`-Platzhalter in ihren eigenen Instanzwerten. Das
@@ -525,8 +529,8 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - [x] Phase 3: privaten Card-Katalog, Card-Datei-CRUD, Runtime-Registry und Sandbox API v1 implementieren.
 - [x] Phase 4: alle Core-Cards in portable HTML-Dateien portieren und den SFC-Fallback entfernen.
 - [ ] Git-Repo für vue-panel initialisieren (bisher keins!).
-- [ ] Weitere Detail-Cards je Domain (`vue-panel/<domain>-detail`, bisher nur `light`).
+- [ ] Weitere Detail-Cards je Domain (`vue-panel/<domain>-detail`, bisher `light` und `weather`).
 - [ ] Weitere Cards (z.B. Kamera, Verlaufs-Graph, Szenen/Buttons, Alarm).
 - [ ] Beispiel-Custom-Theme als Vorlage.
 - [ ] `size.rows` wird noch nicht ausgewertet (nur `cols` als grid-column span).
-- [ ] Wetter-Forecast (benötigt `weather/subscribe_forecast` Subscription).
+- [x] Wetter-Forecast über `weather.get_forecasts` mit Tages-/Stundenumschaltung.
