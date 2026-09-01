@@ -71,7 +71,12 @@
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
-        "required": false
+        "required": false,
+        "default": {
+          "tap": {
+            "action": "toggle"
+          }
+        }
       }
     ]
   };
@@ -155,6 +160,10 @@
         color: var(--text-primary);
         overflow: hidden;
         transition: background-color .8s, color .4s
+    }
+
+    .tile.tap-action {
+        cursor: pointer
     }
 
     /* Slight tint on hover — colour comes from the theme */
@@ -319,10 +328,32 @@
 
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
-  /* Ein einfacher Umschalter für jede Domain */
+  const MEDIA_FEATURE_PAUSE = 1;
+  const MEDIA_FEATURE_TURN_ON = 128;
+  const MEDIA_FEATURE_TURN_OFF = 256;
+  const MEDIA_FEATURE_PLAY = 16384;
+  let currentEntity = null;
+
+  function supportsFeature(entity, feature) {
+    return (Number(entity?.attributes?.supported_features || 0) & feature) !== 0;
+  }
+
+  /* Power-toggle when supported, otherwise toggle playback without causing a service error. */
   async function toggleEntity(id) {
-    if (!id) return;
-    await vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: id});
+    if (!id || !currentEntity) return;
+    const isOff = currentEntity.state === 'off';
+    if (isOff && supportsFeature(currentEntity, MEDIA_FEATURE_TURN_ON)) {
+      return vuePanel.callService('media_player', 'turn_on', {}, {entity_id: id});
+    }
+    if (!isOff && supportsFeature(currentEntity, MEDIA_FEATURE_TURN_OFF)) {
+      return vuePanel.callService('media_player', 'turn_off', {}, {entity_id: id});
+    }
+    if (currentEntity.state === 'playing' && supportsFeature(currentEntity, MEDIA_FEATURE_PAUSE)) {
+      return vuePanel.callService('media_player', 'media_pause', {}, {entity_id: id});
+    }
+    if (supportsFeature(currentEntity, MEDIA_FEATURE_PLAY)) {
+      return vuePanel.callService('media_player', 'media_play', {}, {entity_id: id});
+    }
   }
 
   /*
@@ -416,6 +447,8 @@
 
   const entityId = String(config.entity || '');
   const card = document.getElementById('card');
+  const tapAction = String(config.actions?.tap?.action || 'default');
+  card.classList.toggle('tap-action', !['none', 'assist'].includes(tapAction));
   const name = document.getElementById('name');
   const state = document.getElementById('state');
   const icon = document.getElementById('icon');
@@ -560,6 +593,7 @@
   }
 
   async function render(entity) {
+    currentEntity = entity;
     const version = ++renderVersion;
     const playing = entity?.state === 'playing';
     const idle = ['idle', 'off', 'standby'].includes(entity?.state) || !entity;
@@ -592,6 +626,7 @@
   bindGestures(card, config, {
     entityId,
     ignore: '#controls, #volume-wrap',
+    default: gesture => gesture === 'tap' ? toggleEntity(entityId) : undefined,
     toggle: () => toggleEntity(entityId)
   });
 </script>
