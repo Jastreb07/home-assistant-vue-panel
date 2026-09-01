@@ -193,15 +193,10 @@
 
 <template data-vue-panel-html>
   <article class="wd" id="card">
-    <header class="wd-head">
-      <img class="wd-icon" id="icon" alt="">
-      <div class="wd-headline">
-        <h3 class="wd-condition" id="condition"></h3>
-        <p class="wd-updated" id="updated"></p>
-      </div>
-      <div class="wd-temps">
+    <header class="wd-head" id="weather-head">
+      <div class="wd-head-content">
         <div class="wd-temperature" id="temperature"></div>
-        <div class="wd-range" id="range"></div>
+        <h3 class="wd-condition" id="condition"></h3>
       </div>
     </header>
 
@@ -222,65 +217,71 @@
 
 <style data-vue-panel-css>
     .wd {
+        --wd-content-padding: 24px;
         display: flex;
         flex-direction: column;
         gap: 18px;
         width: 100%;
-        padding: 24px;
+        padding: 0 var(--wd-content-padding) var(--wd-content-padding);
+        box-sizing: border-box;
         color: var(--text-primary)
     }
 
     /* ── Current conditions ── */
     .wd-head {
-        display: grid;
-        grid-template-columns: auto 1fr auto;
-        align-items: center;
-        gap: 12px;
-        min-width: 0
+        position: relative;
+        width: calc(100% + (2 * var(--wd-content-padding)));
+        height: clamp(140px, 26vw, 190px);
+        margin-inline: calc(var(--wd-content-padding) * -1);
+        min-width: 0;
+        overflow: hidden;
+        background-color: #7ecbd3;
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: cover;
+        color: #fff;
+        isolation: isolate
     }
 
-    .wd-icon {
-        width: 64px;
-        height: 64px
-    }
-
-    .wd-headline {
-        min-width: 0
+    .wd-head-content {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        justify-content: space-between;
+        padding: 16px;
+        pointer-events: none
     }
 
     .wd-condition {
         margin: 0;
-        font-size: 22px;
-        font-weight: 400;
-        line-height: 1.2;
+        max-width: min(100%, 320px);
+        padding: 6px 17px;
         overflow: hidden;
+        border-radius: 999px;
+        background: rgba(30, 39, 41, .52);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .14);
+        font-size: clamp(18px, 3.2vw, 23px);
+        font-weight: 450;
+        line-height: 1.15;
         white-space: nowrap;
-        text-overflow: ellipsis
-    }
-
-    .wd-updated {
-        margin: 2px 0 0;
-        color: var(--text-secondary);
-        font-size: 12px;
-        line-height: 1.2
-    }
-
-    .wd-temps {
-        text-align: right
+        text-overflow: ellipsis;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .28);
+        backdrop-filter: blur(6px)
     }
 
     .wd-temperature {
-        font-size: 26px;
-        font-weight: 400;
-        line-height: 1.15;
-        white-space: nowrap
-    }
-
-    .wd-range {
-        margin-top: 2px;
-        color: var(--text-secondary);
-        font-size: 12px;
-        white-space: nowrap
+        padding: 3px 17px 5px;
+        border-radius: 999px;
+        background: rgba(30, 39, 41, .52);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, .14);
+        font-size: clamp(34px, 7vw, 46px);
+        font-weight: 700;
+        line-height: 1.05;
+        white-space: nowrap;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, .28);
+        backdrop-filter: blur(6px)
     }
 
     /* ── Attribute rows ── */
@@ -385,7 +386,7 @@
     .wd-forecast-entry {
         min-width: 0;
         display: grid;
-        grid-template-rows: 34px 38px 24px auto 22px 34px;
+        grid-template-rows: 38px 74px 28px auto 24px 38px;
         justify-items: center;
         align-items: center;
         padding: 0 4px;
@@ -395,15 +396,18 @@
     }
 
     .wd-forecast-entry.is-hourly {
-        grid-template-rows: 30px 38px 26px 38px;
-        gap: 2px;
-        padding: 0 6px;
+        grid-template-rows: 34px 74px 30px 44px;
+        gap: 4px;
+        margin: 0 3px;
+        padding: 8px 6px;
+        border: 1px solid var(--divider);
+        border-radius: 18px;
     }
 
     .wd-forecast-when {
         max-width: 100%;
         overflow: hidden;
-        font-size: 13px;
+        font-size: 15px;
         line-height: 1.1;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -413,7 +417,7 @@
         display: block;
         margin-top: 3px;
         color: var(--text-secondary);
-        font-size: 12px;
+        font-size: 13px;
         text-align: center;
     }
 
@@ -432,12 +436,12 @@
     }
 
     .wd-forecast-entry img {
-        width: 34px;
-        height: 34px;
+        width: 70px;
+        height: 70px;
     }
 
     .wd-forecast-high {
-        font-size: 16px;
+        font-size: 18px;
         font-weight: 700;
         white-space: nowrap;
     }
@@ -464,7 +468,7 @@
 
     .wd-forecast-low {
         color: var(--text-secondary);
-        font-size: 13px;
+        font-size: 14px;
         white-space: nowrap;
     }
 
@@ -474,13 +478,13 @@
         align-content: end;
         justify-items: center;
         color: #287bb5;
-        font-size: 13px;
+        font-size: 14px;
         line-height: 1.25;
         white-space: nowrap;
     }
 
     .wd-forecast-rain-probability {
-        font-size: 12px;
+        font-size: 13px;
     }
 
     .wd-empty {
@@ -498,7 +502,7 @@
 
     @media (max-width: 600px) {
         .wd {
-            padding: 18px
+            --wd-content-padding: 18px
         }
 
         .wd-attributes, .wd-forecast {
@@ -512,11 +516,9 @@
   const config = vuePanel.config;
   const entityId = String(config.entity || '');
 
-  const icon = document.getElementById('icon');
+  const weatherHead = document.getElementById('weather-head');
   const condition = document.getElementById('condition');
-  const updated = document.getElementById('updated');
   const temperature = document.getElementById('temperature');
-  const range = document.getElementById('range');
   const attributesList = document.getElementById('attributes');
   const forecastSection = document.getElementById('forecast-section');
   const tabs = document.getElementById('tabs');
@@ -538,6 +540,7 @@
     lightning: 'thunderstorms',
     'lightning-rainy': 'thunderstorms-rain',
     partlycloudy: 'partly-cloudy-day',
+    'partlycloudy-night': 'partly-cloudy-night',
     pouring: 'extreme-rain',
     rainy: 'rain',
     snowy: 'snow',
@@ -556,6 +559,7 @@
     lightning: vuePanel.t('translation.conditions.lightning'),
     'lightning-rainy': vuePanel.t('translation.conditions.lightningRainy'),
     partlycloudy: vuePanel.t('translation.conditions.partlycloudy'),
+    'partlycloudy-night': vuePanel.t('translation.conditions.partlycloudy'),
     pouring: vuePanel.t('translation.conditions.pouring'),
     rainy: vuePanel.t('translation.conditions.rainy'),
     snowy: vuePanel.t('translation.conditions.snowy'),
@@ -565,6 +569,39 @@
     'windy-variant': vuePanel.t('translation.conditions.windy'),
     exceptional: vuePanel.t('translation.conditions.exceptional')
   };
+
+  const weatherBackgrounds = {
+    'clear-night': { day: 'sunny.jpg', night: 'clear-night.jpg' },
+    cloudy: { day: 'cloudy.jpg', night: 'cloudy-night.jpg' },
+    fog: { day: 'fog.jpg', night: 'fog-night.jpg' },
+    hail: { day: 'hail.jpg', night: 'hail-night.jpg' },
+    lightning: { day: 'lightning.jpg', night: 'lightning-night.jpg' },
+    'lightning-rainy': { day: 'lightning-rainy.jpg', night: 'lightning-rainy-night.jpg' },
+    partlycloudy: { day: 'partly-cloudy.jpg', night: 'partly-cloudy-night.jpg' },
+    'partlycloudy-night': { day: 'partly-cloudy.jpg', night: 'partly-cloudy-night.jpg' },
+    pouring: { day: 'pouring.jpg', night: 'pouring-night.jpg' },
+    rainy: { day: 'rainy.jpg', night: 'rainy-night.jpg' },
+    snowy: { day: 'snowy.jpg', night: 'snowy-night.jpg' },
+    'snowy-rainy': { day: 'snowy-rainy.jpg', night: 'snowy-rainy-night.jpg' },
+    sunny: { day: 'sunny.jpg', night: 'clear-night.jpg' },
+    windy: { day: 'windy.jpg', night: 'windy-night.jpg' },
+    'windy-variant': { day: 'windy-variant.jpg', night: 'windy-variant-night.jpg' }
+  };
+
+  const fallbackBackground = weatherBackgrounds.partlycloudy;
+  let sunEntity = null;
+
+  function isNight(state, attributes) {
+    if (state === 'clear-night' || state.endsWith('-night')) return true;
+    if (typeof attributes.is_daytime === 'boolean') return !attributes.is_daytime;
+    return sunEntity && sunEntity.state === 'below_horizon';
+  }
+
+  function backgroundUrl(state, attributes) {
+    const variants = weatherBackgrounds[state] || fallbackBackground;
+    const file = isNight(state, attributes) ? variants.night : variants.day;
+    return vuePanel.asset('assets/weather-forecast-extended/' + file);
+  }
 
   function iconUrl(state) {
     const file = animatedIcons[String(state || '')] || animatedIcons.exceptional;
@@ -600,46 +637,6 @@
   function formatTemperature(value, unit, digits = 1) {
     const parsed = number(value);
     return parsed === null ? null : formatNumber(parsed, digits) + ' ' + unit;
-  }
-
-  /** "17 hours ago" — how long the entity has been reporting this state. */
-  function relativeTime(stamp) {
-    const time = stamp ? new Date(stamp).getTime() : Number.NaN;
-    if (!Number.isFinite(time)) return '';
-    const seconds = Math.round((Date.now() - time) / 1000);
-    if (seconds < 60) return vuePanel.t('translation.justNow');
-
-    const steps = [
-      ['minute', 60],
-      ['hour', 3600],
-      ['day', 86400],
-      ['week', 604800],
-      ['month', 2592000],
-      ['year', 31536000]
-    ];
-    let unit = 'minute';
-    let size = 60;
-    for (const [name, length] of steps) {
-      if (seconds < length) break;
-      unit = name;
-      size = length;
-    }
-    const amount = Math.floor(seconds / size);
-    /*
-     * `Intl.RelativeTimeFormat` phrases the distance itself, but only the
-     * bare amount is wanted here — the card's own string supplies the
-     * "… ago" wording so both languages read naturally.
-     */
-    const parts = new Intl.RelativeTimeFormat(vuePanel.language, {numeric: 'always'})
-      .formatToParts(-amount, unit);
-    const text = parts
-      .filter(part => part.type !== 'literal' || part.value.trim())
-      .map(part => part.value)
-      .join('')
-      .replace(/^(vor|in)\s+/i, '')
-      .replace(/\s+(ago|später)$/i, '')
-      .trim();
-    return vuePanel.t('translation.updatedAgo').replace('{value}', text);
   }
 
   /* Compass direction of a wind bearing, so the value reads as a direction */
@@ -764,7 +761,7 @@
     const scaleMaximum = temperatures.length ? Math.max(...temperatures) : 1;
     const scaleSpread = Math.max(1, scaleMaximum - scaleMinimum);
     const track = document.createElement('div');
-    const columnWidth = hourly ? 48 : 62;
+    const columnWidth = hourly ? 84 : 82;
     track.className = 'wd-forecast-track';
     track.style.width = `max(100%, ${entries.length * columnWidth}px)`;
     track.style.setProperty('--wd-count', String(entries.length));
@@ -838,8 +835,6 @@
   /* Which forecast the tabs currently show */
   let forecastType = config.forecast === 'hourly' ? 'hourly' : 'daily';
   let currentEntity = null;
-  /* Today's high and low, shown next to the current temperature */
-  let dailyRange = '';
 
   function paintTabs() {
     for (const tab of tabs.children) {
@@ -889,21 +884,6 @@
     renderForecast(entries.slice(0, count), unit, hourly);
   }
 
-  /* The high/low pair beside the temperature always comes from today */
-  async function loadDailyRange() {
-    if (!entityId || !currentEntity) {
-      dailyRange = '';
-      range.textContent = '';
-      return;
-    }
-    const unit = (currentEntity.attributes && currentEntity.attributes.temperature_unit) || '°C';
-    const today = (await fetchForecast('daily'))[0];
-    const high = formatTemperature(today && today.temperature, unit);
-    const low = formatTemperature(today && today.templow, unit);
-    dailyRange = [high, low].filter(Boolean).join(' / ');
-    range.textContent = dailyRange;
-  }
-
   function render(entity) {
     const state = String((entity && entity.state) || '');
     const attributes = (entity && entity.attributes) || {};
@@ -913,15 +893,11 @@
       : !entity
         ? vuePanel.t('translation.entityNotFound')
         : labels[state] || state;
-    updated.textContent = entity ? relativeTime(entity.last_changed || entity.last_updated) : '';
-
     temperature.textContent = formatTemperature(
       attributes.temperature,
       attributes.temperature_unit || '°C'
     ) || '–';
-    range.textContent = dailyRange;
-
-    setIcon(icon, state || 'unknown', iconUrl(state));
+    weatherHead.style.backgroundImage = `url("${backgroundUrl(state, attributes)}")`;
 
     attribution.textContent = String(attributes.attribution || '');
     attribution.hidden = !attribution.textContent;
@@ -995,13 +971,23 @@
     const state = String((entity && entity.state) || '');
     if (state === lastForecastState) return;
     lastForecastState = state;
-    await loadDailyRange();
     await loadForecast();
   }
 
   if (entityId) {
+    try {
+      sunEntity = await vuePanel.getEntity('sun.sun');
+    } catch (_error) {
+      sunEntity = null;
+    }
     await refresh(await vuePanel.getEntity(entityId));
     vuePanel.subscribeEntity(entityId, refresh);
+    if (sunEntity) {
+      vuePanel.subscribeEntity('sun.sun', entity => {
+        sunEntity = entity;
+        if (currentEntity) render(currentEntity);
+      });
+    }
   } else {
     render(null);
     forecastSection.hidden = true;

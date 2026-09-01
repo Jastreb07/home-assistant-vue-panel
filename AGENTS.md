@@ -414,7 +414,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills; beide zeigen Wettericon,
-  Temperatur und Niederschlag. Ein eigener Dialoghintergrund ist bewusst noch nicht vorhanden.
+  Temperatur und Niederschlag. Der Kopf zeigt zustands- und tageszeitabhängige, lokal gebündelte
+  Wetterillustrationen aus `weather-forecast-extended` mit Temperatur- und Zustandspille. Der
+  Head liegt direkt unter der normalen Dialog-Kopfzeile und reicht links/rechts ohne Innenabstand
+  bis an den Dialogrand; ein eigener Hintergrund für den gesamten Dialog ist bewusst nicht vorhanden.
   Die Bars sind Engine-Komponenten und keine Cards mehr.
 - **Cards in Popups und Detailansichten**: `areas` enthält `dialog`. Solche Cards laufen nicht auf
   dem Dashboard, sondern in einem Popup oder einer Detailansicht und erhalten deren Werte über
