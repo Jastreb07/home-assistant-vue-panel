@@ -416,9 +416,9 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills; beide zeigen Wettericon,
   Temperatur und Niederschlag. Der Kopf zeigt zustands- und tageszeitabhängige, lokal gebündelte
   Wetterillustrationen aus `weather-forecast-extended` mit Temperatur- und Zustandspille. Der
-  150px hohe Head liegt direkt unter der normalen Dialog-Kopfzeile, reicht links/rechts ohne
-  Innenabstand bis an den Dialogrand und blendet sein Motiv nach unten transparent in den
-  Dialoghintergrund aus; ein eigener Hintergrund für den gesamten Dialog ist bewusst nicht vorhanden.
+  180px hohe Head liegt direkt unter der normalen Dialog-Kopfzeile und reicht links/rechts ohne
+  Innenabstand bis an den Dialogrand. Das Motiv liegt als 280px hohe Hintergrundebene hinter dem
+  oberen Dialoginhalt und blendet nach unten transparent aus; der Dialog-Header bleibt unverändert.
   Die Bars sind Engine-Komponenten und keine Cards mehr.
 - **Cards in Popups und Detailansichten**: `areas` enthält `dialog`. Solche Cards laufen nicht auf
   dem Dashboard, sondern in einem Popup oder einer Detailansicht und erhalten deren Werte über

@@ -218,32 +218,23 @@
 <style data-vue-panel-css>
     .wd {
         --wd-content-padding: 24px;
+        position: relative;
         display: flex;
         flex-direction: column;
         gap: 18px;
         width: 100%;
         padding: 0 var(--wd-content-padding) var(--wd-content-padding);
         box-sizing: border-box;
-        color: var(--text-primary)
-    }
-
-    /* ── Current conditions ── */
-    .wd-head {
-        position: relative;
-        width: calc(100% + (2 * var(--wd-content-padding)));
-        height: 150px;
-        margin-inline: calc(var(--wd-content-padding) * -1);
-        min-width: 0;
-        overflow: hidden;
-        color: #fff;
+        color: var(--text-primary);
         isolation: isolate
     }
 
-    .wd-head::before {
+    .wd::before {
         content: '';
         position: absolute;
-        inset: 0;
+        inset: 0 0 auto;
         z-index: 0;
+        height: 200px;
         background-color: #7ecbd3;
         background-image: var(--wd-background-image);
         background-position: center;
@@ -252,6 +243,20 @@
         -webkit-mask-image: linear-gradient(to bottom, #000 0%, #000 64%, transparent 100%);
         mask-image: linear-gradient(to bottom, #000 0%, #000 64%, transparent 100%);
         pointer-events: none
+    }
+
+    .wd > * {
+        position: relative;
+        z-index: 1
+    }
+
+    /* ── Current conditions ── */
+    .wd-head {
+        width: calc(100% + (2 * var(--wd-content-padding)));
+        height: 180px;
+        margin-inline: calc(var(--wd-content-padding) * -1);
+        min-width: 0;
+        color: #fff
     }
 
     .wd-head-content {
@@ -528,7 +533,7 @@
   const config = vuePanel.config;
   const entityId = String(config.entity || '');
 
-  const weatherHead = document.getElementById('weather-head');
+  const weatherCard = document.getElementById('card');
   const condition = document.getElementById('condition');
   const temperature = document.getElementById('temperature');
   const attributesList = document.getElementById('attributes');
@@ -909,7 +914,7 @@
       attributes.temperature,
       attributes.temperature_unit || '°C'
     ) || '–';
-    weatherHead.style.setProperty(
+    weatherCard.style.setProperty(
       '--wd-background-image',
       `url("${backgroundUrl(state, attributes)}")`
     );
