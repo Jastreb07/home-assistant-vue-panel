@@ -290,22 +290,29 @@ Aktueller Stand:
   Kühl-Griff (Drag, Klick, Mausrad und Pfeiltasten), einen grauen Punkt für die Isttemperatur,
   umschaltbare Soll-Werte für `target_temp_low`/`target_temp_high` (ganze Zahl groß, Einheit und
   Nachkommastellen klein daneben), Istwert und Luftfeuchte als Metriken sowie
-  unter dem Bogen zwei nebeneinanderstehende Dropdowns für Betriebsart (`hvac_modes` →
-  `climate.set_hvac_mode`) und Voreinstellung (`preset_modes` → `climate.set_preset_mode`, wird
-  ohne Presets ausgeblendet). Beide bilden einen zusammenhängenden Segmentschalter: außen
-  abgerundet (links Presets, rechts Betriebsart), in der Mitte eine Trennlinie, und die Listen
+  unten in der Lücke des Bogens zwei nebeneinanderstehende Dropdowns für Voreinstellung
+  (`preset_modes` → `climate.set_preset_mode`, wird ohne Presets ausgeblendet) und Betriebsart
+  (`hvac_modes` → `climate.set_hvac_mode`). Das Ausschalten steckt im Betriebsart-Menü: `off` ist
+  ein Eintrag wie jeder andere und wird bei Entities ohne `off` in `hvac_modes` über
+  `climate.turn_off`/`turn_on` nachgebildet — einen eigenen Ein/Aus-Schalter gibt es nicht mehr.
+  Die Gruppe hat die feste Breite `--selects-width` (200px, unter 390px 180px), beide Auslöser je
+  die Hälfte davon; zu lange Beschriftungen werden über `applyTextScroll()` zu Lauftexten
+  (Hülle `.pill-label` schneidet ab, `.pill-text` wandert per `vp-text-scroll`). Beide bilden einen zusammenhängenden Segmentschalter: außen
+  abgerundet (links Presets, rechts Betriebsart), in der Mitte eine Trennlinie, und die Menüs
   öffnen sich als radiales Tortenmenü: `buildRadial()` zeichnet aus den Optionen ein SVG mit
   Ringsegmenten (Viewbox 320, Nabe r 62, Ring 74–150, erstes Segment oben) samt Beschriftung im
   Segment, `layoutMenu()` legt es fixiert auf die Bogenmitte und skaliert es mit dem Bogen. Die
-  Nabe zeigt die Gruppenüberschrift und den angepeilten Eintrag, das aktuell gewählte Segment ist
-  hell invertiert, ein Klick auf die Nabe schließt. Solange eine Liste offen ist, legt der `.scrim` einen
+  Nabe zeigt die Gruppenüberschrift und den angepeilten Eintrag. Beide `.menu`-Elemente hängen an
+  der Card-Wurzel und nicht in `.select`: `.selects` ist per `transform` zentriert und wäre damit
+  der Bezugsrahmen für `position: fixed` — dort landeten die Menüs außerhalb des Bildes. Weiter: das aktuell gewählte Segment ist
+  hell invertiert, ein Klick auf die Nabe schließt. Unter drei Einträgen füllen gedimmte,
+  nicht bedienbare Platzhalter-Segmente den Ring auf (`MIN_SEGMENTS`). Solange eine Liste offen ist, legt der `.scrim` einen
   `backdrop-filter: blur(8px)` mit leichter Abdunklung über den Dialoginhalt; er
   wird beim Öffnen per `card.closest('.vp-dialog-body').getBoundingClientRect()` genau auf den
   Dialog-Body gelegt (ohne Dialog auf die Card), sodass Kopf- und Fußzeile scharf bleiben. Ein
   Klick darauf oder Escape schließt die Liste. Der Ein/Aus-Schalter sitzt unten mittig in der Lücke des Bogens. Auslöser-Pillen und Schalter
   tragen das Styling des Schalters aus `light-detail` (40px hohe Pille, `border-radius: 999px`,
-  gleiche Hover-/Active-/Ein-Zustände, wanderndes Power-Icon), die Auswahllisten das der
-  Licht-Popups. Runde Modus-Knöpfe gibt es nicht mehr. In der Hinweiszeile zeigt zwischen Warn- und
+  gleiche Hover-/Active-/Offen-Zustände). Runde Modus-Knöpfe gibt es nicht mehr. In der Hinweiszeile zeigt zwischen Warn- und
   Fenstericon ein eingefärbtes Icon, was das Gerät gerade tut (`hvac_action`: Flamme orange,
   Schneeflocke blau, Leerlauf grau …); der als `translation.actions.*` übersetzte Text steht als
   `title`/`alt` daran; die eingestellte Betriebsart steht dagegen im Dropdown, damit beides nicht

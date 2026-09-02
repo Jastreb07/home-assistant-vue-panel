@@ -68,7 +68,6 @@
         "translation.humidity": "Humidity",
         "translation.windowOpen": "Window open",
         "translation.degraded": "A sensor or thermostat is unavailable",
-        "translation.power": "Power",
         "translation.heatTarget": "Heating temperature",
         "translation.coolTarget": "Cooling temperature",
         "translation.modes.heat": "Heat",
@@ -111,7 +110,6 @@
         "translation.humidity": "Luftfeuchtigkeit",
         "translation.windowOpen": "Fenster geöffnet",
         "translation.degraded": "Ein Sensor oder Thermostat ist nicht verfügbar",
-        "translation.power": "Ein/Aus",
         "translation.heatTarget": "Heiztemperatur",
         "translation.coolTarget": "Kühltemperatur",
         "translation.modes.heat": "Heizen",
@@ -200,20 +198,25 @@
             <span class="pill-label"><span class="pill-text" id="preset-label">—</span></span>
             <img class="pill-caret" id="preset-caret" alt="">
           </button>
-          <div class="menu" id="preset-menu" role="listbox" hidden>
-            <svg class="radial" id="preset-radial" viewBox="0 0 320 320"></svg>
-          </div>
         </div>
         <div class="select" id="mode-select">
           <button class="pill" id="mode-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
             <span class="pill-label"><span class="pill-text" id="mode-label">—</span></span>
             <img class="pill-caret" id="mode-caret" alt="">
           </button>
-          <div class="menu" id="mode-menu" role="listbox" hidden>
-            <svg class="radial" id="mode-radial" viewBox="0 0 320 320"></svg>
-          </div>
         </div>
       </div>
+    </div>
+
+    <!--
+      Die Menüs hängen bewusst an der Card-Wurzel: `.selects` ist per `transform`
+      zentriert und wäre damit der Bezugsrahmen für `position: fixed`.
+    -->
+    <div class="menu" id="preset-menu" role="listbox" hidden>
+      <svg class="radial" id="preset-radial" viewBox="0 0 320 320"></svg>
+    </div>
+    <div class="menu" id="mode-menu" role="listbox" hidden>
+      <svg class="radial" id="mode-radial" viewBox="0 0 320 320"></svg>
     </div>
 
     <div class="scrim" id="scrim" hidden></div>
@@ -1186,8 +1189,10 @@
    * Hülle klemmt und schneidet ab, der Text darin wandert.
    */
   function applyTextScroll(text) {
+    const box = text.parentElement;
+    if (!box) return;
     text.classList.remove('is-scrolling');
-    const overflow = text.scrollWidth - text.parentElement.clientWidth;
+    const overflow = text.scrollWidth - box.clientWidth;
     const scrolling = overflow > 1;
     text.classList.toggle('is-scrolling', scrolling);
     if (scrolling) text.style.setProperty('--vp-scroll-shift', `-${overflow}px`);
@@ -1232,7 +1237,7 @@
   }
 
   document.addEventListener('click', event => {
-    if (!event.target.closest('.select')) closeMenus();
+    if (!event.target.closest('.select, .menu')) closeMenus();
   });
 
   document.addEventListener('keydown', event => {
