@@ -21,8 +21,8 @@
     "defaultSize": {
       "cols": 1,
       "rows": 1,
-      "width": 424,
-      "height": 500
+      "width": 396,
+      "height": 420
     },
     "defaultResponsive": {
       "mobile": true,
@@ -227,10 +227,14 @@
 <style data-vue-panel-css>
   .thermostat-ui {
     position: relative;
-    width: min(424px, 100%);
-    min-height: 500px;
+    width: min(396px, 100%);
+    /*
+     * Keine feste Höhe: der Dialog folgt dem Inhalt. Unten reserviert das
+     * Padding den Platz, den die absolut gesetzte Auswahlgruppe über den
+     * Bogenrand hinaus braucht (`--selects-overhang` + halbe Pillenhöhe).
+     */
     margin-inline: auto;
-    padding: 4px 6px 8px;
+    padding: 4px 6px calc(20px + var(--selects-overhang));
     overflow: visible;
     box-sizing: border-box;
     background: #fff;
@@ -238,6 +242,7 @@
     font-family: Arial, Helvetica, sans-serif;
     user-select: none;
     --selects-width: 200px;
+    --selects-overhang: 20px;
   }
 
   /* Der Bogen ist derselbe wie im Licht-Dial, nur nicht rundum geschlossen */
@@ -442,7 +447,7 @@
   .selects {
     position: absolute;
     z-index: 20;
-    bottom: -20px;
+    bottom: calc(var(--selects-overhang) * -1);
     left: 50%;
     display: flex;
     flex-wrap: nowrap;
@@ -658,7 +663,6 @@
   [hidden] { display: none !important; }
 
   @media (max-width: 390px) {
-    .thermostat-ui { min-height: 470px; }
     .target-main { font-size: 40px; line-height: 40px; }
     .target-fraction { font-size: 24px; line-height: 18px; }
     .targets { gap: 12px; width: 230px; }

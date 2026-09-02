@@ -296,7 +296,9 @@ Aktueller Stand:
   ein Eintrag wie jeder andere und wird bei Entities ohne `off` in `hvac_modes` über
   `climate.turn_off`/`turn_on` nachgebildet — einen eigenen Ein/Aus-Schalter gibt es nicht mehr.
   Die Gruppe hat die feste Breite `--selects-width` (200px, unter 390px 180px), beide Auslöser je
-  die Hälfte davon; zu lange Beschriftungen werden über `applyTextScroll()` zu Lauftexten
+  die Hälfte davon, und hängt um `--selects-overhang` unter den Bogen — genau diesen Betrag
+  reserviert das untere Padding der Card, damit sie keine feste Höhe braucht: der Dialog wächst mit
+  dem Inhalt. Mit `defaultSize.width` 396 (< 424) wählt `PopupFrame` den `md`-Dialog statt `lg`; zu lange Beschriftungen werden über `applyTextScroll()` zu Lauftexten
   (Hülle `.pill-label` schneidet ab, `.pill-text` wandert per `vp-text-scroll`). Beide bilden einen zusammenhängenden Segmentschalter: außen
   abgerundet (links Presets, rechts Betriebsart), in der Mitte eine Trennlinie, und die Menüs
   öffnen sich als radiales Tortenmenü: `buildRadial()` zeichnet aus den Optionen ein SVG mit
