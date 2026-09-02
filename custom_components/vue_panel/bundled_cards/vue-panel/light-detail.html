@@ -21,8 +21,8 @@
     "defaultSize": {
       "cols": 1,
       "rows": 1,
-      "width": 424,
-      "height": 513
+      "width": 396,
+      "height": 420
     },
     "defaultResponsive": {
       "mobile": true,
@@ -51,32 +51,36 @@
     "languages": {
       "en": {
         "translation.name": "Light details",
-        "translation.description": "Detail view of a light: switch, brightness and color temperature",
+        "translation.description": "Detail view of a light: switch, brightness, colour temperature and effects",
         "translation.variables.entity.label": "Light entity",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.states.on": "On",
         "translation.states.off": "Off",
-        "translation.toggle": "Switch",
         "translation.modes.brightness": "Brightness",
-        "translation.modes.colorTemp": "Color temperature",
-        "translation.modes.color": "Color",
+        "translation.modes.colorTemp": "Colour temperature",
+        "translation.modes.color": "Colour",
         "translation.modes.effects": "Effects",
+        "translation.effects.none": "No effect",
+        "translation.captions.effect": "Effect",
+        "translation.unavailable": "The light is unavailable",
         "translation.switchOnly": "This light can only be switched on and off."
       },
       "de": {
         "translation.name": "Licht-Details",
-        "translation.description": "Detailansicht eines Lichts: Schalter, Helligkeit und Farbtemperatur",
+        "translation.description": "Detailansicht eines Lichts: Schalter, Helligkeit, Farbtemperatur und Effekte",
         "translation.variables.entity.label": "Licht-Entity",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.states.on": "An",
         "translation.states.off": "Aus",
-        "translation.toggle": "Schalten",
         "translation.modes.brightness": "Helligkeit",
         "translation.modes.colorTemp": "Farbtemperatur",
         "translation.modes.color": "Farbe",
         "translation.modes.effects": "Effekte",
+        "translation.effects.none": "Kein Effekt",
+        "translation.captions.effect": "Effekt",
+        "translation.unavailable": "Das Licht ist nicht verfügbar",
         "translation.switchOnly": "Dieses Licht lässt sich nur ein- und ausschalten."
       }
     }
@@ -85,56 +89,98 @@
 
 <template data-vue-panel-html>
   <div class="light-ui" id="card">
-    <button class="power" id="toggle" type="button" role="switch" aria-checked="false">
-      <img id="power-icon" alt="">
-    </button>
-
-    <div class="dial" id="dial" role="slider">
-      <svg class="dial-svg" viewBox="0 0 232 232" aria-hidden="true">
-        <circle class="arc-track" cx="116" cy="116" r="107"/>
-        <circle class="arc-progress" id="arc-progress" cx="116" cy="116" r="107"/>
+    <div class="dial" id="dial" role="slider" tabindex="0">
+      <svg class="dial-svg" viewBox="0 0 360 300" aria-hidden="true">
+        <path class="arc-track" id="arc-track" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-value" id="arc-value" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-hit" id="arc-hit" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
       </svg>
-      <div class="hue-ring"></div>
-      <div class="arc-handle" id="arc-handle"></div>
-    </div>
+      <span class="hue-ring" id="hue-ring"></span>
+      <span class="arc-handle" id="arc-handle"></span>
 
-    <div class="status" id="status-text">—</div>
-    <div class="subtitle" id="subtitle-text"></div>
-    <div class="color-preview" id="color-preview"></div>
+      <div class="notices" id="notices">
+        <img id="state-icon" alt="">
+        <img id="effect-icon" alt="" hidden>
+        <img id="warning-icon" alt="" hidden>
+      </div>
+
+      <div class="targets" id="targets">
+        <div class="target selected" id="value-target">
+          <span class="target-main" id="value-main">—</span>
+          <span class="target-side">
+            <span class="target-unit" id="value-unit"></span>
+            <span class="target-fraction" id="value-fraction"></span>
+          </span>
+        </div>
+        <span class="color-preview" id="color-preview" hidden></span>
+      </div>
+
+      <div class="metrics" id="metrics">
+        <div class="metric brightness" id="brightness-metric" hidden>
+          <img id="brightness-icon" alt="">
+          <span id="brightness-value">—</span>
+        </div>
+        <div class="metric kelvin" id="kelvin-metric" hidden>
+          <img id="kelvin-icon" alt="">
+          <span id="kelvin-value">—</span>
+        </div>
+      </div>
+
+      <div class="selects" id="selects">
+        <div class="select" id="power-select">
+          <button class="pill" id="power-trigger" type="button" role="switch" aria-checked="false">
+            <span class="pill-label"><span class="pill-text" id="power-label">—</span></span>
+          </button>
+        </div>
+        <div class="select" id="effect-select" hidden>
+          <button class="pill" id="effect-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="pill-label"><span class="pill-text" id="effect-label">—</span></span>
+            <img class="pill-caret" id="effect-caret" alt="">
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div class="controls" id="controls">
-      <button class="control brightness" data-mode="brightness" type="button">
-        <span class="circle-button preset-trigger" id="brightness-trigger">
-          <img data-icon="mdi:brightness-6" alt="">
-        </span>
-        <span class="label" data-label="brightness"></span>
-      </button>
+      <div class="control-slot">
+        <button class="control" data-mode="brightness" type="button">
+          <span class="circle-button" id="brightness-trigger">
+            <img data-icon="mdi:brightness-6" alt="">
+          </span>
+          <span class="label" data-label="brightness"></span>
+        </button>
+        <div class="preset-popup" id="brightness-presets"></div>
+      </div>
 
-      <button class="control temp" data-mode="colorTemp" type="button">
-        <span class="circle-button preset-trigger" id="kelvin-trigger">
-          <img data-icon="mdi:thermometer" alt="">
-        </span>
-        <span class="label" data-label="colorTemp"></span>
-      </button>
+      <div class="control-slot">
+        <button class="control" data-mode="colorTemp" type="button">
+          <span class="circle-button" id="kelvin-trigger">
+            <img data-icon="mdi:thermometer" alt="">
+          </span>
+          <span class="label" data-label="colorTemp"></span>
+        </button>
+        <div class="preset-popup" id="kelvin-presets"></div>
+      </div>
 
-      <button class="control color" data-mode="color" type="button">
-        <span class="circle-button">
-          <img data-icon="mdi:palette" alt="">
-        </span>
-        <span class="label" data-label="color"></span>
-      </button>
-
-      <button class="control effects" id="effect-trigger" data-mode="effects" type="button" aria-expanded="false">
-        <span class="circle-button">
-          <img data-icon="mdi:auto-fix" alt="">
-        </span>
-        <span class="label" data-label="effects"></span>
-      </button>
+      <div class="control-slot">
+        <button class="control" data-mode="color" type="button">
+          <span class="circle-button">
+            <img data-icon="mdi:palette" alt="">
+          </span>
+          <span class="label" data-label="color"></span>
+        </button>
+      </div>
     </div>
 
-    <div class="preset-popup brightness-presets" id="brightness-presets"></div>
-    <div class="preset-popup kelvin-presets" id="kelvin-presets"></div>
-    <div class="effects-popup" id="effects-popup"></div>
+    <!--
+      Das Menü hängt an der Card-Wurzel: `.selects` ist per `transform`
+      zentriert und wäre sonst der Bezugsrahmen für `position: fixed`.
+    -->
+    <div class="menu" id="effect-menu" role="listbox" hidden>
+      <svg class="radial" id="effect-radial" viewBox="0 0 320 320"></svg>
+    </div>
+
+    <div class="scrim" id="scrim" hidden></div>
     <p class="hint" id="hint" hidden></p>
   </div>
 </template>
@@ -142,31 +188,34 @@
 <style data-vue-panel-css>
   .light-ui {
     position: relative;
-    width: min(424px, 100%);
-    height: 513px;
+    width: min(396px, 100%);
+    /*
+     * Keine feste Höhe: der Dialog folgt dem Inhalt. Unten reserviert das
+     * Padding den Platz, den die absolut gesetzte Auswahlgruppe über den
+     * Bogenrand hinaus braucht.
+     */
     margin-inline: auto;
+    padding: 4px 6px 8px;
     overflow: visible;
-    user-select: none;
+    box-sizing: border-box;
     background: #fff;
     color: #222;
     font-family: Arial, Helvetica, sans-serif;
+    user-select: none;
+    --selects-width: 200px;
+    --selects-overhang: 20px;
+    /* Derselbe Bogen wie im SVG — als Maske für den Farbverlauf */
+    --vp-arc-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'><path d='M81.01 258.99 A140 140 0 1 1 278.99 258.99' fill='none' stroke='black' stroke-width='20' stroke-linecap='round'/></svg>");
   }
 
   .dial {
-    --selected-color: hsl(32 100% 50%);
-    position: absolute;
-    left: 32px;
-    top: 8px;
-    width: 360px;
-    height: 360px;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, .025);
-    touch-action: none;
+    position: relative;
+    width: min(360px, 100%);
+    aspect-ratio: 360 / 300;
+    margin: 0 auto calc(20px + var(--selects-overhang));
   }
 
-  .dial.is-enabled { cursor: grab; }
-  .dial.is-enabled:hover { background: rgba(0, 0, 0, .045); }
-  .dial.is-dragging { cursor: grabbing; transform: scale(1.008); }
+  .dial.is-pressed { transform: scale(1.008); }
 
   .dial-svg {
     position: absolute;
@@ -175,170 +224,325 @@
     height: 100%;
     overflow: visible;
     pointer-events: none;
-    transform: rotate(-90deg);
   }
 
   .arc-track,
-  .arc-progress {
+  .arc-value {
     fill: none;
-    stroke-width: 13;
+    stroke-width: 20;
+    stroke-linecap: round;
   }
 
   .arc-track { stroke: rgba(0, 0, 0, .075); }
 
-  .arc-progress {
-    stroke: #303030;
+  /*
+   * Nur dieses breitere, unsichtbare Band nimmt Zeiger entgegen — deshalb lässt
+   * sich der Wert ausschließlich auf dem Bogen selbst ziehen.
+   */
+  .arc-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 44;
     stroke-linecap: round;
-    opacity: 0;
+    pointer-events: stroke;
+    touch-action: none;
   }
 
-  .dial.is-enabled .arc-progress { opacity: 1; }
-  .dial.is-static-on .arc-progress { opacity: 1; }
+  .dial.is-enabled .arc-hit { cursor: grab; }
+  .dial.is-pressed .arc-hit { cursor: grabbing; }
+  .dial:not(.is-enabled) .arc-hit { pointer-events: none; }
 
+  .arc-value {
+    stroke: #f3c988;
+    transition: stroke-dasharray .18s ease, stroke-dashoffset .18s ease, stroke .18s ease;
+  }
+
+  /*
+   * Im Farbmodus liegt der Farbverlauf als Bogen über der Spur: Die Maske ist
+   * derselbe Pfad mit derselben Strichbreite und denselben runden Enden wie
+   * `.arc-value`, der Verlauf dreht sich um die Bogenmitte (180/160).
+   */
   .hue-ring {
     position: absolute;
     inset: 0;
-    border-radius: 50%;
     opacity: 0;
     pointer-events: none;
+    transition: opacity .18s ease;
     background: conic-gradient(
-      from 0deg,
+      from 135deg at 50% 53.333%,
       hsl(0 100% 50%) 0deg,
-      hsl(60 100% 50%) 60deg,
-      hsl(120 100% 45%) 120deg,
-      hsl(180 100% 45%) 180deg,
-      hsl(240 100% 55%) 240deg,
-      hsl(300 100% 50%) 300deg,
-      hsl(360 100% 50%) 360deg
+      hsl(60 100% 50%) 45deg,
+      hsl(120 100% 45%) 90deg,
+      hsl(180 100% 45%) 135deg,
+      hsl(240 100% 55%) 180deg,
+      hsl(300 100% 50%) 225deg,
+      hsl(360 100% 50%) 270deg
     );
-    -webkit-mask: radial-gradient(circle at center, transparent 0 153px, #000 153px 174px, transparent 174px);
-    mask: radial-gradient(circle at center, transparent 0 153px, #000 153px 174px, transparent 174px);
+    -webkit-mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
+    mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
   }
 
-  .dial.color-mode.is-enabled .hue-ring { opacity: 1; }
-  .dial.color-mode .arc-track,
-  .dial.color-mode .arc-progress { opacity: 0 !important; }
+  .dial.color-mode .hue-ring { opacity: 1; }
+  .dial.color-mode .arc-value { opacity: 0; }
 
   .arc-handle {
     position: absolute;
-    z-index: 2;
+    z-index: 4;
     width: 23px;
     height: 23px;
     margin: -11.5px 0 0 -11.5px;
     border: 4px solid #fff;
     border-radius: 50%;
-    background: #f3f3f3;
+    box-sizing: border-box;
+    background: #f3c988;
     box-shadow: 0 2px 5px rgba(0, 0, 0, .10);
     opacity: 0;
     pointer-events: none;
+    transition: left .12s ease, top .12s ease, opacity .16s ease, box-shadow .15s ease;
   }
 
   .dial.is-enabled .arc-handle { opacity: 1; }
-  .dial.color-mode .arc-handle { background: var(--selected-color); }
 
-  .power {
+  /*
+   * Nur der laufende Zug schaltet die Übergänge ab, damit Füllung und Griff dem
+   * Finger folgen. Ein Tipp auf den Bogen behält die Animation.
+   */
+  .dial.is-dragging .arc-value,
+  .dial.is-dragging .arc-handle {
+    transition: none;
+  }
+
+  /* Zustands-, Effekt- und Warnicon stehen als Reihe über dem großen Wert */
+  .notices {
+    position: absolute;
+    z-index: 3;
+    top: 30%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    min-height: 42px;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .notices img { width: 42px; height: 42px; }
+
+  .targets {
+    position: absolute;
+    z-index: 3;
+    top: 53%;
+    left: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    transform: translate(-50%, -50%);
+  }
+
+  .target {
+    display: inline-flex;
+    align-items: stretch;
+    min-width: 0;
+    color: #111;
+    font: inherit;
+    white-space: nowrap;
+    transition: color .16s ease;
+  }
+
+  .target-main {
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 46px;
+    letter-spacing: -1.4px;
+  }
+
+  .target.is-word .target-main { font-size: 34px; letter-spacing: -.6px; }
+
+  .target-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: 2px;
+    text-align: right;
+    height: 50px;
+  }
+
+  /* Im Farbmodus steht statt der Zahl die eingestellte Farbe in der Mitte */
+  .color-preview {
+    width: 92px;
+    height: 92px;
+    border: 5px solid #fff;
+    border-radius: 50%;
+    box-sizing: border-box;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .18), inset 0 0 0 1px rgba(0, 0, 0, .06);
+    transition: background .18s ease;
+  }
+
+  .dial.is-dragging .color-preview { transition: none; }
+
+  .target-unit { font-size: 12px; line-height: 18px; }
+  .target-fraction { font-size: 21px; line-height: 21px; letter-spacing: -.6px; }
+
+  /* Helligkeit und Farbtemperatur stehen gemeinsam in einer Zeile */
+  .metrics {
+    position: absolute;
+    z-index: 3;
+    bottom: 10%;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    pointer-events: none;
+  }
+
+  .metric {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    color: #e0a03c;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  .metric img { width: 18px; height: 18px; }
+  .kelvin { color: #76a9d6; }
+
+  /*
+   * Schalter und Effektmenü bilden einen zusammenhängenden Schalter: abgerundet
+   * ist nur außen, in der Mitte trennt sie eine Linie.
+   */
+  .selects {
     position: absolute;
     z-index: 20;
-    left: 162px;
-    top: 250px;
-    width: 100px;
+    bottom: calc(var(--selects-overhang) * -1);
+    left: 50%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0;
+    width: var(--selects-width);
+    transform: translateX(-50%);
+  }
+
+  /* Beide Auslöser teilen sich die feste Breite der Gruppe zu gleichen Teilen */
+  .select {
+    position: relative;
+    width: 50%;
+    min-width: 0;
+  }
+
+  /* Die geöffnete Gruppe steht mitsamt Auslöser scharf über dem Weichzeichner */
+  .select.is-open { z-index: 55; }
+
+  .select .pill { border-radius: 0; }
+  .select:first-child .pill { border-radius: 999px 0 0 999px; }
+  .select:last-child .pill { border-radius: 0 999px 999px 0; }
+  .select + .select .pill { box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14); }
+
+  .select + .select:hover .pill {
+    box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14), 0 3px 10px rgba(0, 0, 0, .10);
+  }
+
+  .select + .select.is-open .pill {
+    box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .09), 0 2px 8px rgba(0, 0, 0, .07);
+  }
+
+  /* Steht nur der Schalter zur Verfügung, ist er wieder eine volle Pille */
+  .selects.is-single .pill {
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
     height: 40px;
-    padding: 0;
+    padding: 0 12px;
     border: 0;
     border-radius: 999px;
     background: rgba(0, 0, 0, .10);
     color: rgba(0, 0, 0, .65);
+    font: inherit;
+    font-size: 13px;
     cursor: pointer;
     transition: background .16s ease, box-shadow .16s ease, transform .08s ease, color .16s ease;
   }
 
-  .power:hover {
+  .pill:hover {
     background: rgba(0, 0, 0, .15);
     box-shadow: 0 3px 10px rgba(0, 0, 0, .10);
   }
 
-  .power:active { transform: scale(.94); }
+  .pill:active { transform: scale(.94); }
+  .pill:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; }
 
-  .power img {
-    position: absolute;
-    left: 12px;
-    top: 11px;
-    width: 18px;
-    height: 18px;
-    transition: left .20s ease, transform .20s ease;
+  /* Das eingeschaltete Licht färbt den Schalter im Akzent des Menüs ein */
+  .select.is-on .pill { background: #e2f0fb; color: #0f7ec4; font-weight: 600; }
+  .select.is-on .pill:hover { background: #d6eafa; }
+
+  /* Die Pille klemmt die Breite, der innere Text läuft bei Überlänge durch */
+  .pill-label {
+    min-width: 0;
+    overflow: hidden;
   }
 
-  .light-ui.is-on .power {
+  .pill-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  @keyframes vp-text-scroll {
+    0%, 12% { transform: translateX(0); }
+    88%, 100% { transform: translateX(var(--vp-scroll-shift, 0)); }
+  }
+
+  .pill-text.is-scrolling {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    animation: vp-text-scroll 7s ease-in-out infinite alternate;
+  }
+
+  .pill-caret {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    transition: transform .16s ease;
+  }
+
+  .select.is-open .pill {
     background: #eee;
     color: #333;
     box-shadow: 0 2px 8px rgba(0, 0, 0, .07), inset 0 0 0 1px rgba(0, 0, 0, .09);
   }
 
-  .light-ui.is-on .power img { left: 70px; transform: rotate(360deg); }
-  .power:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; }
+  .select.is-open .pill-caret { transform: rotate(180deg); }
 
-  .status {
-    position: absolute;
-    z-index: 5;
-    left: 0;
-    top: 159px;
-    width: 100%;
-    color: rgba(0, 0, 0, .82);
-    font-size: 46px;
-    font-weight: 400;
-    line-height: 55px;
-    letter-spacing: -.45px;
-    text-align: center;
-    pointer-events: none;
-  }
-
-  .status.small { font-size: 36px; }
-
-  .subtitle {
-    position: absolute;
-    z-index: 5;
-    left: 0;
-    top: 219px;
-    width: 100%;
-    color: rgba(0, 0, 0, .28);
-    font-size: 13px;
-    line-height: 15px;
-    letter-spacing: .15px;
-    text-align: center;
-    text-transform: uppercase;
-    pointer-events: none;
-  }
-
-  .color-preview {
-    position: absolute;
-    z-index: 6;
-    left: 50%;
-    top: 298px;
-    display: none;
-    width: 24px;
-    height: 24px;
-    margin-left: -12px;
-    border: 3px solid #fff;
-    border-radius: 50%;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, .12);
-    pointer-events: none;
-  }
-
-  .color-preview.visible { display: block; }
-
+  /* Die Modusknöpfe bleiben unten unter dem Bogen */
   .controls {
-    position: absolute;
-    left: 80px;
-    top: 379px;
     display: flex;
-    width: 264px;
-    justify-content: space-between;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 22px;
+    width: 100%;
   }
 
-  /* `display` oben wuerde die Browser-Regel fuer [hidden] schlagen */
-  .controls[hidden] {
-    display: none;
-  }
+  .controls[hidden] { display: none; }
+
+  .control-slot { position: relative; }
 
   .control {
     width: 58px;
@@ -415,9 +619,9 @@
 
   .control.is-active .circle-button,
   .control.popup-open .circle-button {
-    background: #f3f3f3;
-    color: #333;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, .08), inset 0 0 0 1px rgba(0, 0, 0, .08);
+    background: #e2f0fb;
+    color: #0f7ec4;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .08), inset 0 0 0 1px rgba(15, 126, 196, .12);
   }
 
   .control.is-active .label,
@@ -426,99 +630,212 @@
     font-weight: 600;
   }
 
-  .preset-popup,
-  .effects-popup {
+  .control:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; border-radius: 12px; }
+
+  /* Halten auf Helligkeit oder Kelvin öffnet die Schnellwerte über dem Knopf */
+  .preset-popup {
     position: absolute;
     z-index: 55;
-    top: 456px;
+    bottom: calc(100% + 8px);
+    left: 50%;
     display: none;
     align-items: center;
     gap: 4px;
     padding: 5px;
-    border: 1px solid rgba(0, 0, 0, .09);
-    border-radius: 10px;
-    background: rgba(255, 255, 255, .98);
-    box-shadow: 0 7px 18px rgba(0, 0, 0, .10);
-    white-space: nowrap;
-  }
-
-  .preset-popup.visible,
-  .effects-popup.visible { display: flex; }
-  .brightness-presets { left: 3px; }
-  .kelvin-presets { left: 57px; }
-  .effects-popup { right: 4px; max-width: 282px; overflow-x: auto; }
-
-  .preset-popup::before,
-  .effects-popup::before {
-    position: absolute;
-    top: -6px;
-    width: 10px;
-    height: 10px;
-    border-top: 1px solid rgba(0, 0, 0, .09);
-    border-left: 1px solid rgba(0, 0, 0, .09);
+    border-radius: 12px;
     background: #fff;
-    content: "";
-    transform: rotate(45deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .06);
+    white-space: nowrap;
+    transform: translateX(-50%);
   }
 
-  .brightness-presets::before { left: 23px; }
-  .kelvin-presets::before { left: 27px; }
-  .effects-popup::before { right: 24px; }
+  .preset-popup.visible { display: flex; }
 
-  .preset-option,
-  .effect-option {
-    position: relative;
-    z-index: 1;
-    padding: 6px 8px;
+  .preset-option {
+    padding: 7px 9px;
     border: 0;
-    border-radius: 7px;
+    border-radius: 999px;
     background: rgba(0, 0, 0, .055);
     color: rgba(0, 0, 0, .65);
     font: inherit;
-    font-size: 9px;
+    font-size: 11px;
     cursor: pointer;
     transition: background .15s ease, color .15s ease, transform .08s ease;
   }
 
-  .preset-option:hover,
-  .effect-option:hover { background: rgba(0, 0, 0, .11); color: rgba(0, 0, 0, .92); }
-  .preset-option:active,
-  .effect-option:active { transform: scale(.95); }
+  .preset-option:hover { background: rgba(0, 0, 0, .11); color: rgba(0, 0, 0, .92); }
+  .preset-option:active { transform: scale(.95); }
+  .preset-option.active { background: #e2f0fb; color: #0f7ec4; font-weight: 600; }
 
-  .preset-option.active,
-  .effect-option.active {
-    background: #ececec;
-    color: #222;
-    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08);
+  /*
+   * Die Effektauswahl erscheint als radiales Menü: helle Segmente mit weichen
+   * Ecken um eine Nabe, passend zur hellen, runden Sprache der Card.
+   */
+  .menu {
+    position: fixed;
+    z-index: 55;
+    transform: translate(-50%, -50%);
+  }
+
+  @keyframes vp-radial-in {
+    from { opacity: 0; transform: scale(.94); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  .radial {
+    display: block;
+    overflow: visible;
+    font-family: inherit;
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .16));
+    animation: vp-radial-in .16s ease-out both;
+  }
+
+  .wedge { cursor: pointer; }
+
+  .wedge .slice {
+    fill: #fff;
+    stroke: #fff;
+    stroke-width: 9;
+    stroke-linejoin: round;
+    transition: fill .15s ease, stroke .15s ease;
+  }
+
+  .wedge:hover .slice { fill: #f1f6fa; stroke: #f1f6fa; }
+  .wedge.is-current .slice { fill: #e2f0fb; stroke: #e2f0fb; }
+  .wedge.is-current:hover .slice { fill: #d6eafa; stroke: #d6eafa; }
+
+  /* Platzhalter halten den Ring rund, sind aber nicht bedienbar */
+  .wedge.is-placeholder { cursor: default; pointer-events: none; }
+  .wedge.is-placeholder .slice { fill: rgba(255, 255, 255, .55); stroke: rgba(255, 255, 255, .55); }
+  .wedge.is-placeholder text { fill: rgba(0, 0, 0, .16); }
+
+  .wedge text {
+    fill: rgba(0, 0, 0, .62);
+    font-size: 15px;
+    font-weight: 500;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  .wedge.is-current text { fill: #0f7ec4; font-weight: 700; }
+
+  .hub-plate {
+    fill: #fff;
+    stroke: rgba(0, 0, 0, .07);
+    stroke-width: 1;
+  }
+
+  .hub-caption {
+    fill: rgba(0, 0, 0, .32);
+    font-size: 11px;
+    letter-spacing: .6px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .hub-text {
+    fill: #1f1f1f;
+    font-size: 15px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  /*
+   * Bei geöffnetem Menü liegt ein Weichzeichner über dem Dialoginhalt. Seine
+   * Maße kommen aus dem `.vp-dialog-body`, damit Kopf- und Fußzeile scharf
+   * bleiben; ohne Dialog deckt er die Card ab.
+   */
+  .scrim {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .10);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
   }
 
   .hint {
-    position: absolute;
-    top: 265px;
-    left: 20px;
-    width: 250px;
-    margin: 0;
+    margin: 18px 20px 0;
     color: rgba(0, 0, 0, .58);
     font-size: 12px;
     text-align: center;
   }
 
   [hidden] { display: none !important; }
+
+  @media (max-width: 390px) {
+    .target-main { font-size: 40px; line-height: 40px; }
+    .target.is-word .target-main { font-size: 28px; }
+    .target-fraction { font-size: 24px; line-height: 18px; }
+    .light-ui { --selects-width: 180px; }
+    .controls { gap: 8px 14px; }
+  }
 </style>
 
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
   const entityId = String(config.entity || vuePanel.context.entity || '');
 
+  const VIEW_WIDTH = 360;
+  const VIEW_HEIGHT = 300;
+  const CENTER_X = 180;
+  const CENTER_Y = 160;
+  const ARC_RADIUS = 140;
+  const ARC_START = 135;
+  const ARC_SPAN = 270;
+  const DRAG_THRESHOLD = 4;
+  const MIN_SEGMENTS = 3;
+  const PRESETS = [5, 25, 50, 75, 100];
+  const HOLD_DELAY = 520;
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  /* `stroke` muss der Strichbreite von `.slice` entsprechen, `gap` ist der sichtbare Abstand */
+  const RADIAL = {size: 320, center: 160, hub: 60, inner: 80, outer: 146, stroke: 9, gap: 7};
+
+  /*
+   * Home Assistant beschreibt die Fähigkeiten eines Lichts über
+   * `supported_color_modes`; angezeigt wird nur, was die Entity hergibt.
+   */
+  const COLOR_MODES = ['hs', 'xy', 'rgb', 'rgbw', 'rgbww'];
+  const DIMMABLE_MODES = ['brightness', 'color_temp', 'white'].concat(COLOR_MODES);
+
   const card = document.getElementById('card');
   const dial = document.getElementById('dial');
-  const arc = document.getElementById('arc-progress');
+  const arcTrack = document.getElementById('arc-track');
+  const arcValue = document.getElementById('arc-value');
+  const arcHit = document.getElementById('arc-hit');
   const handle = document.getElementById('arc-handle');
-  const readout = document.getElementById('status-text');
-  const caption = document.getElementById('subtitle-text');
+  const stateIcon = document.getElementById('state-icon');
+  const warningIcon = document.getElementById('warning-icon');
+  const effectIcon = document.getElementById('effect-icon');
+  const valueTarget = document.getElementById('value-target');
   const colorPreview = document.getElementById('color-preview');
-  const toggle = document.getElementById('toggle');
-  const powerIcon = document.getElementById('power-icon');
+  const valueMain = document.getElementById('value-main');
+  const valueUnit = document.getElementById('value-unit');
+  const valueFraction = document.getElementById('value-fraction');
+  const brightnessMetric = document.getElementById('brightness-metric');
+  const brightnessValue = document.getElementById('brightness-value');
+  const kelvinMetric = document.getElementById('kelvin-metric');
+  const kelvinValue = document.getElementById('kelvin-value');
+  const selects = document.getElementById('selects');
+  const powerSelect = document.getElementById('power-select');
+  const powerTrigger = document.getElementById('power-trigger');
+  const powerLabel = document.getElementById('power-label');
+  const effectSelect = {
+    root: document.getElementById('effect-select'),
+    trigger: document.getElementById('effect-trigger'),
+    label: document.getElementById('effect-label'),
+    caret: document.getElementById('effect-caret'),
+    menu: document.getElementById('effect-menu'),
+    svg: document.getElementById('effect-radial'),
+    caption: vuePanel.t('translation.captions.effect')
+  };
+  const scrim = document.getElementById('scrim');
   const controls = document.getElementById('controls');
   const modeButtons = Array.from(controls.querySelectorAll('[data-mode]'));
   const modeIcons = Array.from(controls.querySelectorAll('[data-icon]'));
@@ -526,46 +843,33 @@
   const kelvinTrigger = document.getElementById('kelvin-trigger');
   const brightnessPresets = document.getElementById('brightness-presets');
   const kelvinPresets = document.getElementById('kelvin-presets');
-  const effectTrigger = document.getElementById('effect-trigger');
-  const effectsPopup = document.getElementById('effects-popup');
   const hint = document.getElementById('hint');
-
-  const SVG_RADIUS = 107;
-  const HANDLE_RADIUS = 166;
-  const HANDLE_CENTER = 180;
-  const CIRCUMFERENCE = 2 * Math.PI * SVG_RADIUS;
-  const PRESETS = [5, 25, 50, 75, 100];
-  const HOLD_DELAY = 520;
-
-  /*
-   * Home Assistant exposes a light's capabilities through
-   * supported_color_modes. Only controls backed by the entity are shown.
-   */
-  const COLOR_MODES = ['hs', 'xy', 'rgb', 'rgbw', 'rgbww'];
-  const DIMMABLE_MODES = ['brightness', 'color_temp', 'white'].concat(COLOR_MODES);
 
   let entity = null;
   let activeMode = '';
   let dialMode = '';
   let dragValue = null;
   let dragging = false;
+  let dragPointerId = null;
+  let dragOrigin = null;
   let commitTimer = null;
-  let dragAccumulatedAngle = 0;
-  let dragLastRawAngle = 0;
   let holdTimer = null;
   let holdTriggered = false;
-
-  arc.style.strokeDasharray = String(CIRCUMFERENCE);
-
-  async function loadIcons() {
-    powerIcon.src = await vuePanel.getIcon('mdi:power', {size: 48, color: '#5c5c5c'});
-    await Promise.all(modeIcons.map(async image => {
-      image.src = await vuePanel.getIcon(image.dataset.icon, {size: 72, color: '#666666'});
-    }));
-  }
+  const iconCache = new Map();
+  const arcLength = arcTrack.getTotalLength();
 
   function attributes() {
     return (entity && entity.attributes) || {};
+  }
+
+  function isOn() {
+    return Boolean(entity) && entity.state === 'on';
+  }
+
+  function iconSource(name, color = '#666666') {
+    const key = `${name}-${color}`;
+    if (!iconCache.has(key)) iconCache.set(key, vuePanel.getIcon(name, {size: 72, color}));
+    return iconCache.get(key);
   }
 
   function features() {
@@ -573,7 +877,7 @@
     const modes = Array.isArray(raw) ? raw.map(String) : [];
     const list = attributes().effect_list;
     return {
-      /* Older integrations may expose values without reporting color modes. */
+      /* Ältere Integrationen melden Werte, ohne Farbmodi zu deklarieren */
       brightness: modes.some(mode => DIMMABLE_MODES.includes(mode))
         || (!modes.length && Number.isFinite(Number(attributes().brightness))),
       colorTemp: modes.includes('color_temp')
@@ -586,7 +890,7 @@
 
   function availableModes() {
     const can = features();
-    return ['brightness', 'colorTemp', 'color', 'effects'].filter(mode => can[mode]);
+    return ['brightness', 'colorTemp', 'color'].filter(mode => can[mode]);
   }
 
   function kelvinRange() {
@@ -597,10 +901,17 @@
   }
 
   function hueCss(value, light) {
-    return 'hsl(' + Math.round(value) + ' 100% ' + (light || 50) + '%)';
+    return `hsl(${Math.round(value)} 100% ${light || 50}%)`;
   }
 
-  /* Return the active control's value as a 0..1 fraction. */
+  function kelvinColor(fraction) {
+    const warm = [235, 145, 45];
+    const cool = [95, 145, 235];
+    const mix = index => Math.round(warm[index] + (cool[index] - warm[index]) * fraction);
+    return `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
+  }
+
+  /* Der aktive Regler als Anteil zwischen 0 und 1 */
   function fractionOf(mode) {
     if (dragValue !== null && mode === dialMode) return dragValue;
     if (mode === 'brightness') {
@@ -620,138 +931,83 @@
     return 0;
   }
 
-  function readoutFor(mode, fraction) {
-    if (!entity || entity.state !== 'on') return vuePanel.t('translation.states.off');
-    if (mode === 'brightness') return Math.max(1, Math.round(fraction * 100)) + '%';
+  /* Großer Wert: Zahl links, Einheit klein daneben — wie in der Thermostat-Card */
+  function readout(mode, fraction) {
+    if (!isOn()) return {main: vuePanel.t('translation.states.off'), unit: '', word: true};
+    if (mode === 'brightness') return {main: String(Math.max(1, Math.round(fraction * 100))), unit: '%'};
     if (mode === 'colorTemp') {
       const range = kelvinRange();
-      return Math.round(range.min + fraction * (range.max - range.min)) + 'K';
+      return {main: String(Math.round(range.min + fraction * (range.max - range.min))), unit: 'K'};
     }
-    if (mode === 'color') return Math.round(fraction * 360) + '°';
-    return vuePanel.t('translation.states.on');
+    if (mode === 'color') return {main: String(Math.round(fraction * 360)), unit: '°'};
+    return {main: vuePanel.t('translation.states.on'), unit: '', word: true};
   }
 
-  function kelvinColor(fraction) {
-    const warm = [235, 145, 45];
-    const cool = [95, 145, 235];
-    const red = Math.round(warm[0] + (cool[0] - warm[0]) * fraction);
-    const green = Math.round(warm[1] + (cool[1] - warm[1]) * fraction);
-    const blue = Math.round(warm[2] + (cool[2] - warm[2]) * fraction);
-    return 'rgb(' + red + ', ' + green + ', ' + blue + ')';
+  /* Die tatsächliche Lichtfarbe — Farbton vom Regler, Sättigung von der Entity */
+  function currentColorCss(fraction) {
+    const hs = attributes().hs_color;
+    const saturation = Array.isArray(hs) && Number.isFinite(Number(hs[1])) ? Number(hs[1]) : 100;
+    return `hsl(${Math.round(fraction * 360)} ${Math.round(saturation)}% 50%)`;
+  }
+
+  function modeColor(mode, fraction) {
+    if (mode === 'color') return hueCss(fraction * 360);
+    if (mode === 'colorTemp') return kelvinColor(fraction);
+    return '#f3c988';
   }
 
   function isDialInteractive() {
-    return Boolean(entity)
-      && entity.state === 'on'
-      && Boolean(dialMode)
-      && dialMode !== 'static';
+    return isOn() && Boolean(dialMode);
+  }
+
+  function setSegment(path, from, to) {
+    const start = Math.max(0, Math.min(1, from));
+    const end = Math.max(start, Math.min(1, to));
+    const length = (end - start) * arcLength;
+    path.hidden = length < 0.5;
+    path.style.strokeDasharray = `${length} ${arcLength + 1}`;
+    path.style.strokeDashoffset = String(-start * arcLength);
+  }
+
+  function placeOnArc(element, value) {
+    const angle = (ARC_START + Math.max(0, Math.min(1, value)) * ARC_SPAN) * Math.PI / 180;
+    const x = CENTER_X + ARC_RADIUS * Math.cos(angle);
+    const y = CENTER_Y + ARC_RADIUS * Math.sin(angle);
+    element.style.left = `${x / VIEW_WIDTH * 100}%`;
+    element.style.top = `${y / VIEW_HEIGHT * 100}%`;
   }
 
   function paintDial() {
-    const fraction = fractionOf(dialMode);
-    const isOn = Boolean(entity) && entity.state === 'on';
-    const isStatic = dialMode === 'static';
-    const shown = isStatic ? (isOn ? 1 : 0) : Math.max(0, Math.min(1, fraction));
-    const isColor = dialMode === 'color';
-    const color = isColor
-      ? hueCss(shown * 360)
-      : dialMode === 'colorTemp' ? kelvinColor(shown) : '#b8b8b8';
+    const fraction = Math.max(0, Math.min(1, fractionOf(dialMode)));
+    const color = isOn() ? modeColor(dialMode, fraction) : 'rgba(0, 0, 0, .18)';
+    const shown = dialMode ? fraction : (isOn() ? 1 : 0);
 
     dial.classList.toggle('is-enabled', isDialInteractive());
-    dial.classList.toggle('is-static-on', isStatic && isOn);
-    dial.classList.toggle('color-mode', isColor);
-    dial.style.setProperty('--selected-color', color);
-    arc.style.strokeDashoffset = String(CIRCUMFERENCE * (1 - shown));
-    arc.style.stroke = color;
-
-    const angle = shown * 2 * Math.PI - Math.PI / 2;
-    handle.style.left = (HANDLE_CENTER + HANDLE_RADIUS * Math.cos(angle)).toFixed(1) + 'px';
-    handle.style.top = (HANDLE_CENTER + HANDLE_RADIUS * Math.sin(angle)).toFixed(1) + 'px';
+    dial.classList.toggle('color-mode', dialMode === 'color' && isOn());
+    setSegment(arcValue, 0, shown);
+    arcValue.style.stroke = color;
+    placeOnArc(handle, shown);
     handle.style.background = color;
 
-    readout.textContent = readoutFor(dialMode, fraction);
-    caption.textContent = isStatic
-      ? vuePanel.t('translation.toggle')
-      : (dialMode ? vuePanel.t('translation.modes.' + dialMode) : '');
-    readout.classList.toggle('small', isOn && (dialMode === 'colorTemp' || isColor));
-    colorPreview.classList.toggle('visible', isOn && isColor);
-    colorPreview.style.background = color;
+    /* Im Farbmodus ersetzt die Farbfläche den Zahlenwert */
+    const showColor = dialMode === 'color' && isOn();
+    colorPreview.hidden = !showColor;
+    valueTarget.hidden = showColor;
+    if (showColor) colorPreview.style.background = currentColorCss(fraction);
 
-    dial.setAttribute('aria-label', caption.textContent);
-    if (isStatic) {
-      dial.setAttribute('aria-valuemin', '0');
-      dial.setAttribute('aria-valuemax', '1');
-      dial.setAttribute('aria-valuenow', isOn ? '1' : '0');
-    } else {
-      dial.setAttribute('aria-valuemin', dialMode === 'colorTemp' ? String(kelvinRange().min) : '0');
-      dial.setAttribute('aria-valuemax', dialMode === 'colorTemp' ? String(kelvinRange().max) : (isColor ? '360' : '100'));
-      dial.setAttribute('aria-valuenow', readout.textContent.replace(/\D/g, ''));
-    }
-  }
+    const text = readout(dialMode, fraction);
+    valueMain.textContent = text.main;
+    valueUnit.textContent = text.unit;
+    valueFraction.textContent = '';
+    valueTarget.classList.toggle('is-word', Boolean(text.word));
 
-  function renderModes(modes) {
-    for (const button of modeButtons) {
-      const mode = button.dataset.mode;
-      const supported = modes.includes(mode);
-      button.hidden = false;
-      button.disabled = !supported;
-      button.setAttribute('aria-disabled', String(!supported));
-      button.classList.toggle('is-active', supported && mode === activeMode);
-      const label = button.querySelector('[data-label]');
-      if (label) {
-        label.textContent = mode === 'colorTemp' ? 'Kelvin' : vuePanel.t('translation.modes.' + mode);
-      }
-    }
-  }
-
-  function renderEffects() {
-    const list = (attributes().effect_list || []).map(String);
-    const active = String(attributes().effect || '');
-    if (effectsPopup.dataset.list !== list.join('|')) {
-      effectsPopup.dataset.list = list.join('|');
-      effectsPopup.textContent = '';
-      for (const item of list) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'effect-option';
-        button.dataset.effect = item;
-        button.textContent = item;
-        button.addEventListener('click', event => {
-          event.stopPropagation();
-          if (!entityId) return;
-          vuePanel.callService('light', 'turn_on', {effect: item}, {entity_id: entityId});
-          setEffectsPopup(false);
-        });
-        effectsPopup.appendChild(button);
-      }
-    }
-    for (const button of effectsPopup.children) {
-      button.classList.toggle('active', button.dataset.effect === active);
-    }
-  }
-
-  function selectMode(mode) {
-    if (mode === 'effects') return;
-    activeMode = mode;
-    dragValue = null;
-    closePopups();
-    update();
-  }
-
-  function rawPointerAngle(event) {
-    const box = dial.getBoundingClientRect();
-    const dx = event.clientX - (box.left + box.width / 2);
-    const dy = event.clientY - (box.top + box.height / 2);
-    let angle = Math.atan2(dy, dx) * 180 / Math.PI + 90;
-    if (angle < 0) angle += 360;
-    return angle;
-  }
-
-  function shortestAngleDelta(from, to) {
-    let delta = to - from;
-    if (delta > 180) delta -= 360;
-    if (delta < -180) delta += 360;
-    return delta;
+    dial.setAttribute('aria-label', dialMode ? vuePanel.t(`translation.modes.${dialMode}`) : vuePanel.t('translation.states.on'));
+    dial.setAttribute('aria-valuemin', dialMode === 'colorTemp' ? String(kelvinRange().min) : '0');
+    dial.setAttribute(
+      'aria-valuemax',
+      dialMode === 'colorTemp' ? String(kelvinRange().max) : dialMode === 'color' ? '360' : '100'
+    );
+    dial.setAttribute('aria-valuenow', text.main.replace(/\D/g, '') || '0');
   }
 
   async function commit(fraction) {
@@ -780,46 +1036,70 @@
     }
   }
 
-  dial.addEventListener('pointerdown', event => {
-    if (!isDialInteractive()) return;
+  function queueCommit() {
+    if (commitTimer !== null) return;
+    commitTimer = setTimeout(() => {
+      commitTimer = null;
+      if (dragValue !== null) commit(dragValue).catch(() => {});
+    }, 180);
+  }
+
+  function pointerFraction(event) {
+    const box = dial.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width * VIEW_WIDTH;
+    const y = (event.clientY - box.top) / box.height * VIEW_HEIGHT;
+    let angle = Math.atan2(y - CENTER_Y, x - CENTER_X) * 180 / Math.PI;
+    if (angle < 0) angle += 360;
+    const delta = (angle - ARC_START + 360) % 360;
+    if (delta <= ARC_SPAN) return delta / ARC_SPAN;
+    /* Unterhalb der Lücke gilt das jeweils nähere Ende des Bogens */
+    return delta < ARC_SPAN + (360 - ARC_SPAN) / 2 ? 1 : 0;
+  }
+
+  /* Alle Zeigergesten hängen am Trefferband des Bogens, nicht an der Dial-Fläche */
+  arcHit.addEventListener('pointerdown', event => {
+    if (!isDialInteractive() || event.button !== 0) return;
     dragging = true;
-    dial.classList.add('is-dragging');
-    dial.setPointerCapture(event.pointerId);
-    dragAccumulatedAngle = fractionOf(dialMode) * 360;
-    dragLastRawAngle = rawPointerAngle(event);
-  });
-
-  dial.addEventListener('pointermove', event => {
-    if (!dragging) return;
-    const raw = rawPointerAngle(event);
-    dragAccumulatedAngle = Math.max(
-      0,
-      Math.min(360, dragAccumulatedAngle + shortestAngleDelta(dragLastRawAngle, raw))
-    );
-    dragLastRawAngle = raw;
-    dragValue = dragAccumulatedAngle / 360;
+    dragPointerId = event.pointerId;
+    dragOrigin = {x: event.clientX, y: event.clientY};
+    dial.classList.add('is-pressed');
+    arcHit.setPointerCapture(event.pointerId);
+    /* Ein Tipp springt animiert auf die getippte Stelle */
+    dragValue = pointerFraction(event);
     paintDial();
-    if (commitTimer === null) {
-      commitTimer = setTimeout(() => {
-        commitTimer = null;
-        if (dragValue !== null) commit(dragValue).catch(() => {});
-      }, 180);
-    }
+    queueCommit();
   });
 
-  function endDrag() {
-    if (!dragging) return;
+  arcHit.addEventListener('pointermove', event => {
+    if (!dragging || event.pointerId !== dragPointerId) return;
+    /* Erst ein echter Zug schaltet die Übergänge ab, damit er dem Finger folgt */
+    if (dragOrigin && Math.hypot(event.clientX - dragOrigin.x, event.clientY - dragOrigin.y) > DRAG_THRESHOLD) {
+      dragOrigin = null;
+      dial.classList.add('is-dragging');
+    }
+    dragValue = pointerFraction(event);
+    paintDial();
+    queueCommit();
+  });
+
+  function endDrag(event) {
+    if (!dragging || event.pointerId !== dragPointerId) return;
     dragging = false;
-    dial.classList.remove('is-dragging');
+    dragPointerId = null;
+    dragOrigin = null;
+    dial.classList.remove('is-pressed', 'is-dragging');
+    if (commitTimer !== null) {
+      clearTimeout(commitTimer);
+      commitTimer = null;
+    }
     const value = dragValue;
     dragValue = null;
     if (value !== null) commit(value).catch(() => {});
   }
 
-  dial.addEventListener('pointerup', endDrag);
-  dial.addEventListener('pointercancel', endDrag);
-
-  dial.addEventListener('wheel', event => {
+  arcHit.addEventListener('pointerup', endDrag);
+  arcHit.addEventListener('pointercancel', endDrag);
+  arcHit.addEventListener('wheel', event => {
     if (!isDialInteractive()) return;
     event.preventDefault();
     const step = dialMode === 'colorTemp' ? 50 / (kelvinRange().max - kelvinRange().min) : .01;
@@ -830,30 +1110,232 @@
     commit(value).catch(() => {});
   }, {passive: false});
 
-  for (const button of modeButtons) {
-    if (button.dataset.mode !== 'effects') {
-      button.addEventListener('click', () => {
-        if (!holdTriggered) selectMode(button.dataset.mode);
-      });
+  dial.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp'].includes(event.key) || !isDialInteractive()) return;
+    event.preventDefault();
+    const step = dialMode === 'colorTemp' ? 50 / (kelvinRange().max - kelvinRange().min) : .01;
+    dragValue = Math.max(0, Math.min(1, fractionOf(dialMode) + (['ArrowRight', 'ArrowUp'].includes(event.key) ? step : -step)));
+    const value = dragValue;
+    paintDial();
+    dragValue = null;
+    commit(value).catch(() => {});
+  });
+
+  /* ---- Radiales Effektmenü ------------------------------------------------ */
+
+  function svgNode(name, attributesMap = {}) {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [key, value] of Object.entries(attributesMap)) node.setAttribute(key, String(value));
+    return node;
+  }
+
+  function polar(radius, degrees) {
+    const angle = (degrees - 90) * Math.PI / 180;
+    return [RADIAL.center + radius * Math.cos(angle), RADIAL.center + radius * Math.sin(angle)];
+  }
+
+  /*
+   * Ein Ringsegment von `from` bis `to` Grad. Der Einzug wird je Radius aus
+   * einer festen Bogenlänge gerechnet — dadurch bleibt die Lücke zum Nachbarn
+   * innen wie außen und bei jeder Segmentzahl gleich breit.
+   */
+  function wedgePath(from, to) {
+    const inset = (RADIAL.gap + RADIAL.stroke) / 2;
+    const limit = Math.max(0, (to - from) / 2 - 1);
+    const outerOffset = Math.min(inset / RADIAL.outer * 180 / Math.PI, limit);
+    const innerOffset = Math.min(inset / RADIAL.inner * 180 / Math.PI, limit);
+    const [x1, y1] = polar(RADIAL.outer, from + outerOffset);
+    const [x2, y2] = polar(RADIAL.outer, to - outerOffset);
+    const [x3, y3] = polar(RADIAL.inner, to - innerOffset);
+    const [x4, y4] = polar(RADIAL.inner, from + innerOffset);
+    const large = to - from > 180 ? 1 : 0;
+    return `M${x1} ${y1} A${RADIAL.outer} ${RADIAL.outer} 0 ${large} 1 ${x2} ${y2}`
+      + ` L${x3} ${y3} A${RADIAL.inner} ${RADIAL.inner} 0 ${large} 0 ${x4} ${y4} Z`;
+  }
+
+  /* Lange Beschriftungen brechen auf zwei Zeilen um */
+  function wrapLabel(text, maxChars) {
+    const words = String(text).replace(/\//g, '/ ').split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (candidate.length > maxChars && line) {
+        lines.push(line);
+        line = word;
+      } else line = candidate;
     }
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
+
+  function appendLines(parent, lines, x, middle, lineHeight) {
+    const top = middle - (lines.length - 1) * lineHeight / 2;
+    lines.forEach((line, index) => {
+      const span = svgNode('tspan', {x, y: (top + index * lineHeight).toFixed(1)});
+      span.textContent = line.replace(/\/ $/, '/').trim();
+      parent.appendChild(span);
+    });
+  }
+
+  function setHub(select, text) {
+    select.hubText.textContent = '';
+    appendLines(select.hubText, wrapLabel(text || '—', 13), RADIAL.center, RADIAL.center + 6, 17);
+  }
+
+  /* Baut das Tortenmenü neu auf */
+  function buildRadial(select) {
+    const options = select.options || [];
+    const svg = select.svg;
+    svg.textContent = '';
+    if (!options.length) return;
+
+    /* Der Ring bleibt ein Ring: zu kurze Listen füllen Platzhalter auf */
+    const segments = options.slice();
+    while (segments.length < MIN_SEGMENTS) segments.push({placeholder: true, label: ''});
+
+    const step = 360 / segments.length;
+    segments.forEach((option, index) => {
+      const middle = index * step;
+      const current = !option.placeholder && option.value === select.current;
+      const group = svgNode('g', {
+        class: 'wedge' + (current ? ' is-current' : '') + (option.placeholder ? ' is-placeholder' : ''),
+        role: 'option',
+        'aria-selected': String(current),
+        'aria-disabled': String(Boolean(option.placeholder))
+      });
+      group.appendChild(svgNode('path', {class: 'slice', d: wedgePath(middle - step / 2, middle + step / 2)}));
+
+      const [labelX, labelY] = polar((RADIAL.inner + RADIAL.outer) / 2, middle);
+      const label = svgNode('text');
+      appendLines(label, option.placeholder ? ['–'] : wrapLabel(option.label, 11), labelX.toFixed(1), labelY + 5, 16);
+      group.appendChild(label);
+      svg.appendChild(group);
+      if (option.placeholder) return;
+
+      group.addEventListener('pointerenter', () => setHub(select, option.label));
+      group.addEventListener('pointerleave', () => setHub(select, select.hubDefault));
+      group.addEventListener('click', event => {
+        event.stopPropagation();
+        closeMenus();
+        select.onPick(option.value);
+      });
+    });
+
+    const hub = svgNode('g', {class: 'hub'});
+    hub.appendChild(svgNode('circle', {class: 'hub-plate', cx: RADIAL.center, cy: RADIAL.center, r: RADIAL.hub}));
+    const caption = svgNode('text', {class: 'hub-caption', x: RADIAL.center, y: RADIAL.center - 26});
+    caption.textContent = select.caption;
+    hub.appendChild(caption);
+    select.hubText = svgNode('text', {class: 'hub-text'});
+    hub.appendChild(select.hubText);
+    /* Ein Klick auf die Nabe schließt das Menü wieder */
+    hub.addEventListener('click', event => {
+      event.stopPropagation();
+      closeMenus();
+    });
+    svg.appendChild(hub);
+    setHub(select, select.hubDefault);
+  }
+
+  /*
+   * Lauftext nur, wenn die Beschriftung wirklich nicht in die Pille passt: die
+   * Hülle klemmt und schneidet ab, der Text darin wandert.
+   */
+  function applyTextScroll(text) {
+    const box = text.parentElement;
+    if (!box) return;
+    text.classList.remove('is-scrolling');
+    const overflow = text.scrollWidth - box.clientWidth;
+    const scrolling = overflow > 1;
+    text.classList.toggle('is-scrolling', scrolling);
+    if (scrolling) text.style.setProperty('--vp-scroll-shift', `-${overflow}px`);
+    else text.style.removeProperty('--vp-scroll-shift');
+  }
+
+  function renderMenu(select, options, current, onPick, fallback = '') {
+    const selected = options.find(option => option.value === current);
+    select.label.textContent = selected ? selected.label : (fallback || '—');
+    select.trigger.title = select.label.textContent;
+    applyTextScroll(select.label);
+    select.root.hidden = options.length === 0;
+    select.options = options;
+    select.current = current;
+    select.onPick = onPick;
+    select.hubDefault = select.label.textContent;
+    if (!select.menu.hidden) buildRadial(select);
+  }
+
+  /* Das Menü liegt mittig auf dem Bogen und skaliert mit ihm */
+  function layoutMenu(select) {
+    const box = dial.getBoundingClientRect();
+    select.menu.style.left = `${box.left + box.width / 2}px`;
+    select.menu.style.top = `${box.top + box.height * (CENTER_Y / VIEW_HEIGHT)}px`;
+    const size = Math.round(Math.min(box.width, box.height) * 1.02);
+    select.svg.setAttribute('width', String(size));
+    select.svg.setAttribute('height', String(size));
+  }
+
+  /* Der Weichzeichner bekommt die Maße des Dialog-Bodys, sonst die der Card */
+  function positionScrim() {
+    const host = card.closest('.vp-dialog-body') || card;
+    const box = host.getBoundingClientRect();
+    scrim.style.top = `${box.top}px`;
+    scrim.style.left = `${box.left}px`;
+    scrim.style.width = `${box.width}px`;
+    scrim.style.height = `${box.height}px`;
+  }
+
+  function setMenuOpen(select, open) {
+    select.root.classList.toggle('is-open', open);
+    select.menu.hidden = !open;
+    select.trigger.setAttribute('aria-expanded', String(open));
+    if (open) {
+      positionScrim();
+      buildRadial(select);
+      layoutMenu(select);
+    }
+    scrim.hidden = select.menu.hidden;
+  }
+
+  function closeMenus() {
+    setMenuOpen(effectSelect, false);
+    closePresetPopups();
+  }
+
+  effectSelect.trigger.addEventListener('click', event => {
+    event.stopPropagation();
+    if (!isOn()) return;
+    setMenuOpen(effectSelect, effectSelect.menu.hidden);
+  });
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.select, .menu, .preset-popup, .control')) closeMenus();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !scrim.hidden) closeMenus();
+  });
+
+  window.addEventListener('resize', () => {
+    if (scrim.hidden) return;
+    positionScrim();
+    if (!effectSelect.menu.hidden) layoutMenu(effectSelect);
+  });
+
+  /* ---- Modusknöpfe und Schnellwerte --------------------------------------- */
+
+  function selectMode(mode) {
+    activeMode = mode;
+    dragValue = null;
+    update();
   }
 
   function closePresetPopups() {
-    brightnessPresets.classList.remove('visible');
-    kelvinPresets.classList.remove('visible');
-    brightnessTrigger.closest('.control').classList.remove('popup-open');
-    kelvinTrigger.closest('.control').classList.remove('popup-open');
-  }
-
-  function setEffectsPopup(open) {
-    effectsPopup.classList.toggle('visible', open);
-    effectTrigger.classList.toggle('popup-open', open);
-    effectTrigger.setAttribute('aria-expanded', String(open));
-  }
-
-  function closePopups() {
-    closePresetPopups();
-    setEffectsPopup(false);
+    for (const [popup, trigger] of [[brightnessPresets, brightnessTrigger], [kelvinPresets, kelvinTrigger]]) {
+      popup.classList.remove('visible');
+      trigger.closest('.control').classList.remove('popup-open');
+    }
   }
 
   function createPresetButtons(container, mode) {
@@ -862,7 +1344,7 @@
       button.type = 'button';
       button.className = 'preset-option';
       button.dataset.value = String(percent);
-      button.textContent = percent + '%';
+      button.textContent = `${percent}%`;
       button.addEventListener('click', event => {
         event.stopPropagation();
         selectMode(mode);
@@ -879,12 +1361,12 @@
 
   function setupLongHold(trigger, container, mode) {
     trigger.addEventListener('pointerdown', event => {
-      if (!entity || entity.state !== 'on' || event.button !== 0) return;
+      if (!isOn() || event.button !== 0) return;
       holdTriggered = false;
       clearTimeout(holdTimer);
       holdTimer = setTimeout(() => {
         holdTriggered = true;
-        closePopups();
+        closeMenus();
         selectMode(mode);
         container.classList.add('visible');
         trigger.closest('.control').classList.add('popup-open');
@@ -905,33 +1387,21 @@
     });
   }
 
+  for (const button of modeButtons) {
+    button.addEventListener('click', () => {
+      if (!holdTriggered) selectMode(button.dataset.mode);
+    });
+  }
+
   createPresetButtons(brightnessPresets, 'brightness');
   createPresetButtons(kelvinPresets, 'colorTemp');
   setupLongHold(brightnessTrigger, brightnessPresets, 'brightness');
   setupLongHold(kelvinTrigger, kelvinPresets, 'colorTemp');
 
-  effectTrigger.addEventListener('click', event => {
-    event.stopPropagation();
-    if (!entity || entity.state !== 'on') return;
-    closePresetPopups();
-    setEffectsPopup(!effectsPopup.classList.contains('visible'));
-  });
-
-  document.addEventListener('click', event => {
-    if (!effectsPopup.contains(event.target) && !effectTrigger.contains(event.target)) {
-      setEffectsPopup(false);
-    }
-    if (!brightnessPresets.contains(event.target) && !brightnessTrigger.contains(event.target)
-      && !kelvinPresets.contains(event.target) && !kelvinTrigger.contains(event.target)) {
-      closePresetPopups();
-    }
-  });
-
-  toggle.addEventListener('click', () => {
+  powerTrigger.addEventListener('click', () => {
     if (!entityId) return;
-    closePopups();
-    const service = entity && entity.state === 'on' ? 'turn_off' : 'turn_on';
-    vuePanel.callService('light', service, {}, {entity_id: entityId});
+    closeMenus();
+    vuePanel.callService('light', isOn() ? 'turn_off' : 'turn_on', {}, {entity_id: entityId}).catch(() => {});
   });
 
   function updatePresetHighlights() {
@@ -945,45 +1415,114 @@
     }
   }
 
+  function renderModeButtons(modes) {
+    for (const button of modeButtons) {
+      const mode = button.dataset.mode;
+      const supported = modes.includes(mode);
+      button.disabled = !supported;
+      button.setAttribute('aria-disabled', String(!supported));
+      button.classList.toggle('is-active', supported && mode === activeMode);
+      const label = button.querySelector('[data-label]');
+      if (label) {
+        label.textContent = mode === 'colorTemp' ? 'Kelvin' : vuePanel.t(`translation.modes.${mode}`);
+      }
+    }
+  }
+
+  function renderMetrics() {
+    const can = features();
+    const on = isOn();
+    const brightness = Number(attributes().brightness);
+    const kelvin = Number(attributes().color_temp_kelvin);
+    brightnessMetric.hidden = !on || !can.brightness || !Number.isFinite(brightness);
+    brightnessValue.textContent = `${Math.max(1, Math.round(brightness / 255 * 100))} %`;
+    kelvinMetric.hidden = !on || !can.colorTemp || !Number.isFinite(kelvin) || kelvin <= 0;
+    kelvinValue.textContent = `${Math.round(kelvin)} K`;
+  }
+
+  function renderSelects() {
+    const on = isOn();
+    powerSelect.classList.toggle('is-on', on);
+    powerTrigger.setAttribute('aria-checked', String(on));
+    powerLabel.textContent = vuePanel.t(on ? 'translation.states.on' : 'translation.states.off');
+    applyTextScroll(powerLabel);
+
+    const list = (attributes().effect_list || []).map(String);
+    renderMenu(
+      effectSelect,
+      list.map(effect => ({value: effect, label: effect})),
+      String(attributes().effect || ''),
+      effect => vuePanel.callService('light', 'turn_on', {effect}, {entity_id: entityId}).catch(() => {}),
+      vuePanel.t('translation.effects.none')
+    );
+    selects.classList.toggle('is-single', effectSelect.root.hidden);
+  }
+
   async function update() {
-    const isOn = Boolean(entity) && entity.state === 'on';
-    card.classList.toggle('is-on', isOn);
-    toggle.setAttribute('aria-checked', isOn ? 'true' : 'false');
+    const unavailable = Boolean(entity) && ['unavailable', 'unknown'].includes(entity.state);
 
     if (!entityId || !entity) {
       hint.hidden = false;
       hint.textContent = vuePanel.t(entityId ? 'translation.entityNotFound' : 'translation.noEntity');
       dial.hidden = true;
       controls.hidden = true;
+      closeMenus();
       dialMode = '';
       return;
     }
 
-    const modes = availableModes();
-    const dialModes = modes.filter(mode => mode !== 'effects');
-    if (!dialModes.includes(activeMode)) activeMode = dialModes[0] || '';
-    renderModes(modes);
-    if (modes.includes('effects')) renderEffects();
-
-    hint.hidden = true;
-    controls.hidden = false;
-    dialMode = dialModes.length > 0 ? activeMode : 'static';
     dial.hidden = false;
-    if (!isOn) closePopups();
+    const modes = availableModes();
+    if (!modes.includes(activeMode)) activeMode = modes[0] || '';
+    dialMode = modes.length ? activeMode : '';
+    controls.hidden = modes.length === 0;
+    hint.hidden = modes.length > 0;
+    if (!modes.length) hint.textContent = vuePanel.t('translation.switchOnly');
+
+    warningIcon.hidden = !unavailable;
+    /* Die Glühbirne zeigt auf einen Blick, ob das Licht an oder aus ist */
+    stateIcon.src = isOn() ? bulbOnIcon : bulbOffIcon;
+    stateIcon.alt = vuePanel.t(isOn() ? 'translation.states.on' : 'translation.states.off');
+    stateIcon.title = stateIcon.alt;
+    const effect = String(attributes().effect || '');
+    effectIcon.hidden = !isOn() || !effect || effect.toLowerCase() === 'none';
+
+    renderModeButtons(modes);
+    renderMetrics();
+    renderSelects();
     updatePresetHighlights();
+    if (!isOn()) closeMenus();
     paintDial();
   }
 
   async function render(next) {
     entity = next;
+    if (!dragging) dragValue = null;
     await update();
   }
 
-  window.addEventListener('resize', () => { if (!dial.hidden) paintDial(); });
-  /* Repaint after the dialog has completed its initial layout. */
-  setTimeout(() => { if (!dial.hidden) paintDial(); }, 0);
+  const [brightnessIconSrc, kelvinIconSrc, warningIconSrc, effectIconSrc, caretIconSrc, bulbOnIcon, bulbOffIcon] =
+    await Promise.all([
+      iconSource('mdi:brightness-6', '#e0a03c'),
+      iconSource('mdi:thermometer', '#76a9d6'),
+      iconSource('mdi:alert', '#ff9800'),
+      iconSource('mdi:auto-fix', '#0f7ec4'),
+      iconSource('mdi:chevron-down', '#666666'),
+      iconSource('mdi:lightbulb-on', '#e0a03c'),
+      iconSource('mdi:lightbulb-off-outline', 'rgba(0, 0, 0, 0.32)')
+    ]);
+  document.getElementById('brightness-icon').src = brightnessIconSrc;
+  document.getElementById('kelvin-icon').src = kelvinIconSrc;
+  warningIcon.src = warningIconSrc;
+  warningIcon.title = vuePanel.t('translation.unavailable');
+  effectIcon.src = effectIconSrc;
+  effectSelect.caret.src = caretIconSrc;
+  await Promise.all(modeIcons.map(async image => {
+    image.src = await iconSource(image.dataset.icon, '#666666');
+  }));
 
-  await loadIcons();
+  /* Nach dem ersten Layout des Dialogs neu zeichnen */
+  setTimeout(() => { if (!dial.hidden) paintDial(); }, 0);
 
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));

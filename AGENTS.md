@@ -222,9 +222,29 @@ Aktueller Stand:
   Detailansicht. Die Card-API kennt dafür `vuePanel.showDetail()` und `vuePanel.openPopup()` unter der
   Capability `dialog:open`, außerdem `vuePanel.context` und `${variable}`-Platzhalter in Instanzwerten.
   Erste mitgelieferte Detail-Card ist `vue-panel/light-detail`;
-- ab Engine `2.2.4` zeigt `vue-panel/light-detail` ein Kreis-Dial im Stil der HA-Detailansicht
-  (Power-Pille, großer Wert, Modus-Buttons) und blendet Helligkeit, Farbtemperatur, Farbe und
-  Effekte nur ein, wenn `supported_color_modes` beziehungsweise `effect_list` sie hergeben;
+- ab `2.2.42`/Engine `2.2.72` zeigt der Theme-Dialog auf Smartphones (`max-width: 767px`) immer
+  Vollbild: `.vp-dialog` wird fixiert, randlos und `100dvh` hoch, der Backdrop verliert sein
+  Padding, und eine per Prop gesetzte Breite oder Body-Höhe wird überschrieben. Kurzer Inhalt
+  steht dabei mittig (`justify-content: safe center` am Body — `safe`, damit langer Inhalt weiter
+  von oben scrollbar bleibt); waagerecht zentrieren sich die Cards über `margin-inline: auto`
+  selbst. Die frühere 600px-Regel (nur volle Breite) ist damit ersetzt;
+- ab Engine `2.2.4` zeigt `vue-panel/light-detail` ein Dial im Stil der HA-Detailansicht und
+  blendet Helligkeit, Farbtemperatur, Farbe und Effekte nur ein, wenn `supported_color_modes`
+  beziehungsweise `effect_list` sie hergeben. Seit `2.2.42` teilt es sich die komplette Optik mit
+  `vue-panel/thermostat-detail`: derselbe unten offene 270°-Bogen samt Trefferband, Griff,
+  Tipp-Animation und Zeigerlogik, dieselbe Formsprache und Metrikzeile (die Icons stehen
+  hier als Reihe über dem mittig stehenden Wert: Glühbirne an/aus, aktiver Effekt, Warnung), dieselbe Pillen-Gruppe in der Bogenlücke und dasselbe radiale Menü mit
+  Weichzeichner auf dem `.vp-dialog-body`. In der Gruppe sitzen der Ein/Aus-Schalter (links, im
+  Akzent eingefärbt, wenn das Licht an ist) und die Effektauswahl (rechts, radiales Menü); ohne
+  Effekte bleibt der Schalter als volle Pille. Die Metriken zeigen Helligkeit und Kelvin, im Bogen
+  steht der Wert des aktiven Reglers. Die drei Modusknöpfe (Helligkeit, Kelvin, Farbe) bleiben
+  unter dem Bogen, Halten öffnet weiterhin die Schnellwerte. Im Farbmodus zeigt der Bogen den vollen Farbverlauf: ein
+  `conic-gradient` (Drehpunkt = Bogenmitte, `from 135deg`) wird mit `--vp-arc-mask` auf exakt
+  denselben Pfad samt Strichbreite und runden Enden wie `.arc-value` maskiert, sodass er wie die
+  übrigen Bögen sitzt; der Griff trägt den gewählten Farbton, und in der Mitte steht statt der
+  Zahl eine runde Farbfläche mit der tatsächlichen Lichtfarbe (Farbton vom Regler, Sättigung aus
+  `hs_color`). Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
+  Inhalt bestimmte Höhe entsprechen ebenfalls der Thermostat-Card;
 - ab Engine `2.2.6` sind die Flächen der Detail-Card theme-fest: Ring, Schalter und Modus-Kacheln
   mischen ihre Farbe über `color-mix(… currentColor …)` statt über weiß-transparente Werte, die im
   hellen Theme unsichtbar waren; die Modus-Icons erben `--text-primary`/`--text-secondary`, ein
