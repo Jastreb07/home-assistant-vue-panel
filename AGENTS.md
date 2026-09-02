@@ -589,6 +589,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   oder `bottom`; normale Dialoge und Popups verwenden standardmäßig `top`. Detail-Cards sind
   standardmäßig zentriert und können die Position über `detail.position` im Card-Metadatenblock
   oder pro Aufruf über `vuePanel.showDetail({ position })` überschreiben.
+- Die `BaseDialog`-Prop `mobileHeight` unterscheidet `full` (Standard für normale Dialoge und
+  Popups) und `fit-content` (Standard für Detail-Cards). Fit-Content-Dialoge sind mobil unten
+  angedockt, maximal viewporthoch und nur an den beiden oberen Ecken abgerundet. Detail-Cards
+  können dies über `detail.mobileHeight` oder `vuePanel.showDetail({ mobileHeight })` ändern.
 - Store: Views und Popups teilen sich alle Section-/Card-Actions. `sectionHost(id)` löst beide auf,
   alle Actions nehmen deshalb `hostId` statt `viewId`. Popup-Actions: `addPopup`, `updatePopup`,
   `removePopup`, `duplicatePopup`, `movePopup`; Getter `popups`, `popupById`.

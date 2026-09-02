@@ -49,6 +49,7 @@ interface VuePanelCardApiV1 {
     entity?: string
     variables?: readonly string[]
     position?: 'top' | 'center' | 'bottom'
+    mobileHeight?: 'full' | 'fit-content'
   }): Promise<null>
   showNativeDetail(entityId: string): Promise<null>
   openPopup(popupId: string, context?: Record<string, unknown>): Promise<null>
@@ -66,6 +67,8 @@ the original type, mixed text is interpolated as a string, and unknown keys stay
 `showDetail()` opens the detail view of this card: the requested `card`, otherwise the card's own
 `detail.card`, otherwise the default card of the entity's domain, otherwise a built-in dialog.
 Detail content is centered by default; `position` overrides it for one opening.
+On mobile, detail dialogs use `fit-content` by default; `mobileHeight` can request a full-screen
+dialog instead.
 `showNativeDetail()` forwards the entity ID to the integration loader, which dispatches Home
 Assistant's `hass-more-info` event in the host document. It is unavailable in standalone preview.
 `openPopup()` opens a popup defined in the dashboard and hands over all instance values unless an

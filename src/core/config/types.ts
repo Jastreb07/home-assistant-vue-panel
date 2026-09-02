@@ -10,6 +10,7 @@ export type ViewWidth = 'default' | 'full'
 export type ViewAlign = 'left' | 'center' | 'right'
 export type PopupSize = 'sm' | 'md' | 'lg' | 'full'
 export type DialogContentPosition = 'top' | 'center' | 'bottom'
+export type DialogMobileHeight = 'full' | 'fit-content'
 
 export type ViewBackgroundAttachment = 'scroll' | 'fixed'
 export type ViewBackgroundSize = 'auto' | 'cover' | 'contain'
@@ -174,6 +175,8 @@ export interface CardDetailConfig {
   entityKey?: string
   /** Vertical position of the detail card inside the dialog (default center) */
   position?: DialogContentPosition
+  /** Mobile dialog height (default fit-content for detail cards) */
+  mobileHeight?: DialogMobileHeight
 }
 
 export interface CustomCardDefinition {

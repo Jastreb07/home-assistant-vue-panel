@@ -134,6 +134,7 @@ The optional `detail` block declares which dialog card the `more-info` tap actio
   "card": "vue-panel/light-detail",
   "entityKey": "entity",
   "position": "center",
+  "mobileHeight": "fit-content",
   "variables": ["entity", "name", "icon"]
 }
 ```
@@ -141,6 +142,7 @@ The optional `detail` block declares which dialog card the `more-info` tap actio
 - `card`: dialog card to render — omit it to use the domain default;
 - `entityKey`: variable holding the entity the detail view belongs to (default `entity`);
 - `position`: vertical dialog position (`top`, `center`, or `bottom`; default `center`);
+- `mobileHeight`: mobile dialog height (`full` or `fit-content`; default `fit-content`);
 - `variables`: values handed over — omit it to hand over all of them.
 
 The engine resolves the detail view in this order: the target configured on the tap action, the card's own

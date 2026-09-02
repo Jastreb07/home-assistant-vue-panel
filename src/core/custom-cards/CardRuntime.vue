@@ -10,7 +10,11 @@ import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
 import { mdiIconDataUrl } from '@/core/ui/mdiIconNames'
 import { runtimeId } from '@/core/utils/runtimeId'
-import type { CardDetailConfig, DialogContentPosition } from '@/core/config/types'
+import type {
+  CardDetailConfig,
+  DialogContentPosition,
+  DialogMobileHeight,
+} from '@/core/config/types'
 import type { CardArea } from '@/core/registry/cardRegistry'
 import { popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
 import { openDetail, openPopup } from '@/core/popups/popupService'
@@ -423,11 +427,20 @@ function buildApi(capabilities: PortableCardCapability[]) {
         }
         position = value
       }
+      let mobileHeight: DialogMobileHeight | undefined
+      if (payload.mobileHeight !== undefined) {
+        const value = String(payload.mobileHeight)
+        if (value !== 'full' && value !== 'fit-content') {
+          throw new Error('Invalid mobile detail dialog height.')
+        }
+        mobileHeight = value
+      }
       openDetail(snapshot(cardConfig.value), props.definition.detail, {
         card,
         entityId: payload.entity === undefined ? undefined : String(payload.entity),
         variables,
         position,
+        mobileHeight,
       })
       return null
     },

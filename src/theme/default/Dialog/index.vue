@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { dialogPointerPosition, type DialogPointerPosition } from '@/core/ui/dialogPointer'
 import { useDashboardStore } from '@/core/config/dashboardStore'
-import type { DialogContentPosition } from '@/core/config/types'
+import type { DialogContentPosition, DialogMobileHeight } from '@/core/config/types'
 
 const props = withDefaults(
   defineProps<{
@@ -22,8 +22,15 @@ const props = withDefaults(
     closeOnBackdrop?: boolean
     /** Vertical body alignment — normal dialogs default to top */
     contentPosition?: DialogContentPosition
+    /** Mobile height — normal dialogs default to full */
+    mobileHeight?: DialogMobileHeight
   }>(),
-  { size: 'md', closeOnBackdrop: false, contentPosition: 'top' },
+  {
+    size: 'md',
+    closeOnBackdrop: false,
+    contentPosition: 'top',
+    mobileHeight: 'full',
+  },
 )
 const emit = defineEmits<{ close: [] }>()
 const store = useDashboardStore()
@@ -115,7 +122,10 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <div
       class="vp-dialog-backdrop"
-      :class="{ 'vp-dialog-backdrop--closing': isClosing }"
+      :class="{
+        'vp-dialog-backdrop--closing': isClosing,
+        'vp-dialog-backdrop--mobile-fit': mobileHeight === 'fit-content',
+      }"
       @click.self="onBackdropClick"
     >
       <div
@@ -124,6 +134,7 @@ onBeforeUnmount(() => {
         :class="[
           `vp-dialog--${size}`,
           `vp-dialog--animation-${animationMode}`,
+          `vp-dialog--mobile-${mobileHeight}`,
           {
             'vp-dialog--ready': isReady,
             'vp-dialog--closing': isClosing,

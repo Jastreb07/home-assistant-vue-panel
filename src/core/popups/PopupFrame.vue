@@ -91,6 +91,7 @@ const popupView = computed<ViewConfig | null>(() => {
     :width="popup?.width"
     :body-height="popup?.height"
     :content-position="request.contentPosition ?? (request.popupId ? 'top' : 'center')"
+    :mobile-height="request.mobileHeight ?? (request.popupId ? 'full' : 'fit-content')"
     close-on-backdrop
     @close="emit('close')"
   >

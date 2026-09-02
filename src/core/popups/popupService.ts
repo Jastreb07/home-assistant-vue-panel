@@ -1,5 +1,9 @@
 import { readonly, ref } from 'vue'
-import type { CardDetailConfig, DialogContentPosition } from '@/core/config/types'
+import type {
+  CardDetailConfig,
+  DialogContentPosition,
+  DialogMobileHeight,
+} from '@/core/config/types'
 import { cardRegistry } from '@/core/registry/cardRegistry'
 import { pickVariables, type PopupContext } from './popupContext'
 
@@ -17,6 +21,8 @@ export interface PopupRequest {
   entityId?: string
   /** Vertical body position — detail cards default to center */
   contentPosition?: DialogContentPosition
+  /** Mobile dialog height — detail cards default to fit-content */
+  mobileHeight?: DialogMobileHeight
   context: PopupContext
   /** Runs when this dialog is closed — used to return to the popup manager. */
   onClose?: () => void
@@ -42,6 +48,7 @@ export interface DetailOptions {
   entityId?: string
   variables?: string[]
   position?: DialogContentPosition
+  mobileHeight?: DialogMobileHeight
 }
 
 /**
@@ -64,6 +71,7 @@ export function openDetail(
     cardType: cardType && cardRegistry[cardType] ? cardType : '',
     entityId,
     contentPosition: options.position ?? detail?.position ?? 'center',
+    mobileHeight: options.mobileHeight ?? detail?.mobileHeight ?? 'fit-content',
     context: {
       ...pickVariables(config, options.variables ?? detail?.variables),
       // The detail card always needs the entity it was opened for, even when

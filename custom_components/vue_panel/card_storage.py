@@ -119,7 +119,7 @@ _METADATA_FIELDS = {
 }
 # Optional metadata: a card without them simply keeps the engine defaults
 _OPTIONAL_METADATA_FIELDS = {"detail"}
-_DETAIL_FIELDS = {"card", "variables", "entityKey", "position"}
+_DETAIL_FIELDS = {"card", "variables", "entityKey", "position", "mobileHeight"}
 _VARIABLE_FIELDS = {
     "gestures",
     "actions",
@@ -541,6 +541,9 @@ def _validate_detail(value: Any, keys: set[str]) -> None:
     position = value.get("position")
     if position is not None and position not in {"top", "center", "bottom"}:
         raise CardFileError("Card detail position must be top, center, or bottom")
+    mobile_height = value.get("mobileHeight")
+    if mobile_height is not None and mobile_height not in {"full", "fit-content"}:
+        raise CardFileError("Card detail mobileHeight must be full or fit-content")
 
 
 def parse_card_document(document: str) -> dict[str, Any]:
