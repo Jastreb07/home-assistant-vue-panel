@@ -17,7 +17,7 @@ CONF_REVISION: Final = "revision"
 DEFAULT_DASHBOARD_ICON: Final = "mdi:view-dashboard"
 DEFAULT_REQUIRE_ADMIN: Final = False
 
-INTEGRATION_VERSION: Final = "2.2.40"
+INTEGRATION_VERSION: Final = "2.2.41"
 PANEL_WEBCOMPONENT_NAME: Final = "vue-panel-panel"
 STATIC_URL_BASE: Final = "/vue-panel-static"
 PANEL_MODULE_URL: Final = (f"{STATIC_URL_BASE}/loader.js?v={INTEGRATION_VERSION}")

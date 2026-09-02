@@ -12,6 +12,10 @@
     "areas": [
       "dashboard"
     ],
+    "detail": {
+      "card": "vue-panel/thermostat-detail",
+      "entityKey": "entity"
+    },
     "capabilities": [
       "entity:read",
       "entity:subscribe",
@@ -147,7 +151,12 @@
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
-        "required": false
+        "required": false,
+        "default": {
+          "tap": {
+            "action": "more-info"
+          }
+        }
       }
     ]
   };
@@ -663,6 +672,7 @@
   /* Tap actions apply to the complete compact tile. */
   bindGestures(card, config, {
     entityId,
+    default: gesture => gesture === 'tap' ? vuePanel.showDetail({entity: entityId}) : undefined,
     toggle: () => toggleEntity(entityId)
   });
 </script>

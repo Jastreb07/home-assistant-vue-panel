@@ -467,6 +467,7 @@ class CardStorageTests(unittest.TestCase):
             "vue-panel/section-title",
             "vue-panel/sensor",
             "vue-panel/thermostat",
+            "vue-panel/thermostat-detail",
             "vue-panel/view-title",
             "vue-panel/weather",
             "vue-panel/weather-detail",

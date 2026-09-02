@@ -282,6 +282,49 @@ Aktueller Stand:
 - ab `2.2.20`/Engine `2.2.36` verwendet die Thermostat-Card standardmäßig eine statt zwei
   Nachkommastellen. Explizit konfigurierte Instanzwerte bleiben unverändert; die Auswahl von
   null bis drei Stellen bleibt erhalten;
+- ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
+  mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
+  (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
+  Popup-Listen), nur ist der Bogen kein voller Kreis, sondern ein unten offener 270°-Bogen
+  (Mittelpunkt 180/160, Radius 140 im Viewbox 360×300, Start 135°). Er hat einen Heiz- und einen
+  Kühl-Griff (Drag, Klick, Mausrad und Pfeiltasten), einen grauen Punkt für die Isttemperatur,
+  umschaltbare Soll-Werte für `target_temp_low`/`target_temp_high` (ganze Zahl groß, Einheit und
+  Nachkommastellen klein daneben), Istwert und Luftfeuchte als Metriken sowie
+  unter dem Bogen zwei nebeneinanderstehende Dropdowns für Betriebsart (`hvac_modes` →
+  `climate.set_hvac_mode`) und Voreinstellung (`preset_modes` → `climate.set_preset_mode`, wird
+  ohne Presets ausgeblendet). Beide bilden einen zusammenhängenden Segmentschalter: außen
+  abgerundet (links Presets, rechts Betriebsart), in der Mitte eine Trennlinie, und die Listen
+  öffnen sich als radiales Tortenmenü: `buildRadial()` zeichnet aus den Optionen ein SVG mit
+  Ringsegmenten (Viewbox 320, Nabe r 62, Ring 74–150, erstes Segment oben) samt Beschriftung im
+  Segment, `layoutMenu()` legt es fixiert auf die Bogenmitte und skaliert es mit dem Bogen. Die
+  Nabe zeigt die Gruppenüberschrift und den angepeilten Eintrag, das aktuell gewählte Segment ist
+  hell invertiert, ein Klick auf die Nabe schließt. Solange eine Liste offen ist, legt der `.scrim` einen
+  `backdrop-filter: blur(8px)` mit leichter Abdunklung über den Dialoginhalt; er
+  wird beim Öffnen per `card.closest('.vp-dialog-body').getBoundingClientRect()` genau auf den
+  Dialog-Body gelegt (ohne Dialog auf die Card), sodass Kopf- und Fußzeile scharf bleiben. Ein
+  Klick darauf oder Escape schließt die Liste. Der Ein/Aus-Schalter sitzt unten mittig in der Lücke des Bogens. Auslöser-Pillen und Schalter
+  tragen das Styling des Schalters aus `light-detail` (40px hohe Pille, `border-radius: 999px`,
+  gleiche Hover-/Active-/Ein-Zustände, wanderndes Power-Icon), die Auswahllisten das der
+  Licht-Popups. Runde Modus-Knöpfe gibt es nicht mehr. In der Hinweiszeile zeigt zwischen Warn- und
+  Fenstericon ein eingefärbtes Icon, was das Gerät gerade tut (`hvac_action`: Flamme orange,
+  Schneeflocke blau, Leerlauf grau …); der als `translation.actions.*` übersetzte Text steht als
+  `title`/`alt` daran; die eingestellte Betriebsart steht dagegen im Dropdown, damit beides nicht
+  dasselbe Wort doppelt anzeigt.
+  Alle Zeigergesten hängen an einem unsichtbaren, 44 Einheiten breiten Trefferpfad
+  (`.arc-hit`, `pointer-events: stroke`) direkt auf dem Bogen — nicht an der Dial-Fläche. Damit
+  lässt sich der Wert nur auf dem Bogen selbst ziehen, die Fläche darin bleibt klick- und
+  scrollbar, und `touch-action: none` gilt ebenfalls nur für dieses Band. Drücken und Ziehen sind
+  getrennt: `pointerdown` setzt nur `is-pressed` (Cursor und leichte Skalierung), sodass ein Tipp
+  auf den Bogen animiert auf die getippte Stelle läuft. Erst wenn der Zeiger sich um mehr als vier
+  Pixel bewegt, kommt `is-dragging` dazu und schaltet die Übergänge von Füllung, Griffen und
+  Ist-Punkt ab — sonst liefe die Bogenfüllung dem Finger sichtbar hinterher.
+  Optional zeigt ein `binary_sensor` als `windowSensor` ein Fenster-offen-Hinweisicon; ohne ihn
+  greifen die Attribute `window_open`/`door_open`, das Warnicon kommt aus `degraded_mode`,
+  `unavailable_sensors` und `devices_errors` (Better Thermostat), die Kühlschwelle notfalls aus
+  `bt_preset_cool_temperature` und die Schrittweite aus `bt_target_temp_step`.
+  Bedienelemente erscheinen nur, wenn `supported_features` beziehungsweise die Attribute
+  (`current_humidity`, `hvac_action`, Bereichs-Sollwerte) sie hergeben. Die
+  Thermostat-Card öffnet die Ansicht per `detail`-Zuordnung und hat als Tap-Default `more-info`;
 - ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
   Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
   `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit
@@ -410,8 +453,8 @@ Das normative Dateiformat und zwei vollständige Vorlagen stehen unter
 Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, sondern verwenden
 ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
-  room-tile, menu, entity und section-title, dazu die Dialog-Cards light-detail und
-  weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
+  room-tile, menu, entity und section-title, dazu die Dialog-Cards light-detail,
+  thermostat-detail und weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills; beide zeigen Wettericon,
   Temperatur und Niederschlag. Der Kopf zeigt zustands- und tageszeitabhängige, lokal gebündelte

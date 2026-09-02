@@ -1,0 +1,1400 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "thermostat-detail",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:thermostat",
+    "group": "Vue Panel",
+    "areas": [
+      "dialog"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 424,
+      "height": 500
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": true,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "translation.variables.entity.label",
+        "type": "entity",
+        "required": true,
+        "domain": "climate",
+        "default": ""
+      },
+      {
+        "key": "windowSensor",
+        "label": "translation.variables.windowSensor.label",
+        "type": "entity",
+        "required": false,
+        "domain": "binary_sensor",
+        "default": ""
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Thermostat details",
+        "translation.description": "Temperature, HVAC mode and power controls for climate entities",
+        "translation.variables.entity.label": "Thermostat entity",
+        "translation.variables.windowSensor.label": "Window sensor (optional override)",
+        "translation.noEntity": "No entity selected",
+        "translation.entityNotFound": "Entity not found",
+        "translation.currentTemperature": "Current temperature",
+        "translation.humidity": "Humidity",
+        "translation.windowOpen": "Window open",
+        "translation.degraded": "A sensor or thermostat is unavailable",
+        "translation.power": "Power",
+        "translation.heatTarget": "Heating temperature",
+        "translation.coolTarget": "Cooling temperature",
+        "translation.modes.heat": "Heat",
+        "translation.modes.cool": "Cool",
+        "translation.modes.heat_cool": "Heat/Cool",
+        "translation.modes.auto": "Automatic",
+        "translation.modes.dry": "Dry",
+        "translation.modes.fan_only": "Fan only",
+        "translation.modes.off": "Off",
+        "translation.states.off": "Off",
+        "translation.states.unavailable": "Unavailable",
+        "translation.states.unknown": "Unknown",
+        "translation.actions.heating": "Heating",
+        "translation.actions.cooling": "Cooling",
+        "translation.actions.idle": "Idle",
+        "translation.actions.off": "Off",
+        "translation.actions.drying": "Drying",
+        "translation.actions.fan": "Fan running",
+        "translation.actions.preheating": "Preheating",
+        "translation.actions.defrosting": "Defrosting",
+        "translation.presets.none": "None",
+        "translation.presets.eco": "Eco",
+        "translation.presets.away": "Away",
+        "translation.presets.boost": "Boost",
+        "translation.presets.comfort": "Comfort",
+        "translation.presets.home": "Home",
+        "translation.presets.sleep": "Sleep",
+        "translation.presets.activity": "Activity",
+        "translation.captions.mode": "Mode",
+        "translation.captions.preset": "Preset"
+      },
+      "de": {
+        "translation.name": "Thermostat-Details",
+        "translation.description": "Temperatur-, Betriebsart- und Ein/Aus-Steuerung für Klima-Entities",
+        "translation.variables.entity.label": "Thermostat-Entity",
+        "translation.variables.windowSensor.label": "Fenstersensor (optionale Überschreibung)",
+        "translation.noEntity": "Keine Entity ausgewählt",
+        "translation.entityNotFound": "Entity nicht gefunden",
+        "translation.currentTemperature": "Isttemperatur",
+        "translation.humidity": "Luftfeuchtigkeit",
+        "translation.windowOpen": "Fenster geöffnet",
+        "translation.degraded": "Ein Sensor oder Thermostat ist nicht verfügbar",
+        "translation.power": "Ein/Aus",
+        "translation.heatTarget": "Heiztemperatur",
+        "translation.coolTarget": "Kühltemperatur",
+        "translation.modes.heat": "Heizen",
+        "translation.modes.cool": "Kühlen",
+        "translation.modes.heat_cool": "Heizen/Kühlen",
+        "translation.modes.auto": "Automatisch",
+        "translation.modes.dry": "Trocknen",
+        "translation.modes.fan_only": "Nur Lüfter",
+        "translation.modes.off": "Aus",
+        "translation.states.off": "Aus",
+        "translation.states.unavailable": "Nicht verfügbar",
+        "translation.states.unknown": "Unbekannt",
+        "translation.actions.heating": "Heizt",
+        "translation.actions.cooling": "Kühlt",
+        "translation.actions.idle": "Leerlauf",
+        "translation.actions.off": "Aus",
+        "translation.actions.drying": "Trocknet",
+        "translation.actions.fan": "Lüftet",
+        "translation.actions.preheating": "Vorheizen",
+        "translation.actions.defrosting": "Abtauen",
+        "translation.presets.none": "Keine",
+        "translation.presets.eco": "Eco",
+        "translation.presets.away": "Abwesend",
+        "translation.presets.boost": "Boost",
+        "translation.presets.comfort": "Komfort",
+        "translation.presets.home": "Zuhause",
+        "translation.presets.sleep": "Schlafen",
+        "translation.presets.activity": "Aktivität",
+        "translation.captions.mode": "Betriebsart",
+        "translation.captions.preset": "Voreinstellung"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <div class="thermostat-ui" id="card">
+    <div class="dial" id="dial" role="slider" tabindex="0">
+      <svg class="dial-svg" viewBox="0 0 360 300" aria-hidden="true">
+        <path class="arc-track" id="arc-track" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-value arc-heat" id="arc-heat" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-value arc-cool" id="arc-cool" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-hit" id="arc-hit" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+      </svg>
+      <span class="current-dot" id="current-dot" hidden></span>
+      <span class="arc-handle heat-handle" id="heat-handle"></span>
+      <span class="arc-handle cool-handle" id="cool-handle"></span>
+
+      <div class="notices" id="notices">
+        <img id="warning-icon" alt="" hidden>
+        <img class="action-icon" id="action-icon" alt="" hidden>
+        <img id="window-icon" alt="" hidden>
+      </div>
+
+      <div class="targets" id="targets">
+        <button class="target selected" id="heat-target" type="button">
+          <span class="target-main" id="heat-value">—</span>
+          <span class="target-side">
+            <span class="target-unit" id="heat-unit"></span>
+            <span class="target-fraction" id="heat-fraction"></span>
+          </span>
+        </button>
+        <button class="target cool-target" id="cool-target" type="button" hidden>
+          <span class="target-main" id="cool-value">—</span>
+          <span class="target-side">
+            <span class="target-unit" id="cool-unit"></span>
+            <span class="target-fraction" id="cool-fraction"></span>
+          </span>
+        </button>
+      </div>
+
+      <div class="metrics" id="metrics">
+        <div class="metric current" id="current-metric">
+          <img id="temperature-icon" alt="">
+          <span id="current-temperature">—</span>
+        </div>
+        <div class="metric humidity" id="humidity-metric" hidden>
+          <img id="humidity-icon" alt="">
+          <span id="humidity">—</span>
+        </div>
+      </div>
+
+      <div class="selects" id="selects">
+        <div class="select" id="preset-select" hidden>
+          <button class="pill" id="preset-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="pill-label"><span class="pill-text" id="preset-label">—</span></span>
+            <img class="pill-caret" id="preset-caret" alt="">
+          </button>
+          <div class="menu" id="preset-menu" role="listbox" hidden>
+            <svg class="radial" id="preset-radial" viewBox="0 0 320 320"></svg>
+          </div>
+        </div>
+        <div class="select" id="mode-select">
+          <button class="pill" id="mode-trigger" type="button" aria-haspopup="listbox" aria-expanded="false">
+            <span class="pill-label"><span class="pill-text" id="mode-label">—</span></span>
+            <img class="pill-caret" id="mode-caret" alt="">
+          </button>
+          <div class="menu" id="mode-menu" role="listbox" hidden>
+            <svg class="radial" id="mode-radial" viewBox="0 0 320 320"></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="scrim" id="scrim" hidden></div>
+    <p class="hint" id="hint" hidden></p>
+  </div>
+</template>
+
+<style data-vue-panel-css>
+  .thermostat-ui {
+    position: relative;
+    width: min(424px, 100%);
+    min-height: 500px;
+    margin-inline: auto;
+    padding: 4px 6px 8px;
+    overflow: visible;
+    box-sizing: border-box;
+    background: #fff;
+    color: #222;
+    font-family: Arial, Helvetica, sans-serif;
+    user-select: none;
+    --selects-width: 200px;
+  }
+
+  /* Der Bogen ist derselbe wie im Licht-Dial, nur nicht rundum geschlossen */
+  .dial {
+    position: relative;
+    width: min(360px, 100%);
+    aspect-ratio: 360 / 300;
+    margin: 0 auto;
+  }
+
+  .dial.is-pressed { transform: scale(1.008); }
+
+  .dial-svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+    pointer-events: none;
+  }
+
+  .arc-track,
+  .arc-value {
+    fill: none;
+    /* 20 Viewbox-Einheiten entsprechen den 13 Einheiten des Licht-Dials */
+    stroke-width: 20;
+    stroke-linecap: round;
+  }
+
+  .arc-track { stroke: rgba(0, 0, 0, .075); }
+
+  /*
+   * Nur dieses breitere, unsichtbare Band nimmt Zeiger entgegen — deshalb lässt
+   * sich der Wert ausschließlich auf dem Bogen selbst ziehen und die Fläche
+   * innerhalb des Bogens bleibt scroll- und klickbar.
+   */
+  .arc-hit {
+    fill: none;
+    stroke: transparent;
+    stroke-width: 44;
+    stroke-linecap: round;
+    pointer-events: stroke;
+    touch-action: none;
+  }
+
+  .dial.is-enabled .arc-hit { cursor: grab; }
+  .dial.is-pressed .arc-hit { cursor: grabbing; }
+  .dial:not(.is-enabled) .arc-hit { pointer-events: none; }
+  .arc-value { transition: stroke-dasharray .18s ease, stroke-dashoffset .18s ease; }
+  .arc-heat { stroke: #f2a4ac; }
+  .arc-cool { stroke: #75bdf2; }
+
+  .arc-handle {
+    position: absolute;
+    z-index: 4;
+    width: 23px;
+    height: 23px;
+    margin: -11.5px 0 0 -11.5px;
+    border: 4px solid #fff;
+    border-radius: 50%;
+    box-sizing: border-box;
+    background: #f2a4ac;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, .10);
+    pointer-events: none;
+    transition: left .12s ease, top .12s ease, transform .15s ease, box-shadow .15s ease;
+  }
+
+  .cool-handle { background: #75bdf2; }
+  .arc-handle.selected { transform: scale(1.13); box-shadow: 0 3px 8px rgba(0, 0, 0, .15); }
+
+  /*
+   * Nur der laufende Zug schaltet die Übergänge ab, damit Füllung und Griff dem
+   * Finger folgen. Ein Tipp auf den Bogen behält die Animation.
+   */
+  .dial.is-dragging .arc-value,
+  .dial.is-dragging .arc-handle,
+  .dial.is-dragging .current-dot {
+    transition: none;
+  }
+
+  /* Kleiner Punkt auf dem Bogen: die gemessene Isttemperatur */
+  .current-dot {
+    position: absolute;
+    z-index: 3;
+    width: 9px;
+    height: 9px;
+    margin: -4.5px 0 0 -4.5px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, .32);
+    pointer-events: none;
+    transition: left .18s ease, top .18s ease;
+  }
+
+  .notices {
+      position: absolute;
+      z-index: 3;
+      top: 50%;
+      left: 22%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      min-width: 42px;
+      transform: translateY(-50%);
+      pointer-events: none;
+  }
+
+  .notices img { width: 42px; height: 42px; }
+
+  /*
+   * Was das Gerät gerade tut (`hvac_action`), als eingefärbtes Icon zwischen den
+   * Hinweisicons. Größe und Abstand kommen aus `.notices img`.
+   */
+  .action-icon { transition: opacity .16s ease; }
+
+  .targets {
+      position: absolute;
+      z-index: 3;
+      top: 50%;
+      right: 25%;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 18px;
+      width: 90px;
+      height: 140px;
+      transform: translateY(-50%);
+  }
+
+  .target {
+    display: inline-flex;
+    align-items: stretch;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: rgba(0, 0, 0, .48);
+    font: inherit;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .16s ease, transform .16s ease;
+  }
+
+  .target.selected { color: #111; transform: scale(1.5); }
+  .target:focus-visible { outline: 2px solid #4b9ed6; outline-offset: 4px; border-radius: 5px; }
+
+  .target-main {
+    font-size: 56px;
+    font-weight: 400;
+    line-height: 46px;
+    letter-spacing: -1.4px;
+  }
+
+  .target-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-left: 2px;
+    text-align: right;
+    height: 50px;
+  }
+
+  .target-unit { font-size: 12px; line-height: 18px; }
+  .target-fraction { font-size: 21px; line-height: 21px; letter-spacing: -.6px; }
+
+  /* Isttemperatur und Luftfeuchte stehen gemeinsam in einer Zeile */
+  .metrics {
+    position: absolute;
+    z-index: 3;
+    bottom: 10%;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    pointer-events: none;
+  }
+
+  .metric {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    color: #1599ed;
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  .metric img { width: 18px; height: 18px; }
+  .humidity { color: #76a9d6; font-size: 16px; }
+  .humidity img { width: 18px; height: 18px; }
+
+  /*
+   * Voreinstellung und Betriebsart bilden einen zusammenhängenden Schalter:
+   * abgerundet ist nur außen (links Presets, rechts Betriebsart), in der Mitte
+   * trennt sie eine Linie. Das Pillen-Styling kommt aus der Licht-Card.
+   */
+  .selects {
+    position: absolute;
+    z-index: 20;
+    bottom: -20px;
+    left: 50%;
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 0;
+    width: var(--selects-width);
+    transform: translateX(-50%);
+  }
+
+  /* Beide Auslöser teilen sich die feste Breite der Gruppe zu gleichen Teilen */
+  .select {
+    position: relative;
+    width: 50%;
+    min-width: 0;
+  }
+
+  /* Die geöffnete Gruppe steht mitsamt Auslöser scharf über dem Weichzeichner */
+  .select.is-open { z-index: 55; }
+
+  .select .pill { border-radius: 0; }
+  .select:first-child .pill { border-radius: 999px 0 0 999px; }
+  .select:last-child .pill { border-radius: 0 999px 999px 0; }
+  .select + .select .pill { box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14); }
+
+  .select + .select:hover .pill {
+    box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14), 0 3px 10px rgba(0, 0, 0, .10);
+  }
+
+  .select + .select.is-open .pill {
+    box-shadow: inset 1px 0 0 rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .09), 0 2px 8px rgba(0, 0, 0, .07);
+  }
+
+  /* Steht nur eine der beiden Listen zur Verfügung, ist sie wieder eine volle Pille */
+  .selects.is-single .pill {
+    border-radius: 999px;
+    box-shadow: none;
+  }
+
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    height: 40px;
+    padding: 0 12px;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .10);
+    color: rgba(0, 0, 0, .65);
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background .16s ease, box-shadow .16s ease, transform .08s ease, color .16s ease;
+  }
+
+  .pill:hover {
+    background: rgba(0, 0, 0, .15);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, .10);
+  }
+
+  .pill:active { transform: scale(.94); }
+
+  .pill:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; }
+
+  /* Die Pille klemmt die Breite, der innere Text läuft bei Überlänge durch */
+  .pill-label {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .pill-text {
+    display: inline-block;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+
+  /* Zu lange Beschriftungen laufen wie in der Licht-Card durch */
+  @keyframes vp-text-scroll {
+    0%, 12% { transform: translateX(0); }
+    88%, 100% { transform: translateX(var(--vp-scroll-shift, 0)); }
+  }
+
+  .pill-text.is-scrolling {
+    max-width: none;
+    overflow: visible;
+    text-overflow: clip;
+    animation: vp-text-scroll 7s ease-in-out infinite alternate;
+  }
+
+  .pill-caret {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    transition: transform .16s ease;
+  }
+
+  .select.is-open .pill {
+    background: #eee;
+    color: #333;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .07), inset 0 0 0 1px rgba(0, 0, 0, .09);
+  }
+
+  .select.is-open .pill-caret { transform: rotate(180deg); }
+
+  /*
+   * Die Auswahl erscheint als radiales Menü: ein dunkler Ring aus Segmenten um
+   * eine Nabe, die den gerade angepeilten Eintrag ausschreibt.
+   */
+  .menu {
+    position: fixed;
+    z-index: 55;
+    transform: translate(-50%, -50%);
+  }
+
+  .radial {
+    display: block;
+    overflow: visible;
+    font-family: inherit;
+  }
+
+  .wedge { cursor: pointer; }
+
+  .wedge .slice {
+    fill: rgba(32, 32, 32, .93);
+    transition: fill .15s ease;
+  }
+
+  .wedge:hover .slice { fill: rgba(64, 64, 64, .96); }
+
+  /* Platzhalter halten den Ring rund, sind aber nicht bedienbar */
+  .wedge.is-placeholder { cursor: default; pointer-events: none; }
+  .wedge.is-placeholder .slice { fill: rgba(32, 32, 32, .45); }
+  .wedge.is-placeholder text { fill: rgba(255, 255, 255, .22); }
+  .wedge.is-current .slice { fill: rgba(240, 240, 240, .95); }
+  .wedge.is-current:hover .slice { fill: #fff; }
+
+  .wedge text {
+    fill: #e8e8e8;
+    font-size: 15px;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  .wedge.is-current text { fill: #1c1c1c; font-weight: 700; }
+
+  .hub-plate { fill: rgba(12, 12, 12, .96); }
+
+  .hub-text {
+    fill: #f2f2f2;
+    font-size: 15px;
+    font-weight: 600;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  .hub-caption {
+    fill: rgba(255, 255, 255, .45);
+    font-size: 11px;
+    letter-spacing: .4px;
+    text-anchor: middle;
+    pointer-events: none;
+  }
+
+  /*
+   * Bei geöffneter Liste liegt ein Weichzeichner über dem Dialoginhalt. Seine
+   * Maße kommen aus dem `.vp-dialog-body`, damit Kopf- und Fußzeile scharf
+   * bleiben; ohne Dialog deckt er die Card ab.
+   */
+  .scrim {
+    position: fixed;
+    z-index: 40;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, .12);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .hint {
+    margin: 30px 20px 0;
+    color: rgba(0, 0, 0, .58);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 390px) {
+    .thermostat-ui { min-height: 470px; }
+    .target-main { font-size: 40px; line-height: 40px; }
+    .target-fraction { font-size: 24px; line-height: 18px; }
+    .targets { gap: 12px; width: 230px; }
+    .thermostat-ui { --selects-width: 180px; }
+  }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+  const entityId = String(config.entity || vuePanel.context.entity || '');
+  const windowSensorId = String(config.windowSensor || vuePanel.context.windowSensor || '');
+
+  const FEATURE_TARGET = 1;
+  const FEATURE_RANGE = 2;
+  const FEATURE_TURN_OFF = 128;
+  const FEATURE_TURN_ON = 256;
+  const VIEW_WIDTH = 360;
+  const VIEW_HEIGHT = 300;
+  const CENTER_X = 180;
+  const CENTER_Y = 160;
+  const ARC_RADIUS = 140;
+  const ARC_START = 135;
+  const ARC_SPAN = 270;
+  const DRAG_THRESHOLD = 4;
+
+  const card = document.getElementById('card');
+  const dial = document.getElementById('dial');
+  const arcTrack = document.getElementById('arc-track');
+  const arcHit = document.getElementById('arc-hit');
+  const heatArc = document.getElementById('arc-heat');
+  const coolArc = document.getElementById('arc-cool');
+  const heatHandle = document.getElementById('heat-handle');
+  const coolHandle = document.getElementById('cool-handle');
+  const currentDot = document.getElementById('current-dot');
+  const heatTarget = document.getElementById('heat-target');
+  const coolTarget = document.getElementById('cool-target');
+  const heatValue = document.getElementById('heat-value');
+  const coolValue = document.getElementById('cool-value');
+  const heatUnit = document.getElementById('heat-unit');
+  const coolUnit = document.getElementById('cool-unit');
+  const heatFraction = document.getElementById('heat-fraction');
+  const coolFraction = document.getElementById('cool-fraction');
+  const currentMetric = document.getElementById('current-metric');
+  const currentTemperature = document.getElementById('current-temperature');
+  const humidityMetric = document.getElementById('humidity-metric');
+  const humidity = document.getElementById('humidity');
+  const warningIcon = document.getElementById('warning-icon');
+  const windowIcon = document.getElementById('window-icon');
+  const actionIcon = document.getElementById('action-icon');
+  const selects = document.getElementById('selects');
+  const modeSelect = {
+    root: document.getElementById('mode-select'),
+    trigger: document.getElementById('mode-trigger'),
+    label: document.getElementById('mode-label'),
+    caret: document.getElementById('mode-caret'),
+    menu: document.getElementById('mode-menu'),
+    svg: document.getElementById('mode-radial'),
+    caption: vuePanel.t('translation.captions.mode')
+  };
+  const presetSelect = {
+    root: document.getElementById('preset-select'),
+    trigger: document.getElementById('preset-trigger'),
+    label: document.getElementById('preset-label'),
+    caret: document.getElementById('preset-caret'),
+    menu: document.getElementById('preset-menu'),
+    svg: document.getElementById('preset-radial'),
+    caption: vuePanel.t('translation.captions.preset')
+  };
+  const scrim = document.getElementById('scrim');
+  const hint = document.getElementById('hint');
+
+  let entity = null;
+  let windowSensor = null;
+  let selectedTarget = 'low';
+  let dragging = false;
+  let dragPointerId = null;
+  let dragOrigin = null;
+  let draft = null;
+  let commitTimer = null;
+  const iconCache = new Map();
+  const arcLength = arcTrack.getTotalLength();
+
+  function attributes() {
+    return (entity && entity.attributes) || {};
+  }
+
+  function number(value) {
+    if (value === null || value === undefined || value === '') return Number.NaN;
+    return Number(value);
+  }
+
+  function supports(feature) {
+    return (Number(attributes().supported_features || 0) & feature) !== 0;
+  }
+
+  function isOpenValue(value) {
+    if (value === true || value === 1) return true;
+    return ['on', 'open', 'opened', 'true', '1'].includes(String(value ?? '').toLowerCase());
+  }
+
+  function hasContent(value) {
+    if (value === null || value === undefined || value === false || value === '' || value === '[]' || value === '{}') return false;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
+    try {
+      const parsed = JSON.parse(String(value));
+      return Array.isArray(parsed) ? parsed.length > 0 : parsed && typeof parsed === 'object' ? Object.keys(parsed).length > 0 : Boolean(parsed);
+    } catch (error) {
+      return true;
+    }
+  }
+
+  function temperatureRange() {
+    const unit = String(attributes().temperature_unit || '°C');
+    const fahrenheit = unit.includes('F');
+    const min = number(attributes().min_temp);
+    const max = number(attributes().max_temp);
+    const step = number(attributes().target_temp_step ?? attributes().bt_target_temp_step);
+    return {
+      unit,
+      min: Number.isFinite(min) ? min : (fahrenheit ? 44 : 7),
+      max: Number.isFinite(max) ? max : (fahrenheit ? 95 : 35),
+      step: Number.isFinite(step) && step > 0 ? step : (fahrenheit ? 1 : 0.5)
+    };
+  }
+
+  /*
+   * Native Home Assistant liefert entweder `temperature` oder das Paar
+   * `target_temp_low`/`target_temp_high`. Better Thermostat meldet seine
+   * Kühlschwelle zusätzlich als `bt_preset_cool_temperature`.
+   */
+  function targetValues() {
+    const low = number(attributes().target_temp_low);
+    const high = number(attributes().target_temp_high ?? attributes().bt_preset_cool_temperature);
+    const value = number(attributes().temperature);
+    const range = (supports(FEATURE_RANGE) || (Number.isFinite(low) && Number.isFinite(high)))
+      && Number.isFinite(low) && Number.isFinite(high);
+    const limits = temperatureRange();
+    return {
+      range,
+      low: Number.isFinite(low) ? low : Number.isFinite(value) ? value : limits.min,
+      high: Number.isFinite(high) ? high : limits.max,
+      value: Number.isFinite(value) ? value : Number.isFinite(low) ? low : limits.min
+    };
+  }
+
+  function canAdjustTemperature() {
+    const values = targetValues();
+    return supports(FEATURE_TARGET)
+      || supports(FEATURE_RANGE)
+      || Number.isFinite(number(attributes().temperature))
+      || values.range;
+  }
+
+  function fraction(value) {
+    const limits = temperatureRange();
+    return Math.max(0, Math.min(1, (value - limits.min) / Math.max(limits.step, limits.max - limits.min)));
+  }
+
+  function decimals() {
+    const text = String(temperatureRange().step);
+    return text.includes('.') ? Math.min(2, text.split('.')[1].length) : 0;
+  }
+
+  function format(value, fixed = true) {
+    if (!Number.isFinite(value)) return '—';
+    const digits = fixed ? decimals() : 1;
+    return new Intl.NumberFormat(vuePanel.language || undefined, {
+      minimumFractionDigits: fixed ? digits : 0,
+      maximumFractionDigits: digits
+    }).format(value);
+  }
+
+  /* Die Zielwerte stehen groß als ganze Zahl, Einheit und Nachkommastellen klein daneben */
+  function splitNumber(value) {
+    if (!Number.isFinite(value)) return {main: '—', fraction: ''};
+    const digits = decimals();
+    const parts = new Intl.NumberFormat(vuePanel.language || undefined, {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits
+    }).formatToParts(value);
+    let main = '';
+    let rest = '';
+    for (const part of parts) {
+      if (part.type === 'decimal' || part.type === 'fraction') rest += part.value;
+      else main += part.value;
+    }
+    return {main, fraction: rest};
+  }
+
+  function setSegment(path, from, to) {
+    const start = Math.max(0, Math.min(1, from));
+    const end = Math.max(start, Math.min(1, to));
+    const length = (end - start) * arcLength;
+    path.hidden = length < 0.5;
+    path.style.strokeDasharray = `${length} ${arcLength + 1}`;
+    path.style.strokeDashoffset = String(-start * arcLength);
+  }
+
+  function placeOnArc(element, value) {
+    const angle = (ARC_START + Math.max(0, Math.min(1, value)) * ARC_SPAN) * Math.PI / 180;
+    const x = CENTER_X + ARC_RADIUS * Math.cos(angle);
+    const y = CENTER_Y + ARC_RADIUS * Math.sin(angle);
+    element.style.left = `${x / VIEW_WIDTH * 100}%`;
+    element.style.top = `${y / VIEW_HEIGHT * 100}%`;
+  }
+
+  function shownTargets() {
+    return draft || targetValues();
+  }
+
+  function paintDial() {
+    const values = shownTargets();
+    const lowFraction = fraction(values.range ? values.low : values.value);
+    const highFraction = fraction(values.high);
+    const singleCoolMode = !values.range && entity?.state === 'cool';
+    const unit = temperatureRange().unit;
+    const heatParts = splitNumber(values.range ? values.low : values.value);
+    const coolParts = splitNumber(values.high);
+    heatValue.textContent = heatParts.main;
+    heatFraction.textContent = heatParts.fraction;
+    heatUnit.textContent = unit;
+    coolValue.textContent = coolParts.main;
+    coolFraction.textContent = coolParts.fraction;
+    coolUnit.textContent = unit;
+    coolTarget.hidden = !values.range;
+    coolHandle.hidden = !values.range;
+    heatTarget.classList.toggle('selected', selectedTarget !== 'high');
+    coolTarget.classList.toggle('selected', selectedTarget === 'high');
+    heatHandle.classList.toggle('selected', selectedTarget !== 'high');
+    coolHandle.classList.toggle('selected', selectedTarget === 'high');
+    heatArc.classList.toggle('arc-cool', singleCoolMode);
+    heatHandle.classList.toggle('cool-handle', singleCoolMode);
+
+    if (values.range) {
+      setSegment(heatArc, 0, lowFraction);
+      setSegment(coolArc, highFraction, 1);
+      placeOnArc(heatHandle, lowFraction);
+      placeOnArc(coolHandle, highFraction);
+    } else {
+      setSegment(heatArc, 0, lowFraction);
+      coolArc.hidden = true;
+      placeOnArc(heatHandle, lowFraction);
+    }
+
+    const current = number(attributes().current_temperature);
+    currentDot.hidden = !Number.isFinite(current);
+    if (Number.isFinite(current)) placeOnArc(currentDot, fraction(current));
+
+    const selectedValue = values.range && selectedTarget === 'high' ? values.high : values.range ? values.low : values.value;
+    dial.setAttribute('aria-label', selectedTarget === 'high' ? vuePanel.t('translation.coolTarget') : vuePanel.t('translation.heatTarget'));
+    dial.setAttribute('aria-valuemin', String(temperatureRange().min));
+    dial.setAttribute('aria-valuemax', String(temperatureRange().max));
+    dial.setAttribute('aria-valuenow', String(selectedValue));
+  }
+
+  function roundToStep(value) {
+    const limits = temperatureRange();
+    const rounded = limits.min + Math.round((value - limits.min) / limits.step) * limits.step;
+    return Math.max(limits.min, Math.min(limits.max, Number(rounded.toFixed(4))));
+  }
+
+  function pointerFraction(event) {
+    const box = dial.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width * VIEW_WIDTH;
+    const y = (event.clientY - box.top) / box.height * VIEW_HEIGHT;
+    let angle = Math.atan2(y - CENTER_Y, x - CENTER_X) * 180 / Math.PI;
+    if (angle < 0) angle += 360;
+    const delta = (angle - ARC_START + 360) % 360;
+    if (delta <= ARC_SPAN) return delta / ARC_SPAN;
+    /* Unterhalb der Lücke gilt das jeweils nähere Ende des Bogens */
+    return delta < ARC_SPAN + (360 - ARC_SPAN) / 2 ? 1 : 0;
+  }
+
+  function updateDraft(fractionValue) {
+    const limits = temperatureRange();
+    const value = roundToStep(limits.min + fractionValue * (limits.max - limits.min));
+    const values = {...shownTargets()};
+    if (values.range) {
+      if (selectedTarget === 'high') values.high = Math.max(values.low + limits.step, value);
+      else values.low = Math.min(values.high - limits.step, value);
+    } else values.value = value;
+    draft = values;
+    paintDial();
+  }
+
+  async function commitTargets() {
+    if (!entityId || !draft) return;
+    const values = {...draft};
+    if (values.range) {
+      await vuePanel.callService('climate', 'set_temperature', {
+        target_temp_low: values.low,
+        target_temp_high: values.high
+      }, {entity_id: entityId});
+    } else {
+      await vuePanel.callService('climate', 'set_temperature', {temperature: values.value}, {entity_id: entityId});
+    }
+  }
+
+  function queueCommit() {
+    if (commitTimer !== null) return;
+    commitTimer = setTimeout(() => {
+      commitTimer = null;
+      commitTargets().catch(() => {});
+    }, 180);
+  }
+
+  /* Alle Zeigergesten hängen am Trefferband des Bogens, nicht an der Dial-Fläche */
+  arcHit.addEventListener('pointerdown', event => {
+    if (!entity || event.button !== 0 || !canAdjustTemperature()) return;
+    const pointer = pointerFraction(event);
+    const values = shownTargets();
+    if (values.range) {
+      selectedTarget = Math.abs(pointer - fraction(values.low)) <= Math.abs(pointer - fraction(values.high)) ? 'low' : 'high';
+    } else selectedTarget = 'value';
+    dragging = true;
+    dragPointerId = event.pointerId;
+    dragOrigin = {x: event.clientX, y: event.clientY};
+    dial.classList.add('is-pressed');
+    arcHit.setPointerCapture(event.pointerId);
+    /* Ein Tipp springt animiert auf die getippte Stelle */
+    updateDraft(pointer);
+    queueCommit();
+  });
+
+  arcHit.addEventListener('pointermove', event => {
+    if (!dragging || event.pointerId !== dragPointerId) return;
+    /* Erst ein echter Zug schaltet die Übergänge ab, damit er dem Finger folgt */
+    if (dragOrigin && Math.hypot(event.clientX - dragOrigin.x, event.clientY - dragOrigin.y) > DRAG_THRESHOLD) {
+      dragOrigin = null;
+      dial.classList.add('is-dragging');
+    }
+    updateDraft(pointerFraction(event));
+    queueCommit();
+  });
+
+  function endDrag(event) {
+    if (!dragging || event.pointerId !== dragPointerId) return;
+    dragging = false;
+    dragPointerId = null;
+    dragOrigin = null;
+    dial.classList.remove('is-pressed', 'is-dragging');
+    if (commitTimer !== null) {
+      clearTimeout(commitTimer);
+      commitTimer = null;
+    }
+    commitTargets().catch(() => {}).finally(() => {
+      draft = null;
+      paintDial();
+    });
+  }
+
+  arcHit.addEventListener('pointerup', endDrag);
+  arcHit.addEventListener('pointercancel', endDrag);
+  arcHit.addEventListener('wheel', event => {
+    if (!entity || !canAdjustTemperature()) return;
+    event.preventDefault();
+    const values = shownTargets();
+    const current = values.range && selectedTarget === 'high' ? values.high : values.range ? values.low : values.value;
+    const limits = temperatureRange();
+    updateDraft(fraction(roundToStep(current + (event.deltaY < 0 ? limits.step : -limits.step))));
+    commitTargets().catch(() => {});
+  }, {passive: false});
+
+  dial.addEventListener('keydown', event => {
+    if (!['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp'].includes(event.key) || !entity || !canAdjustTemperature()) return;
+    event.preventDefault();
+    const values = shownTargets();
+    const current = values.range && selectedTarget === 'high' ? values.high : values.range ? values.low : values.value;
+    const direction = ['ArrowRight', 'ArrowUp'].includes(event.key) ? 1 : -1;
+    updateDraft(fraction(roundToStep(current + direction * temperatureRange().step)));
+    commitTargets().catch(() => {});
+  });
+
+  heatTarget.addEventListener('click', () => {
+    selectedTarget = targetValues().range ? 'low' : 'value';
+    paintDial();
+    dial.focus();
+  });
+  coolTarget.addEventListener('click', () => {
+    selectedTarget = 'high';
+    paintDial();
+    dial.focus();
+  });
+
+  function iconSource(name, color = '#666666') {
+    const key = `${name}-${color}`;
+    if (!iconCache.has(key)) iconCache.set(key, vuePanel.getIcon(name, {size: 72, color}));
+    return iconCache.get(key);
+  }
+
+  function modeLabel(mode) {
+    const key = `translation.modes.${mode}`;
+    const translated = vuePanel.t(key);
+    return translated === key ? mode : translated;
+  }
+
+  function presetLabel(preset) {
+    const key = `translation.presets.${preset}`;
+    const translated = vuePanel.t(key);
+    return translated === key ? preset.replace(/_/g, ' ') : translated;
+  }
+
+  /*
+   * Beide Dropdowns teilen sich dieselbe Mechanik: Auslöser-Pille mit dem
+   * aktuellen Wert, darunter eine Liste, aus der ein Klick den Dienst aufruft.
+   */
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const MIN_SEGMENTS = 3;
+  const RADIAL = {size: 320, center: 160, hub: 62, inner: 74, outer: 150, gap: 1.2};
+
+  function svgNode(name, attributes = {}) {
+    const node = document.createElementNS(SVG_NS, name);
+    for (const [key, value] of Object.entries(attributes)) node.setAttribute(key, String(value));
+    return node;
+  }
+
+  function polar(radius, degrees) {
+    const angle = (degrees - 90) * Math.PI / 180;
+    return [RADIAL.center + radius * Math.cos(angle), RADIAL.center + radius * Math.sin(angle)];
+  }
+
+  /* Ein Ringsegment von `from` bis `to` Grad */
+  function wedgePath(from, to) {
+    const [x1, y1] = polar(RADIAL.outer, from);
+    const [x2, y2] = polar(RADIAL.outer, to);
+    const [x3, y3] = polar(RADIAL.inner, to);
+    const [x4, y4] = polar(RADIAL.inner, from);
+    const large = to - from > 180 ? 1 : 0;
+    return `M${x1} ${y1} A${RADIAL.outer} ${RADIAL.outer} 0 ${large} 1 ${x2} ${y2}`
+      + ` L${x3} ${y3} A${RADIAL.inner} ${RADIAL.inner} 0 ${large} 0 ${x4} ${y4} Z`;
+  }
+
+  /* Lange Beschriftungen brechen auf zwei Zeilen um; der Schrägstrich trennt mit */
+  function wrapLabel(text, maxChars) {
+    const words = String(text).replace(/\//g, '/ ').split(/\s+/).filter(Boolean);
+    const lines = [];
+    let line = '';
+    for (const word of words) {
+      const candidate = line ? `${line} ${word}` : word;
+      if (candidate.length > maxChars && line) {
+        lines.push(line);
+        line = word;
+      } else line = candidate;
+    }
+    if (line) lines.push(line);
+    return lines.slice(0, 2);
+  }
+
+  function appendLines(parent, lines, x, middle, lineHeight) {
+    const top = middle - (lines.length - 1) * lineHeight / 2;
+    lines.forEach((line, index) => {
+      const span = svgNode('tspan', {x, y: (top + index * lineHeight).toFixed(1)});
+      span.textContent = line.replace(/\/ $/, '/').trim();
+      parent.appendChild(span);
+    });
+  }
+
+  function setHub(select, text) {
+    select.hubText.textContent = '';
+    appendLines(select.hubText, wrapLabel(text || '—', 13), RADIAL.center, RADIAL.center + 6, 17);
+  }
+
+  /* Baut das Tortenmenü einer Auswahl neu auf */
+  function buildRadial(select) {
+    const options = select.options || [];
+    const svg = select.svg;
+    svg.textContent = '';
+    if (!options.length) return;
+
+    /* Der Ring bleibt ein Ring: zu kurze Listen füllen Platzhalter auf */
+    const segments = options.slice();
+    while (segments.length < MIN_SEGMENTS) segments.push({placeholder: true, label: ''});
+
+    const step = 360 / segments.length;
+    segments.forEach((option, index) => {
+      const middle = index * step;
+      const from = middle - step / 2 + RADIAL.gap;
+      const to = middle + step / 2 - RADIAL.gap;
+      const current = !option.placeholder && option.value === select.current;
+      const group = svgNode('g', {
+        class: 'wedge' + (current ? ' is-current' : '') + (option.placeholder ? ' is-placeholder' : ''),
+        role: 'option',
+        'aria-selected': String(current),
+        'aria-disabled': String(Boolean(option.placeholder))
+      });
+      group.appendChild(svgNode('path', {class: 'slice', d: wedgePath(from, to)}));
+
+      const [labelX, labelY] = polar((RADIAL.inner + RADIAL.outer) / 2, middle);
+      const label = svgNode('text');
+      appendLines(label, option.placeholder ? ['–'] : wrapLabel(option.label, 11), labelX.toFixed(1), labelY + 5, 16);
+      group.appendChild(label);
+      svg.appendChild(group);
+      if (option.placeholder) return;
+
+      group.addEventListener('pointerenter', () => setHub(select, option.label));
+      group.addEventListener('pointerleave', () => setHub(select, select.hubDefault));
+      group.addEventListener('click', event => {
+        event.stopPropagation();
+        closeMenus();
+        select.onPick(option.value);
+      });
+    });
+
+    const hub = svgNode('g', {class: 'hub'});
+    hub.appendChild(svgNode('circle', {class: 'hub-plate', cx: RADIAL.center, cy: RADIAL.center, r: RADIAL.hub}));
+    const caption = svgNode('text', {class: 'hub-caption', x: RADIAL.center, y: RADIAL.center - 26});
+    caption.textContent = select.caption;
+    hub.appendChild(caption);
+    select.hubText = svgNode('text', {class: 'hub-text'});
+    hub.appendChild(select.hubText);
+    /* Ein Klick auf die Nabe schließt das Menü wieder */
+    hub.addEventListener('click', event => {
+      event.stopPropagation();
+      closeMenus();
+    });
+    svg.appendChild(hub);
+    setHub(select, select.hubDefault);
+  }
+
+  async function renderMenu(select, options, current, onPick, fallback = '') {
+    const {root, trigger, label} = select;
+    const selected = options.find(option => option.value === current);
+    /* Steht der aktuelle Wert nicht in der Liste — etwa der Zustand „Aus“ —,
+       zeigt die Pille den übersetzten Ersatztext */
+    label.textContent = selected ? selected.label : (fallback || (current ? current.replace(/_/g, ' ') : '—'));
+    trigger.title = label.textContent;
+    applyTextScroll(label);
+    root.hidden = options.length === 0;
+    select.options = options;
+    select.current = current;
+    select.onPick = onPick;
+    select.hubDefault = label.textContent;
+    if (!select.menu.hidden) buildRadial(select);
+  }
+
+  /* Das Menü liegt mittig auf dem Bogen und skaliert mit ihm */
+  function layoutMenu(select) {
+    const box = dial.getBoundingClientRect();
+    select.menu.style.left = `${box.left + box.width / 2}px`;
+    select.menu.style.top = `${box.top + box.height * (CENTER_Y / VIEW_HEIGHT)}px`;
+    const size = Math.round(Math.min(box.width, box.height) * 1.02);
+    select.svg.setAttribute('width', String(size));
+    select.svg.setAttribute('height', String(size));
+  }
+
+  /*
+   * Lauftext nur, wenn die Beschriftung wirklich nicht in die Pille passt: die
+   * Hülle klemmt und schneidet ab, der Text darin wandert.
+   */
+  function applyTextScroll(text) {
+    text.classList.remove('is-scrolling');
+    const overflow = text.scrollWidth - text.parentElement.clientWidth;
+    const scrolling = overflow > 1;
+    text.classList.toggle('is-scrolling', scrolling);
+    if (scrolling) text.style.setProperty('--vp-scroll-shift', `-${overflow}px`);
+    else text.style.removeProperty('--vp-scroll-shift');
+  }
+
+  /* Der Weichzeichner bekommt die Maße des Dialog-Bodys, sonst die der Card */
+  function positionScrim() {
+    const host = card.closest('.vp-dialog-body') || card;
+    const box = host.getBoundingClientRect();
+    scrim.style.top = `${box.top}px`;
+    scrim.style.left = `${box.left}px`;
+    scrim.style.width = `${box.width}px`;
+    scrim.style.height = `${box.height}px`;
+  }
+
+  function setMenuOpen(select, open) {
+    select.root.classList.toggle('is-open', open);
+    select.menu.hidden = !open;
+    select.trigger.setAttribute('aria-expanded', String(open));
+    /* Solange eine Liste offen ist, liegt der Weichzeichner über dem Dialoginhalt */
+    if (open) {
+      positionScrim();
+      buildRadial(select);
+      layoutMenu(select);
+    }
+    scrim.hidden = modeSelect.menu.hidden && presetSelect.menu.hidden;
+  }
+
+  function closeMenus() {
+    setMenuOpen(modeSelect, false);
+    setMenuOpen(presetSelect, false);
+  }
+
+  for (const select of [modeSelect, presetSelect]) {
+    select.trigger.addEventListener('click', event => {
+      event.stopPropagation();
+      const open = select.menu.hidden;
+      closeMenus();
+      setMenuOpen(select, open);
+    });
+  }
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.select')) closeMenus();
+  });
+
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape' && !scrim.hidden) closeMenus();
+  });
+
+  window.addEventListener('resize', () => {
+    if (scrim.hidden) return;
+    positionScrim();
+    for (const select of [modeSelect, presetSelect]) {
+      if (!select.menu.hidden) layoutMenu(select);
+    }
+  });
+
+  async function renderSelects() {
+    /*
+     * Das Ausschalten steckt im Betriebsart-Menü. Meldet eine Entity `off`
+     * nicht unter `hvac_modes`, hängen wir den Eintrag an und schalten dann
+     * über `climate.turn_off`.
+     */
+    const declared = Array.isArray(attributes().hvac_modes) ? attributes().hvac_modes.map(String) : [];
+    const modes = declared.includes('off') || !supports(FEATURE_TURN_OFF) ? declared : [...declared, 'off'];
+    await renderMenu(
+      modeSelect,
+      modes.map(mode => ({value: mode, label: modeLabel(mode)})),
+      String(entity?.state || ''),
+      mode => {
+        if (mode === 'off' && !declared.includes('off')) {
+          return vuePanel.callService('climate', 'turn_off', {}, {entity_id: entityId}).catch(() => {});
+        }
+        if (mode !== 'off' && entity?.state === 'off' && !declared.includes('off') && supports(FEATURE_TURN_ON)) {
+          return vuePanel.callService('climate', 'turn_on', {}, {entity_id: entityId})
+            .then(() => vuePanel.callService('climate', 'set_hvac_mode', {hvac_mode: mode}, {entity_id: entityId}))
+            .catch(() => {});
+        }
+        return vuePanel.callService('climate', 'set_hvac_mode', {hvac_mode: mode}, {entity_id: entityId}).catch(() => {});
+      },
+      statusLabel(entity)
+    );
+
+    const presets = Array.isArray(attributes().preset_modes) ? attributes().preset_modes.map(String) : [];
+    await renderMenu(
+      presetSelect,
+      presets.map(preset => ({value: preset, label: presetLabel(preset)})),
+      String(attributes().preset_mode || ''),
+      preset => vuePanel.callService('climate', 'set_preset_mode', {preset_mode: preset}, {entity_id: entityId}).catch(() => {})
+    );
+
+    /* Fehlt eine der beiden Listen, ist die verbliebene wieder rundum abgerundet */
+    selects.classList.toggle('is-single', presetSelect.root.hidden || modeSelect.root.hidden);
+
+    card.classList.toggle('is-on', Boolean(entity) && !['off', 'unavailable', 'unknown'].includes(entity.state));
+  }
+
+  /* Die Zustandszeile zeigt die eingestellte Betriebsart … */
+  function statusLabel(value) {
+    const mode = String(value?.state || '');
+    const stateKey = `translation.states.${mode}`;
+    const translatedState = vuePanel.t(stateKey);
+    if (translatedState !== stateKey) return translatedState;
+    return modeLabel(mode);
+  }
+
+  /* … das Icon in der Hinweiszeile dagegen, was das Gerät gerade tut */
+  function actionIconFor(action) {
+    return {
+      heating: ['mdi:fire', '#f57c00'],
+      preheating: ['mdi:fire-alert', '#fb8c00'],
+      cooling: ['mdi:snowflake', '#039be5'],
+      defrosting: ['mdi:snowflake-melt', '#4fc3f7'],
+      drying: ['mdi:water-percent', '#26a69a'],
+      fan: ['mdi:fan', '#26a69a'],
+      idle: ['mdi:sleep', '#9e9e9e'],
+      off: ['mdi:power', '#9e9e9e']
+    }[action] || ['mdi:thermostat', '#9e9e9e'];
+  }
+
+  function actionLabel(value) {
+    const action = String(value?.attributes?.hvac_action || '');
+    if (!action) return '';
+    const key = `translation.actions.${action}`;
+    const translated = vuePanel.t(key);
+    return translated === key ? action.replace(/_/g, ' ') : translated;
+  }
+
+  async function update() {
+    if (!entityId || !entity) {
+      hint.hidden = false;
+      hint.textContent = vuePanel.t(entityId ? 'translation.entityNotFound' : 'translation.noEntity');
+      dial.hidden = true;
+      selects.hidden = true;
+      closeMenus();
+      return;
+    }
+
+    hint.hidden = true;
+    dial.hidden = false;
+    selects.hidden = false;
+    dial.classList.toggle('is-enabled', canAdjustTemperature());
+    dial.setAttribute('aria-disabled', String(!canAdjustTemperature()));
+
+    const current = number(attributes().current_temperature);
+    const currentHumidity = number(attributes().current_humidity ?? attributes().humidity);
+    currentMetric.hidden = !Number.isFinite(current);
+    currentTemperature.textContent = Number.isFinite(current) ? `${format(current, false)} ${temperatureRange().unit}` : '—';
+    humidityMetric.hidden = !Number.isFinite(currentHumidity);
+    humidity.textContent = Number.isFinite(currentHumidity) ? `${format(currentHumidity, false)} %` : '—';
+    const currentAction = String(attributes().hvac_action || '');
+    actionIcon.hidden = !currentAction;
+    if (currentAction) {
+      const [icon, color] = actionIconFor(currentAction);
+      const label = actionLabel(entity);
+      actionIcon.src = await iconSource(icon, color);
+      actionIcon.alt = label;
+      actionIcon.title = label;
+    }
+
+    /* Better Thermostat meldet Fenster und Störungen über eigene Attribute */
+    const windowOpen = windowSensorId
+      ? isOpenValue(windowSensor?.state)
+      : isOpenValue(attributes().window_open) || isOpenValue(attributes().door_open);
+    const degraded = attributes().degraded_mode === true
+      || hasContent(attributes().unavailable_sensors)
+      || hasContent(attributes().devices_errors);
+    windowIcon.hidden = !windowOpen;
+    warningIcon.hidden = !degraded;
+    windowIcon.title = vuePanel.t('translation.windowOpen');
+    warningIcon.title = vuePanel.t('translation.degraded');
+
+    paintDial();
+    await renderSelects();
+  }
+
+  async function render(next) {
+    entity = next;
+    if (!dragging) draft = null;
+    await update();
+  }
+
+  const [temperatureIcon, humidityIcon, openedWindowIcon, degradedIcon] = await Promise.all([
+    iconSource('mdi:thermometer', '#1599ed'),
+    iconSource('mdi:water-percent', '#76a9d6'),
+    iconSource('mdi:window-open-variant', '#1599ed'),
+    iconSource('mdi:alert', '#ff9800')
+  ]);
+  modeSelect.caret.src = await iconSource('mdi:chevron-down', '#666666');
+  presetSelect.caret.src = modeSelect.caret.src;
+
+  document.getElementById('temperature-icon').src = temperatureIcon;
+  document.getElementById('humidity-icon').src = humidityIcon;
+  windowIcon.src = openedWindowIcon;
+  warningIcon.src = degradedIcon;
+
+  if (windowSensorId) windowSensor = await vuePanel.getEntity(windowSensorId);
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, render);
+  } else await render(null);
+  if (windowSensorId) {
+    vuePanel.subscribeEntity(windowSensorId, next => {
+      windowSensor = next;
+      update();
+    });
+  }
+</script>
