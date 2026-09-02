@@ -15,8 +15,10 @@ const props = withDefaults(
     width?: number
     /** Explicit body height in px — the content decides when unset */
     bodyHeight?: number
+    /** Close when the backdrop outside the dialog is clicked */
+    closeOnBackdrop?: boolean
   }>(),
-  { size: 'md' },
+  { size: 'md', closeOnBackdrop: false },
 )
 const emit = defineEmits<{ close: [] }>()
 
@@ -59,7 +61,11 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div class="vp-dialog-backdrop" :class="{ 'vp-dialog-backdrop--closing': isClosing }" @click.self="requestClose">
+    <div
+      class="vp-dialog-backdrop"
+      :class="{ 'vp-dialog-backdrop--closing': isClosing }"
+      @click.self="closeOnBackdrop && requestClose()"
+    >
       <div
         class="vp-dialog"
         :class="[`vp-dialog--${size}`, { 'vp-dialog--closing': isClosing }]"

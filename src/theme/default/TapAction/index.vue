@@ -6,7 +6,7 @@ import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
 import BaseInput from '@/core/ui/BaseInput.vue'
 import type { SelectOption } from '@/core/ui/selectMenu'
 import {
-  CARD_ACTIONS,
+  CARD_ACTION_OPTIONS,
   CARD_GESTURES,
   GESTURE_ICONS,
   actionTarget,
@@ -42,14 +42,18 @@ const gestures = computed<CardGesture[]>(() =>
 )
 
 const actionOptions = computed<SelectOption[]>(() =>
-  (props.actions?.length ? props.actions : [...CARD_ACTIONS]).map((action) => ({
-    value: action,
-    label: t(`editor.cardActionOptions.${action}`),
-  })),
+  [...new Set(
+    (props.actions?.length ? props.actions : CARD_ACTION_OPTIONS)
+      .map((action) => action === 'default' ? 'more-info' : action),
+  )].map((action) => ({
+      value: action,
+      label: t(`editor.cardActionOptions.${action}`),
+    })),
 )
 
 function entry(gesture: CardGesture): CardActionValue {
-  return props.modelValue?.[gesture] ?? { action: 'default' }
+  const value = props.modelValue?.[gesture]
+  return !value || value.action === 'default' ? { action: 'more-info' } : value
 }
 
 function update(gesture: CardGesture, patch: Partial<CardActionValue>) {
@@ -81,13 +85,6 @@ function setAction(gesture: CardGesture, action: string) {
             @update:model-value="setAction(gesture, String($event))"
           />
         </label>
-
-        <p
-          v-if="gesture === 'hold' && entry(gesture).action === 'default'"
-          class="vp-tap-action-hint"
-        >
-          {{ t('editor.holdDefaultHint') }}
-        </p>
 
         <label v-if="actionTarget(entry(gesture).action) === 'view'" class="vp-tap-action-field">
           <span>{{ t('editor.cardActionTargets.view') }}</span>

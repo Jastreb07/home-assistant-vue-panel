@@ -16,6 +16,8 @@ defineProps<{
   width?: number
   /** Explicit body height in px — the content decides when unset */
   bodyHeight?: number
+  /** Close when the backdrop outside the dialog is clicked */
+  closeOnBackdrop?: boolean
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
@@ -29,6 +31,7 @@ const emit = defineEmits<{ close: [] }>()
     :subtitle="subtitle"
     :width="width"
     :body-height="bodyHeight"
+    :close-on-backdrop="closeOnBackdrop"
     @close="emit('close')"
   >
     <slot />

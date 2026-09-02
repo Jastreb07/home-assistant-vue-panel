@@ -125,7 +125,6 @@ export default {
     noViewTarget: '— kein Ziel —',
     noPopupTarget: '— kein Popup —',
     automaticDetail: 'Automatisch (Card-Standard)',
-    holdDefaultHint: 'Ohne eigene Card-Aktion öffnet Halten die automatische Detailansicht.',
     cardActionsGroup: 'Tipp-Aktionen',
     cardGestures: {
       tap: 'Tipp-Aktion',
@@ -133,7 +132,6 @@ export default {
       hold: 'Halten-Aktion',
     },
     cardActionOptions: {
-      default: 'Standard (Card-Aktion)',
       'more-info': 'Detailansicht',
       'ha-more-info': 'Natives Home-Assistant-Popup',
       toggle: 'Umschalten',

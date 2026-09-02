@@ -201,13 +201,13 @@ narrows the choices down:
   "type": "action",
   "required": false,
   "gestures": ["tap", "hold"],
-  "actions": ["default", "toggle", "navigate"],
-  "default": { "tap": { "action": "toggle" } }
+  "actions": ["more-info", "toggle", "navigate"],
+  "default": { "tap": { "action": "more-info" } }
 }
 ```
 
 `gestures` and `actions` are optional — without them every gesture (`tap`, `double_tap`, `hold`)
-and every action (`default`, `more-info`, `ha-more-info`, `toggle`, `navigate`, `url`,
+and every selectable action (`more-info`, `ha-more-info`, `toggle`, `navigate`, `url`,
 `perform-action`, `popup`, `assist`, `none`) is offered. `more-info` opens Vue Panel's detail
 view, while `ha-more-info` asks the surrounding Home Assistant frontend to show its native
 more-info dialog for the card's entity. The stored value is one entry per gesture:
@@ -216,11 +216,11 @@ more-info dialog for the card's entity. The stored value is one entry per gestur
 { "tap": { "action": "navigate", "target": "living-room" } }
 ```
 
-`default` uses the same shape and is the only variable type whose default is an object. `default`
-as an action means "whatever the card does by itself". For `hold` a card usually does nothing on
-its own, so the bundled cards fall back to the automatic detail view of the card's entity — a
-plain `hold` slot therefore behaves like `more-info` without a target. `ha-more-info` has no
-target field because the card supplies its configured entity. `assist` is not implemented.
+The action variable is the only variable type whose `default` is an object. Bundled cards use
+`more-info` as their default tap action, except for `vue-panel/light`, which uses `toggle`.
+The legacy action value `default` remains readable for existing files but is no longer offered
+by either editor. `ha-more-info` has no target field because the card supplies its configured
+entity. `assist` is not implemented.
 
 A `list` stores an array of objects. Every entry carries its own `id`, a `depth` (0–2, only used
 when `nestable` is true) and one value per item field:

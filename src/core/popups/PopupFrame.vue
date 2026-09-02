@@ -90,6 +90,7 @@ const popupView = computed<ViewConfig | null>(() => {
     :size="size"
     :width="popup?.width"
     :body-height="popup?.height"
+    close-on-backdrop
     @close="emit('close')"
   >
     <template v-if="popupView">

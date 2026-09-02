@@ -125,7 +125,6 @@ export default {
     noViewTarget: '— no target —',
     noPopupTarget: '— no popup —',
     automaticDetail: 'Automatic (card default)',
-    holdDefaultHint: 'Without an own card action, holding opens the automatic detail view.',
     cardActionsGroup: 'Tap actions',
     cardGestures: {
       tap: 'Tap action',
@@ -133,7 +132,6 @@ export default {
       hold: 'Hold action',
     },
     cardActionOptions: {
-      default: 'Default (card action)',
       'more-info': 'More info',
       'ha-more-info': 'Native Home Assistant popup',
       toggle: 'Toggle',

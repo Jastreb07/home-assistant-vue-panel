@@ -24,6 +24,7 @@ import type {
 } from '@/core/registry/cardConditions'
 import {
   CARD_ACTIONS,
+  CARD_ACTION_OPTIONS,
   CARD_GESTURES,
   type CardAction,
   type CardActionValue,
@@ -289,7 +290,7 @@ function changeVariableType(variable: CustomCardVariable, type: string) {
   variable.optionLabels = undefined
   // The tap-action editor is a core component and needs no scalar default
   variable.gestures = type === 'action' ? (variable.gestures ?? [...CARD_GESTURES]) : undefined
-  variable.actions = type === 'action' ? (variable.actions ?? [...CARD_ACTIONS]) : undefined
+  variable.actions = type === 'action' ? (variable.actions ?? [...CARD_ACTION_OPTIONS]) : undefined
   // A list repeats item fields instead of holding a single scalar default
   variable.itemFields = type === 'list'
       ? (variable.itemFields?.length ? variable.itemFields : defaultItemFields())
@@ -1354,12 +1355,12 @@ const previewStyle = computed(() => ({
                     </div>
                     <span>{{ t('customCards.variables.actions') }}</span>
                     <div class="action-choices">
-                      <label v-for="action in CARD_ACTIONS" :key="action" class="check-row">
+                      <label v-for="action in CARD_ACTION_OPTIONS" :key="action" class="check-row">
                         <span>{{ t(`editor.cardActionOptions.${action}`) }}</span>
                         <BaseCheckbox
-                            :model-value="(variable.actions ?? [...CARD_ACTIONS]).includes(action)"
+                            :model-value="(variable.actions ?? [...CARD_ACTION_OPTIONS]).includes(action)"
                             @update:model-value="variable.actions =
-                              toggleActionValue(variable.actions, action, $event, CARD_ACTIONS)"
+                              toggleActionValue(variable.actions, action, $event, CARD_ACTION_OPTIONS)"
                         />
                       </label>
                     </div>

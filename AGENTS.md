@@ -240,9 +240,7 @@ Aktueller Stand:
   steht der Wert des aktiven Reglers. Die drei Modusknöpfe (Helligkeit, Kelvin, Farbe) bleiben
   unter dem Bogen; Halten öffnet die Schnellwerte im selben radialen Menü wie die Effekte (fünf
   Stufen, bei Kelvin mit dem Wert, den die Stufe im Bereich der Lampe ergibt). Es ist immer nur ein
-  Ring offen. Weil der Weichzeichner den gehaltenen Knopf überdeckt, landet der Klick beim
-  Loslassen auf dem Scrim; dieser eine Klick wird über `holdTriggered` geschluckt, sonst schlösse
-  sich der Ring sofort wieder. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
+  Ring offen. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
   als Untergrund (`.gradient-ring`): ein `conic-gradient` (Drehpunkt = Bogenmitte, `from 225deg`, damit 0° auf dem
   Bogenanfang und 270° auf seinem Ende sitzt; in der Lücke springt der Verlauf hart auf die
   Anfangsfarbe zurück, sonst würde die runde Endkappe die Anfangsfarbe zeigen)
@@ -367,11 +365,10 @@ Aktueller Stand:
   Bedienelemente erscheinen nur, wenn `supported_features` beziehungsweise die Attribute
   (`current_humidity`, `hvac_action`, Bereichs-Sollwerte) sie hergeben. Die
   Thermostat-Card öffnet die Ansicht per `detail`-Zuordnung und hat als Tap-Default `more-info`;
-- ab Engine `2.2.5` bedeutet die Aktion `default` beim Halten „automatische Detailansicht“: hat die
-  Card für die Geste keine eigene Aktion (`handlers.default` liefert `undefined`), ruft
-  `bindGestures` `vuePanel.showDetail({entity})`. Alle mitgelieferten Cards verhalten sich damit
-  ohne Konfiguration wie `more-info` ohne Ziel; `light.html` hat deshalb keinen expliziten
-  `hold`-Default mehr;
+- Der Tipp-Aktionseditor bietet die frühere Aktion `default` („Standard (Card-Aktion)“) nicht mehr
+  an. Alle mitgelieferten Cards verwenden für Tippen explizit `more-info` als Standard; nur
+  `vue-panel/light` behält `toggle`. Parser, Typen und Card-Runtimes lesen alte `default`-Werte
+  weiterhin, damit bestehende Dashboard- und Card-Dateien kompatibel bleiben;
 - gelöschte Dashboard-Subentries werden gesichert und ihre aktive JSON-Datei wird entfernt;
   Revisionskonflikte bieten „Neu laden“ oder eine lokale JSON-Kopie an;
 - jede Panel-Instanz führt ihren unveränderlichen Dashboard-Namen und ihre debouncte
@@ -500,9 +497,7 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   `md`-Dialogstufe, entfernt seine Dialogabstände wie die bestehenden Detail-Cards zur Laufzeit
   über den umgebenden `.vp-dialog-body` und steuert Media Player nativ über
   deren `supported_features` (Cover, Metadaten, Zeitleiste, Transport, Lautstärke, Ein/Aus und
-  Quellen); die kompakte Media-Card übernimmt ihre visuelle Sprache mit vollflächigem Cover,
-  dunklem Verlauf und gläsernen runden Bedienelementen und verweist über ihr `detail`-Metadatum
-  darauf. Weather-detail lädt Tages-
+  Quellen); die Media-Card verweist über ihr `detail`-Metadatum darauf. Weather-detail lädt Tages-
   und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills und Uhrzeiten als `HH:MM`; beide zeigen Wettericon,
@@ -559,6 +554,9 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
 - Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
+- `BaseDialog` schließt bei einem Klick auf den Backdrop standardmäßig nicht. Nur bewusst flüchtige
+  Dialoge setzen `close-on-backdrop`; aktuell gilt das ausschließlich für Laufzeit-Popups und
+  Detailansichten in `PopupFrame.vue`.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
 

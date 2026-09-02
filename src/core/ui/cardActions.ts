@@ -20,6 +20,11 @@ export const CARD_ACTIONS = [
 ] as const
 export type CardAction = (typeof CARD_ACTIONS)[number]
 
+/** Actions shown in editors; `default` remains accepted only for existing data. */
+export const CARD_ACTION_OPTIONS = CARD_ACTIONS.filter(
+  (action): action is Exclude<CardAction, 'default'> => action !== 'default',
+)
+
 export interface CardActionValue {
   action: CardAction
   /**
