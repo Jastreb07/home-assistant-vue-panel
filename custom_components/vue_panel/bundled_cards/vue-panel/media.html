@@ -64,13 +64,21 @@
         "default": true
       },
       {
+        "key": "textScroll",
+        "label": "translation.variables.textScroll.label",
+        "group": "translation.groups.display",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
         "required": false,
         "default": {
           "tap": {
-            "action": "toggle"
+            "action": "default"
           }
         }
       }
@@ -88,15 +96,12 @@
         "translation.variables.entity.label": "Media player entity",
         "translation.variables.name.label": "Display name",
         "translation.variables.dynamicBackground.label": "Dynamic background",
+        "translation.variables.textScroll.label": "Text scrolling effect",
         "translation.groups.appearance": "Appearance",
         "translation.groups.display": "Display",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.states.idle": "Idle",
-        "translation.states.playing": "Playing",
-        "translation.states.paused": "Paused",
-        "translation.states.buffering": "Buffering",
-        "translation.states.off": "Off",
         "translation.unknownTitle": "Unknown title",
         "translation.defaultName": "Media",
         "translation.variables.actions.label": "Tap actions"
@@ -107,15 +112,12 @@
         "translation.variables.entity.label": "Media-Player-Entity",
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.dynamicBackground.label": "Dynamischer Hintergrund",
+        "translation.variables.textScroll.label": "Lauftext-Effekt",
         "translation.groups.appearance": "Darstellung",
         "translation.groups.display": "Anzeige",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.states.idle": "Inaktiv",
-        "translation.states.playing": "Wiedergabe",
-        "translation.states.paused": "Pausiert",
-        "translation.states.buffering": "Wird geladen",
-        "translation.states.off": "Aus",
         "translation.unknownTitle": "Unbekannter Titel",
         "translation.defaultName": "Medien",
         "translation.variables.actions.label": "Tipp-Aktionen"
@@ -132,11 +134,11 @@
       <div class="media-backdrop__gradient"></div>
     </div>
     <div class="top-row">
-      <span class="app-badge" id="app-badge" hidden></span>
+      <span class="tile__icon"><img id="icon" alt=""></span>
       <button class="power-button" id="power" type="button"><img id="power-icon" alt=""></button>
     </div>
     <div class="tile__info">
-      <div class="tile__state" id="state"></div>
+      <div class="tile__app" id="app-name" hidden></div>
       <div class="tile__name" id="name"></div>
     </div>
     <div class="controls" id="controls">
@@ -233,19 +235,22 @@
         gap: 10px;
     }
 
-    .app-badge {
-        min-width: 0;
-        overflow: hidden;
-        padding: 6px 10px;
+    .tile__icon {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
         border: 1px solid rgba(255, 255, 255, .18);
-        border-radius: 999px;
+        border-radius: 50%;
         background: rgba(0, 0, 0, .28);
         -webkit-backdrop-filter: blur(12px);
         backdrop-filter: blur(12px);
-        font-size: 11px;
-        font-weight: 600;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    }
+
+    .tile__icon img {
+        width: 21px;
+        height: 21px;
     }
 
     .power-button {
@@ -280,10 +285,10 @@
     .tile__info {
         width: 100%;
         min-width: 0;
-        margin-top: auto;
+        margin-top: 32px;
     }
 
-    .tile__name, .tile__state {
+    .tile__name, .tile__app {
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis
@@ -291,13 +296,13 @@
 
     .tile__name {
         margin-top: 4px;
-        font-size: clamp(15px, 5cqw, 26px);
+        font-size: 12px;
         font-weight: 650;
         line-height: 1.15;
         text-shadow: 0 1px 5px rgba(0, 0, 0, .32);
     }
 
-    .tile__state {
+    .tile__app {
         color: rgba(255, 255, 255, .74);
         font-size: 10px;
         font-weight: 700;
@@ -305,6 +310,20 @@
         line-height: 1.2;
         text-transform: uppercase;
         text-shadow: 0 1px 4px rgba(0, 0, 0, .3);
+    }
+
+    @keyframes vp-text-scroll {
+        0%, 12% {
+            transform: translateX(0);
+        }
+        88%, 100% {
+            transform: translateX(var(--vp-scroll-shift, 0));
+        }
+    }
+
+    .is-scrolling {
+        text-overflow: clip;
+        animation: vp-text-scroll 7s ease-in-out infinite alternate;
     }
 
     .controls {
@@ -351,9 +370,15 @@
     @media (prefers-reduced-motion: reduce) {
         .tile,
         .media-backdrop,
+        .is-scrolling,
         .controls button,
         .power-button {
+            animation: none;
             transition: none;
+        }
+
+        .is-scrolling {
+            text-overflow: ellipsis;
         }
     }
 </style>
@@ -365,6 +390,14 @@
   const MEDIA_FEATURE_TURN_OFF = 256;
   const MEDIA_FEATURE_PLAY = 16384;
   let currentEntity = null;
+
+  function applyTextScroll(element) {
+    const overflow = element.scrollWidth - element.clientWidth;
+    const scrolling = config.textScroll !== false && overflow > 1;
+    element.classList.toggle('is-scrolling', scrolling);
+    if (scrolling) element.style.setProperty('--vp-scroll-shift', `-${overflow}px`);
+    else element.style.removeProperty('--vp-scroll-shift');
+  }
 
   function supportsFeature(entity, feature) {
     return (Number(entity?.attributes?.supported_features || 0) & feature) !== 0;
@@ -482,8 +515,7 @@
   const tapAction = String(config.actions?.tap?.action || 'default');
   card.classList.toggle('tap-action', !['none', 'assist'].includes(tapAction));
   const name = document.getElementById('name');
-  const state = document.getElementById('state');
-  const appBadge = document.getElementById('app-badge');
+  const appName = document.getElementById('app-name');
   const power = document.getElementById('power');
   const artwork = document.getElementById('artwork');
   const controls = document.getElementById('controls');
@@ -578,13 +610,14 @@
 
   async function renderIcons(playing, color, version) {
     const sources = await Promise.all([
+      getIcon(playing ? 'mdi:speaker-play' : 'mdi:speaker', 48, color),
       getIcon('mdi:power', 48, color),
       getIcon('mdi:skip-previous', 48, color),
       getIcon(playing ? 'mdi:pause' : 'mdi:play', 48, color),
       getIcon('mdi:skip-next', 48, color)
     ]);
     if (version !== renderVersion) return;
-    for (const [id, source] of [['power-icon', sources[0]], ['previous', sources[1]], ['play', sources[2]], ['next', sources[3]]]) {
+    for (const [id, source] of [['icon', sources[0]], ['power-icon', sources[1]], ['previous', sources[2]], ['play', sources[3]], ['next', sources[4]]]) {
       document.getElementById(id).src = source;
     }
   }
@@ -630,26 +663,24 @@
     const source = picture ? new URL(String(picture), window.location.origin).href : '';
     card.classList.toggle('active', playing);
     const app = entity?.attributes?.app_name || entity?.attributes?.source;
-    appBadge.textContent = app ? String(app) : '';
-    appBadge.hidden = !app;
+    appName.textContent = app ? String(app) : '';
+    appName.hidden = !app;
     power.hidden = !entity || (
       ['off', 'standby'].includes(entity.state)
         ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
         : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
     );
-    name.textContent = String(
-      !idle && entity?.attributes?.media_title
-        ? entity.attributes.media_title
-        : config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName')
-    );
-    const stateKey = `translation.states.${entity?.state || 'idle'}`;
-    state.textContent = !entityId
+    name.textContent = !entityId
       ? vuePanel.t('translation.noEntity')
       : !entity
         ? vuePanel.t('translation.entityNotFound')
-        : vuePanel.t(stateKey) === stateKey
-          ? entity.state
-          : vuePanel.t(stateKey);
+        : String(
+          !idle && entity.attributes?.media_title
+            ? entity.attributes.media_title
+            : config.name || entity.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName')
+        );
+    applyTextScroll(appName);
+    applyTextScroll(name);
     controls.hidden = idle;
     await applyArtwork(source, version);
     await renderIcons(playing, '#ffffff', version);

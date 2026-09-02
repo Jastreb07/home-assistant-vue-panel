@@ -1369,6 +1369,15 @@
   });
 
   document.addEventListener('click', event => {
+    /*
+     * Sobald der Ring offen ist, liegt der Weichzeichner über dem Knopf: Das
+     * Loslassen erzeugt den Klick also auf dem Scrim. Dieser eine Klick beendet
+     * nur die Halten-Geste und darf den frisch geöffneten Ring nicht schließen.
+     */
+    if (holdTriggered) {
+      holdTriggered = false;
+      return;
+    }
     if (!event.target.closest('.select, .menu, .control')) closeMenus();
   });
 

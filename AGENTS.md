@@ -240,7 +240,9 @@ Aktueller Stand:
   steht der Wert des aktiven Reglers. Die drei Modusknöpfe (Helligkeit, Kelvin, Farbe) bleiben
   unter dem Bogen; Halten öffnet die Schnellwerte im selben radialen Menü wie die Effekte (fünf
   Stufen, bei Kelvin mit dem Wert, den die Stufe im Bereich der Lampe ergibt). Es ist immer nur ein
-  Ring offen. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
+  Ring offen. Weil der Weichzeichner den gehaltenen Knopf überdeckt, landet der Klick beim
+  Loslassen auf dem Scrim; dieser eine Klick wird über `holdTriggered` geschluckt, sonst schlösse
+  sich der Ring sofort wieder. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
   als Untergrund (`.gradient-ring`): ein `conic-gradient` (Drehpunkt = Bogenmitte, `from 225deg`, damit 0° auf dem
   Bogenanfang und 270° auf seinem Ende sitzt; in der Lücke springt der Verlauf hart auf die
   Anfangsfarbe zurück, sonst würde die runde Endkappe die Anfangsfarbe zeigen)
