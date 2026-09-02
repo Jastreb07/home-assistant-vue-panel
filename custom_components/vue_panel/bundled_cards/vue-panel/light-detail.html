@@ -142,34 +142,26 @@
     </div>
 
     <div class="controls" id="controls">
-      <div class="control-slot">
-        <button class="control" data-mode="brightness" type="button">
-          <span class="circle-button" id="brightness-trigger">
-            <img data-icon="mdi:brightness-6" alt="">
-          </span>
-          <span class="label" data-label="brightness"></span>
-        </button>
-        <div class="preset-popup" id="brightness-presets"></div>
-      </div>
+      <button class="control" data-mode="brightness" type="button">
+        <span class="circle-button" id="brightness-trigger">
+          <img data-icon="mdi:brightness-6" alt="">
+        </span>
+        <span class="label" data-label="brightness"></span>
+      </button>
 
-      <div class="control-slot">
-        <button class="control" data-mode="colorTemp" type="button">
-          <span class="circle-button" id="kelvin-trigger">
-            <img data-icon="mdi:thermometer" alt="">
-          </span>
-          <span class="label" data-label="colorTemp"></span>
-        </button>
-        <div class="preset-popup" id="kelvin-presets"></div>
-      </div>
+      <button class="control" data-mode="colorTemp" type="button">
+        <span class="circle-button" id="kelvin-trigger">
+          <img data-icon="mdi:thermometer" alt="">
+        </span>
+        <span class="label" data-label="colorTemp"></span>
+      </button>
 
-      <div class="control-slot">
-        <button class="control" data-mode="color" type="button">
-          <span class="circle-button">
-            <img data-icon="mdi:palette" alt="">
-          </span>
-          <span class="label" data-label="color"></span>
-        </button>
-      </div>
+      <button class="control" data-mode="color" type="button">
+        <span class="circle-button">
+          <img data-icon="mdi:palette" alt="">
+        </span>
+        <span class="label" data-label="color"></span>
+      </button>
     </div>
 
     <!--
@@ -178,6 +170,12 @@
     -->
     <div class="menu" id="effect-menu" role="listbox" hidden>
       <svg class="radial" id="effect-radial" viewBox="0 0 320 320"></svg>
+    </div>
+    <div class="menu" id="brightness-menu" role="listbox" hidden>
+      <svg class="radial" id="brightness-radial" viewBox="0 0 320 320"></svg>
+    </div>
+    <div class="menu" id="kelvin-menu" role="listbox" hidden>
+      <svg class="radial" id="kelvin-radial" viewBox="0 0 320 320"></svg>
     </div>
 
     <div class="scrim" id="scrim" hidden></div>
@@ -569,8 +567,6 @@
 
   .controls[hidden] { display: none; }
 
-  .control-slot { position: relative; }
-
   .control {
     width: 58px;
     padding: 0;
@@ -659,43 +655,8 @@
 
   .control:focus-visible { outline: 2px solid rgba(0, 0, 0, .55); outline-offset: 3px; border-radius: 12px; }
 
-  /* Halten auf Helligkeit oder Kelvin öffnet die Schnellwerte über dem Knopf */
-  .preset-popup {
-    position: absolute;
-    z-index: 55;
-    bottom: calc(100% + 8px);
-    left: 50%;
-    display: none;
-    align-items: center;
-    gap: 4px;
-    padding: 5px;
-    border-radius: 12px;
-    background: #fff;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, .14), inset 0 0 0 1px rgba(0, 0, 0, .06);
-    white-space: nowrap;
-    transform: translateX(-50%);
-  }
-
-  .preset-popup.visible { display: flex; }
-
-  .preset-option {
-    padding: 7px 9px;
-    border: 0;
-    border-radius: 999px;
-    background: rgba(0, 0, 0, .055);
-    color: rgba(0, 0, 0, .65);
-    font: inherit;
-    font-size: 11px;
-    cursor: pointer;
-    transition: background .15s ease, color .15s ease, transform .08s ease;
-  }
-
-  .preset-option:hover { background: rgba(0, 0, 0, .11); color: rgba(0, 0, 0, .92); }
-  .preset-option:active { transform: scale(.95); }
-  .preset-option.active { background: #e2f0fb; color: #0f7ec4; font-weight: 600; }
-
   /*
-   * Die Effektauswahl erscheint als radiales Menü: helle Segmente mit weichen
+   * Effekte und Schnellwerte erscheinen als radiales Menü: helle Segmente mit weichen
    * Ecken um eine Nabe, passend zur hellen, runden Sprache der Card.
    */
   .menu {
@@ -877,8 +838,24 @@
   const modeIcons = Array.from(controls.querySelectorAll('[data-icon]'));
   const brightnessTrigger = document.getElementById('brightness-trigger');
   const kelvinTrigger = document.getElementById('kelvin-trigger');
-  const brightnessPresets = document.getElementById('brightness-presets');
-  const kelvinPresets = document.getElementById('kelvin-presets');
+  /*
+   * Halten auf einem Modusknopf öffnet dieselbe Ringauswahl wie die
+   * Effektpille — nur mit den Schnellwerten des jeweiligen Reglers.
+   */
+  const presetSelects = ['brightness', 'colorTemp'].map(mode => {
+    const key = mode === 'brightness' ? 'brightness' : 'kelvin';
+    const trigger = mode === 'brightness' ? brightnessTrigger : kelvinTrigger;
+    return {
+      mode,
+      root: trigger.closest('.control'),
+      trigger,
+      menu: document.getElementById(`${key}-menu`),
+      svg: document.getElementById(`${key}-radial`),
+      caption: vuePanel.t(`translation.modes.${mode}`),
+      openClass: 'popup-open'
+    };
+  });
+  const allSelects = [effectSelect, ...presetSelects];
   const hint = document.getElementById('hint');
 
   let entity = null;
@@ -1117,6 +1094,16 @@
     queueCommit();
   });
 
+  /*
+   * `touch-action` wird auf SVG-Elementen nicht überall beachtet. Ohne dieses
+   * `preventDefault` beginnt der Browser beim Wischen über den Bogen zu scrollen
+   * und bricht den Zug mit `pointercancel` ab — auf Touchgeräten ließe sich der
+   * Griff dann gar nicht bewegen.
+   */
+  arcHit.addEventListener('touchstart', event => {
+    if (isDialInteractive()) event.preventDefault();
+  }, {passive: false});
+
   arcHit.addEventListener('pointermove', event => {
     if (!dragging || event.pointerId !== dragPointerId) return;
     /* Erst ein echter Zug schaltet die Übergänge ab, damit er dem Finger folgt */
@@ -1334,7 +1321,7 @@
   }
 
   function setMenuOpen(select, open) {
-    select.root.classList.toggle('is-open', open);
+    select.root.classList.toggle(select.openClass || 'is-open', open);
     select.menu.hidden = !open;
     select.trigger.setAttribute('aria-expanded', String(open));
     if (open) {
@@ -1342,22 +1329,47 @@
       buildRadial(select);
       layoutMenu(select);
     }
-    scrim.hidden = select.menu.hidden;
+    scrim.hidden = allSelects.every(entry => entry.menu.hidden);
   }
 
   function closeMenus() {
-    setMenuOpen(effectSelect, false);
-    closePresetPopups();
+    for (const select of allSelects) setMenuOpen(select, false);
+  }
+
+  /*
+   * Die Schnellwerte stehen als Prozentstufen im Ring; bei Kelvin trägt jedes
+   * Segment den Wert, den die Stufe im Bereich der Lampe ergibt.
+   */
+  function preparePresets(select) {
+    const limits = select.mode === 'colorTemp' ? kelvinRange() : null;
+    const asLabel = percent => limits
+      ? `${Math.round(limits.min + percent / 100 * (limits.max - limits.min))} K`
+      : `${percent} %`;
+    select.options = PRESETS.map(percent => ({value: String(percent), label: asLabel(percent)}));
+    const current = Math.round(fractionOf(select.mode) * 100);
+    select.current = PRESETS.includes(current) ? String(current) : '';
+    select.hubDefault = asLabel(current);
+    select.onPick = value => {
+      const fraction = Number(value) / 100;
+      selectMode(select.mode);
+      dragValue = fraction;
+      paintDial();
+      dragValue = null;
+      commit(fraction).catch(() => {});
+    };
   }
 
   effectSelect.trigger.addEventListener('click', event => {
     event.stopPropagation();
     if (!isOn()) return;
-    setMenuOpen(effectSelect, effectSelect.menu.hidden);
+    /* Es ist immer nur ein Ring offen */
+    const open = effectSelect.menu.hidden;
+    closeMenus();
+    setMenuOpen(effectSelect, open);
   });
 
   document.addEventListener('click', event => {
-    if (!event.target.closest('.select, .menu, .preset-popup, .control')) closeMenus();
+    if (!event.target.closest('.select, .menu, .control')) closeMenus();
   });
 
   document.addEventListener('keydown', event => {
@@ -1367,7 +1379,9 @@
   window.addEventListener('resize', () => {
     if (scrim.hidden) return;
     positionScrim();
-    if (!effectSelect.menu.hidden) layoutMenu(effectSelect);
+    for (const select of allSelects) {
+      if (!select.menu.hidden) layoutMenu(select);
+    }
   });
 
   /* ---- Modusknöpfe und Schnellwerte --------------------------------------- */
@@ -1378,55 +1392,27 @@
     update();
   }
 
-  function closePresetPopups() {
-    for (const [popup, trigger] of [[brightnessPresets, brightnessTrigger], [kelvinPresets, kelvinTrigger]]) {
-      popup.classList.remove('visible');
-      trigger.closest('.control').classList.remove('popup-open');
-    }
-  }
-
-  function createPresetButtons(container, mode) {
-    for (const percent of PRESETS) {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'preset-option';
-      button.dataset.value = String(percent);
-      button.textContent = `${percent}%`;
-      button.addEventListener('click', event => {
-        event.stopPropagation();
-        selectMode(mode);
-        const fraction = percent / 100;
-        dragValue = fraction;
-        paintDial();
-        dragValue = null;
-        commit(fraction).catch(() => {});
-        closePresetPopups();
-      });
-      container.appendChild(button);
-    }
-  }
-
-  function setupLongHold(trigger, container, mode) {
-    trigger.addEventListener('pointerdown', event => {
+  function setupLongHold(select) {
+    select.trigger.addEventListener('pointerdown', event => {
       if (!isOn() || event.button !== 0) return;
       holdTriggered = false;
       clearTimeout(holdTimer);
       holdTimer = setTimeout(() => {
         holdTriggered = true;
         closeMenus();
-        selectMode(mode);
-        container.classList.add('visible');
-        trigger.closest('.control').classList.add('popup-open');
+        selectMode(select.mode);
+        preparePresets(select);
+        setMenuOpen(select, true);
       }, HOLD_DELAY);
     });
     const cancel = () => {
       clearTimeout(holdTimer);
       holdTimer = null;
     };
-    trigger.addEventListener('pointerup', cancel);
-    trigger.addEventListener('pointercancel', cancel);
-    trigger.addEventListener('pointerleave', cancel);
-    trigger.closest('.control').addEventListener('click', event => {
+    select.trigger.addEventListener('pointerup', cancel);
+    select.trigger.addEventListener('pointercancel', cancel);
+    select.trigger.addEventListener('pointerleave', cancel);
+    select.root.addEventListener('click', event => {
       if (!holdTriggered) return;
       event.preventDefault();
       event.stopPropagation();
@@ -1440,27 +1426,13 @@
     });
   }
 
-  createPresetButtons(brightnessPresets, 'brightness');
-  createPresetButtons(kelvinPresets, 'colorTemp');
-  setupLongHold(brightnessTrigger, brightnessPresets, 'brightness');
-  setupLongHold(kelvinTrigger, kelvinPresets, 'colorTemp');
+  for (const select of presetSelects) setupLongHold(select);
 
   powerTrigger.addEventListener('click', () => {
     if (!entityId) return;
     closeMenus();
     vuePanel.callService('light', isOn() ? 'turn_off' : 'turn_on', {}, {entity_id: entityId}).catch(() => {});
   });
-
-  function updatePresetHighlights() {
-    const brightness = Math.round(fractionOf('brightness') * 100);
-    for (const button of brightnessPresets.children) {
-      button.classList.toggle('active', Number(button.dataset.value) === brightness);
-    }
-    const temperature = Math.round(fractionOf('colorTemp') * 100);
-    for (const button of kelvinPresets.children) {
-      button.classList.toggle('active', Number(button.dataset.value) === temperature);
-    }
-  }
 
   function renderModeButtons(modes) {
     for (const button of modeButtons) {
@@ -1537,7 +1509,6 @@
     renderModeButtons(modes);
     renderMetrics();
     renderSelects();
-    updatePresetHighlights();
     if (!isOn()) closeMenus();
     paintDial();
   }

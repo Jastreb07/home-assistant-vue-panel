@@ -988,6 +988,16 @@
     queueCommit();
   });
 
+  /*
+   * `touch-action` wird auf SVG-Elementen nicht überall beachtet. Ohne dieses
+   * `preventDefault` beginnt der Browser beim Wischen über den Bogen zu scrollen
+   * und bricht den Zug mit `pointercancel` ab — auf Touchgeräten ließe sich der
+   * Griff dann gar nicht bewegen.
+   */
+  arcHit.addEventListener('touchstart', event => {
+    if (entity && canAdjustTemperature()) event.preventDefault();
+  }, {passive: false});
+
   arcHit.addEventListener('pointermove', event => {
     if (!dragging || event.pointerId !== dragPointerId) return;
     /* Erst ein echter Zug schaltet die Übergänge ab, damit er dem Finger folgt */

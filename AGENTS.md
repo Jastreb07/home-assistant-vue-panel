@@ -238,7 +238,9 @@ Aktueller Stand:
   Akzent eingefärbt, wenn das Licht an ist) und die Effektauswahl (rechts, radiales Menü); ohne
   Effekte bleibt der Schalter als volle Pille. Die Metriken zeigen Helligkeit und Kelvin, im Bogen
   steht der Wert des aktiven Reglers. Die drei Modusknöpfe (Helligkeit, Kelvin, Farbe) bleiben
-  unter dem Bogen, Halten öffnet weiterhin die Schnellwerte. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
+  unter dem Bogen; Halten öffnet die Schnellwerte im selben radialen Menü wie die Effekte (fünf
+  Stufen, bei Kelvin mit dem Wert, den die Stufe im Bereich der Lampe ergibt). Es ist immer nur ein
+  Ring offen. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
   als Untergrund (`.gradient-ring`): ein `conic-gradient` (Drehpunkt = Bogenmitte, `from 225deg`, damit 0° auf dem
   Bogenanfang und 270° auf seinem Ende sitzt; in der Lücke springt der Verlauf hart auf die
   Anfangsfarbe zurück, sonst würde die runde Endkappe die Anfangsfarbe zeigen)
@@ -348,7 +350,10 @@ Aktueller Stand:
   Alle Zeigergesten hängen an einem unsichtbaren, 44 Einheiten breiten Trefferpfad
   (`.arc-hit`, `pointer-events: stroke`) direkt auf dem Bogen — nicht an der Dial-Fläche. Damit
   lässt sich der Wert nur auf dem Bogen selbst ziehen, die Fläche darin bleibt klick- und
-  scrollbar, und `touch-action: none` gilt ebenfalls nur für dieses Band. Drücken und Ziehen sind
+  scrollbar, und `touch-action: none` gilt ebenfalls nur für dieses Band. Weil `touch-action` auf
+  SVG-Elementen nicht überall beachtet wird, verhindert zusätzlich ein nicht-passiver
+  `touchstart`-Handler mit `preventDefault()` am Band das Scrollen — sonst brach der Browser den
+  Zug auf Touchgeräten sofort mit `pointercancel` ab. Beide Detail-Cards machen das gleich. Drücken und Ziehen sind
   getrennt: `pointerdown` setzt nur `is-pressed` (Cursor und leichte Skalierung), sodass ein Tipp
   auf den Bogen animiert auf die getippte Stelle läuft. Erst wenn der Zeiger sich um mehr als vier
   Pixel bewegt, kommt `is-dragging` dazu und schaltet die Übergänge von Füllung, Griffen und
@@ -491,7 +496,7 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   room-tile, menu, entity und section-title, dazu die Dialog-Cards light-detail,
   thermostat-detail und weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
-  Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills; beide zeigen Wettericon,
+  Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills und Uhrzeiten als `HH:MM`; beide zeigen Wettericon,
   Temperatur und Niederschlag. Der Kopf zeigt zustands- und tageszeitabhängige, lokal gebündelte
   Wetterillustrationen aus `weather-forecast-extended` mit Temperatur- und Zustandspille. Der
   180px hohe Head liegt direkt unter der normalen Dialog-Kopfzeile und reicht links/rechts ohne

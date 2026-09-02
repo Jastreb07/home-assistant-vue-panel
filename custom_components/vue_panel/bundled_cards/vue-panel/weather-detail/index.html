@@ -731,13 +731,10 @@
       : label;
   }
 
+  /* Stundenwerte stehen immer als HH:MM da — ohne „Uhr“, AM/PM oder Kürzungen */
   function hourLabel(stamp) {
     if (!stamp) return '';
-    const value = stamp.toLocaleTimeString(vuePanel.language, {
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-    return value.replace(/:00(?:\s*Uhr)?$/i, '');
+    return `${String(stamp.getHours()).padStart(2, '0')}:${String(stamp.getMinutes()).padStart(2, '0')}`;
   }
 
   function isCurrentHour(stamp) {
