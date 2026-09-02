@@ -246,8 +246,10 @@ Aktueller Stand:
   `.arc-value` maskiert, sodass er wie die übrigen Bögen sitzt — beim Farbton der Regenbogen, bei
   Kelvin der Verlauf von Warmorange zu fast Weiß; CSS-Stopps und `KELVIN_RAMP`/`kelvinColor()` im
   Skript verwenden dieselben Stützstellen, damit der Griff zur Stelle passt, auf der er sitzt. Der Griff trägt immer die Farbe,
-  die der Bogen an seiner Position hat. Im Farbmodus steht in der Mitte statt der Zahl eine runde Farbfläche mit
-  der tatsächlichen Lichtfarbe (Farbton vom Regler, Sättigung aus `hs_color`). Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
+  die der Bogen an seiner Position hat. Im Farbmodus steht in der Mitte statt der Zahl eine runde Farbfläche; sie
+  zeigt am Regler die Farbe des Griffs und sonst die tatsächliche Farbe der Lampe. Geschaltet wird
+  genau die Farbe des Griffs, also `hs_color: [<Farbton>, 100]` — der Farbkreis ist voll gesättigt,
+  die frühere Übernahme der alten Sättigung führte zu einer anderen Farbe als angezeigt. Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
   Inhalt bestimmte Höhe entsprechen ebenfalls der Thermostat-Card;
 - ab Engine `2.2.6` sind die Flächen der Detail-Card theme-fest: Ring, Schalter und Modus-Kacheln
   mischen ihre Farbe über `color-mix(… currentColor …)` statt über weiß-transparente Werte, die im

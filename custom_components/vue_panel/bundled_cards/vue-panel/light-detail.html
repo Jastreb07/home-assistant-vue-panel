@@ -819,6 +819,8 @@
   const DRAG_THRESHOLD = 4;
   const MIN_SEGMENTS = 3;
   const PRESETS = [5, 25, 50, 75, 100];
+  /* Der Farbkreis zeigt voll gesättigte Töne — genau die werden auch geschaltet */
+  const COLOR_SATURATION = 100;
   const KELVIN_RAMP = [
     [255, 141, 26],
     [255, 178, 96],
@@ -984,7 +986,10 @@
   /* Die tatsächliche Lichtfarbe — Farbton vom Regler, Sättigung von der Entity */
   function currentColorCss(fraction) {
     const hs = attributes().hs_color;
-    const saturation = Array.isArray(hs) && Number.isFinite(Number(hs[1])) ? Number(hs[1]) : 100;
+    /* Am Regler gilt die Farbe des Griffs, sonst die tatsächliche Farbe der Lampe */
+    const saturation = dragValue !== null || !Array.isArray(hs) || !Number.isFinite(Number(hs[1]))
+      ? COLOR_SATURATION
+      : Number(hs[1]);
     return `hsl(${Math.round(fraction * 360)} ${Math.round(saturation)}% 50%)`;
   }
 
@@ -1068,10 +1073,12 @@
       return;
     }
     if (dialMode === 'color') {
-      const hs = attributes().hs_color;
-      const saturation = Array.isArray(hs) ? Number(hs[1]) || 100 : 100;
+      /*
+       * Die Lampe bekommt genau die Farbe, die Bogen und Griff zeigen: der
+       * Farbkreis ist voll gesättigt, also wird auch voll gesättigt geschaltet.
+       */
       await vuePanel.callService(
-        'light', 'turn_on', {hs_color: [Math.round(fraction * 360), saturation]}, {entity_id: entityId}
+        'light', 'turn_on', {hs_color: [Math.round(fraction * 360), COLOR_SATURATION]}, {entity_id: entityId}
       );
     }
   }
