@@ -531,6 +531,7 @@
       holdTimer = setTimeout(() => {
         holdTimer = null;
         if (suppressed()) return;
+        handlers.onHold?.();
         held = true;
         run('hold');
       }, 500);
@@ -712,6 +713,20 @@
   /* Blocks the click that follows the drag's pointerup */
   let suppressUntil = 0;
 
+  function cancelSliderDrag() {
+    const pointerId = dragPointerId;
+    dragPointerId = null;
+    dragging = false;
+    card.classList.remove('is-sliding');
+    if (pointerId !== null && card.hasPointerCapture(pointerId)) card.releasePointerCapture(pointerId);
+    if (commitTimer !== null) {
+      clearTimeout(commitTimer);
+      commitTimer = null;
+    }
+    dragPercent = null;
+    paintLevel(lastEntity);
+  }
+
   function percentFromDrag(event) {
     const height = card.clientHeight || 1;
     /* Dragging up brightens: the full card height covers the whole range */
@@ -778,6 +793,7 @@
   bindGestures(card, config, {
     entityId,
     toggle: () => toggleEntity(entityId),
+    onHold: cancelSliderDrag,
     suppress: () => dragging || Date.now() < suppressUntil,
     default: gesture => (gesture === 'tap' ? toggleEntity(entityId) : undefined)
   });
