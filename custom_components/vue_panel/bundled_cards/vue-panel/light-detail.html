@@ -95,7 +95,7 @@
         <path class="arc-value" id="arc-value" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
         <path class="arc-hit" id="arc-hit" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
       </svg>
-      <span class="hue-ring" id="hue-ring"></span>
+      <span class="gradient-ring" id="gradient-ring"></span>
       <span class="arc-handle" id="arc-handle"></span>
 
       <div class="notices" id="notices">
@@ -258,18 +258,35 @@
   }
 
   /*
-   * Im Farbmodus liegt der Farbverlauf als Bogen über der Spur: Die Maske ist
-   * derselbe Pfad mit derselben Strichbreite und denselben runden Enden wie
-   * `.arc-value`, der Verlauf dreht sich um die Bogenmitte (180/160).
+   * Farbe und Kelvin bekommen einen Verlauf als Untergrund statt einer Füllung.
+   * Die Maske ist derselbe Pfad mit derselben Strichbreite und denselben runden
+   * Enden wie `.arc-value`, der Verlauf dreht sich um die Bogenmitte (180/160).
    */
-  .hue-ring {
+  .gradient-ring {
     position: absolute;
     inset: 0;
     opacity: 0;
     pointer-events: none;
     transition: opacity .18s ease;
+    -webkit-mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
+    mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
+  }
+
+  .dial.color-mode .gradient-ring,
+  .dial.kelvin-mode .gradient-ring { opacity: 1; }
+
+  .dial.color-mode .arc-value,
+  .dial.kelvin-mode .arc-value { opacity: 0; }
+
+  /*
+   * `from 225deg` legt 0° des Verlaufs auf den Bogenanfang unten links und 270°
+   * auf sein Ende unten rechts. Die restlichen 90° liegen in der Lücke; dort
+   * wechselt der Verlauf hart zurück auf die Anfangsfarbe, damit beide runden
+   * Bogenkappen sauber in ihrer eigenen Farbe enden.
+   */
+  .dial.color-mode .gradient-ring {
     background: conic-gradient(
-      from 135deg at 50% 53.333%,
+      from 225deg at 50% 53.333%,
       hsl(0 100% 50%) 0deg,
       hsl(60 100% 50%) 45deg,
       hsl(120 100% 45%) 90deg,
@@ -278,12 +295,18 @@
       hsl(300 100% 50%) 225deg,
       hsl(360 100% 50%) 270deg
     );
-    -webkit-mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
-    mask: var(--vp-arc-mask) center / 100% 100% no-repeat;
   }
 
-  .dial.color-mode .hue-ring { opacity: 1; }
-  .dial.color-mode .arc-value { opacity: 0; }
+  /* Dieselben Endfarben wie `kelvinColor()` im Skript */
+  .dial.kelvin-mode .gradient-ring {
+    background: conic-gradient(
+      from 225deg at 50% 53.333%,
+      rgb(235, 145, 45) 0deg,
+      rgb(95, 145, 235) 270deg,
+      rgb(95, 145, 235) 315deg,
+      rgb(235, 145, 45) 315deg
+    );
+  }
 
   .arc-handle {
     position: absolute;
@@ -984,9 +1007,11 @@
 
     dial.classList.toggle('is-enabled', isDialInteractive());
     dial.classList.toggle('color-mode', dialMode === 'color' && isOn());
+    dial.classList.toggle('kelvin-mode', dialMode === 'colorTemp' && isOn());
     setSegment(arcValue, 0, shown);
     arcValue.style.stroke = color;
     placeOnArc(handle, shown);
+    /* Der Griff trägt die Farbe, die der Bogen an seiner Position hat */
     handle.style.background = color;
 
     /* Im Farbmodus ersetzt die Farbfläche den Zahlenwert */

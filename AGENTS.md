@@ -238,12 +238,15 @@ Aktueller Stand:
   Akzent eingefärbt, wenn das Licht an ist) und die Effektauswahl (rechts, radiales Menü); ohne
   Effekte bleibt der Schalter als volle Pille. Die Metriken zeigen Helligkeit und Kelvin, im Bogen
   steht der Wert des aktiven Reglers. Die drei Modusknöpfe (Helligkeit, Kelvin, Farbe) bleiben
-  unter dem Bogen, Halten öffnet weiterhin die Schnellwerte. Im Farbmodus zeigt der Bogen den vollen Farbverlauf: ein
-  `conic-gradient` (Drehpunkt = Bogenmitte, `from 135deg`) wird mit `--vp-arc-mask` auf exakt
-  denselben Pfad samt Strichbreite und runden Enden wie `.arc-value` maskiert, sodass er wie die
-  übrigen Bögen sitzt; der Griff trägt den gewählten Farbton, und in der Mitte steht statt der
-  Zahl eine runde Farbfläche mit der tatsächlichen Lichtfarbe (Farbton vom Regler, Sättigung aus
-  `hs_color`). Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
+  unter dem Bogen, Halten öffnet weiterhin die Schnellwerte. Farbe und Kelvin zeigen statt einer Füllung einen Verlauf
+  als Untergrund (`.gradient-ring`): ein `conic-gradient` (Drehpunkt = Bogenmitte, `from 225deg`, damit 0° auf dem
+  Bogenanfang und 270° auf seinem Ende sitzt; in der Lücke springt der Verlauf hart auf die
+  Anfangsfarbe zurück, sonst würde die runde Endkappe die Anfangsfarbe zeigen)
+  wird mit `--vp-arc-mask` auf exakt denselben Pfad samt Strichbreite und runden Enden wie
+  `.arc-value` maskiert, sodass er wie die übrigen Bögen sitzt — beim Farbton der Regenbogen, bei
+  Kelvin der Warm-Kalt-Verlauf mit denselben Endfarben wie `kelvinColor()`. Der Griff trägt immer die Farbe,
+  die der Bogen an seiner Position hat. Im Farbmodus steht in der Mitte statt der Zahl eine runde Farbfläche mit
+  der tatsächlichen Lichtfarbe (Farbton vom Regler, Sättigung aus `hs_color`). Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
   Inhalt bestimmte Höhe entsprechen ebenfalls der Thermostat-Card;
 - ab Engine `2.2.6` sind die Flächen der Detail-Card theme-fest: Ring, Schalter und Modus-Kacheln
   mischen ihre Farbe über `color-mix(… currentColor …)` statt über weiß-transparente Werte, die im
