@@ -364,7 +364,10 @@ Aktueller Stand:
   `bt_preset_cool_temperature` und die Schrittweite aus `bt_target_temp_step`.
   Bedienelemente erscheinen nur, wenn `supported_features` beziehungsweise die Attribute
   (`current_humidity`, `hvac_action`, Bereichs-Sollwerte) sie hergeben. Die
-  Thermostat-Card öffnet die Ansicht per `detail`-Zuordnung und hat als Tap-Default `more-info`;
+  Thermostat-Card öffnet die Ansicht per `detail`-Zuordnung und hat als Tap-Default `more-info`.
+  Wichtig für schmale Geräte: Die absolut positionierte `.targets`-Spalte bleibt immer 90px
+  breit; nur Schriftgröße und Abstand werden unter 390px reduziert. Eine breitere Spalte
+  verschiebt wegen `right: 25%` die Sollwerte in die linke Hinweisicon-Spalte;
 - Der Tipp-Aktionseditor bietet die frühere Aktion `default` („Standard (Card-Aktion)“) nicht mehr
   an. Alle mitgelieferten Cards verwenden für Tippen explizit `more-info` als Standard; nur
   `vue-panel/light` behält `toggle`. Parser, Typen und Card-Runtimes lesen alte `default`-Werte
