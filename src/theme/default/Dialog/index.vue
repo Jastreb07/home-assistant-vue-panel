@@ -22,13 +22,27 @@ const emit = defineEmits<{ close: [] }>()
 
 const titleId = `vp-dialog-title-${useId()}`
 const closeButton = ref<HTMLButtonElement | null>(null)
+const isClosing = ref(false)
+let closeTimer: ReturnType<typeof setTimeout> | undefined
 const dialogStyle = () => (props.width ? { width: `min(${props.width}px, 100%)` } : undefined)
 const bodyStyle = () => (props.bodyHeight ? { height: `${props.bodyHeight}px` } : undefined)
+
+function requestClose() {
+  if (isClosing.value) return
+
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    emit('close')
+    return
+  }
+
+  isClosing.value = true
+  closeTimer = setTimeout(() => emit('close'), 180)
+}
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key !== 'Escape') return
   event.preventDefault()
-  emit('close')
+  requestClose()
 }
 
 onMounted(async () => {
@@ -37,15 +51,18 @@ onMounted(async () => {
   closeButton.value?.focus({ preventScroll: true })
 })
 
-onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
+onBeforeUnmount(() => {
+  window.removeEventListener('keydown', onKeydown)
+  if (closeTimer) clearTimeout(closeTimer)
+})
 </script>
 
 <template>
   <Teleport to="body">
-    <div class="vp-dialog-backdrop" @click.self="emit('close')">
+    <div class="vp-dialog-backdrop" :class="{ 'vp-dialog-backdrop--closing': isClosing }" @click.self="requestClose">
       <div
         class="vp-dialog"
-        :class="`vp-dialog--${size}`"
+        :class="[`vp-dialog--${size}`, { 'vp-dialog--closing': isClosing }]"
         :style="dialogStyle()"
         role="dialog"
         aria-modal="true"
@@ -57,7 +74,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeydown))
             class="vp-dialog-close"
             type="button"
             :aria-label="$t('common.close')"
-            @click="emit('close')"
+            @click="requestClose"
           >
             <MdiIcon icon="mdi:close" :size="24" />
           </button>
