@@ -64,14 +64,6 @@
         "default": true
       },
       {
-        "key": "showVolume",
-        "label": "translation.variables.showVolume.label",
-        "group": "translation.groups.display",
-        "type": "boolean",
-        "required": false,
-        "default": true
-      },
-      {
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
@@ -97,11 +89,14 @@
         "translation.variables.name.label": "Display name",
         "translation.variables.dynamicBackground.label": "Dynamic background",
         "translation.groups.appearance": "Appearance",
-        "translation.variables.showVolume.label": "Show volume",
         "translation.groups.display": "Display",
         "translation.noEntity": "No entity selected",
         "translation.entityNotFound": "Entity not found",
         "translation.states.idle": "Idle",
+        "translation.states.playing": "Playing",
+        "translation.states.paused": "Paused",
+        "translation.states.buffering": "Buffering",
+        "translation.states.off": "Off",
         "translation.unknownTitle": "Unknown title",
         "translation.defaultName": "Media",
         "translation.variables.actions.label": "Tap actions"
@@ -113,11 +108,14 @@
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.dynamicBackground.label": "Dynamischer Hintergrund",
         "translation.groups.appearance": "Darstellung",
-        "translation.variables.showVolume.label": "Lautstärke anzeigen",
         "translation.groups.display": "Anzeige",
         "translation.noEntity": "Keine Entity ausgewählt",
         "translation.entityNotFound": "Entity nicht gefunden",
         "translation.states.idle": "Inaktiv",
+        "translation.states.playing": "Wiedergabe",
+        "translation.states.paused": "Pausiert",
+        "translation.states.buffering": "Wird geladen",
+        "translation.states.off": "Aus",
         "translation.unknownTitle": "Unbekannter Titel",
         "translation.defaultName": "Medien",
         "translation.variables.actions.label": "Tipp-Aktionen"
@@ -133,56 +131,50 @@
       <div class="media-backdrop__artwork" id="artwork"></div>
       <div class="media-backdrop__gradient"></div>
     </div>
-    <span class="tile__icon"><img id="icon" alt=""></span>
+    <div class="top-row">
+      <span class="app-badge" id="app-badge" hidden></span>
+      <button class="power-button" id="power" type="button"><img id="power-icon" alt=""></button>
+    </div>
+    <div class="tile__info">
+      <div class="tile__state" id="state"></div>
+      <div class="tile__name" id="name"></div>
+    </div>
     <div class="controls" id="controls">
       <button data-service="media_previous_track"><img id="previous" alt=""></button>
       <button data-service="media_play_pause"><img id="play" alt=""></button>
       <button data-service="media_next_track"><img id="next" alt=""></button>
     </div>
-    <div class="tile__info">
-      <div class="tile__name" id="name"></div>
-      <div class="tile__state" id="state"></div>
-    </div>
-    <label class="volume" id="volume-wrap"><img id="volume-icon" alt=""><input id="volume" type="range" min="0"
-                                                                               max="100"><span id="volume-value"></span></label>
   </article>
 </template>
 
 <style data-vue-panel-css>
     .tile {
         position: relative;
+        container-type: inline-size;
         width: 100%;
         height: 100%;
         min-height: 120px;
-        padding: 14px 16px;
+        padding: 12px 14px;
         border-radius: var(--card-radius);
         display: flex;
         flex-direction: column;
         align-items: flex-start;
-        background: var(--card-bg);
+        background:
+            radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 48%),
+            linear-gradient(145deg, color-mix(in srgb, var(--nav-bg) 72%, #18202c), #18202c);
         box-shadow: var(--card-shadow);
-        color: var(--text-primary);
+        color: #fff;
         overflow: hidden;
-        transition: background-color .8s, color .4s
+        transition: background-color .8s, color .4s;
     }
 
     .tile.tap-action {
         cursor: pointer
     }
 
-    /* Slight tint on hover — colour comes from the theme */
-    .tile:hover:not(.active):not(.has-artwork) {
-        background: var(--card-bg-hover, var(--card-bg));
-    }
-
-    .tile.active:not(.has-artwork) {
-        background: #f6d36b;
-        color: #111
-    }
-
     .tile.has-artwork {
         background: var(--media-background, var(--card-bg));
-        color: var(--media-foreground, #fff)
+        color: #fff;
     }
 
     .media-backdrop {
@@ -190,7 +182,7 @@
         inset: 0;
         pointer-events: none;
         opacity: 0;
-        transition: opacity .8s
+        transition: opacity .24s ease;
     }
 
     .has-artwork .media-backdrop {
@@ -198,60 +190,97 @@
     }
 
     .media-backdrop__color {
-        position: absolute;
-        inset: 0;
-        background: var(--media-background, var(--card-bg));
-        transition: background-color .8s
+        display: none;
     }
 
     .media-backdrop__artwork,
     .media-backdrop__gradient {
         position: absolute;
-        top: 0;
-        right: 0;
-        width: auto;
+        inset: 0;
+        width: 100%;
         height: 100%;
-        aspect-ratio: 1;
-        transition: background-image .8s, opacity .8s
     }
 
     .media-backdrop__artwork {
         background-position: center;
         background-repeat: no-repeat;
-        background-size: cover
+        background-size: cover;
+        transform: scale(1.015);
     }
 
     .media-backdrop__gradient {
-        background: linear-gradient(to right, var(--media-background, var(--card-bg)), transparent)
+        background: linear-gradient(
+            to bottom,
+            rgba(5, 9, 15, .1) 8%,
+            rgba(5, 9, 15, .38) 52%,
+            rgba(5, 9, 15, .94) 100%
+        );
     }
 
     .tile > :not(.media-backdrop) {
         z-index: 1
     }
 
-    .tile__icon {
-        width: 38px;
-        height: 38px;
-        border-radius: 50%;
+    .top-row {
+        position: absolute;
+        z-index: 2;
+        top: 12px;
+        right: 12px;
+        left: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .app-badge {
+        min-width: 0;
+        overflow: hidden;
+        padding: 6px 10px;
+        border: 1px solid rgba(255, 255, 255, .18);
+        border-radius: 999px;
+        background: rgba(0, 0, 0, .28);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        font-size: 11px;
+        font-weight: 600;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .power-button {
         display: grid;
         place-items: center;
-        background: var(--tile-icon-bg, rgb(215 215 215 / 35%))
+        width: 34px;
+        height: 34px;
+        flex: 0 0 34px;
+        border: 1px solid rgba(255, 255, 255, .12);
+        border-radius: 50%;
+        padding: 0;
+        background: rgba(0, 0, 0, .28);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+        cursor: pointer;
+        transition: background-color .13s ease, transform .13s ease;
     }
 
-    .tile.active .tile__icon,
-    .tile.has-artwork .tile__icon {
-        background: var(--media-control-background, rgb(255 255 255 / 40%))
+    .power-button:hover {
+        background: rgba(0, 0, 0, .46);
     }
 
-    .tile__icon img {
-        width: 24px;
-        height: 24px
+    .power-button:active {
+        transform: scale(.92);
+    }
+
+    .power-button img {
+        width: 20px;
+        height: 20px;
     }
 
     .tile__info {
         width: 100%;
         min-width: 0;
-        margin-top: auto
+        margin-top: auto;
     }
 
     .tile__name, .tile__state {
@@ -261,72 +290,71 @@
     }
 
     .tile__name {
-        font-size: 14px;
-        font-weight: 600;
-        line-height: 1.2
+        margin-top: 4px;
+        font-size: clamp(15px, 5cqw, 26px);
+        font-weight: 650;
+        line-height: 1.15;
+        text-shadow: 0 1px 5px rgba(0, 0, 0, .32);
     }
 
     .tile__state {
-        margin-top: 3px;
-        color: var(--media-secondary, #666);
-        font-size: 11px;
-        line-height: 1.2
+        color: rgba(255, 255, 255, .74);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: .07em;
+        line-height: 1.2;
+        text-transform: uppercase;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, .3);
     }
 
     .controls {
-        position: absolute;
-        top: 16px;
-        right: 10px;
-        display: flex
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        gap: 8px;
+        margin-top: 10px;
     }
 
-    .controls[hidden], .volume[hidden] {
+    .controls[hidden] {
         display: none
     }
 
     .controls button {
-        width: 22px;
-        height: 22px;
+        width: 34px;
+        height: 34px;
         padding: 0;
-        border: 0;
+        border: 1px solid rgba(255, 255, 255, .12);
         border-radius: 50%;
         display: grid;
         place-items: center;
-        background: transparent;
-        cursor: pointer
+        background: rgba(0, 0, 0, .24);
+        -webkit-backdrop-filter: blur(10px);
+        backdrop-filter: blur(10px);
+        cursor: pointer;
+        transition: background-color .13s ease, transform .13s ease;
     }
 
     .controls img {
-        width: 18px;
-        height: 18px
+        width: 20px;
+        height: 20px;
     }
 
-    .has-artwork .controls button:hover {
-        background: var(--media-control-background, rgb(255 255 255 / 22%))
+    .controls button:hover {
+        background: rgba(0, 0, 0, .46);
     }
 
-    .volume {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        gap: 4px
+    .controls button:active {
+        transform: scale(.92);
     }
 
-    .volume img {
-        width: 14px;
-        height: 14px
-    }
-
-    .volume input {
-        min-width: 0;
-        flex: 1;
-        accent-color: currentColor
-    }
-
-    .volume span {
-        min-width: 30px;
-        font-size: 9px;
-        text-align: right
+    @media (prefers-reduced-motion: reduce) {
+        .tile,
+        .media-backdrop,
+        .controls button,
+        .power-button {
+            transition: none;
+        }
     }
 </style>
 
@@ -455,12 +483,10 @@
   card.classList.toggle('tap-action', !['none', 'assist'].includes(tapAction));
   const name = document.getElementById('name');
   const state = document.getElementById('state');
-  const icon = document.getElementById('icon');
+  const appBadge = document.getElementById('app-badge');
+  const power = document.getElementById('power');
   const artwork = document.getElementById('artwork');
   const controls = document.getElementById('controls');
-  const volumeWrap = document.getElementById('volume-wrap');
-  const volume = document.getElementById('volume');
-  const volumeValue = document.getElementById('volume-value');
   const colorCache = new Map();
   const iconCache = new Map();
   let renderedArtwork = '';
@@ -552,14 +578,13 @@
 
   async function renderIcons(playing, color, version) {
     const sources = await Promise.all([
-      getIcon(playing ? 'mdi:speaker-play' : 'mdi:speaker', 64, color),
+      getIcon('mdi:power', 48, color),
       getIcon('mdi:skip-previous', 48, color),
       getIcon(playing ? 'mdi:pause' : 'mdi:play', 48, color),
-      getIcon('mdi:skip-next', 48, color),
-      getIcon('mdi:volume-high', 48, color)
+      getIcon('mdi:skip-next', 48, color)
     ]);
     if (version !== renderVersion) return;
-    for (const [id, source] of [['icon', sources[0]], ['previous', sources[1]], ['play', sources[2]], ['next', sources[3]], ['volume-icon', sources[4]]]) {
+    for (const [id, source] of [['power-icon', sources[0]], ['previous', sources[1]], ['play', sources[2]], ['next', sources[3]]]) {
       document.getElementById(id).src = source;
     }
   }
@@ -604,23 +629,37 @@
     const picture = config.dynamicBackground !== false && !idle && (entity?.attributes?.entity_picture_local || entity?.attributes?.entity_picture);
     const source = picture ? new URL(String(picture), window.location.origin).href : '';
     card.classList.toggle('active', playing);
-    name.textContent = String(config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName'));
-    state.textContent = !entityId ? vuePanel.t('translation.noEntity') : !entity ? vuePanel.t('translation.entityNotFound') : idle ? vuePanel.t('translation.states.idle') : `${entity.attributes?.media_title || vuePanel.t('translation.unknownTitle')}${entity.attributes?.media_artist ? ` · ${entity.attributes.media_artist}` : ''}`;
+    const app = entity?.attributes?.app_name || entity?.attributes?.source;
+    appBadge.textContent = app ? String(app) : '';
+    appBadge.hidden = !app;
+    power.hidden = !entity || (
+      ['off', 'standby'].includes(entity.state)
+        ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
+        : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
+    );
+    name.textContent = String(
+      !idle && entity?.attributes?.media_title
+        ? entity.attributes.media_title
+        : config.name || entity?.attributes?.friendly_name || entityId || vuePanel.t('translation.defaultName')
+    );
+    const stateKey = `translation.states.${entity?.state || 'idle'}`;
+    state.textContent = !entityId
+      ? vuePanel.t('translation.noEntity')
+      : !entity
+        ? vuePanel.t('translation.entityNotFound')
+        : vuePanel.t(stateKey) === stateKey
+          ? entity.state
+          : vuePanel.t(stateKey);
     controls.hidden = idle;
-    const level = Math.round(Number(entity?.attributes?.volume_level) * 100);
-    volumeWrap.hidden = config.showVolume === false || !Number.isFinite(level);
-    volume.value = String(level || 0);
-    volumeValue.textContent = `${level || 0} %`;
-    const palette = await applyArtwork(source, version);
-    const foreground = palette?.foreground || (playing ? '#111111' : '#737373');
-    await renderIcons(playing, foreground, version);
+    await applyArtwork(source, version);
+    await renderIcons(playing, '#ffffff', version);
   }
 
   controls.addEventListener('click', async event => {
     const button = event.target.closest('button');
     if (button) await vuePanel.callService('media_player', button.dataset.service, {}, {entity_id: entityId});
   });
-  volume.addEventListener('change', () => vuePanel.callService('media_player', 'volume_set', {volume_level: Number(volume.value) / 100}, {entity_id: entityId}));
+  power.addEventListener('click', () => toggleEntity(entityId));
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));
     vuePanel.subscribeEntity(entityId, render);
@@ -629,7 +668,7 @@
   /* Tipp-Aktionen auf der Card; die eigenen Bedienelemente bleiben unberührt */
   bindGestures(card, config, {
     entityId,
-    ignore: '#controls, #volume-wrap',
+    ignore: '#controls, #power',
     default: gesture => gesture === 'tap' ? toggleEntity(entityId) : undefined,
     toggle: () => toggleEntity(entityId)
   });

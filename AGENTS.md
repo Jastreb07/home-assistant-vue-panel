@@ -498,7 +498,9 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   `md`-Dialogstufe, entfernt seine Dialogabstände wie die bestehenden Detail-Cards zur Laufzeit
   über den umgebenden `.vp-dialog-body` und steuert Media Player nativ über
   deren `supported_features` (Cover, Metadaten, Zeitleiste, Transport, Lautstärke, Ein/Aus und
-  Quellen); die Media-Card verweist über ihr `detail`-Metadatum darauf. Weather-detail lädt Tages-
+  Quellen); die kompakte Media-Card übernimmt ihre visuelle Sprache mit vollflächigem Cover,
+  dunklem Verlauf und gläsernen runden Bedienelementen und verweist über ihr `detail`-Metadatum
+  darauf. Weather-detail lädt Tages-
   und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills und Uhrzeiten als `HH:MM`; beide zeigen Wettericon,
