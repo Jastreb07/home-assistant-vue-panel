@@ -26,16 +26,17 @@
     0 24px 38px 3px rgba(0, 0, 0, 0.14),
     0 9px 46px 8px rgba(0, 0, 0, 0.12),
     0 11px 15px -7px rgba(0, 0, 0, 0.2);
-  animation: vp-dialog-enter 180ms cubic-bezier(0.2, 0, 0, 1) both;
+  position: relative;
+  animation: vp-dialog-enter 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .vp-dialog-backdrop--closing {
-  animation: vp-dialog-backdrop-leave 180ms ease-in both;
+  animation: vp-dialog-backdrop-leave 220ms ease-in both;
   pointer-events: none;
 }
 
 .vp-dialog--closing {
-  animation: vp-dialog-leave 180ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: vp-dialog-leave 220ms cubic-bezier(0.4, 0, 0.8, 0.2) both;
 }
 
 @keyframes vp-dialog-backdrop-enter {
@@ -51,14 +52,33 @@
 }
 
 @keyframes vp-dialog-enter {
-  from {
+  0% {
     opacity: 0;
+    top: -16px;
+    clip-path: inset(3% 2% round 34px);
+  }
+  72% {
+    opacity: 1;
+    top: 2px;
+    clip-path: inset(0 round 28px);
+  }
+  100% {
+    opacity: 1;
+    top: 0;
+    clip-path: inset(0 round 28px);
   }
 }
 
 @keyframes vp-dialog-leave {
-  to {
+  0% {
+    opacity: 1;
+    top: 0;
+    clip-path: inset(0 round 28px);
+  }
+  100% {
     opacity: 0;
+    top: 12px;
+    clip-path: inset(2% 1.5% round 34px);
   }
 }
 

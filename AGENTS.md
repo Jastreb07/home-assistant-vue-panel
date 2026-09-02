@@ -556,7 +556,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
 - `BaseDialog` schließt bei einem Klick auf den Backdrop standardmäßig nicht. Nur bewusst flüchtige
   Dialoge setzen `close-on-backdrop`; aktuell gilt das ausschließlich für Laufzeit-Popups und
-  Detailansichten in `PopupFrame.vue`.
+  Detailansichten in `PopupFrame.vue`. Ein gesperrter Backdrop-Klick löst eine kurze gedämpfte
+  macOS-artige Shake-Animation aus. Öffnen und Schließen animieren Opacity, vertikalen Lift und
+  `clip-path`, aber niemals `transform`: Ein Transform am Dialog würde die darin liegenden
+  fixed-positionierten Card-Scrims und Radialmenüs wieder relativ zum Dialog verschieben.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
 

@@ -23,9 +23,11 @@ const props = withDefaults(
 const emit = defineEmits<{ close: [] }>()
 
 const titleId = `vp-dialog-title-${useId()}`
+const dialog = ref<HTMLDivElement | null>(null)
 const closeButton = ref<HTMLButtonElement | null>(null)
 const isClosing = ref(false)
 let closeTimer: ReturnType<typeof setTimeout> | undefined
+let attentionAnimation: Animation | undefined
 const dialogStyle = () => (props.width ? { width: `min(${props.width}px, 100%)` } : undefined)
 const bodyStyle = () => (props.bodyHeight ? { height: `${props.bodyHeight}px` } : undefined)
 
@@ -38,7 +40,29 @@ function requestClose() {
   }
 
   isClosing.value = true
-  closeTimer = setTimeout(() => emit('close'), 180)
+  closeTimer = setTimeout(() => emit('close'), 220)
+}
+
+function onBackdropClick() {
+  if (props.closeOnBackdrop) {
+    requestClose()
+    return
+  }
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+  attentionAnimation?.cancel()
+  attentionAnimation = dialog.value?.animate(
+    [
+      { left: '0' },
+      { left: '-10px', offset: 0.2 },
+      { left: '8px', offset: 0.4 },
+      { left: '-6px', offset: 0.58 },
+      { left: '4px', offset: 0.74 },
+      { left: '-2px', offset: 0.88 },
+      { left: '0' },
+    ],
+    { duration: 380, easing: 'cubic-bezier(.22, .61, .36, 1)' },
+  )
 }
 
 function onKeydown(event: KeyboardEvent) {
@@ -56,6 +80,7 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.removeEventListener('keydown', onKeydown)
   if (closeTimer) clearTimeout(closeTimer)
+  attentionAnimation?.cancel()
 })
 </script>
 
@@ -64,9 +89,10 @@ onBeforeUnmount(() => {
     <div
       class="vp-dialog-backdrop"
       :class="{ 'vp-dialog-backdrop--closing': isClosing }"
-      @click.self="closeOnBackdrop && requestClose()"
+      @click.self="onBackdropClick"
     >
       <div
+        ref="dialog"
         class="vp-dialog"
         :class="[`vp-dialog--${size}`, { 'vp-dialog--closing': isClosing }]"
         :style="dialogStyle()"
