@@ -1,0 +1,762 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "media-detail",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:multimedia",
+    "group": "Vue Panel",
+    "areas": [
+      "dialog"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 396,
+      "height": 610
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": true,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "translation.variables.entity.label",
+        "type": "entity",
+        "required": true,
+        "domain": "media_player",
+        "default": ""
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Media details",
+        "translation.description": "Artwork, playback, timeline, volume, power and source controls for media players",
+        "translation.variables.entity.label": "Media player entity",
+        "translation.noEntity": "No media player selected",
+        "translation.entityNotFound": "Media player not found",
+        "translation.unknownTitle": "Nothing playing",
+        "translation.states.playing": "Playing",
+        "translation.states.paused": "Paused",
+        "translation.states.idle": "Idle",
+        "translation.states.off": "Off",
+        "translation.states.standby": "Standby",
+        "translation.states.buffering": "Buffering",
+        "translation.states.unavailable": "Unavailable",
+        "translation.source": "Source",
+        "translation.volume": "Volume",
+        "translation.power": "Power",
+        "translation.previous": "Previous",
+        "translation.next": "Next",
+        "translation.play": "Play",
+        "translation.pause": "Pause",
+        "translation.stop": "Stop",
+        "translation.mute": "Mute",
+        "translation.unmute": "Unmute"
+      },
+      "de": {
+        "translation.name": "Medien-Details",
+        "translation.description": "Cover, Wiedergabe, Fortschritt, Lautstärke, Ein/Aus und Quellen für Media Player",
+        "translation.variables.entity.label": "Media-Player-Entity",
+        "translation.noEntity": "Kein Media Player ausgewählt",
+        "translation.entityNotFound": "Media Player nicht gefunden",
+        "translation.unknownTitle": "Keine Wiedergabe",
+        "translation.states.playing": "Wiedergabe",
+        "translation.states.paused": "Pausiert",
+        "translation.states.idle": "Inaktiv",
+        "translation.states.off": "Aus",
+        "translation.states.standby": "Bereitschaft",
+        "translation.states.buffering": "Wird geladen",
+        "translation.states.unavailable": "Nicht verfügbar",
+        "translation.source": "Quelle",
+        "translation.volume": "Lautstärke",
+        "translation.power": "Ein/Aus",
+        "translation.previous": "Zurück",
+        "translation.next": "Weiter",
+        "translation.play": "Wiedergabe",
+        "translation.pause": "Pause",
+        "translation.stop": "Stopp",
+        "translation.mute": "Stummschalten",
+        "translation.unmute": "Ton einschalten"
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <div class="media-detail" id="card">
+    <div class="empty-state" id="empty" hidden>
+      <img id="empty-icon" alt="">
+      <span id="empty-text"></span>
+    </div>
+
+    <div class="player" id="player" hidden>
+      <div class="hero" id="hero">
+        <div class="hero-art" id="artwork" aria-hidden="true"></div>
+        <div class="hero-shade" aria-hidden="true"></div>
+        <div class="hero-top">
+          <span class="app-badge" id="app-badge" hidden></span>
+          <button class="icon-button power-button" id="power" type="button">
+            <img id="power-icon" alt="">
+          </button>
+        </div>
+        <div class="hero-copy">
+          <span class="eyebrow" id="state"></span>
+          <strong class="title" id="title"></strong>
+          <span class="artist" id="artist" hidden></span>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="timeline" id="timeline-wrap" hidden>
+          <input id="timeline" type="range" min="0" max="1" step="1" aria-label="Timeline">
+          <div class="time-labels">
+            <span id="position">0:00</span>
+            <span id="duration">0:00</span>
+          </div>
+        </div>
+
+        <div class="transport" id="transport">
+          <button class="icon-button" id="previous" type="button"><img id="previous-icon" alt=""></button>
+          <button class="icon-button stop-button" id="stop" type="button"><img id="stop-icon" alt=""></button>
+          <button class="play-button" id="play" type="button"><img id="play-icon" alt=""></button>
+          <button class="icon-button stop-button" id="unused" type="button" disabled aria-hidden="true"></button>
+          <button class="icon-button" id="next" type="button"><img id="next-icon" alt=""></button>
+        </div>
+
+        <div class="volume-row" id="volume-wrap" hidden>
+          <button class="icon-button small-button" id="mute" type="button"><img id="volume-icon" alt=""></button>
+          <input id="volume" type="range" min="0" max="100" step="1" aria-label="Volume">
+          <span id="volume-value">0%</span>
+        </div>
+
+        <label class="source-row" id="source-wrap" hidden>
+          <span>
+            <img id="source-icon" alt="">
+            <span data-label="source"></span>
+          </span>
+          <select id="source"></select>
+        </label>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style data-vue-panel-css>
+  .media-detail {
+    width: 100%;
+    margin-inline: auto;
+    color: var(--text-primary);
+    box-sizing: border-box;
+  }
+
+  .player {
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    background: var(--card-bg);
+    box-shadow: none;
+  }
+
+  .hero {
+    position: relative;
+    min-height: 280px;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 80% 10%, color-mix(in srgb, var(--accent) 34%, transparent), transparent 48%),
+      linear-gradient(145deg, color-mix(in srgb, var(--nav-bg) 72%, #18202c), #18202c);
+    color: #fff;
+  }
+
+  .hero-art,
+  .hero-shade {
+    position: absolute;
+    inset: 0;
+  }
+
+  .hero-art {
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    opacity: 0;
+    transform: scale(1.015);
+    transition: opacity 240ms ease;
+  }
+
+  .hero.has-artwork .hero-art {
+    opacity: 1;
+  }
+
+  .hero-shade {
+    background: linear-gradient(to bottom, rgba(5, 9, 15, .12) 12%, rgba(5, 9, 15, .35) 50%, rgba(5, 9, 15, .92) 100%);
+  }
+
+  .hero-top {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .app-badge {
+    min-width: 0;
+    overflow: hidden;
+    padding: 7px 12px;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: 999px;
+    background: rgba(0, 0, 0, .28);
+    backdrop-filter: blur(12px);
+    font-size: 12px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .hero-copy {
+    position: absolute;
+    z-index: 1;
+    right: 20px;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .eyebrow {
+    color: rgba(255, 255, 255, .72);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+  }
+
+  .title,
+  .artist {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .title {
+    font-size: clamp(24px, 5vw, 34px);
+    font-weight: 650;
+    line-height: 1.08;
+  }
+
+  .artist {
+    color: rgba(255, 255, 255, .78);
+    font-size: 14px;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    padding: 22px;
+  }
+
+  input[type='range'] {
+    min-width: 0;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+
+  .timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .timeline input {
+    width: 100%;
+  }
+
+  .time-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .transport {
+    display: grid;
+    grid-template-columns: repeat(5, 48px);
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  button {
+    border: 0;
+    color: inherit;
+    font: inherit;
+  }
+
+  .icon-button,
+  .play-button {
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background-color 130ms ease, transform 130ms ease;
+  }
+
+  .icon-button {
+    width: 48px;
+    height: 48px;
+    background: transparent;
+  }
+
+  .icon-button:hover {
+    background: var(--nav-item-hover);
+  }
+
+  .power-button {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 auto;
+    background: rgba(0, 0, 0, .28);
+    backdrop-filter: blur(12px);
+  }
+
+  .power-button:hover {
+    background: rgba(0, 0, 0, .48);
+  }
+
+  .play-button {
+    width: 64px;
+    height: 64px;
+    margin-inline: -8px;
+    background: var(--accent);
+    color: var(--accent-contrast, #fff);
+    box-shadow: 0 8px 22px color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+
+  .icon-button:active,
+  .play-button:active {
+    transform: scale(.94);
+  }
+
+  .icon-button:focus-visible,
+  .play-button:focus-visible,
+  select:focus-visible,
+  input:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .icon-button img {
+    width: 25px;
+    height: 25px;
+  }
+
+  .play-button img {
+    width: 30px;
+    height: 30px;
+  }
+
+  .stop-button[hidden] {
+    display: grid !important;
+    visibility: hidden;
+  }
+
+  #unused {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .volume-row {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) 42px;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .small-button {
+    width: 40px;
+    height: 40px;
+  }
+
+  .volume-row input {
+    width: 100%;
+  }
+
+  .volume-row > span {
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  .source-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 14px;
+    padding-top: 17px;
+    border-top: 1px solid var(--divider);
+  }
+
+  .source-row > span {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .source-row img {
+    width: 18px;
+    height: 18px;
+  }
+
+  .source-row select {
+    min-width: 0;
+    width: 100%;
+    height: 40px;
+    border: 1px solid var(--divider);
+    border-radius: 12px;
+    padding: 0 34px 0 12px;
+    background: var(--input-bg, var(--nav-bg));
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .empty-state {
+    display: grid;
+    place-items: center;
+    gap: 14px;
+    min-height: 320px;
+    color: var(--text-secondary);
+    text-align: center;
+  }
+
+  .empty-state img {
+    width: 64px;
+    height: 64px;
+    opacity: .58;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  @media (max-width: 520px) {
+    .hero {
+      min-height: 230px;
+    }
+
+    .content {
+      padding: 18px 14px;
+    }
+
+    .transport {
+      grid-template-columns: repeat(5, 42px);
+      gap: 4px;
+    }
+
+    .icon-button {
+      width: 42px;
+      height: 42px;
+    }
+
+    .play-button {
+      width: 58px;
+      height: 58px;
+    }
+
+    .source-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-art,
+    .icon-button,
+    .play-button {
+      transition: none;
+    }
+  }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+  const entityId = String(config.entity || vuePanel.context.entity || '');
+  const card = document.getElementById('card');
+  const dialogBody = card.closest('.vp-dialog-body');
+  const detailBody = card.closest('.detail-body');
+  const runtime = card.closest('.card-runtime');
+  if (dialogBody) dialogBody.style.padding = '0';
+  if (detailBody) detailBody.style.padding = '0';
+  if (runtime) runtime.style.maxWidth = 'none';
+  const player = document.getElementById('player');
+  const empty = document.getElementById('empty');
+  const emptyText = document.getElementById('empty-text');
+  const hero = document.getElementById('hero');
+  const artwork = document.getElementById('artwork');
+  const state = document.getElementById('state');
+  const title = document.getElementById('title');
+  const artist = document.getElementById('artist');
+  const appBadge = document.getElementById('app-badge');
+  const power = document.getElementById('power');
+  const previous = document.getElementById('previous');
+  const stop = document.getElementById('stop');
+  const play = document.getElementById('play');
+  const next = document.getElementById('next');
+  const timelineWrap = document.getElementById('timeline-wrap');
+  const timeline = document.getElementById('timeline');
+  const positionLabel = document.getElementById('position');
+  const durationLabel = document.getElementById('duration');
+  const volumeWrap = document.getElementById('volume-wrap');
+  const volume = document.getElementById('volume');
+  const volumeValue = document.getElementById('volume-value');
+  const mute = document.getElementById('mute');
+  const sourceWrap = document.getElementById('source-wrap');
+  const source = document.getElementById('source');
+
+  const FEATURE = {
+    pause: 1,
+    seek: 2,
+    volumeSet: 4,
+    volumeMute: 8,
+    previous: 16,
+    next: 32,
+    turnOn: 128,
+    turnOff: 256,
+    selectSource: 2048,
+    stop: 4096,
+    play: 16384
+  };
+
+  let currentEntity = null;
+  let seeking = false;
+  let volumeChanging = false;
+  let iconVersion = 0;
+
+  const supports = (entity, feature) =>
+    (Number(entity?.attributes?.supported_features || 0) & feature) !== 0;
+
+  function formatTime(value) {
+    const seconds = Math.max(0, Math.round(Number(value) || 0));
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor(seconds % 3600 / 60);
+    const remainder = String(seconds % 60).padStart(2, '0');
+    return hours ? `${hours}:${String(minutes).padStart(2, '0')}:${remainder}` : `${minutes}:${remainder}`;
+  }
+
+  function currentPosition(entity) {
+    const base = Number(entity?.attributes?.media_position);
+    if (!Number.isFinite(base)) return 0;
+    if (entity.state !== 'playing') return base;
+    const updated = Date.parse(String(entity.attributes?.media_position_updated_at || ''));
+    return Number.isFinite(updated) ? base + Math.max(0, (Date.now() - updated) / 1000) : base;
+  }
+
+  function renderTimeline() {
+    if (!currentEntity || seeking) return;
+    const total = Number(currentEntity.attributes?.media_duration);
+    const visible = Number.isFinite(total) && total > 0;
+    timelineWrap.hidden = !visible;
+    if (!visible) return;
+    const position = Math.min(total, currentPosition(currentEntity));
+    timeline.max = String(Math.round(total));
+    timeline.value = String(Math.round(position));
+    timeline.disabled = !supports(currentEntity, FEATURE.seek);
+    positionLabel.textContent = formatTime(position);
+    durationLabel.textContent = formatTime(total);
+  }
+
+  function artworkUrl(entity) {
+    const picture = entity?.attributes?.entity_picture_local || entity?.attributes?.entity_picture;
+    if (!picture) return '';
+    try {
+      return new URL(String(picture), window.location.origin).href;
+    } catch {
+      return '';
+    }
+  }
+
+  async function setIcon(id, name, size, color) {
+    document.getElementById(id).src = await vuePanel.getIcon(name, {size, color});
+  }
+
+  async function renderIcons(entity) {
+    const version = ++iconVersion;
+    const playing = entity?.state === 'playing';
+    const muted = entity?.attributes?.is_volume_muted === true;
+    const foreground = getComputedStyle(card).color;
+    const icons = [
+      setIcon('power-icon', 'mdi:power', 48, '#ffffff'),
+      setIcon('previous-icon', 'mdi:skip-previous', 48, foreground),
+      setIcon('stop-icon', 'mdi:stop', 48, foreground),
+      setIcon('play-icon', playing ? 'mdi:pause' : 'mdi:play', 56, '#ffffff'),
+      setIcon('next-icon', 'mdi:skip-next', 48, foreground),
+      setIcon('volume-icon', muted ? 'mdi:volume-off' : 'mdi:volume-high', 48, foreground),
+      setIcon('source-icon', 'mdi:video-input-component', 36, foreground)
+    ];
+    await Promise.all(icons);
+    if (version !== iconVersion) return;
+    play.setAttribute('aria-label', vuePanel.t(playing ? 'translation.pause' : 'translation.play'));
+    power.setAttribute('aria-label', vuePanel.t('translation.power'));
+    previous.setAttribute('aria-label', vuePanel.t('translation.previous'));
+    next.setAttribute('aria-label', vuePanel.t('translation.next'));
+    stop.setAttribute('aria-label', vuePanel.t('translation.stop'));
+    mute.setAttribute('aria-label', vuePanel.t(muted ? 'translation.unmute' : 'translation.mute'));
+  }
+
+  function renderSource(entity) {
+    const sources = Array.isArray(entity?.attributes?.source_list)
+      ? entity.attributes.source_list.map(String)
+      : [];
+    sourceWrap.hidden = !supports(entity, FEATURE.selectSource) || sources.length === 0;
+    if (sourceWrap.hidden) return;
+    const selected = String(entity.attributes?.source || '');
+    source.replaceChildren(...sources.map(value => {
+      const option = document.createElement('option');
+      option.value = value;
+      option.textContent = value;
+      option.selected = value === selected;
+      return option;
+    }));
+  }
+
+  async function render(entity) {
+    currentEntity = entity;
+    if (!entityId || !entity) {
+      player.hidden = true;
+      empty.hidden = false;
+      emptyText.textContent = entityId
+        ? vuePanel.t('translation.entityNotFound')
+        : vuePanel.t('translation.noEntity');
+      await setIcon('empty-icon', 'mdi:multimedia', 96, getComputedStyle(card).color);
+      return;
+    }
+
+    empty.hidden = true;
+    player.hidden = false;
+    const attributes = entity.attributes || {};
+    const picture = artworkUrl(entity);
+    artwork.style.backgroundImage = picture ? `url(${JSON.stringify(picture)})` : '';
+    hero.classList.toggle('has-artwork', Boolean(picture));
+
+    const stateKey = `translation.states.${entity.state}`;
+    state.textContent = vuePanel.t(stateKey) === stateKey ? entity.state : vuePanel.t(stateKey);
+    title.textContent = String(attributes.media_title || attributes.friendly_name || vuePanel.t('translation.unknownTitle'));
+    const subtitle = attributes.media_artist || attributes.media_album_name;
+    artist.textContent = subtitle ? String(subtitle) : '';
+    artist.hidden = !subtitle;
+    const app = attributes.app_name || attributes.source;
+    appBadge.textContent = app ? String(app) : '';
+    appBadge.hidden = !app;
+
+    const off = ['off', 'standby', 'unavailable'].includes(entity.state);
+    power.hidden = off ? !supports(entity, FEATURE.turnOn) : !supports(entity, FEATURE.turnOff);
+    previous.hidden = !supports(entity, FEATURE.previous);
+    next.hidden = !supports(entity, FEATURE.next);
+    stop.hidden = !supports(entity, FEATURE.stop);
+    play.hidden = entity.state === 'playing'
+      ? !supports(entity, FEATURE.pause)
+      : !supports(entity, FEATURE.play);
+
+    const level = Number(attributes.volume_level);
+    volumeWrap.hidden = !supports(entity, FEATURE.volumeSet) || !Number.isFinite(level);
+    if (!volumeWrap.hidden && !volumeChanging) {
+      const percent = Math.round(level * 100);
+      volume.value = String(percent);
+      volumeValue.textContent = `${percent}%`;
+    }
+    mute.hidden = !supports(entity, FEATURE.volumeMute);
+    renderSource(entity);
+    renderTimeline();
+    await renderIcons(entity);
+  }
+
+  power.addEventListener('click', () => {
+    if (!currentEntity) return;
+    const service = ['off', 'standby', 'unavailable'].includes(currentEntity.state) ? 'turn_on' : 'turn_off';
+    return vuePanel.callService('media_player', service, {}, {entity_id: entityId});
+  });
+
+  previous.addEventListener('click', () =>
+    vuePanel.callService('media_player', 'media_previous_track', {}, {entity_id: entityId}));
+  next.addEventListener('click', () =>
+    vuePanel.callService('media_player', 'media_next_track', {}, {entity_id: entityId}));
+  stop.addEventListener('click', () =>
+    vuePanel.callService('media_player', 'media_stop', {}, {entity_id: entityId}));
+  play.addEventListener('click', () => {
+    const service = currentEntity?.state === 'playing' ? 'media_pause' : 'media_play';
+    return vuePanel.callService('media_player', service, {}, {entity_id: entityId});
+  });
+  mute.addEventListener('click', () =>
+    vuePanel.callService('media_player', 'volume_mute', {
+      is_volume_muted: currentEntity?.attributes?.is_volume_muted !== true
+    }, {entity_id: entityId}));
+
+  timeline.addEventListener('input', () => {
+    seeking = true;
+    positionLabel.textContent = formatTime(timeline.value);
+  });
+  timeline.addEventListener('change', async () => {
+    await vuePanel.callService('media_player', 'media_seek', {
+      seek_position: Number(timeline.value)
+    }, {entity_id: entityId});
+    seeking = false;
+    renderTimeline();
+  });
+
+  volume.addEventListener('input', () => {
+    volumeChanging = true;
+    volumeValue.textContent = `${volume.value}%`;
+  });
+  volume.addEventListener('change', async () => {
+    await vuePanel.callService('media_player', 'volume_set', {
+      volume_level: Number(volume.value) / 100
+    }, {entity_id: entityId});
+    volumeChanging = false;
+  });
+
+  source.addEventListener('change', () =>
+    vuePanel.callService('media_player', 'select_source', {
+      source: source.value
+    }, {entity_id: entityId}));
+
+  document.querySelector('[data-label="source"]').textContent = vuePanel.t('translation.source');
+  timeline.setAttribute('aria-label', vuePanel.t('translation.states.playing'));
+  volume.setAttribute('aria-label', vuePanel.t('translation.volume'));
+  setInterval(renderTimeline, 1000);
+  if (entityId) {
+    await render(await vuePanel.getEntity(entityId));
+    vuePanel.subscribeEntity(entityId, render);
+  } else {
+    await render(null);
+  }
+</script>

@@ -497,7 +497,6 @@ def validate_card_metadata(value: Any) -> dict[str, Any]:
         raise CardFileError("Card responsive breakpoints are invalid")
     if not isinstance(value.get("fullRow"), bool):
         raise CardFileError("Card fullRow must be boolean")
-
     variables = value.get("variables")
     if not isinstance(variables, list):
         raise CardFileError("Card variables must be an array")

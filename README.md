@@ -10,7 +10,7 @@ die Engine selbst aus und speichert Dashboards sowie eigene Cards in privaten JS
   den Engine-Build und die schreibgeschützten Core-Cards.
 - `<config>/vue-panel/dashboards/<name>.json` enthält je Panel eine Dashboard-Konfiguration.
 - `<config>/vue-panel/cards/<manufacturer>/<cardName>.html` enthält lokale oder importierte Cards.
-- `custom_components/vue_panel/bundled_cards/vue-panel/*.html` enthält die 10 mitgelieferten Cards.
+- `custom_components/vue_panel/bundled_cards/vue-panel/` enthält die mitgelieferten Core-Cards.
 - Jede Card läuft eingebettet im Engine-Dokument: ihr CSS ist auf die Card begrenzt, das
   Theme-Stylesheet gilt auch in der Card, und das Card-Skript erhält nur die deklarierten
   Funktionen der versionierten `vuePanel`-API. Das ist eine Style- und DOM-Grenze, keine

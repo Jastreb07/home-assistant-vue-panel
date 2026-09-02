@@ -494,7 +494,12 @@ Instanzformular automatisch. Portable Cards importieren nichts aus der Engine, s
 ausschließlich die versionierte `vuePanel`-Card-API.
 - Mitgelieferte portable Core-Cards: clock, light, sensor, thermostat, cover, weather, media,
   room-tile, menu, entity und section-title, dazu die Dialog-Cards light-detail,
-  thermostat-detail und weather-detail. Weather-detail lädt Tages- und Stundenwerte über `weather.get_forecasts`:
+  thermostat-detail, media-detail und weather-detail. Media-detail öffnet in der kleineren
+  `md`-Dialogstufe, entfernt seine Dialogabstände wie die bestehenden Detail-Cards zur Laufzeit
+  über den umgebenden `.vp-dialog-body` und steuert Media Player nativ über
+  deren `supported_features` (Cover, Metadaten, Zeitleiste, Transport, Lautstärke, Ein/Aus und
+  Quellen); die Media-Card verweist über ihr `detail`-Metadatum darauf. Weather-detail lädt Tages-
+  und Stundenwerte über `weather.get_forecasts`:
   Tageswerte zeigen einen gemeinsamen Min-/Max-Maßstab mit vertikalen Bereichsbalken,
   Stundenwerte einen horizontalen Zeitstrom mit Tageswechsel-Pills und Uhrzeiten als `HH:MM`; beide zeigen Wettericon,
   Temperatur und Niederschlag. Der Kopf zeigt zustands- und tageszeitabhängige, lokal gebündelte

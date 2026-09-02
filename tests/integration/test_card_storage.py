@@ -462,6 +462,7 @@ class CardStorageTests(unittest.TestCase):
             "vue-panel/light",
             "vue-panel/light-detail",
             "vue-panel/media",
+            "vue-panel/media-detail",
             "vue-panel/menu",
             "vue-panel/room-tile",
             "vue-panel/section-title",
