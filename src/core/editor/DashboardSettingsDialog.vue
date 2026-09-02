@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type {
   BarConfig,
@@ -19,6 +19,18 @@ import BaseCodeEditor from '@/core/ui/BaseCodeEditor.vue'
 import BaseCheckbox from '@/core/ui/BaseCheckbox.vue'
 import BaseCollapsible from '@/core/ui/BaseCollapsible.vue'
 import { defaultResponsiveVisibility, type ResponsiveVisibility } from '@/core/ui/responsiveCss'
+import {
+  applyPanelScale,
+  DEFAULT_PANEL_SCALE,
+  PANEL_SCALE_MAX,
+  PANEL_SCALE_MIN,
+  PANEL_SCALE_STEP,
+  readPanelScale,
+  readViewScale,
+  savePanelScale,
+  saveViewScale,
+  applyViewScale,
+} from '@/core/ui/panelScale'
 
 const emit = defineEmits<{ close: [] }>()
 
@@ -32,6 +44,13 @@ const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 const hideHaSidebar = ref(store.settings.hideHaSidebar === true)
 const viewTransition = ref(store.settings.viewTransition !== false)
 const dialogAnimation = ref<DialogAnimation>(store.settings.dialogAnimation)
+const initialPanelScale = readPanelScale()
+const panelScale = ref(initialPanelScale)
+const panelScaleInput = ref(String(initialPanelScale))
+const initialViewScale = readViewScale()
+const viewScale = ref(initialViewScale)
+const viewScaleInput = ref(String(initialViewScale))
+let panelScaleCommitted = false
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
@@ -121,6 +140,7 @@ const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
   { value: 'bars', label: t('settings.bars'), icon: 'mdi:dock-window' },
   { value: 'kiosk', label: t('settings.kiosk'), icon: 'mdi:monitor-dashboard' },
+  { value: 'scaling', label: t('settings.scaling.tab'), icon: 'mdi:magnify-expand' },
   { value: 'dialogs', label: t('settings.dialogAnimation.tab'), icon: 'mdi:animation-outline' },
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
@@ -137,6 +157,63 @@ onMounted(async () => {
   if (!store.settings.customCss) cssDraft.value = defaultCss.value
 })
 
+onBeforeUnmount(() => {
+  if (!panelScaleCommitted) {
+    applyPanelScale(initialPanelScale)
+    applyViewScale(initialViewScale)
+  }
+})
+
+function previewPanelScale(value: unknown) {
+  panelScale.value = applyPanelScale(value)
+  panelScaleInput.value = String(panelScale.value)
+}
+
+function previewViewScale(value: unknown) {
+  viewScale.value = applyViewScale(value)
+  viewScaleInput.value = String(viewScale.value)
+}
+
+function previewPanelScaleSlider(event: Event) {
+  previewPanelScale((event.target as HTMLInputElement).value)
+}
+
+function previewViewScaleSlider(event: Event) {
+  previewViewScale((event.target as HTMLInputElement).value)
+}
+
+function updatePanelScaleInput(value: string | number) {
+  panelScaleInput.value = String(value)
+  const parsed = Number(value)
+  if (panelScaleInput.value !== '' && parsed >= PANEL_SCALE_MIN && parsed <= PANEL_SCALE_MAX) {
+    previewPanelScale(parsed)
+  }
+}
+
+function updateViewScaleInput(value: string | number) {
+  viewScaleInput.value = String(value)
+  const parsed = Number(value)
+  if (viewScaleInput.value !== '' && parsed >= PANEL_SCALE_MIN && parsed <= PANEL_SCALE_MAX) {
+    previewViewScale(parsed)
+  }
+}
+
+function commitPanelScaleInput() {
+  previewPanelScale(panelScaleInput.value)
+}
+
+function commitViewScaleInput() {
+  previewViewScale(viewScaleInput.value)
+}
+
+function resetPanelScale() {
+  previewPanelScale(DEFAULT_PANEL_SCALE)
+}
+
+function resetViewScale() {
+  previewViewScale(DEFAULT_PANEL_SCALE)
+}
+
 function resetCss() {
   cssDraft.value = defaultCss.value
 }
@@ -145,6 +222,8 @@ function resetCss() {
 const cssWarningAcknowledged = ref(false)
 
 function save() {
+  commitPanelScaleInput()
+  commitViewScaleInput()
   const uiThemeChanged = uiTheme.value !== store.settings.uiTheme
   // Only store an override when it actually differs from the theme default
   const css = cssDraft.value.trim()
@@ -159,6 +238,9 @@ function save() {
     dialogAnimation: dialogAnimation.value,
     customCss: isOverride ? cssDraft.value : undefined,
   }, JSON.parse(JSON.stringify(barDrafts.value)) as BarConfig)
+  panelScale.value = savePanelScale(panelScale.value)
+  viewScale.value = saveViewScale(viewScale.value)
+  panelScaleCommitted = true
   emit('close')
   // Themed components are cached — a reload applies the new component theme
   if (uiThemeChanged) setTimeout(() => location.reload(), 300)
@@ -189,6 +271,78 @@ function save() {
           <small>{{ t('settings.viewTransitionHint') }}</small>
         </div>
         <BaseCheckbox v-model="viewTransition" />
+      </div>
+    </div>
+
+    <div v-show="tab === 'scaling'" class="settings-form scaling-form">
+      <p class="tab-hint">{{ t('settings.scaling.hint') }}</p>
+      <div class="field">
+        <div class="scale-heading">
+          <span>{{ t('settings.panelScale') }}</span>
+          <BaseButton size="sm" @click="resetPanelScale">{{ t('settings.scaling.reset') }}</BaseButton>
+        </div>
+        <div class="scale-control">
+          <span>{{ PANEL_SCALE_MIN }} %</span>
+          <input
+            class="scale-slider"
+            type="range"
+            :value="panelScale"
+            :min="PANEL_SCALE_MIN"
+            :max="PANEL_SCALE_MAX"
+            :step="PANEL_SCALE_STEP"
+            :aria-label="t('settings.panelScale')"
+            @input="previewPanelScaleSlider"
+          >
+          <span>{{ PANEL_SCALE_MAX }} %</span>
+          <div class="scale-input">
+            <BaseInput
+              :model-value="panelScaleInput"
+              type="number"
+              :min="PANEL_SCALE_MIN"
+              :max="PANEL_SCALE_MAX"
+              :step="1"
+              size="sm"
+              @update:model-value="updatePanelScaleInput"
+              @blur="commitPanelScaleInput"
+            />
+            <span>%</span>
+          </div>
+        </div>
+        <small>{{ t('settings.panelScaleHint') }}</small>
+      </div>
+      <div class="field">
+        <div class="scale-heading">
+          <span>{{ t('settings.viewScale') }}</span>
+          <BaseButton size="sm" @click="resetViewScale">{{ t('settings.scaling.reset') }}</BaseButton>
+        </div>
+        <div class="scale-control">
+          <span>{{ PANEL_SCALE_MIN }} %</span>
+          <input
+            class="scale-slider"
+            type="range"
+            :value="viewScale"
+            :min="PANEL_SCALE_MIN"
+            :max="PANEL_SCALE_MAX"
+            :step="PANEL_SCALE_STEP"
+            :aria-label="t('settings.viewScale')"
+            @input="previewViewScaleSlider"
+          >
+          <span>{{ PANEL_SCALE_MAX }} %</span>
+          <div class="scale-input">
+            <BaseInput
+              :model-value="viewScaleInput"
+              type="number"
+              :min="PANEL_SCALE_MIN"
+              :max="PANEL_SCALE_MAX"
+              :step="1"
+              size="sm"
+              @update:model-value="updateViewScaleInput"
+              @blur="commitViewScaleInput"
+            />
+            <span>%</span>
+          </div>
+        </div>
+        <small>{{ t('settings.viewScaleHint') }}</small>
       </div>
     </div>
 
@@ -384,6 +538,37 @@ function save() {
   margin: 0;
   font-size: 12px;
   color: var(--text-secondary);
+}
+.scale-control {
+  display: grid;
+  grid-template-columns: auto minmax(120px, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.scale-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.scaling-form > .field + .field {
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+.scale-slider {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.scale-input {
+  display: grid;
+  grid-template-columns: 64px auto;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 .bar-field {
   display: flex;

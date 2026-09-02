@@ -6,6 +6,10 @@ export default {
     close: 'Schließen',
     preview: 'Vorschau',
     ok: 'OK',
+    tabs: {
+      scrollLeft: 'Tabs nach links scrollen',
+      scrollRight: 'Tabs nach rechts scrollen',
+    },
     cssWarning:
       'Benutzerdefiniertes CSS wird über das Theme gelegt und kann nach zukünftigen Updates fehlerhaft werden. Nur fortfahren, wenn du weißt, was du tust.',
     selectMenu: {
@@ -578,6 +582,17 @@ export default {
     theme: 'Theme',
     uiTheme: 'Komponenten-Theme',
     uiThemeHint: 'Themes liegen unter src/theme/<name>/ — fehlende Komponenten fallen auf das Default-Theme zurück.',
+    panelScale: 'Skalierung auf diesem Gerät',
+    panelScaleHint:
+      'Skaliert die gesamte Vue-Panel-Oberfläche wie der Browser-Zoom. Die Auswahl wird nur in diesem Browser gespeichert.',
+    viewScale: 'Skalierung des View-Bereichs',
+    viewScaleHint:
+      'Skaliert nur den Inhalt der View-Area. Leisten und Dialoge behalten ihre normale Größe.',
+    scaling: {
+      tab: 'Skalierung',
+      hint: 'Diese Einstellungen gelten nur für diesen Browser und werden nicht im Dashboard gespeichert.',
+      reset: 'Auf 100 % zurücksetzen',
+    },
     themes: {
       dark: 'Dunkel',
       light: 'Hell',

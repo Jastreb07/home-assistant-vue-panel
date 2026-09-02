@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { dialogPointerPosition, type DialogPointerPosition } from '@/core/ui/dialogPointer'
 import { useDashboardStore } from '@/core/config/dashboardStore'
+import type { DialogContentPosition } from '@/core/config/types'
 
 const props = withDefaults(
   defineProps<{
@@ -19,8 +20,10 @@ const props = withDefaults(
     bodyHeight?: number
     /** Close when the backdrop outside the dialog is clicked */
     closeOnBackdrop?: boolean
+    /** Vertical body alignment — normal dialogs default to top */
+    contentPosition?: DialogContentPosition
   }>(),
-  { size: 'md', closeOnBackdrop: false },
+  { size: 'md', closeOnBackdrop: false, contentPosition: 'top' },
 )
 const emit = defineEmits<{ close: [] }>()
 const store = useDashboardStore()
@@ -152,7 +155,11 @@ onBeforeUnmount(() => {
             <slot name="actions" />
           </div>
         </header>
-        <div class="vp-dialog-body" :style="bodyStyle()">
+        <div
+          class="vp-dialog-body"
+          :class="`vp-dialog-body--${contentPosition}`"
+          :style="bodyStyle()"
+        >
           <slot />
         </div>
         <footer v-if="$slots.footer" class="vp-dialog-footer">

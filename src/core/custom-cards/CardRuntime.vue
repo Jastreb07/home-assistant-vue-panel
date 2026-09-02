@@ -10,7 +10,7 @@ import { navigatePanel, usePanelRoutePath } from '@/core/router/panelNavigation'
 import { useI18n } from 'vue-i18n'
 import { mdiIconDataUrl } from '@/core/ui/mdiIconNames'
 import { runtimeId } from '@/core/utils/runtimeId'
-import type { CardDetailConfig } from '@/core/config/types'
+import type { CardDetailConfig, DialogContentPosition } from '@/core/config/types'
 import type { CardArea } from '@/core/registry/cardRegistry'
 import { popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
 import { openDetail, openPopup } from '@/core/popups/popupService'
@@ -415,10 +415,19 @@ function buildApi(capabilities: PortableCardCapability[]) {
       const variables = Array.isArray(payload.variables)
         ? payload.variables.map(String)
         : undefined
+      let position: DialogContentPosition | undefined
+      if (payload.position !== undefined) {
+        const value = String(payload.position)
+        if (value !== 'top' && value !== 'center' && value !== 'bottom') {
+          throw new Error('Invalid detail dialog position.')
+        }
+        position = value
+      }
       openDetail(snapshot(cardConfig.value), props.definition.detail, {
         card,
         entityId: payload.entity === undefined ? undefined : String(payload.entity),
         variables,
+        position,
       })
       return null
     },

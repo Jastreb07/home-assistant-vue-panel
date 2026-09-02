@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import { useMediaQuery } from '@/core/composables/useMediaQuery'
 
 defineProps<{
   reserveResizeCorner?: boolean
@@ -19,6 +20,7 @@ const trigger = ref<HTMLButtonElement | null>(null)
 const menu = ref<HTMLElement | null>(null)
 const open = ref(false)
 const menuStyle = ref<Record<string, string>>({})
+const isMobile = useMediaQuery('(max-width: 767px)')
 
 const actions = [
   { name: 'edit', icon: 'mdi:pencil', label: 'editor.cardActions.edit' },
@@ -80,6 +82,14 @@ function closeMenu() {
   open.value = false
 }
 
+function editFromSurface() {
+  if (!isMobile.value) emit('edit')
+}
+
+function blockSurfaceScroll(event: Event) {
+  if (!isMobile.value) event.preventDefault()
+}
+
 onMounted(() => {
   document.addEventListener('pointerdown', onDocumentPointerDown)
   window.addEventListener('resize', closeMenu)
@@ -107,9 +117,11 @@ onBeforeUnmount(() => {
       type="button"
       class="vp-card-edit-surface"
       :aria-label="$t('editor.cardActions.edit')"
-      @click.stop="emit('edit')"
-      @wheel.prevent
-      @touchmove.prevent
+      :aria-hidden="isMobile || undefined"
+      :tabindex="isMobile ? -1 : 0"
+      @click.stop="editFromSurface"
+      @wheel="blockSurfaceScroll"
+      @touchmove="blockSurfaceScroll"
     >
       <span class="vp-card-edit-pencil">
         <MdiIcon icon="mdi:pencil" :size="20" />

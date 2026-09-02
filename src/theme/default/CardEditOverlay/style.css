@@ -167,6 +167,35 @@
   }
 }
 
+@media (max-width: 767px) {
+  .vp-card-edit-surface,
+  .vp-card-edit-overlay:hover .vp-card-edit-surface,
+  .vp-card-edit-overlay:focus-within .vp-card-edit-surface,
+  .vp-card-edit-overlay--open .vp-card-edit-surface {
+    opacity: 1;
+    clip-path: none;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    cursor: default;
+    touch-action: pan-y;
+    transition: none;
+  }
+
+  .vp-card-edit-pencil {
+    display: none;
+  }
+
+  .vp-card-edit-trigger {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vp-card-edit-surface {
     transition: none;

@@ -9,6 +9,7 @@ export type CardOrientation = 'auto' | 'vertical' | 'horizontal'
 export type ViewWidth = 'default' | 'full'
 export type ViewAlign = 'left' | 'center' | 'right'
 export type PopupSize = 'sm' | 'md' | 'lg' | 'full'
+export type DialogContentPosition = 'top' | 'center' | 'bottom'
 
 export type ViewBackgroundAttachment = 'scroll' | 'fixed'
 export type ViewBackgroundSize = 'auto' | 'cover' | 'contain'
@@ -171,6 +172,8 @@ export interface CardDetailConfig {
   variables?: string[]
   /** Variable holding the entity the domain default is resolved from */
   entityKey?: string
+  /** Vertical position of the detail card inside the dialog (default center) */
+  position?: DialogContentPosition
 }
 
 export interface CustomCardDefinition {

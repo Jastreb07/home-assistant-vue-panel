@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { themed } from '@/theme/registry'
+import type { DialogContentPosition } from '@/core/config/types'
 
 /** Thin wrapper: renders the 'Dialog' component of the active theme. */
 const Dialog = themed('Dialog')
@@ -18,6 +19,8 @@ defineProps<{
   bodyHeight?: number
   /** Close when the backdrop outside the dialog is clicked */
   closeOnBackdrop?: boolean
+  /** Vertical body alignment — normal dialogs default to top */
+  contentPosition?: DialogContentPosition
 }>()
 const emit = defineEmits<{ close: [] }>()
 </script>
@@ -32,6 +35,7 @@ const emit = defineEmits<{ close: [] }>()
     :width="width"
     :body-height="bodyHeight"
     :close-on-backdrop="closeOnBackdrop"
+    :content-position="contentPosition"
     @close="emit('close')"
   >
     <slot />

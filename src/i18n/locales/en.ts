@@ -6,6 +6,10 @@ export default {
     close: 'Close',
     preview: 'Preview',
     ok: 'OK',
+    tabs: {
+      scrollLeft: 'Scroll tabs left',
+      scrollRight: 'Scroll tabs right',
+    },
     cssWarning:
       'Custom CSS is applied on top of the theme and may break after future updates. Only continue if you know what you are doing.',
     selectMenu: {
@@ -577,6 +581,17 @@ export default {
     theme: 'Theme',
     uiTheme: 'Component theme',
     uiThemeHint: 'Themes live in src/theme/<name>/ — missing components fall back to the default theme.',
+    panelScale: 'Scale on this device',
+    panelScaleHint:
+      'Scales the entire Vue Panel interface like browser zoom. The selection is stored only in this browser.',
+    viewScale: 'View area scale',
+    viewScaleHint:
+      'Scales only the view area content. Bars and dialogs keep their regular size.',
+    scaling: {
+      tab: 'Scaling',
+      hint: 'These settings apply only to this browser and are not stored in the dashboard.',
+      reset: 'Reset to 100%',
+    },
     themes: {
       dark: 'Dark',
       light: 'Light',

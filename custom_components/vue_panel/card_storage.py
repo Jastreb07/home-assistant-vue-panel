@@ -119,7 +119,7 @@ _METADATA_FIELDS = {
 }
 # Optional metadata: a card without them simply keeps the engine defaults
 _OPTIONAL_METADATA_FIELDS = {"detail"}
-_DETAIL_FIELDS = {"card", "variables", "entityKey"}
+_DETAIL_FIELDS = {"card", "variables", "entityKey", "position"}
 _VARIABLE_FIELDS = {
     "gestures",
     "actions",
@@ -538,6 +538,9 @@ def _validate_detail(value: Any, keys: set[str]) -> None:
         not isinstance(entity_key, str) or entity_key not in keys
     ):
         raise CardFileError("Card detail entityKey must be a declared variable")
+    position = value.get("position")
+    if position is not None and position not in {"top", "center", "bottom"}:
+        raise CardFileError("Card detail position must be top, center, or bottom")
 
 
 def parse_card_document(document: str) -> dict[str, Any]:

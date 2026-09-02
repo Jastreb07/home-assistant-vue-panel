@@ -264,7 +264,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               />
               <div class="view-foreground">
             <div v-if="store.editMode && activeView" class="edit-toolbar">
-              <MdiIcon icon="mdi:pencil" :size="16" />
+              <MdiIcon class="toolbar-mark" icon="mdi:pencil" :size="16" />
               <div class="view-picker">
                 <BaseViewSelectMenu
                   :model-value="activeView.id"
@@ -279,6 +279,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <button
                 class="toolbar-icon-btn"
                 :title="t('shell.newView')"
+                :aria-label="t('shell.newView')"
                 @click="viewDialog = 'new'"
               >
                 <MdiIcon icon="mdi:plus" :size="18" />
@@ -286,6 +287,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <button
                 class="toolbar-icon-btn"
                 :title="t('shell.duplicateView')"
+                :aria-label="t('shell.duplicateView')"
                 @click="viewDialog = 'duplicate'"
               >
                 <MdiIcon icon="mdi:content-copy" :size="17" />
@@ -293,6 +295,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <button
                 class="toolbar-icon-btn custom-card-button"
                 :title="t('shell.newCustomCard')"
+                :aria-label="t('shell.newCustomCard')"
                 @click="customCardDialogOpen = true"
               >
                 <MdiIcon icon="mdi:code-tags" :size="18" />
@@ -300,6 +303,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
               <button
                 class="toolbar-icon-btn"
                 :title="t('shell.managePopups')"
+                :aria-label="t('shell.managePopups')"
                 @click="popupManagerOpen = true"
               >
                 <MdiIcon icon="mdi:card-text-outline" :size="18" />
@@ -309,6 +313,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                   class="toolbar-icon-btn"
                   :disabled="!store.canUndo"
                   :title="t('editor.undo')"
+                  :aria-label="t('editor.undo')"
                   @click="store.undo()"
                 >
                   <MdiIcon icon="mdi:undo" :size="18" />
@@ -317,17 +322,28 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
                   class="toolbar-icon-btn"
                   :disabled="!store.canRedo"
                   :title="t('editor.redo')"
+                  :aria-label="t('editor.redo')"
                   @click="store.redo()"
                 >
                   <MdiIcon icon="mdi:redo" :size="18" />
                 </button>
-                <button class="toolbar-btn" @click="viewDialog = 'edit'">
+                <button
+                  class="toolbar-btn"
+                  :title="t('shell.viewSettings')"
+                  :aria-label="t('shell.viewSettings')"
+                  @click="viewDialog = 'edit'"
+                >
                   <MdiIcon icon="mdi:cog" :size="16" />
-                  {{ t('shell.viewSettings') }}
+                  <span class="toolbar-label">{{ t('shell.viewSettings') }}</span>
                 </button>
-                <button class="toolbar-btn" @click="settingsOpen = true">
+                <button
+                  class="toolbar-btn"
+                  :title="t('settings.title')"
+                  :aria-label="t('settings.title')"
+                  @click="settingsOpen = true"
+                >
                   <MdiIcon icon="mdi:tune" :size="16" />
-                  {{ t('settings.title') }}
+                  <span class="toolbar-label">{{ t('settings.title') }}</span>
                 </button>
               </div>
             </div>
@@ -398,6 +414,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
   min-width: 0;
   min-height: 0;
   overflow: hidden;
+  zoom: var(--vp-view-scale, 1);
 }
 .view-background {
   pointer-events: none;
@@ -520,5 +537,47 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown))
 }
 .toolbar-btn:hover {
   border-color: var(--accent);
+}
+@media (max-width: 767px) {
+  .edit-toolbar {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    width: calc(100% - 16px);
+    max-width: none;
+    margin: 0 8px 32px;
+    padding: 8px;
+    border-radius: 14px;
+    box-shadow: var(--card-shadow);
+  }
+  .toolbar-mark {
+    display: none;
+  }
+  .view-picker {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+  }
+  .edit-toolbar > .toolbar-icon-btn {
+    width: 100%;
+    height: 44px;
+  }
+  .toolbar-actions {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-left: 0;
+  }
+  .toolbar-actions .toolbar-icon-btn,
+  .toolbar-actions .toolbar-btn {
+    width: 100%;
+    height: 44px;
+    justify-content: center;
+    padding: 0;
+  }
+  .toolbar-label {
+    display: none;
+  }
 }
 </style>

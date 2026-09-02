@@ -470,6 +470,12 @@ Views steuern nur die Sichtbarkeit.
   atomare Writes und maximal fünf Backups.
 - Es gibt weder Dashboard-`localStorage` noch `frontend/*_user_data`, `.storage` oder Legacy-Migrationen.
 - **Undo/Redo**: JSON-Snapshot-Stacks im Store (max 50). `save()` = mit History, `persist()` = ohne (für undo/redo/sync). Strg+Z/Y + Toolbar-Buttons im Edit-Modus.
+- Die Geräteskalierungen sind bewusst keine Dashboard-Persistenz: `panelScale.ts` speichert
+  `vue-panel:scale` für die gesamte Engine und `vue-panel:view-scale` nur für `.view-area` lokal
+  pro Browser (je 50–200 % in 1-%-Schritten, Standard 100 %). Der Gesamtwert setzt vor dem
+  App-Mount `zoom` am Dokument-Root, der View-Wert die CSS-Variable `--vp-view-scale`.
+  Dashboard-Einstellungen → „Skalierung“ zeigt beide Slider samt Zahlenfeld, Live-Vorschau und
+  separatem 100-%-Reset; Abbrechen stellt beide vorherigen Werte wieder her.
 
 ### Auth (core/ha/connection.ts)
 - Dev: Long-lived Token aus `.env.local`. Produktion: postMessage vom loader.js (inkl. `language`).
@@ -552,6 +558,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - **VariableCard** = wiederverwendbare, aufklappbare Hülle für einen Variablen-Schemaeintrag (`title`, `marker?`, `defaultOpen?`, `removeLabel`, `remove`-Event, Default-Slot); Wrapper `@/core/ui/BaseVariableCard.vue`. Die Löschaktion ist vom Toggle getrennt.
 - **ViewSelectMenu** = auf Views spezialisiertes Dropdown statt des generischen SelectMenu (`modelValue` = View-`id`, `views`, `size`, `searchable`, `reorderable`; Events `update:modelValue` und `move`); Wrapper `@/core/ui/BaseViewSelectMenu.vue`, Typen und Helfer in `@/core/ui/viewSelect.ts`. Es rückt Unteransichten nach Pfadtiefe ein, markiert die oberste View als Standard-View mit `mdi:star` und verschiebt Views über die beiden Pfeile rechts (auch per Alt+↑/↓) via `store.moveView()`. Während einer Suche sind die Pfeile ausgeblendet, weil das Umsortieren einer gefilterten Liste mehrdeutig wäre. Verwendet in der Edit-Toolbar der AppShell.
 - **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
+- **Tabs** bleiben immer einzeilig. Wenn ihre Gesamtbreite nicht in den verfügbaren Raum passt,
+  wird die mittlere Tab-Leiste horizontal scrollbar und erhält links und rechts feste,
+  zustandsabhängig deaktivierte Pfeile; Auswahl und Tastaturnavigation holen den aktiven Tab
+  automatisch in den sichtbaren Bereich.
 - **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
 - Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
 - Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
@@ -575,6 +585,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   `padding?` und `sections[]`. Der Inhalt ist **wie eine Flex-View**: `PopupFrame.vue` baut aus dem
   Popup eine synthetische `ViewConfig` mit `layout: 'flex'` und rendert sie über `FlexLayout` mit
   `area="dialog"` — dadurch gilt die komplette `useSectionEditing`-Werkzeugleiste unverändert.
+- Dialog-Bodies stehen über die `BaseDialog`-Prop `contentPosition` vertikal auf `top`, `center`
+  oder `bottom`; normale Dialoge und Popups verwenden standardmäßig `top`. Detail-Cards sind
+  standardmäßig zentriert und können die Position über `detail.position` im Card-Metadatenblock
+  oder pro Aufruf über `vuePanel.showDetail({ position })` überschreiben.
 - Store: Views und Popups teilen sich alle Section-/Card-Actions. `sectionHost(id)` löst beide auf,
   alle Actions nehmen deshalb `hostId` statt `viewId`. Popup-Actions: `addPopup`, `updatePopup`,
   `removePopup`, `duplicatePopup`, `movePopup`; Getter `popups`, `popupById`.
@@ -606,6 +620,10 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - **Section-Dialog** (`core/editor/SectionSettingsDialog.vue`): Tab „Allgemein" (Ausrichtung der Cards `auto|vertical|horizontal`; im Sections-Layout zusätzlich `cardsPerRow` = Auto oder 1–6, unabhängig von der Ausrichtung; dazu `contentAlign` = `left|center|right` als `justify-content` der Card-Zeile — nur sichtbar bei layout=flex oder horizontaler Ausrichtung, schlägt die View-Ausrichtung) + Tab „Erweitert" mit Collapsibles „Größe" (bei layout=sections: Breite in Spalten; bei layout=flex: Volle Breite (Default) oder eigene Breite in px → `SectionConfig.width`) und „Abstände" (Margin/Padding via `BaseBoxInput`). Wird von allen 4 Section-Layouts gerendert; `addSection` legt den Abschnitt sofort an und öffnet den Dialog. Ausrichtung/Spacing wertet `LayoutSection.vue` aus, `columnSpan` setzt `grid-column: span N` (in `dense`-Modus ignoriert). Eine feste `cardsPerRow`-Zahl erzeugt ein exaktes Abschnittsraster und ignoriert normale Card-Spans; `fullRow` bleibt davon unberührt.
 - **View-Tab „Erweitert"** (`ViewSettingsDialog`): zwei `BaseCollapsible`-Boxen — „Spezifische Einstellungen für die Abschnittsansicht" (nur bei layout=sections: maxColumns, dense, topMargin) und „Abstände & Ausrichtung" mit Margin, Padding, Breite (`default|full`), Ausrichtung (`left|center|right`). `ViewRenderer.vue` legt einen `.view-box`-Wrapper darum, setzt Padding/Margin inline, bei `full` die Variable `--view-max-width: none` und für die Ausrichtung `--view-align` (die Auto-Margins). Alle Layouts nutzen `max-width: var(--view-max-width, …)` und `margin: var(--view-align, 0 auto)` statt fester Werte. Damit die Ausrichtung überhaupt sichtbar wird, rechnet `SectionsLayout` seine `max-width` aus den **tatsächlich belegten** Spalten (`usedColumns`, inkl. Add-Tile im Edit-Modus), nicht aus `maxColumns`. Im Flex-Layout wirkt die Ausrichtung als `justify-content` auf die **Abschnitts-Reihe** (Default links); wie die Cards innerhalb eines Abschnitts stehen, regelt dessen eigenes `contentAlign`.
 - Edit-Modus: `store.editMode` (EditFab absolut im `.view-area`, rechts/unten je 24px; der Inhalt scrollt separat in `.view-scroll`). Toolbar: Undo/Redo, View-Einstellungen, Dashboard-Einstellungen. Im Edit-Modus erscheinen Subviews in der Nav.
+- Auf Mobilgeräten wird die View-Edit-Toolbar als dreizeiliges 4-Spalten-Raster mit 44px
+  Touch-Zielen dargestellt. Card-Edit-Overlays zeigen dort ausschließlich den dauerhaft
+  sichtbaren Drei-Punkte-Trigger: Die unsichtbare Surface blockiert Card-Tipps ohne Blur oder
+  Pencil, erlaubt aber vertikales Seitenscrollen; auch der Resize-Corner ist mobil gesperrt.
 - **Globale Bars**: vier Engine-Container — `sidebar-left`, `sidebar-right`, `header`, `bottom`.
   Dashboard-Einstellungen → Tab „Bars“ setzt Größe und (bei Header/Bottom) die Platzierung
   `view|full`. Jede Bar besteht aus beliebig vielen Spalten; im Bearbeitungsmodus legt „+ Spalte“

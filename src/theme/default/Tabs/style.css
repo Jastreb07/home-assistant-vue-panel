@@ -1,11 +1,58 @@
+.vp-tabs-shell {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--divider);
+}
 .vp-tabs {
   display: flex;
-  flex-wrap: wrap;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
   align-items: stretch;
   gap: 4px;
+  min-width: 0;
   min-height: 44px;
-  overflow: visible;
-  border-bottom: 1px solid var(--divider);
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.vp-tabs::-webkit-scrollbar {
+  display: none;
+}
+.vp-tabs-scroll {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.vp-tabs-scroll--left {
+  border-right: 1px solid var(--divider);
+}
+.vp-tabs-scroll--right {
+  border-left: 1px solid var(--divider);
+}
+.vp-tabs-scroll:disabled {
+  color: var(--text-secondary);
+  cursor: default;
+  opacity: 0.35;
+}
+.vp-tabs-scroll:not(:disabled):hover,
+.vp-tabs-scroll:not(:disabled):focus-visible {
+  background: var(--nav-item-hover);
+  color: var(--accent);
+  outline: none;
 }
 .vp-tab {
   flex: 0 0 auto;
@@ -37,4 +84,10 @@
 .vp-tab:focus-visible {
   outline: none;
   color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-tabs {
+    scroll-behavior: auto;
+  }
 }

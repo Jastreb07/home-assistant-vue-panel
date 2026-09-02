@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
 import type { TabItem } from '@/core/ui/tabs'
 
@@ -11,6 +11,50 @@ const props = defineProps<{
 const emit = defineEmits<{ 'update:modelValue': [value: string] }>()
 
 const activeIndex = computed(() => props.items.findIndex((i) => i.value === props.modelValue))
+const shell = ref<HTMLElement | null>(null)
+const tabList = ref<HTMLElement | null>(null)
+const hasOverflow = ref(false)
+const canScrollLeft = ref(false)
+const canScrollRight = ref(false)
+let resizeObserver: ResizeObserver | undefined
+
+function updateScrollEdges() {
+  const element = tabList.value
+  if (!element) return
+  canScrollLeft.value = element.scrollLeft > 1
+  canScrollRight.value = element.scrollLeft + element.clientWidth < element.scrollWidth - 1
+}
+
+function updateOverflow() {
+  const container = shell.value
+  const element = tabList.value
+  if (!container || !element) return
+
+  const overflow = element.scrollWidth > container.clientWidth + 1
+  if (hasOverflow.value !== overflow) {
+    hasOverflow.value = overflow
+    void nextTick(updateScrollEdges)
+    return
+  }
+  updateScrollEdges()
+}
+
+function scrollTabs(direction: -1 | 1) {
+  const element = tabList.value
+  if (!element) return
+  element.scrollBy({
+    left: direction * Math.max(160, element.clientWidth * 0.7),
+    behavior: 'smooth',
+  })
+}
+
+async function revealActiveTab() {
+  await nextTick()
+  tabList.value
+    ?.querySelector<HTMLElement>('.vp-tab.active')
+    ?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' })
+  updateOverflow()
+}
 
 /** ←/→ move between tabs, as expected from a tablist. */
 function onKeydown(e: KeyboardEvent) {
@@ -22,23 +66,61 @@ function onKeydown(e: KeyboardEvent) {
   const next = (Math.max(0, activeIndex.value) + step + count) % count
   emit('update:modelValue', props.items[next]!.value)
 }
+
+watch(() => props.modelValue, revealActiveTab)
+watch(() => props.items, () => void nextTick(updateOverflow), { deep: true })
+
+onMounted(() => {
+  resizeObserver = new ResizeObserver(updateOverflow)
+  if (shell.value) resizeObserver.observe(shell.value)
+  if (tabList.value) resizeObserver.observe(tabList.value)
+  updateOverflow()
+})
+
+onBeforeUnmount(() => resizeObserver?.disconnect())
 </script>
 
 <template>
-  <div class="vp-tabs" role="tablist" @keydown="onKeydown">
+  <div ref="shell" class="vp-tabs-shell">
     <button
-      v-for="item in items"
-      :key="item.value"
+      v-if="hasOverflow"
       type="button"
-      role="tab"
-      class="vp-tab"
-      :class="{ active: item.value === modelValue, 'vp-tab--end': item.align === 'end' }"
-      :aria-selected="item.value === modelValue"
-      :tabindex="item.value === modelValue ? 0 : -1"
-      @click="emit('update:modelValue', item.value)"
+      class="vp-tabs-scroll vp-tabs-scroll--left"
+      :disabled="!canScrollLeft"
+      :title="$t('common.tabs.scrollLeft')"
+      :aria-label="$t('common.tabs.scrollLeft')"
+      @click="scrollTabs(-1)"
     >
-      <MdiIcon v-if="item.icon" :icon="item.icon" :size="16" />
-      <span>{{ item.label }}</span>
+      <MdiIcon icon="mdi:chevron-left" :size="22" />
+    </button>
+
+    <div ref="tabList" class="vp-tabs" role="tablist" @keydown="onKeydown" @scroll="updateScrollEdges">
+      <button
+        v-for="item in items"
+        :key="item.value"
+        type="button"
+        role="tab"
+        class="vp-tab"
+        :class="{ active: item.value === modelValue, 'vp-tab--end': item.align === 'end' }"
+        :aria-selected="item.value === modelValue"
+        :tabindex="item.value === modelValue ? 0 : -1"
+        @click="emit('update:modelValue', item.value)"
+      >
+        <MdiIcon v-if="item.icon" :icon="item.icon" :size="16" />
+        <span>{{ item.label }}</span>
+      </button>
+    </div>
+
+    <button
+      v-if="hasOverflow"
+      type="button"
+      class="vp-tabs-scroll vp-tabs-scroll--right"
+      :disabled="!canScrollRight"
+      :title="$t('common.tabs.scrollRight')"
+      :aria-label="$t('common.tabs.scrollRight')"
+      @click="scrollTabs(1)"
+    >
+      <MdiIcon icon="mdi:chevron-right" :size="22" />
     </button>
   </div>
 </template>

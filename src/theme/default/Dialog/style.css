@@ -189,6 +189,18 @@
   overscroll-behavior: contain;
 }
 
+.vp-dialog-body--top {
+  justify-content: flex-start;
+}
+
+.vp-dialog-body--center {
+  justify-content: safe center;
+}
+
+.vp-dialog-body--bottom {
+  justify-content: safe flex-end;
+}
+
 .vp-dialog-footer {
   display: flex;
   justify-content: flex-end;
@@ -216,15 +228,9 @@
     border-radius: 0;
   }
 
-  /*
-   * Eine feste Body-Höhe eines Popups würde den Vollbildmodus zerschneiden.
-   * Kurzer Inhalt steht im Vollbild mittig statt oben zu kleben; `safe` sorgt
-   * dafür, dass langer Inhalt trotzdem von oben scrollbar bleibt. Waagerecht
-   * zentrieren sich die Cards weiterhin selbst über `margin-inline: auto`.
-   */
+  /* A fixed popup body height must not split the mobile full-screen dialog. */
   .vp-dialog-body {
     height: auto !important;
-    justify-content: safe center;
   }
 }
 
