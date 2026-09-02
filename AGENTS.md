@@ -244,7 +244,8 @@ Aktueller Stand:
   Anfangsfarbe zurück, sonst würde die runde Endkappe die Anfangsfarbe zeigen)
   wird mit `--vp-arc-mask` auf exakt denselben Pfad samt Strichbreite und runden Enden wie
   `.arc-value` maskiert, sodass er wie die übrigen Bögen sitzt — beim Farbton der Regenbogen, bei
-  Kelvin der Warm-Kalt-Verlauf mit denselben Endfarben wie `kelvinColor()`. Der Griff trägt immer die Farbe,
+  Kelvin der Verlauf von Warmorange zu fast Weiß; CSS-Stopps und `KELVIN_RAMP`/`kelvinColor()` im
+  Skript verwenden dieselben Stützstellen, damit der Griff zur Stelle passt, auf der er sitzt. Der Griff trägt immer die Farbe,
   die der Bogen an seiner Position hat. Im Farbmodus steht in der Mitte statt der Zahl eine runde Farbfläche mit
   der tatsächlichen Lichtfarbe (Farbton vom Regler, Sättigung aus `hs_color`). Dialogbreite (`defaultSize.width` 396 → `md`) und die vom
   Inhalt bestimmte Höhe entsprechen ebenfalls der Thermostat-Card;
