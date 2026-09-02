@@ -93,6 +93,7 @@ def default_dashboard() -> dict[str, Any]:
             "uiTheme": "default",
             "screensaverMinutes": 0,
             "autoReturnSeconds": 0,
+            "dialogAnimation": "scale",
         },
         "bars": {
             "sidebar-left": {

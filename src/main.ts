@@ -10,10 +10,12 @@ import {
 import { applyHaLocale } from './i18n'
 import { applyHostRoutePath } from './core/router/panelNavigation'
 import { syncPortableCardCatalog } from './core/registry/cardRegistry'
+import { startDialogPointerTracking } from './core/ui/dialogPointer'
 
 const target = document.querySelector('#app')
 if (!target) throw new Error('Vue Panel development mount element is missing.')
 
+startDialogPointerTracking()
 const mounted = mountVuePanel(target)
 
 async function start(): Promise<void> {

@@ -38,6 +38,7 @@ export const defaultSettings: DashboardSettings = {
   autoReturnSeconds: 0,
   hideHaSidebar: false,
   viewTransition: true,
+  dialogAnimation: 'scale',
 }
 
 export const barPositions: BarPosition[] = [

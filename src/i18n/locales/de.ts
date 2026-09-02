@@ -586,6 +586,16 @@ export default {
     viewTransition: 'Übergang beim View-Wechsel',
     viewTransitionHint:
       'Blendet die neue View beim Wechsel sanft ein. Ist im System „Bewegung reduzieren“ aktiv, wird der Übergang immer übersprungen.',
+    dialogAnimation: {
+      tab: 'Dialoge & Popups',
+      label: 'Animation',
+      hint: 'Legt die Öffnungs- und Schließanimation für alle Dialog- und Popup-Fenster fest.',
+      options: {
+        none: 'Keine Animation',
+        simple: 'Einfach',
+        scale: 'Skalierung',
+      },
+    },
     kiosk: 'Kiosk',
     kioskHint:
       'Einstellungen für den unbeaufsichtigten Dauerbetrieb, etwa auf einem Wandtablet.',

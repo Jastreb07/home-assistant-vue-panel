@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, useId } from 'vue'
 import MdiIcon from '@/core/ui/MdiIcon.vue'
+import { dialogPointerPosition, type DialogPointerPosition } from '@/core/ui/dialogPointer'
+import { useDashboardStore } from '@/core/config/dashboardStore'
 
 const props = withDefaults(
   defineProps<{
@@ -21,26 +23,46 @@ const props = withDefaults(
   { size: 'md', closeOnBackdrop: false },
 )
 const emit = defineEmits<{ close: [] }>()
+const store = useDashboardStore()
 
 const titleId = `vp-dialog-title-${useId()}`
 const dialog = ref<HTMLDivElement | null>(null)
 const closeButton = ref<HTMLButtonElement | null>(null)
+const isReady = ref(false)
 const isClosing = ref(false)
+const openPointer = dialogPointerPosition()
 let closeTimer: ReturnType<typeof setTimeout> | undefined
 let attentionAnimation: Animation | undefined
+const animationMode = computed(() => store.settings.dialogAnimation)
 const dialogStyle = () => (props.width ? { width: `min(${props.width}px, 100%)` } : undefined)
 const bodyStyle = () => (props.bodyHeight ? { height: `${props.bodyHeight}px` } : undefined)
+
+function setMotionOrigin(pointer: DialogPointerPosition) {
+  if (!dialog.value) return
+  const bounds = dialog.value.getBoundingClientRect()
+  const x = pointer.x - bounds.left
+  const y = pointer.y - bounds.top
+  dialog.value.style.setProperty('--vp-dialog-origin-x', `${x}px`)
+  dialog.value.style.setProperty('--vp-dialog-origin-y', `${y}px`)
+}
 
 function requestClose() {
   if (isClosing.value) return
 
-  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  if (
+    animationMode.value === 'none'
+    || window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  ) {
     emit('close')
     return
   }
 
+  if (animationMode.value === 'scale') setMotionOrigin(openPointer)
   isClosing.value = true
-  closeTimer = setTimeout(() => emit('close'), 220)
+  closeTimer = setTimeout(
+    () => emit('close'),
+    animationMode.value === 'simple' ? 180 : 320,
+  )
 }
 
 function onBackdropClick() {
@@ -74,6 +96,8 @@ function onKeydown(event: KeyboardEvent) {
 onMounted(async () => {
   window.addEventListener('keydown', onKeydown)
   await nextTick()
+  setMotionOrigin(openPointer)
+  isReady.value = true
   closeButton.value?.focus({ preventScroll: true })
 })
 
@@ -94,7 +118,14 @@ onBeforeUnmount(() => {
       <div
         ref="dialog"
         class="vp-dialog"
-        :class="[`vp-dialog--${size}`, { 'vp-dialog--closing': isClosing }]"
+        :class="[
+          `vp-dialog--${size}`,
+          `vp-dialog--animation-${animationMode}`,
+          {
+            'vp-dialog--ready': isReady,
+            'vp-dialog--closing': isClosing,
+          },
+        ]"
         :style="dialogStyle()"
         role="dialog"
         aria-modal="true"

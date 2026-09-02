@@ -288,6 +288,8 @@ export interface BarEntry {
 
 export type BarConfig = Record<BarPosition, BarEntry>
 
+export type DialogAnimation = 'none' | 'simple' | 'scale'
+
 export interface DashboardSettings {
   theme: 'dark' | 'light' | 'auto'
   uiTheme: string
@@ -301,6 +303,8 @@ export interface DashboardSettings {
   hideHaSidebar?: boolean
   /** Animate the switch from one view to the next — on unless turned off */
   viewTransition?: boolean
+  /** Animation used by all engine dialogs and runtime popups */
+  dialogAnimation: DialogAnimation
   customCss?: string
 }
 

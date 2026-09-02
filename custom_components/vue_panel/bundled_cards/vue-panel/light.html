@@ -292,6 +292,10 @@
         overflow: hidden;
     }
 
+    .tile.slider-enabled {
+        touch-action: none;
+    }
+
     /* Slight tint on hover — colour comes from the theme */
     .tile:hover:not(.active) {
         background: var(--card-bg-hover, var(--card-bg));
@@ -580,6 +584,7 @@
   ringValue.style.strokeDasharray = String(RING_LENGTH);
 
   const sliderEnabled = config.brightnessSlider === true;
+  card.classList.toggle('slider-enabled', sliderEnabled);
   /* Percentage shown while dragging — the entity update lags behind the drag */
   let dragPercent = null;
   let lastEntity = null;
@@ -753,6 +758,7 @@
       dragPointerId = event.pointerId;
       dragStartY = event.clientY;
       dragStartPercent = brightnessPercent(lastEntity) || (lastEntity?.state === 'on' ? 100 : 0);
+      card.setPointerCapture(event.pointerId);
     });
 
     card.addEventListener('pointermove', event => {
@@ -761,7 +767,6 @@
         if (Math.abs(event.clientY - dragStartY) < 6) return;
         dragging = true;
         card.classList.add('is-sliding');
-        card.setPointerCapture(event.pointerId);
       }
       dragPercent = percentFromDrag(event);
       paintLevel(lastEntity);

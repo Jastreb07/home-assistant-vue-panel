@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { BarConfig, BarPosition, BarScope, DashboardSettings } from '@/core/config/types'
+import type {
+  BarConfig,
+  BarPosition,
+  BarScope,
+  DashboardSettings,
+  DialogAnimation,
+} from '@/core/config/types'
 import { barPositions, barSizeLimits, isSidebar, useDashboardStore } from '@/core/config/dashboardStore'
 import { availableThemes, themeMainCss } from '@/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
@@ -25,6 +31,7 @@ const screensaverMinutes = ref(store.settings.screensaverMinutes)
 const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 const hideHaSidebar = ref(store.settings.hideHaSidebar === true)
 const viewTransition = ref(store.settings.viewTransition !== false)
+const dialogAnimation = ref<DialogAnimation>(store.settings.dialogAnimation)
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
@@ -34,6 +41,12 @@ const themeOptions = computed(() =>
   themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
 )
 const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
+const dialogAnimationOptions = computed(() =>
+  (['none', 'simple', 'scale'] as DialogAnimation[]).map((value) => ({
+    value,
+    label: t(`settings.dialogAnimation.options.${value}`),
+  })),
+)
 const placementOptions = computed(() => (['view', 'full'] as const).map((value) => ({
   value,
   label: t('editor.barPlacement.' + value),
@@ -108,6 +121,7 @@ const tabItems = computed(() => [
   { value: 'settings', label: t('editor.tabSettings'), icon: 'mdi:tune' },
   { value: 'bars', label: t('settings.bars'), icon: 'mdi:dock-window' },
   { value: 'kiosk', label: t('settings.kiosk'), icon: 'mdi:monitor-dashboard' },
+  { value: 'dialogs', label: t('settings.dialogAnimation.tab'), icon: 'mdi:animation-outline' },
   { value: 'css', label: t('editor.tabCss'), icon: 'mdi:language-css3' },
 ])
 
@@ -142,6 +156,7 @@ function save() {
     autoReturnSeconds: Math.max(0, Number(autoReturnSeconds.value) || 0),
     hideHaSidebar: hideHaSidebar.value,
     viewTransition: viewTransition.value,
+    dialogAnimation: dialogAnimation.value,
     customCss: isOverride ? cssDraft.value : undefined,
   }, JSON.parse(JSON.stringify(barDrafts.value)) as BarConfig)
   emit('close')
@@ -315,6 +330,18 @@ function save() {
           </div>
         </div>
       </BaseCollapsible>
+    </div>
+
+    <div v-show="tab === 'dialogs'" class="settings-form">
+      <p class="tab-hint">{{ t('settings.dialogAnimation.hint') }}</p>
+      <div class="field">
+        <span>{{ t('settings.dialogAnimation.label') }}</span>
+        <BaseSelectMenu
+          :model-value="dialogAnimation"
+          :options="dialogAnimationOptions"
+          @update:model-value="dialogAnimation = $event as DialogAnimation"
+        />
+      </div>
     </div>
 
     <div v-show="tab === 'css'" class="css-tab">

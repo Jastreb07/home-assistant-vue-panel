@@ -585,6 +585,16 @@ export default {
     viewTransition: 'Animate view switch',
     viewTransitionHint:
       'Fades the new view in when switching. Always skipped when the system asks for reduced motion.',
+    dialogAnimation: {
+      tab: 'Dialogs & popups',
+      label: 'Animation',
+      hint: 'Sets the opening and closing animation for all dialog and popup windows.',
+      options: {
+        none: 'No animation',
+        simple: 'Simple',
+        scale: 'Scale',
+      },
+    },
     kiosk: 'Kiosk',
     kioskHint:
       'Settings for unattended, always-on operation — a wall tablet, for example.',

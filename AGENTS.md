@@ -459,7 +459,8 @@ Größe. Das Card-Dokument liegt separat als private HTML-Datei.
 Platzierung und Inhalte liegen vollständig im `config`-Objekt der jeweiligen portablen Bar-Card.
 Views steuern nur die Sichtbarkeit.
 `padding`/`margin` sind `BoxValue { top?, right?, bottom?, left?, unit?, linked? }` aus `core/ui/boxInput.ts` (`boxToCss()` → CSS-Shorthand, `normalizeBox()` verwirft leere Werte).
-`DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, screensaverMinutes, autoReturnSeconds }` (0 = aus).
+`DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, dialogAnimation:
+'none'|'simple'|'scale', screensaverMinutes, autoReturnSeconds }` (0 = aus).
 
 ### Persistenz (kein YAML!)
 - Dashboards liegen unter `<config>/vue-panel/dashboards/<dashboard-name>.json`; Cards unter
@@ -557,9 +558,13 @@ ausschließlich die versionierte `vuePanel`-Card-API.
 - `BaseDialog` schließt bei einem Klick auf den Backdrop standardmäßig nicht. Nur bewusst flüchtige
   Dialoge setzen `close-on-backdrop`; aktuell gilt das ausschließlich für Laufzeit-Popups und
   Detailansichten in `PopupFrame.vue`. Ein gesperrter Backdrop-Klick löst eine kurze gedämpfte
-  macOS-artige Shake-Animation aus. Öffnen und Schließen animieren Opacity, vertikalen Lift und
-  `clip-path`, aber niemals `transform`: Ein Transform am Dialog würde die darin liegenden
-  fixed-positionierten Card-Scrims und Radialmenüs wieder relativ zum Dialog verschieben.
+  macOS-artige Shake-Animation aus. `dialogPointer.ts` merkt sich den letzten Pointer-Down;
+  Öffnen und Schließen verwenden ausschließlich eine Skalierung von 10 auf 100 Prozent
+  beziehungsweise rückwärts, jeweils mit dem beim Öffnen gespeicherten Cursorpunkt als
+  `transform-origin` (Tastatur-Fallback: Viewportmitte). Die Skalierung gilt nur während der
+  Animation, damit fixed-positionierte Card-Scrims und Radialmenüs danach wieder viewportbezogen
+  bleiben. Dashboard-Einstellungen → „Dialoge & Popups“ schaltet dashboardweit zwischen keiner
+  Animation, einfachem Ein-/Ausblenden und dieser Skalierung (Standard) um.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
 
