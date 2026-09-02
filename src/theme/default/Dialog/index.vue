@@ -4,6 +4,7 @@ import MdiIcon from '@/core/ui/MdiIcon.vue'
 import { dialogPointerPosition, type DialogPointerPosition } from '@/core/ui/dialogPointer'
 import { useDashboardStore } from '@/core/config/dashboardStore'
 import type { DialogContentPosition, DialogMobileHeight } from '@/core/config/types'
+import { useMediaQuery } from '@/core/composables/useMediaQuery'
 
 const props = withDefaults(
   defineProps<{
@@ -41,9 +42,12 @@ const closeButton = ref<HTMLButtonElement | null>(null)
 const isReady = ref(false)
 const isClosing = ref(false)
 const openPointer = dialogPointerPosition()
+const isMobile = useMediaQuery('(max-width: 767px)')
 let closeTimer: ReturnType<typeof setTimeout> | undefined
 let attentionAnimation: Animation | undefined
-const animationMode = computed(() => store.settings.dialogAnimation)
+const animationMode = computed(() => (
+  isMobile.value ? store.settings.mobileDialogAnimation : store.settings.dialogAnimation
+))
 const dialogStyle = () => (props.width ? { width: `min(${props.width}px, 100%)` } : undefined)
 const bodyStyle = () => (props.bodyHeight ? { height: `${props.bodyHeight}px` } : undefined)
 

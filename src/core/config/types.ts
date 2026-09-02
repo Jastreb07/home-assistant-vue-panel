@@ -294,7 +294,7 @@ export interface BarEntry {
 
 export type BarConfig = Record<BarPosition, BarEntry>
 
-export type DialogAnimation = 'none' | 'simple' | 'scale'
+export type DialogAnimation = 'none' | 'simple' | 'scale' | 'slide-up'
 
 export interface DashboardSettings {
   theme: 'dark' | 'light' | 'auto'
@@ -311,6 +311,8 @@ export interface DashboardSettings {
   viewTransition?: boolean
   /** Animation used by all engine dialogs and runtime popups */
   dialogAnimation: DialogAnimation
+  /** Animation used instead on mobile devices */
+  mobileDialogAnimation: DialogAnimation
   customCss?: string
 }
 

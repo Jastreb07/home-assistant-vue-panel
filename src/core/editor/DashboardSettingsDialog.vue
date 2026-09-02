@@ -44,6 +44,7 @@ const autoReturnSeconds = ref(store.settings.autoReturnSeconds)
 const hideHaSidebar = ref(store.settings.hideHaSidebar === true)
 const viewTransition = ref(store.settings.viewTransition !== false)
 const dialogAnimation = ref<DialogAnimation>(store.settings.dialogAnimation)
+const mobileDialogAnimation = ref<DialogAnimation>(store.settings.mobileDialogAnimation)
 const initialPanelScale = readPanelScale()
 const panelScale = ref(initialPanelScale)
 const panelScaleInput = ref(String(initialPanelScale))
@@ -61,7 +62,7 @@ const themeOptions = computed(() =>
 )
 const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
 const dialogAnimationOptions = computed(() =>
-  (['none', 'simple', 'scale'] as DialogAnimation[]).map((value) => ({
+  (['none', 'simple', 'scale', 'slide-up'] as DialogAnimation[]).map((value) => ({
     value,
     label: t(`settings.dialogAnimation.options.${value}`),
   })),
@@ -236,6 +237,7 @@ function save() {
     hideHaSidebar: hideHaSidebar.value,
     viewTransition: viewTransition.value,
     dialogAnimation: dialogAnimation.value,
+    mobileDialogAnimation: mobileDialogAnimation.value,
     customCss: isOverride ? cssDraft.value : undefined,
   }, JSON.parse(JSON.stringify(barDrafts.value)) as BarConfig)
   panelScale.value = savePanelScale(panelScale.value)
@@ -486,14 +488,22 @@ function save() {
       </BaseCollapsible>
     </div>
 
-    <div v-show="tab === 'dialogs'" class="settings-form">
+    <div v-show="tab === 'dialogs'" class="settings-form dialog-animation-form">
       <p class="tab-hint">{{ t('settings.dialogAnimation.hint') }}</p>
       <div class="field">
-        <span>{{ t('settings.dialogAnimation.label') }}</span>
+        <span>{{ t('settings.dialogAnimation.desktopLabel') }}</span>
         <BaseSelectMenu
           :model-value="dialogAnimation"
           :options="dialogAnimationOptions"
           @update:model-value="dialogAnimation = $event as DialogAnimation"
+        />
+      </div>
+      <div class="field">
+        <span>{{ t('settings.dialogAnimation.mobileLabel') }}</span>
+        <BaseSelectMenu
+          :model-value="mobileDialogAnimation"
+          :options="dialogAnimationOptions"
+          @update:model-value="mobileDialogAnimation = $event as DialogAnimation"
         />
       </div>
     </div>
@@ -554,6 +564,10 @@ function save() {
   gap: 12px;
 }
 .scaling-form > .field + .field {
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+.dialog-animation-form > .field + .field {
   padding-top: 16px;
   border-top: 1px solid var(--divider);
 }

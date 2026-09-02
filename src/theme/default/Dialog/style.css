@@ -44,6 +44,11 @@
   animation: vp-dialog-enter 320ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.vp-dialog--ready.vp-dialog--animation-slide-up {
+  visibility: visible;
+  animation: vp-dialog-slide-up-enter 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 .vp-dialog-backdrop--closing {
   pointer-events: none;
 }
@@ -54,6 +59,10 @@
 
 .vp-dialog--animation-scale.vp-dialog--closing {
   animation: vp-dialog-leave 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+
+.vp-dialog--animation-slide-up.vp-dialog--closing {
+  animation: vp-dialog-slide-up-leave 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
 }
 
 @keyframes vp-dialog-simple-enter {
@@ -83,6 +92,24 @@
   }
   to {
     scale: 0.1;
+  }
+}
+
+@keyframes vp-dialog-slide-up-enter {
+  from {
+    transform: translateY(calc(100% + 8px));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes vp-dialog-slide-up-leave {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100% + 8px));
   }
 }
 

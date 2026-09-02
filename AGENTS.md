@@ -459,8 +459,9 @@ Größe. Das Card-Dokument liegt separat als private HTML-Datei.
 Platzierung und Inhalte liegen vollständig im `config`-Objekt der jeweiligen portablen Bar-Card.
 Views steuern nur die Sichtbarkeit.
 `padding`/`margin` sind `BoxValue { top?, right?, bottom?, left?, unit?, linked? }` aus `core/ui/boxInput.ts` (`boxToCss()` → CSS-Shorthand, `normalizeBox()` verwirft leere Werte).
-`DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, dialogAnimation:
-'none'|'simple'|'scale', screensaverMinutes, autoReturnSeconds }` (0 = aus).
+`DashboardSettings { theme: 'dark'|'light'|'auto', uiTheme: string, dialogAnimation,
+mobileDialogAnimation: 'none'|'simple'|'scale'|'slide-up', screensaverMinutes,
+autoReturnSeconds }` (0 = aus).
 
 ### Persistenz (kein YAML!)
 - Dashboards liegen unter `<config>/vue-panel/dashboards/<dashboard-name>.json`; Cards unter
@@ -573,8 +574,10 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   beziehungsweise rückwärts, jeweils mit dem beim Öffnen gespeicherten Cursorpunkt als
   `transform-origin` (Tastatur-Fallback: Viewportmitte). Die Skalierung gilt nur während der
   Animation, damit fixed-positionierte Card-Scrims und Radialmenüs danach wieder viewportbezogen
-  bleiben. Dashboard-Einstellungen → „Dialoge & Popups“ schaltet dashboardweit zwischen keiner
-  Animation, einfachem Ein-/Ausblenden und dieser Skalierung (Standard) um.
+  bleiben. Dashboard-Einstellungen → „Dialoge & Popups“ schaltet getrennt für Mobil sowie
+  Tablet/Desktop zwischen keiner Animation, einfachem Ein-/Ausblenden, Skalierung und „Von
+  unten“ um. Auf allen Geräten ist „Von unten“ der Standard: Der Dialog fährt beim Öffnen hoch
+  und beim Schließen wieder hinunter.
 - Theme-Wahl: Dashboard-Einstellungen → `settings.uiTheme`; Wechsel macht `location.reload()` (Komponenten-Cache).
 - Farbschema (dark/light/auto) ist davon getrennt: `settings.theme` → `useTheme()` setzt `<html data-theme>`.
 

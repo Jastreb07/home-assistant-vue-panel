@@ -603,12 +603,14 @@ export default {
       'Blendet die neue View beim Wechsel sanft ein. Ist im System „Bewegung reduzieren“ aktiv, wird der Übergang immer übersprungen.',
     dialogAnimation: {
       tab: 'Dialoge & Popups',
-      label: 'Animation',
-      hint: 'Legt die Öffnungs- und Schließanimation für alle Dialog- und Popup-Fenster fest.',
+      desktopLabel: 'Animation auf Tablet und Desktop',
+      mobileLabel: 'Animation auf Mobilgeräten',
+      hint: 'Legt die Öffnungs- und Schließanimation für Dialog- und Popup-Fenster fest.',
       options: {
         none: 'Keine Animation',
         simple: 'Einfach',
         scale: 'Skalierung',
+        'slide-up': 'Von unten',
       },
     },
     kiosk: 'Kiosk',
