@@ -552,8 +552,8 @@
   .select.is-open .pill-caret { transform: rotate(180deg); }
 
   /*
-   * Die Auswahl erscheint als radiales Menü: ein dunkler Ring aus Segmenten um
-   * eine Nabe, die den gerade angepeilten Eintrag ausschreibt.
+   * Die Auswahl erscheint als radiales Menü: helle Segmente mit weichen Ecken
+   * um eine Nabe, passend zur hellen, runden Sprache der Card.
    */
   .menu {
     position: fixed;
@@ -561,51 +561,72 @@
     transform: translate(-50%, -50%);
   }
 
+  @keyframes vp-radial-in {
+    from { opacity: 0; transform: scale(.94); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
   .radial {
     display: block;
     overflow: visible;
     font-family: inherit;
+    transform-origin: 50% 50%;
+    filter: drop-shadow(0 12px 26px rgba(0, 0, 0, .16));
+    animation: vp-radial-in .16s ease-out both;
   }
 
   .wedge { cursor: pointer; }
 
+  /*
+   * Der gleichfarbige Rand mit `stroke-linejoin: round` rundet die Ecken der
+   * Segmente ab — dieselbe weiche Formsprache wie Bogen und Pillen.
+   */
   .wedge .slice {
-    fill: rgba(32, 32, 32, .93);
-    transition: fill .15s ease;
+    fill: #fff;
+    stroke: #fff;
+    stroke-width: 9;
+    stroke-linejoin: round;
+    transition: fill .15s ease, stroke .15s ease;
   }
 
-  .wedge:hover .slice { fill: rgba(64, 64, 64, .96); }
+  .wedge:hover .slice { fill: #f1f6fa; stroke: #f1f6fa; }
+  .wedge.is-current .slice { fill: #e2f0fb; stroke: #e2f0fb; }
+  .wedge.is-current:hover .slice { fill: #d6eafa; stroke: #d6eafa; }
 
   /* Platzhalter halten den Ring rund, sind aber nicht bedienbar */
   .wedge.is-placeholder { cursor: default; pointer-events: none; }
-  .wedge.is-placeholder .slice { fill: rgba(32, 32, 32, .45); }
-  .wedge.is-placeholder text { fill: rgba(255, 255, 255, .22); }
-  .wedge.is-current .slice { fill: rgba(240, 240, 240, .95); }
-  .wedge.is-current:hover .slice { fill: #fff; }
+  .wedge.is-placeholder .slice { fill: rgba(255, 255, 255, .55); stroke: rgba(255, 255, 255, .55); }
+  .wedge.is-placeholder text { fill: rgba(0, 0, 0, .16); }
 
   .wedge text {
-    fill: #e8e8e8;
+    fill: rgba(0, 0, 0, .62);
     font-size: 15px;
+    font-weight: 500;
     text-anchor: middle;
     pointer-events: none;
   }
 
-  .wedge.is-current text { fill: #1c1c1c; font-weight: 700; }
+  .wedge.is-current text { fill: #0f7ec4; font-weight: 700; }
 
-  .hub-plate { fill: rgba(12, 12, 12, .96); }
-
-  .hub-text {
-    fill: #f2f2f2;
-    font-size: 15px;
-    font-weight: 600;
-    text-anchor: middle;
-    pointer-events: none;
+  .hub-plate {
+    fill: #fff;
+    stroke: rgba(0, 0, 0, .07);
+    stroke-width: 1;
   }
 
   .hub-caption {
-    fill: rgba(255, 255, 255, .45);
+    fill: rgba(0, 0, 0, .32);
     font-size: 11px;
-    letter-spacing: .4px;
+    letter-spacing: .6px;
+    text-anchor: middle;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  .hub-text {
+    fill: #1f1f1f;
+    font-size: 15px;
+    font-weight: 600;
     text-anchor: middle;
     pointer-events: none;
   }
@@ -622,7 +643,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, .12);
+    background: rgba(0, 0, 0, .10);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
   }
@@ -1047,7 +1068,8 @@
    */
   const SVG_NS = 'http://www.w3.org/2000/svg';
   const MIN_SEGMENTS = 3;
-  const RADIAL = {size: 320, center: 160, hub: 62, inner: 74, outer: 150, gap: 1.2};
+  /* `stroke` muss der Strichbreite von `.slice` entsprechen, `gap` ist der sichtbare Abstand */
+  const RADIAL = {size: 320, center: 160, hub: 60, inner: 80, outer: 146, stroke: 9, gap: 7};
 
   function svgNode(name, attributes = {}) {
     const node = document.createElementNS(SVG_NS, name);
@@ -1060,12 +1082,21 @@
     return [RADIAL.center + radius * Math.cos(angle), RADIAL.center + radius * Math.sin(angle)];
   }
 
-  /* Ein Ringsegment von `from` bis `to` Grad */
+  /*
+   * Ein Ringsegment von `from` bis `to` Grad. Der Einzug wird je Radius aus
+   * einer festen Bogenlänge gerechnet — dadurch bleibt die Lücke zum Nachbarn
+   * innen wie außen und bei jeder Segmentzahl gleich breit. Der gleichfarbige
+   * Rand, der die Ecken rundet, ist dabei schon eingerechnet.
+   */
   function wedgePath(from, to) {
-    const [x1, y1] = polar(RADIAL.outer, from);
-    const [x2, y2] = polar(RADIAL.outer, to);
-    const [x3, y3] = polar(RADIAL.inner, to);
-    const [x4, y4] = polar(RADIAL.inner, from);
+    const inset = (RADIAL.gap + RADIAL.stroke) / 2;
+    const limit = Math.max(0, (to - from) / 2 - 1);
+    const outerOffset = Math.min(inset / RADIAL.outer * 180 / Math.PI, limit);
+    const innerOffset = Math.min(inset / RADIAL.inner * 180 / Math.PI, limit);
+    const [x1, y1] = polar(RADIAL.outer, from + outerOffset);
+    const [x2, y2] = polar(RADIAL.outer, to - outerOffset);
+    const [x3, y3] = polar(RADIAL.inner, to - innerOffset);
+    const [x4, y4] = polar(RADIAL.inner, from + innerOffset);
     const large = to - from > 180 ? 1 : 0;
     return `M${x1} ${y1} A${RADIAL.outer} ${RADIAL.outer} 0 ${large} 1 ${x2} ${y2}`
       + ` L${x3} ${y3} A${RADIAL.inner} ${RADIAL.inner} 0 ${large} 0 ${x4} ${y4} Z`;
@@ -1115,8 +1146,8 @@
     const step = 360 / segments.length;
     segments.forEach((option, index) => {
       const middle = index * step;
-      const from = middle - step / 2 + RADIAL.gap;
-      const to = middle + step / 2 - RADIAL.gap;
+      const from = middle - step / 2;
+      const to = middle + step / 2;
       const current = !option.placeholder && option.value === select.current;
       const group = svgNode('g', {
         class: 'wedge' + (current ? ' is-current' : '') + (option.placeholder ? ' is-placeholder' : ''),
