@@ -47,6 +47,8 @@ export interface DetailOptions {
   card?: string
   entityId?: string
   variables?: string[]
+  /** Additional per-opening values for interactive detail cards. */
+  context?: PopupContext
   position?: DialogContentPosition
   mobileHeight?: DialogMobileHeight
 }
@@ -74,6 +76,7 @@ export function openDetail(
     mobileHeight: options.mobileHeight ?? detail?.mobileHeight ?? 'fit-content',
     context: {
       ...pickVariables(config, options.variables ?? detail?.variables),
+      ...options.context,
       // The detail card always needs the entity it was opened for, even when
       // the card restricts which of its values are handed over.
       ...(entityId ? { [entityKey]: entityId, entity: entityId } : {}),

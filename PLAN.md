@@ -80,6 +80,14 @@ Ab `2.2.20`/Engine `2.2.36` verwendet die Thermostat-Card für neue beziehungswe
 konfigurierte Instanzen standardmäßig eine Nachkommastelle. Explizit gespeicherte Werte bleiben
 erhalten; weiterhin sind null bis drei Nachkommastellen wählbar.
 
+Ab `2.2.49`/Engine `2.2.85` heißt die große Alarm-Card `vue-panel/alarm-full` und bietet für
+die PIN-Anzeige zusätzlich den Modus „Dialog“. Gewählte Scharf-/Unscharf-Aktionen öffnen darin
+`vue-panel/alarm-full-popup-detail`; die Dialog-Card übernimmt PIN-Eingabe, Befehlsstatus sowie
+die Alarmo-Bestätigung zum Ignorieren offener Sensoren. Die große Card selbst bleibt transparent,
+ohne Schatten und ohne Hover-Hintergrund. `showDetail()` kann dafür neben
+ausgewählten Instanzvariablen einen JSON-kompatiblen, nur für diesen Aufruf gültigen `context`
+übergeben; die aufgelöste Entity-ID bleibt dabei maßgeblich.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

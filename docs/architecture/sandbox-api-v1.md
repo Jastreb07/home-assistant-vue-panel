@@ -48,6 +48,7 @@ interface VuePanelCardApiV1 {
     card?: string
     entity?: string
     variables?: readonly string[]
+    context?: Record<string, unknown>
     position?: 'top' | 'center' | 'bottom'
     mobileHeight?: 'full' | 'fit-content'
   }): Promise<null>
@@ -66,6 +67,8 @@ the original type, mixed text is interpolated as a string, and unknown keys stay
 
 `showDetail()` opens the detail view of this card: the requested `card`, otherwise the card's own
 `detail.card`, otherwise the default card of the entity's domain, otherwise a built-in dialog.
+`context` adds immutable values that apply only to this opening; they override selected instance
+variables, while the resolved entity always remains authoritative.
 Detail content is centered by default; `position` overrides it for one opening.
 On mobile, detail dialogs use `fit-content` by default; `mobileHeight` can request a full-screen
 dialog instead.

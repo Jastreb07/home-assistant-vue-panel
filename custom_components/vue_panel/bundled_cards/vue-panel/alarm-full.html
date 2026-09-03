@@ -4,7 +4,7 @@
     "formatVersion": 2,
     "apiVersion": 1,
     "manufacturer": "vue-panel",
-    "cardName": "alarm",
+    "cardName": "alarm-full",
     "name": "translation.name",
     "description": "translation.description",
     "icon": "mdi:shield-home-outline",
@@ -61,14 +61,6 @@
         "default": "mdi:shield-home-outline"
       },
       {
-        "key": "showBackground",
-        "label": "translation.variables.showBackground.label",
-        "group": "translation.groups.appearance",
-        "type": "boolean",
-        "required": false,
-        "default": true
-      },
-      {
         "key": "width",
         "label": "translation.variables.width.label",
         "group": "translation.groups.appearance",
@@ -115,12 +107,14 @@
         "options": [
           "always",
           "action",
-          "popup"
+          "popup",
+          "dialog"
         ],
         "optionLabels": {
           "always": "translation.variables.pinPanelDisplay.options.always",
           "action": "translation.variables.pinPanelDisplay.options.action",
-          "popup": "translation.variables.pinPanelDisplay.options.popup"
+          "popup": "translation.variables.pinPanelDisplay.options.popup",
+          "dialog": "translation.variables.pinPanelDisplay.options.dialog"
         },
         "default": "always"
       },
@@ -186,7 +180,6 @@
         "translation.variables.entity.label": "Alarm panel entity",
         "translation.variables.name.label": "Display name",
         "translation.variables.icon.label": "Icon",
-        "translation.variables.showBackground.label": "Show card background",
         "translation.variables.width.label": "Card width (px)",
         "translation.variables.scale.label": "Card scale (%)",
         "translation.variables.codeDisplay.label": "Code display",
@@ -196,6 +189,7 @@
         "translation.variables.pinPanelDisplay.options.always": "Always",
         "translation.variables.pinPanelDisplay.options.action": "On action",
         "translation.variables.pinPanelDisplay.options.popup": "On action as popup",
+        "translation.variables.pinPanelDisplay.options.dialog": "On action in a dialog",
         "translation.variables.codeLength.label": "Number of code dots",
         "translation.variables.locks.label": "Smart locks",
         "translation.variables.locks.items.entity": "Lock entity",
@@ -255,7 +249,6 @@
         "translation.variables.entity.label": "Alarm-Entity",
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.icon.label": "Icon",
-        "translation.variables.showBackground.label": "Card-Hintergrund anzeigen",
         "translation.variables.width.label": "Card-Breite (px)",
         "translation.variables.scale.label": "Card-Skalierung (%)",
         "translation.variables.codeDisplay.label": "Code-Anzeige",
@@ -265,6 +258,7 @@
         "translation.variables.pinPanelDisplay.options.always": "Immer",
         "translation.variables.pinPanelDisplay.options.action": "Bei Aktion",
         "translation.variables.pinPanelDisplay.options.popup": "Bei Aktion als Popup",
+        "translation.variables.pinPanelDisplay.options.dialog": "Bei Aktion im Dialog",
         "translation.variables.codeLength.label": "Anzahl Code-Punkte",
         "translation.variables.locks.label": "Smart Locks",
         "translation.variables.locks.items.entity": "Lock-Entity",
@@ -404,7 +398,7 @@
         --alarm-alert: #f24b45;
         position: relative;
         width: 100%;
-        height: 100%;
+        height: fit-content;
         display: flex;
         flex-direction: column;
         gap: var(--alarm-gap);
@@ -412,23 +406,16 @@
         border: 0;
         box-sizing: border-box;
         border-radius: var(--card-radius);
-        background: var(--card-bg);
-        box-shadow: var(--card-shadow);
-        color: var(--text-primary);
-        overflow: auto;
-        font-family: Arial, Helvetica, sans-serif;
-        user-select: none;
-        transition: background .2s, box-shadow .2s;
-    }
-
-    /* Slight tint on hover — colour comes from the theme */
-    .alarm-card:hover:not(.active) {
-        background: var(--card-bg-hover, var(--card-bg));
-    }
-
-    .alarm-card.is-transparent {
         background: transparent;
         box-shadow: none;
+        color: var(--text-primary);
+        overflow: visible;
+        font-family: Arial, Helvetica, sans-serif;
+        user-select: none;
+    }
+
+    .alarm-card.has-code-popup {
+        min-height: var(--alarm-code-popup-height, fit-content);
     }
 
     .alarm-header {
@@ -693,8 +680,8 @@
 
     .alarm-code-layer.is-popup .alarm-code {
         max-width: 364px;
-        max-height: calc(100% - 12px);
-        overflow: auto;
+        max-height: none;
+        overflow: visible;
         background: var(--card-bg);
         box-shadow: 0 10px 30px rgba(0, 0, 0, .18);
     }
@@ -1078,8 +1065,8 @@
 
     .alarm-lock-icon {
         flex: 0 0 auto;
-        width: 40px;
-        height: 40px;
+        width: 46px;
+        height: 46px;
         display: grid;
         place-items: center;
         border-radius: 50%;
@@ -1087,8 +1074,8 @@
     }
 
     .alarm-lock-icon img {
-        width: 20px;
-        height: 20px;
+        width: var(--alarm-mode-icon);
+        height: var(--alarm-mode-icon);
     }
 
     .alarm-lock-copy {
@@ -1100,8 +1087,9 @@
         overflow: hidden;
         white-space: nowrap;
         text-overflow: ellipsis;
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 17px;
+        line-height: 19px;
+        font-weight: 700;
     }
 
     .alarm-lock-state {
@@ -1110,21 +1098,22 @@
         text-overflow: ellipsis;
         margin-top: 1px;
         color: #6c6c6c;
-        font-size: 13px;
-        line-height: 16px;
+        font-size: 16px;
+        line-height: 20px;
     }
 
     .alarm-lock-button {
         flex: 0 0 auto;
         min-width: 112px;
-        height: 40px;
+        height: 46px;
         padding: 0 16px;
         border: 0;
         border-radius: 999px;
         background: var(--card-bg);
         color: var(--text-primary);
-        font-size: 14px;
-        font-weight: 600;
+        font-size: 17px;
+        line-height: 19px;
+        font-weight: 700;
         cursor: pointer;
         transition: background .14s ease, transform .08s ease;
     }
@@ -1343,14 +1332,13 @@
     ? Math.round(Math.min(12, Math.max(1, configuredCodeLength)))
     : 4;
   const codeDisplay = config.codeDisplay === 'input' ? 'input' : 'dots';
-  const pinPanelDisplay = ['action', 'popup'].includes(config.pinPanelDisplay)
+  const pinPanelDisplay = ['action', 'popup', 'dialog'].includes(config.pinPanelDisplay)
     ? config.pinPanelDisplay
     : 'always';
   card.style.width = `${cardWidth}px`;
   card.style.maxWidth = '100%';
   card.style.marginInline = 'auto';
   card.style.zoom = String(cardScale / 100);
-  card.classList.toggle('is-transparent', config.showBackground === false);
 
   const iconWrap = document.getElementById('icon-wrap');
   const iconElement = document.getElementById('icon');
@@ -1489,6 +1477,13 @@
     codePanel.hidden = !visible;
     codePanel.classList.toggle('is-popup', popup);
     codePanel.classList.toggle('requires-pin', pendingAction !== null);
+    card.classList.toggle('has-code-popup', popup);
+    if (popup) {
+      const popupHeight = Math.ceil(Math.max(codeDialog.scrollHeight, codeDialog.offsetHeight) + 28);
+      card.style.setProperty('--alarm-code-popup-height', `${popupHeight}px`);
+    } else {
+      card.style.removeProperty('--alarm-code-popup-height');
+    }
     codePanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
     codeDialog.setAttribute('aria-modal', popup ? 'true' : 'false');
     codeCancel.hidden = !popup;
@@ -1591,8 +1586,27 @@
     }
   }
 
+  function openActionDialog(action) {
+    return vuePanel.showDetail({
+      card: 'vue-panel/alarm-full-popup-detail',
+      entity: entityId,
+      context: {
+        action: action.type,
+        mode: action.mode?.key || '',
+        codeDisplay,
+        codeLength
+      },
+      position: 'center',
+      mobileHeight: 'fit-content'
+    });
+  }
+
   function requestArm(mode) {
     if (!entityId) return;
+    if (pinPanelDisplay === 'dialog') {
+      openActionDialog({type: 'arm', mode});
+      return;
+    }
     const info = codeInfo(currentEntity);
     if (info.format && info.armRequired) {
       requestedMode = mode.key;
@@ -1605,6 +1619,10 @@
 
   function requestDisarm() {
     if (!entityId) return;
+    if (pinPanelDisplay === 'dialog') {
+      openActionDialog({type: 'disarm'});
+      return;
+    }
     const info = codeInfo(currentEntity);
     if (info.format) {
       requestedMode = 'disarmed';

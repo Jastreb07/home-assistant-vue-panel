@@ -419,6 +419,9 @@ function buildApi(capabilities: PortableCardCapability[]) {
       const variables = Array.isArray(payload.variables)
         ? payload.variables.map(String)
         : undefined
+      const context = payload.context === undefined
+        ? undefined
+        : snapshot(recordPayload(payload.context, 'Detail context'))
       let position: DialogContentPosition | undefined
       if (payload.position !== undefined) {
         const value = String(payload.position)
@@ -439,6 +442,7 @@ function buildApi(capabilities: PortableCardCapability[]) {
         card,
         entityId: payload.entity === undefined ? undefined : String(payload.entity),
         variables,
+        context,
         position,
         mobileHeight,
       })

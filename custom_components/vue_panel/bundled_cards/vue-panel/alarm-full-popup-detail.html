@@ -1,0 +1,779 @@
+<script data-vue-panel-config>
+  const vuePanelCard = {
+    "format": "vue-panel-card",
+    "formatVersion": 2,
+    "apiVersion": 1,
+    "manufacturer": "vue-panel",
+    "cardName": "alarm-full-popup-detail",
+    "name": "translation.name",
+    "description": "translation.description",
+    "icon": "mdi:shield-key-outline",
+    "group": "Vue Panel",
+    "areas": [
+      "dialog"
+    ],
+    "capabilities": [
+      "entity:read",
+      "entity:subscribe",
+      "icon:render",
+      "service:call"
+    ],
+    "defaultSize": {
+      "cols": 1,
+      "rows": 1,
+      "width": 396,
+      "height": 520
+    },
+    "defaultResponsive": {
+      "mobile": true,
+      "tablet": true,
+      "desktop": true,
+      "mobileMax": 767,
+      "tabletMax": 1023
+    },
+    "fullRow": true,
+    "variables": [
+      {
+        "key": "entity",
+        "label": "translation.variables.entity.label",
+        "type": "entity",
+        "required": true,
+        "domain": "alarm_control_panel",
+        "default": ""
+      }
+    ]
+  };
+</script>
+
+<script data-vue-panel-translation>
+  const vuePanelTranslations = {
+    "fallback": "en",
+    "languages": {
+      "en": {
+        "translation.name": "Alarm action",
+        "translation.description": "PIN entry and open-sensor confirmation for the full alarm card",
+        "translation.variables.entity.label": "Alarm panel entity",
+        "translation.actions.disarm": "Disarm",
+        "translation.actions.armed_home": "Arm home",
+        "translation.actions.armed_away": "Arm away",
+        "translation.actions.armed_night": "Arm night",
+        "translation.actions.armed_vacation": "Arm vacation",
+        "translation.actions.armed_custom_bypass": "Arm custom",
+        "translation.pin.required": "Enter the PIN to continue.",
+        "translation.pin.optional": "Confirm this alarm action.",
+        "translation.pin.backspace": "Delete",
+        "translation.pin.confirm": "Confirm",
+        "translation.pin.wrong": "The alarm did not accept the PIN or command.",
+        "translation.progress": "Command is being sent…",
+        "translation.success": "Alarm command accepted.",
+        "translation.openSensors.beforeCount": "Could not arm because",
+        "translation.openSensors.sensor": "sensor",
+        "translation.openSensors.sensors": "sensors",
+        "translation.openSensors.afterCount": "are open",
+        "translation.openSensors.open": "Open",
+        "translation.openSensors.unavailable": "Unavailable",
+        "translation.openSensors.unknown": "Unknown",
+        "translation.openSensors.force": "Ignore open sensors and arm",
+        "translation.openSensors.retry": "Try again",
+        "translation.noAction": "No alarm action was selected."
+      },
+      "de": {
+        "translation.name": "Alarmaktion",
+        "translation.description": "PIN-Eingabe und Bestätigung offener Sensoren für die große Alarm-Card",
+        "translation.variables.entity.label": "Alarm-Entity",
+        "translation.actions.disarm": "Deaktivieren",
+        "translation.actions.armed_home": "Zuhause scharfschalten",
+        "translation.actions.armed_away": "Abwesend scharfschalten",
+        "translation.actions.armed_night": "Nachts scharfschalten",
+        "translation.actions.armed_vacation": "Urlaub scharfschalten",
+        "translation.actions.armed_custom_bypass": "Angepasst scharfschalten",
+        "translation.pin.required": "PIN eingeben, um fortzufahren.",
+        "translation.pin.optional": "Diese Alarmaktion bestätigen.",
+        "translation.pin.backspace": "Löschen",
+        "translation.pin.confirm": "Bestätigen",
+        "translation.pin.wrong": "Die Alarmanlage hat PIN oder Befehl nicht angenommen.",
+        "translation.progress": "Befehl wird gesendet…",
+        "translation.success": "Alarmbefehl wurde angenommen.",
+        "translation.openSensors.beforeCount": "Konnte nicht scharf geschaltet werden, da",
+        "translation.openSensors.sensor": "Sensor",
+        "translation.openSensors.sensors": "Sensoren",
+        "translation.openSensors.afterCount": "geöffnet sind",
+        "translation.openSensors.open": "Geöffnet",
+        "translation.openSensors.unavailable": "Nicht verfügbar",
+        "translation.openSensors.unknown": "Unbekannt",
+        "translation.openSensors.force": "Offene Sensoren ignorieren und scharfschalten",
+        "translation.openSensors.retry": "Erneut versuchen",
+        "translation.noAction": "Es wurde keine Alarmaktion ausgewählt."
+      }
+    }
+  };
+</script>
+
+<template data-vue-panel-html>
+  <section class="alarm-dialog-card" id="card">
+    <div class="action-view" id="action-view">
+      <div class="action-heading">
+        <span class="action-icon"><img id="action-icon" alt=""></span>
+        <span>
+          <strong id="action-title"></strong>
+          <small id="action-hint"></small>
+        </span>
+      </div>
+
+      <div class="pin-entry" id="pin-entry">
+        <div class="pin-dots" id="pin-dots"></div>
+        <input class="pin-input" id="pin-input" type="password" inputmode="numeric" autocomplete="off" hidden>
+        <div class="keypad" id="keypad">
+          <button type="button" data-key="1">1</button>
+          <button type="button" data-key="2">2</button>
+          <button type="button" data-key="3">3</button>
+          <button type="button" data-key="4">4</button>
+          <button type="button" data-key="5">5</button>
+          <button type="button" data-key="6">6</button>
+          <button type="button" data-key="7">7</button>
+          <button type="button" data-key="8">8</button>
+          <button type="button" data-key="9">9</button>
+          <button class="key-icon" id="backspace" type="button"><img id="backspace-icon" alt=""></button>
+          <button type="button" data-key="0">0</button>
+          <button class="key-icon key-confirm" id="confirm" type="button"><img id="confirm-icon" alt=""></button>
+        </div>
+      </div>
+
+      <button class="primary-action" id="direct-confirm" type="button" hidden></button>
+      <p class="dialog-status" id="status" role="status" hidden></p>
+    </div>
+
+    <div class="sensor-view" id="sensor-view" hidden>
+      <div class="sensor-alert">
+        <img id="sensor-alert-icon" alt="">
+        <p id="sensor-title"></p>
+      </div>
+      <div class="sensor-list" id="sensor-list"></div>
+      <div class="sensor-actions">
+        <button class="secondary-action" id="retry" type="button"></button>
+        <button class="primary-action danger" id="force" type="button"></button>
+      </div>
+      <p class="dialog-status" id="sensor-status" role="status" hidden></p>
+    </div>
+  </section>
+</template>
+
+<style data-vue-panel-css>
+  .alarm-dialog-card {
+    --alarm-accent: #d59c00;
+    --alarm-danger: #f24b45;
+    width: 100%;
+    max-width: 396px;
+    min-width: 0;
+    box-sizing: border-box;
+    color: var(--text-primary);
+    font-family: Arial, Helvetica, sans-serif;
+    user-select: none;
+  }
+
+  .action-view,
+  .sensor-view {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .action-view[hidden],
+  .sensor-view[hidden],
+  .pin-entry[hidden],
+  .pin-input[hidden],
+  .primary-action[hidden],
+  .dialog-status[hidden] {
+    display: none;
+  }
+
+  .action-heading {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 0 4px;
+  }
+
+  .action-heading > span:last-child {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .action-heading strong {
+    font-size: 20px;
+    line-height: 24px;
+    font-weight: 700;
+  }
+
+  .action-heading small {
+    color: var(--text-secondary);
+    font-size: 14px;
+    line-height: 19px;
+  }
+
+  .action-icon {
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    display: grid;
+    place-items: center;
+    border: 2px solid color-mix(in srgb, var(--alarm-accent) 58%, var(--divider));
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--alarm-accent) 10%, var(--card-bg));
+  }
+
+  .action-icon img {
+    width: 28px;
+    height: 28px;
+  }
+
+  .pin-entry {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pin-dots {
+    min-height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 9px;
+  }
+
+  .pin-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text-primary) 18%, transparent);
+  }
+
+  .pin-dot.is-filled {
+    background: color-mix(in srgb, var(--text-primary) 66%, transparent);
+  }
+
+  .pin-input {
+    width: 100%;
+    height: 50px;
+    box-sizing: border-box;
+    padding: 0 18px;
+    border: 1px solid var(--divider);
+    border-radius: 999px;
+    outline: 0;
+    background: var(--card-bg);
+    color: var(--text-primary);
+    font: 22px/1 Arial, Helvetica, sans-serif;
+    letter-spacing: .32em;
+    text-align: center;
+  }
+
+  .pin-input:focus-visible {
+    border-color: var(--alarm-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--alarm-accent) 20%, transparent);
+  }
+
+  .keypad {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .keypad button {
+    height: 56px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 12%, var(--card-bg));
+    color: var(--text-primary);
+    font: 700 20px/1 Arial, Helvetica, sans-serif;
+    cursor: pointer;
+    transition: background .13s ease, transform .08s ease;
+  }
+
+  .keypad button:hover {
+    background: color-mix(in srgb, var(--text-primary) 18%, var(--card-bg));
+  }
+
+  .keypad button:active {
+    transform: scale(.96);
+  }
+
+  .keypad button:focus-visible,
+  .primary-action:focus-visible,
+  .secondary-action:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--alarm-accent) 60%, transparent);
+    outline-offset: 2px;
+  }
+
+  .keypad button:disabled,
+  .primary-action:disabled,
+  .secondary-action:disabled {
+    opacity: .48;
+    cursor: default;
+    transform: none;
+  }
+
+  .keypad img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .key-confirm {
+    background: color-mix(in srgb, var(--alarm-accent) 24%, var(--card-bg)) !important;
+  }
+
+  .primary-action,
+  .secondary-action {
+    min-height: 46px;
+    padding: 0 18px;
+    border-radius: 999px;
+    font: 700 15px/19px Arial, Helvetica, sans-serif;
+    cursor: pointer;
+  }
+
+  .primary-action {
+    border: 0;
+    background: var(--alarm-accent);
+    color: #fff;
+  }
+
+  .primary-action.danger {
+    background: var(--alarm-danger);
+  }
+
+  .secondary-action {
+    border: 1px solid var(--divider);
+    background: var(--card-bg);
+    color: var(--text-primary);
+  }
+
+  .dialog-status {
+    margin: 0;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--alarm-danger) 10%, transparent);
+    color: var(--alarm-danger);
+    font-size: 14px;
+    line-height: 19px;
+    text-align: center;
+  }
+
+  .dialog-status.is-progress,
+  .dialog-status.is-success {
+    background: color-mix(in srgb, var(--alarm-accent) 10%, transparent);
+    color: color-mix(in srgb, var(--alarm-accent) 74%, var(--text-primary));
+  }
+
+  .dialog-status.is-success {
+    background: color-mix(in srgb, #2f8f4b 12%, transparent);
+    color: #2f8f4b;
+  }
+
+  .sensor-alert {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    color: var(--alarm-danger);
+  }
+
+  .sensor-alert img {
+    width: 28px;
+    height: 28px;
+    flex: 0 0 28px;
+  }
+
+  .sensor-alert p {
+    margin: 2px 0 0;
+    font-size: 15px;
+    line-height: 20px;
+    font-weight: 650;
+  }
+
+  .sensor-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px 8px;
+  }
+
+  .sensor-item {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    text-align: center;
+  }
+
+  .sensor-item-icon {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--text-primary) 10%, var(--card-bg));
+  }
+
+  .sensor-item-icon img {
+    width: 27px;
+    height: 27px;
+  }
+
+  .sensor-item-state {
+    position: absolute;
+    right: -4px;
+    bottom: -3px;
+    max-width: 64px;
+    overflow: hidden;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: var(--alarm-danger);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .sensor-item-name {
+    width: 100%;
+    overflow: hidden;
+    color: var(--text-secondary);
+    font-size: 12px;
+    line-height: 15px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .sensor-actions {
+    display: grid;
+    grid-template-columns: minmax(0, .75fr) minmax(0, 1.4fr);
+    gap: 10px;
+  }
+
+  @media (max-width: 390px) {
+    .keypad button {
+      height: 52px;
+    }
+
+    .sensor-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .sensor-actions {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .keypad button {
+      transition: none;
+    }
+  }
+</style>
+
+<script data-vue-panel-javascript>
+  const config = vuePanel.config;
+  const context = vuePanel.context;
+  const entityId = String(config.entity || context.entity || '');
+  const action = context.action === 'disarm' ? 'disarm' : context.action === 'arm' ? 'arm' : '';
+  const modeKey = String(context.mode || '');
+  const codeDisplay = context.codeDisplay === 'input' ? 'input' : 'dots';
+  const configuredLength = Number(context.codeLength);
+  const codeLength = Number.isFinite(configuredLength)
+    ? Math.round(Math.min(12, Math.max(1, configuredLength)))
+    : 4;
+
+  const MODES = {
+    armed_home: {service: 'alarm_arm_home', icon: 'mdi:shield-home'},
+    armed_away: {service: 'alarm_arm_away', icon: 'mdi:shield-lock'},
+    armed_night: {service: 'alarm_arm_night', icon: 'mdi:shield-moon'},
+    armed_vacation: {service: 'alarm_arm_vacation', icon: 'mdi:shield-airplane'},
+    armed_custom_bypass: {service: 'alarm_arm_custom_bypass', icon: 'mdi:shield-star'}
+  };
+  const mode = MODES[modeKey] || null;
+
+  const card = document.getElementById('card');
+  const actionView = document.getElementById('action-view');
+  const actionIcon = document.getElementById('action-icon');
+  const actionTitle = document.getElementById('action-title');
+  const actionHint = document.getElementById('action-hint');
+  const pinEntry = document.getElementById('pin-entry');
+  const pinDots = document.getElementById('pin-dots');
+  const pinInput = document.getElementById('pin-input');
+  const keypad = document.getElementById('keypad');
+  const backspace = document.getElementById('backspace');
+  const confirm = document.getElementById('confirm');
+  const directConfirm = document.getElementById('direct-confirm');
+  const status = document.getElementById('status');
+  const sensorView = document.getElementById('sensor-view');
+  const sensorTitle = document.getElementById('sensor-title');
+  const sensorList = document.getElementById('sensor-list');
+  const retry = document.getElementById('retry');
+  const force = document.getElementById('force');
+  const sensorStatus = document.getElementById('sensor-status');
+
+  let entity = null;
+  let code = '';
+  let commandInFlight = false;
+  let commandTimer = null;
+  let lastCode = '';
+  let renderVersion = 0;
+
+  function openSensorsOf(value) {
+    const sensors = value?.attributes?.open_sensors;
+    if (!sensors || typeof sensors !== 'object' || Array.isArray(sensors)) return [];
+    return Object.entries(sensors)
+      .filter(([id]) => /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id))
+      .map(([id, state]) => ({id, state: String(state || 'unknown')}));
+  }
+
+  function needsCode(value) {
+    const hasFormat = Boolean(value?.attributes?.code_format);
+    return action === 'disarm' ? hasFormat : hasFormat && value?.attributes?.code_arm_required === true;
+  }
+
+  function targetReached(value) {
+    if (!value) return false;
+    if (action === 'disarm') return ['disarmed', 'disarming'].includes(value.state);
+    return Boolean(mode) && [modeKey, 'arming', 'pending'].includes(value.state);
+  }
+
+  function setStatus(element, key, kind = 'error') {
+    element.textContent = vuePanel.t(key);
+    element.hidden = false;
+    element.classList.toggle('is-progress', kind === 'progress');
+    element.classList.toggle('is-success', kind === 'success');
+  }
+
+  function clearStatus(element) {
+    element.hidden = true;
+    element.classList.remove('is-progress', 'is-success');
+  }
+
+  function renderCode() {
+    pinInput.value = code;
+    for (const [index, dot] of [...pinDots.children].entries()) {
+      dot.classList.toggle('is-filled', index < code.length);
+    }
+    confirm.disabled = commandInFlight || (needsCode(entity) && !code);
+    directConfirm.disabled = commandInFlight;
+    backspace.disabled = commandInFlight || !code;
+  }
+
+  function buildDots() {
+    pinDots.replaceChildren();
+    for (let index = 0; index < codeLength; index += 1) {
+      const dot = document.createElement('span');
+      dot.className = 'pin-dot';
+      pinDots.append(dot);
+    }
+  }
+
+  async function renderSensors() {
+    const version = ++renderVersion;
+    const sensors = openSensorsOf(entity);
+    sensorTitle.replaceChildren();
+    sensorTitle.append(`${vuePanel.t('translation.openSensors.beforeCount')} `);
+    const count = document.createElement('strong');
+    count.textContent = `${sensors.length} ${vuePanel.t(
+      sensors.length === 1 ? 'translation.openSensors.sensor' : 'translation.openSensors.sensors'
+    )}`;
+    sensorTitle.append(count, ` ${vuePanel.t('translation.openSensors.afterCount')}`);
+
+    const rows = document.createDocumentFragment();
+    for (const sensor of sensors) {
+      const sensorEntity = await vuePanel.getEntity(sensor.id);
+      if (version !== renderVersion) return;
+      const item = document.createElement('div');
+      item.className = 'sensor-item';
+      const icon = document.createElement('span');
+      icon.className = 'sensor-item-icon';
+      const image = document.createElement('img');
+      image.alt = '';
+      image.src = await vuePanel.getIcon(String(sensorEntity?.attributes?.icon || 'mdi:window-open-variant'), {
+        size: 40,
+        color: getComputedStyle(card).color
+      });
+      if (version !== renderVersion) return;
+      const badge = document.createElement('span');
+      badge.className = 'sensor-item-state';
+      const stateKey = ['open', 'unavailable'].includes(sensor.state) ? sensor.state : 'unknown';
+      badge.textContent = vuePanel.t(`translation.openSensors.${stateKey}`);
+      const name = document.createElement('span');
+      name.className = 'sensor-item-name';
+      name.textContent = String(sensorEntity?.attributes?.friendly_name || sensor.id);
+      icon.append(image, badge);
+      item.append(icon, name);
+      rows.append(item);
+    }
+    if (version === renderVersion) sensorList.replaceChildren(rows);
+  }
+
+  async function showSensorView() {
+    commandInFlight = false;
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = null;
+    actionView.hidden = true;
+    sensorView.hidden = false;
+    clearStatus(sensorStatus);
+    retry.disabled = false;
+    force.disabled = false;
+    await renderSensors();
+  }
+
+  function showActionView() {
+    sensorView.hidden = true;
+    actionView.hidden = false;
+    clearStatus(status);
+    clearStatus(sensorStatus);
+    renderCode();
+  }
+
+  function finishTimer() {
+    if (commandTimer) clearTimeout(commandTimer);
+    commandTimer = null;
+  }
+
+  function commandFailed() {
+    commandInFlight = false;
+    finishTimer();
+    if (action === 'arm' && openSensorsOf(entity).length) {
+      showSensorView();
+      return;
+    }
+    setStatus(status, 'translation.pin.wrong');
+    renderCode();
+  }
+
+  function startWaiting(targetStatus = status) {
+    commandInFlight = true;
+    setStatus(targetStatus, 'translation.progress', 'progress');
+    renderCode();
+    finishTimer();
+    commandTimer = setTimeout(commandFailed, 2500);
+  }
+
+  async function submit() {
+    if (commandInFlight || !entityId || !action || (action === 'arm' && !mode)) return;
+    if (needsCode(entity) && !code) return;
+    lastCode = code;
+    startWaiting();
+    const service = action === 'disarm' ? 'alarm_disarm' : mode.service;
+    try {
+      await vuePanel.callService(
+        'alarm_control_panel',
+        service,
+        code ? {code} : {},
+        {entity_id: entityId}
+      );
+    } catch (error) {
+      commandFailed();
+    }
+  }
+
+  async function forceArm() {
+    if (commandInFlight || action !== 'arm' || !mode || !entityId) return;
+    startWaiting(sensorStatus);
+    retry.disabled = true;
+    force.disabled = true;
+    const shortMode = modeKey.replace(/^armed_/, '').replace('custom_bypass', 'custom');
+    const data = {entity_id: entityId, mode: shortMode, force: true};
+    if (lastCode) data.code = lastCode;
+    try {
+      await vuePanel.callService('alarmo', 'arm', data);
+    } catch (error) {
+      commandInFlight = false;
+      finishTimer();
+      retry.disabled = false;
+      force.disabled = false;
+      setStatus(sensorStatus, 'translation.pin.wrong');
+    }
+  }
+
+  async function renderEntity(value) {
+    entity = value;
+    if (commandInFlight && targetReached(value)) {
+      commandInFlight = false;
+      finishTimer();
+      const targetStatus = sensorView.hidden ? status : sensorStatus;
+      setStatus(targetStatus, 'translation.success', 'success');
+      retry.disabled = true;
+      force.disabled = true;
+    }
+    const required = needsCode(value);
+    pinEntry.hidden = !required;
+    directConfirm.hidden = required;
+    actionHint.textContent = vuePanel.t(required ? 'translation.pin.required' : 'translation.pin.optional');
+    renderCode();
+  }
+
+  keypad.addEventListener('click', event => {
+    const key = event.target.closest('[data-key]')?.dataset.key;
+    if (key !== undefined && !commandInFlight && (codeDisplay === 'input' || code.length < codeLength)) {
+      code += key;
+      renderCode();
+    }
+  });
+  pinInput.addEventListener('input', () => {
+    code = pinInput.value.replace(/\D/g, '');
+    renderCode();
+  });
+  pinInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') submit();
+  });
+  backspace.addEventListener('click', () => {
+    code = code.slice(0, -1);
+    renderCode();
+  });
+  confirm.addEventListener('click', submit);
+  directConfirm.addEventListener('click', submit);
+  retry.addEventListener('click', showActionView);
+  force.addEventListener('click', forceArm);
+
+  directConfirm.textContent = vuePanel.t('translation.pin.confirm');
+  retry.textContent = vuePanel.t('translation.openSensors.retry');
+  force.textContent = vuePanel.t('translation.openSensors.force');
+  backspace.setAttribute('aria-label', vuePanel.t('translation.pin.backspace'));
+  confirm.setAttribute('aria-label', vuePanel.t('translation.pin.confirm'));
+  directConfirm.hidden = true;
+  pinDots.hidden = codeDisplay === 'input';
+  pinInput.hidden = codeDisplay !== 'input';
+  buildDots();
+
+  const validAction = action === 'disarm' || (action === 'arm' && mode);
+  if (!validAction || !entityId) {
+    actionTitle.textContent = vuePanel.t('translation.noAction');
+    actionHint.textContent = '';
+    pinEntry.hidden = true;
+    directConfirm.hidden = true;
+  } else {
+    const translationKey = action === 'disarm' ? 'disarm' : modeKey;
+    actionTitle.textContent = vuePanel.t(`translation.actions.${translationKey}`);
+    actionIcon.src = await vuePanel.getIcon(
+      action === 'disarm' ? 'mdi:shield-off-outline' : mode.icon,
+      {size: 48, color: '#8a6700'}
+    );
+    document.getElementById('backspace-icon').src = await vuePanel.getIcon('mdi:backspace-outline', {
+      size: 40,
+      color: getComputedStyle(card).color
+    });
+    document.getElementById('confirm-icon').src = await vuePanel.getIcon('mdi:check', {
+      size: 40,
+      color: getComputedStyle(card).color
+    });
+    document.getElementById('sensor-alert-icon').src = await vuePanel.getIcon('mdi:alert-outline', {
+      size: 40,
+      color: '#f24b45'
+    });
+    entity = await vuePanel.getEntity(entityId);
+    await renderEntity(entity);
+    vuePanel.subscribeEntity(entityId, renderEntity);
+    if (codeDisplay === 'input' && needsCode(entity)) setTimeout(() => pinInput.focus(), 0);
+  }
+</script>
