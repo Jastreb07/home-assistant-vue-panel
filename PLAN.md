@@ -100,6 +100,24 @@ sie enthält ausschließlich Sensoren mit offenem Zustand und fasst nicht zugewi
 „Ohne Bereich“ zusammen. Die eingeschränkte Card API v1 löst die Bereiche über
 `getEntityAreas()` auf (`entity:read`): Entity-Bereich vor Gerätebereich, maximal 100 explizite IDs.
 
+Ab `2.2.52`/Engine `2.2.88` übernehmen die offenen Sensorzeilen aus der Light-Card deren komplette
+Aktivfarbgebung: `#f6d36b` als Hintergrund, `rgb(255 255 255 / 40%)` für den Icon-Kreis und
+`#111111` für das Icon. Dadurch kennzeichnen beide Cards ihren aktiven Zustand identisch.
+
+Ab `2.2.53`/Engine `2.2.89` deklariert `alarm-full-popup-detail` eine vollbreite Detail-Card und
+nutzt in seinem Inhaltsbereich durchgehend 20px Padding. Die Wiederholen- und Ignorieren-Aktionen
+liegen zusammen in einer eigenen, ebenfalls vollbreiten Footer-Leiste; `space-between` verteilt
+sie an beide Seiten und eine obere Trennlinie führt die Geometrie des Dialog-Headers fort.
+
+Ab `2.2.54`/Engine `2.2.90` nimmt der Full-Bleed-Detail-Host neben der Breite auch die verfügbare
+Dialoghöhe ein und hält Überlauf innerhalb der Card. Die Alarm-Detail-Card weist den verbleibenden
+Platz ihrer Sensorliste zu und aktiviert nur dort vertikales Scrollen; Warnhinweis und Footer mit
+den beiden Aktionen bleiben fest sichtbar.
+
+Ab `2.2.55`/Engine `2.2.91` fasst `alarm-full-popup-detail` den Warnhinweis in einer eigenen,
+theme-festen Warnbox zusammen. Eine leicht rot gemischte Fläche, ein dezenter roter Rahmen,
+16px Radius und die mittige Ausrichtung von Icon und Text trennen die Ursache klar von der Liste.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

@@ -22,7 +22,7 @@
     "defaultSize": {
       "cols": 1,
       "rows": 1,
-      "width": 396,
+      "width": 700,
       "height": 520
     },
     "defaultResponsive": {
@@ -146,16 +146,18 @@
     </div>
 
     <div class="sensor-view" id="sensor-view" hidden>
-      <div class="sensor-alert">
-        <img id="sensor-alert-icon" alt="">
-        <p id="sensor-title"></p>
+      <div class="sensor-content">
+        <div class="sensor-alert">
+          <img id="sensor-alert-icon" alt="">
+          <p id="sensor-title"></p>
+        </div>
+        <div class="sensor-list" id="sensor-list"></div>
+        <p class="dialog-status" id="sensor-status" role="status" hidden></p>
       </div>
-      <div class="sensor-list" id="sensor-list"></div>
       <div class="sensor-actions">
         <button class="secondary-action" id="retry" type="button"></button>
         <button class="primary-action danger" id="force" type="button"></button>
       </div>
-      <p class="dialog-status" id="sensor-status" role="status" hidden></p>
     </div>
   </section>
 </template>
@@ -165,7 +167,7 @@
     --alarm-accent: #d59c00;
     --alarm-danger: #f24b45;
     width: 100%;
-    max-width: 396px;
+    max-width: none;
     min-width: 0;
     box-sizing: border-box;
     color: var(--text-primary);
@@ -173,11 +175,38 @@
     user-select: none;
   }
 
-  .action-view,
-  .sensor-view {
+  .alarm-dialog-card.is-sensor-view {
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .action-view {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    padding: 20px;
+  }
+
+  .sensor-view {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .sensor-content {
+    display: flex;
+    width: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    flex: 1;
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px;
+    overflow: hidden;
   }
 
   .action-view[hidden],
@@ -378,8 +407,12 @@
 
   .sensor-alert {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid color-mix(in srgb, var(--alarm-danger) 32%, var(--divider));
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--alarm-danger) 8%, var(--card-bg));
     color: var(--alarm-danger);
   }
 
@@ -390,7 +423,7 @@
   }
 
   .sensor-alert p {
-    margin: 2px 0 0;
+    margin: 0;
     font-size: 15px;
     line-height: 20px;
     font-weight: 650;
@@ -398,8 +431,13 @@
 
   .sensor-list {
     display: flex;
+    min-height: 0;
+    flex: 1;
     flex-direction: column;
     gap: 20px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .sensor-group {
@@ -448,8 +486,8 @@
     min-height: 56px;
     padding: 7px 12px 7px 8px;
     border-radius: 999px;
-    background: #4aaef2;
-    color: #13212d;
+    background: #e3e3e3;
+    color: #111;
   }
 
   .sensor-item-icon {
@@ -459,7 +497,7 @@
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: rgba(255, 255, 255, .92);
+    background: rgb(255 255 255 / 40%);
   }
 
   .sensor-item-icon img {
@@ -485,7 +523,7 @@
 
   .sensor-item-state {
     overflow: hidden;
-    color: rgba(19, 33, 45, .72);
+    color: rgb(17 17 17 / 72%);
     font-size: 12px;
     line-height: 14px;
     white-space: nowrap;
@@ -493,9 +531,25 @@
   }
 
   .sensor-actions {
-    display: grid;
-    grid-template-columns: minmax(0, .75fr) minmax(0, 1.4fr);
+    width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: space-between;
     gap: 10px;
+    padding: 16px 20px 20px;
+    border-top: 1px solid var(--divider);
+  }
+
+  .sensor-actions .secondary-action {
+    min-width: 0;
+    flex: 0 1 135px;
+  }
+
+  .sensor-actions .primary-action {
+    min-width: 0;
+    flex: 0 1 252px;
   }
 
   @media (max-width: 390px) {
@@ -503,9 +557,6 @@
       height: 52px;
     }
 
-    .sensor-actions {
-      grid-template-columns: 1fr;
-    }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -685,7 +736,7 @@
         const iconName = String(entry.sensorEntity?.attributes?.icon || 'mdi:window-open-variant');
         image.src = await vuePanel.getIcon(
           /^mdi:[a-z0-9-]+$/.test(iconName) ? iconName : 'mdi:window-open-variant',
-          {size: 40, color: '#4a5158'}
+          {size: 40, color: '#111111'}
         );
         const copy = document.createElement('span');
         copy.className = 'sensor-item-copy';
@@ -712,6 +763,7 @@
     commandTimer = null;
     actionView.hidden = true;
     sensorView.hidden = false;
+    card.classList.add('is-sensor-view');
     clearStatus(sensorStatus);
     retry.disabled = false;
     force.disabled = false;
@@ -721,6 +773,7 @@
   function showActionView() {
     sensorView.hidden = true;
     actionView.hidden = false;
+    card.classList.remove('is-sensor-view');
     clearStatus(status);
     clearStatus(sensorStatus);
     renderCode();

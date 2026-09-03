@@ -327,6 +327,19 @@ Aktueller Stand:
   offene Sensoren als kompakte Zeilen, nach ihrem HA-Bereich gruppiert und ohne Zuordnung gesammelt
   unter „Ohne Bereich“. Card API v1 stellt dafür unter `entity:read` zusätzlich
   `getEntityAreas()` bereit; die explizite Entity-Bereichszuordnung hat Vorrang vor dem Gerätebereich;
+- ab `2.2.52`/Engine `2.2.88` verwenden die offenen Sensorzeilen in
+  `alarm-full-popup-detail` exakt die Aktivfarben der Light-Card: den warmgelben Hintergrund,
+  einen weiß-transparenten Icon-Kreis und das dunkelgraue aktive Icon;
+- ab `2.2.53`/Engine `2.2.89` füllt `alarm-full-popup-detail` die verfügbare Dialogbreite aus.
+  Aktions- und Sensorinhalt besitzen einheitlich 20px Innenabstand; die beiden Sensoraktionen
+  stehen gemeinsam in einer vollbreiten Footer-Leiste mit oberer Trennlinie und
+  `justify-content: space-between`;
+- ab `2.2.54`/Engine `2.2.90` füllt der Full-Bleed-Detail-Host auch die verfügbare Dialoghöhe und
+  kapselt seinen Überlauf. In `alarm-full-popup-detail` ist ausschließlich die gruppierte
+  Sensorliste scrollbar; Warnhinweis und Aktions-Footer bleiben dadurch jederzeit sichtbar;
+- ab `2.2.55`/Engine `2.2.91` steht der Warnhinweis in `alarm-full-popup-detail` in einer
+  theme-festen Box mit dezenter roter Fläche, rotem Rahmen, 16px Radius und vertikal zentriertem
+  Icon und Text;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

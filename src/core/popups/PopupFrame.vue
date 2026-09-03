@@ -149,7 +149,16 @@ const popupView = computed<ViewConfig | null>(() => {
 }
 /* Cancels the dialog's own padding so the card reaches the dialog edges */
 .detail-body.is-full-bleed {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+  justify-content: flex-start;
   margin: calc(var(--vp-dialog-padding, 24px) * -1);
   padding: 0;
+  overflow: hidden;
+}
+.detail-body.is-full-bleed > :deep(*) {
+  min-height: 0;
+  max-width: none;
 }
 </style>
