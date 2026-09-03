@@ -78,7 +78,7 @@
         "group": "translation.groups.appButton",
         "type": "string",
         "required": false,
-        "default": ""
+        "default": "com.google.android.tv.remote"
       },
       {
         "key": "appIcon",
@@ -91,7 +91,15 @@
       {
         "key": "showAppButton",
         "label": "translation.variables.showAppButton.label",
-        "group": "translation.groups.visibility",
+        "group": "translation.groups.appButton",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
+        "key": "showAppButtonDetail",
+        "label": "translation.variables.showAppButtonDetail.label",
+        "group": "translation.groups.appButton",
         "type": "boolean",
         "required": false,
         "default": false
@@ -105,20 +113,20 @@
         "default": true
       },
       {
-        "key": "powerEntity",
-        "label": "translation.variables.powerEntity.label",
-        "group": "translation.groups.power",
-        "type": "entity",
-        "required": false,
-        "default": ""
-      },
-      {
         "key": "showControls",
         "label": "translation.variables.showControls.label",
         "group": "translation.groups.visibility",
         "type": "boolean",
         "required": false,
         "default": true
+      },
+      {
+        "key": "showAppName",
+        "label": "translation.variables.showAppName.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": false
       },
       {
         "key": "actions",
@@ -151,10 +159,10 @@
         "translation.variables.showAppButton.label": "Show app button",
         "translation.variables.showPowerButton.label": "Show power button",
         "translation.variables.showControls.label": "Show playback buttons",
+        "translation.variables.showAppName.label": "Show app/source name",
         "translation.groups.appButton": "App button",
-        "translation.groups.power": "Power button",
-        "translation.variables.powerEntity.label": "Override power entity (optional)",
         "translation.groups.visibility": "Visible elements",
+        "translation.variables.showAppButtonDetail.label": "Show app button in the detail view",
         "translation.openApp": "Open app",
         "translation.groups.appearance": "Appearance",
         "translation.groups.display": "Display",
@@ -177,10 +185,10 @@
         "translation.variables.showAppButton.label": "App-Knopf anzeigen",
         "translation.variables.showPowerButton.label": "Ein/Aus-Knopf anzeigen",
         "translation.variables.showControls.label": "Wiedergabe-Knöpfe anzeigen",
+        "translation.variables.showAppName.label": "App-/Quellenname anzeigen",
         "translation.groups.appButton": "App-Knopf",
-        "translation.groups.power": "Ein/Aus-Knopf",
-        "translation.variables.powerEntity.label": "Abweichende Ein/Aus-Entity (optional)",
         "translation.groups.visibility": "Sichtbare Elemente",
+        "translation.variables.showAppButtonDetail.label": "App-Knopf in der Detailansicht anzeigen",
         "translation.openApp": "App öffnen",
         "translation.groups.appearance": "Darstellung",
         "translation.groups.display": "Anzeige",
@@ -207,14 +215,16 @@
       <button class="power-button" id="app-button" type="button" hidden><img id="app-icon" alt=""></button>
       <button class="power-button" id="power" type="button"><img id="power-icon" alt=""></button>
     </div>
-    <div class="tile__info">
-      <div class="tile__app" id="app-name" hidden></div>
-      <div class="tile__name" id="name"></div>
-    </div>
-    <div class="controls" id="controls">
-      <button data-service="media_previous_track"><img id="previous" alt=""></button>
-      <button data-service="media_play_pause"><img id="play" alt=""></button>
-      <button data-service="media_next_track"><img id="next" alt=""></button>
+    <div class="bottom">
+      <div class="tile__info">
+        <div class="tile__app" id="app-name" hidden></div>
+        <div class="tile__name" id="name"></div>
+      </div>
+      <div class="controls" id="controls">
+        <button data-service="media_previous_track"><img id="previous" alt=""></button>
+        <button data-service="media_play_pause"><img id="play" alt=""></button>
+        <button data-service="media_next_track"><img id="next" alt=""></button>
+      </div>
     </div>
   </article>
 </template>
@@ -360,10 +370,18 @@
         display: none;
     }
 
+    /* Text und Wiedergabe-Knöpfe bilden eine Gruppe, die unten in der Card sitzt */
+    .bottom {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        margin-top: auto;
+    }
+
     .tile__info {
         width: 100%;
         min-width: 0;
-        margin-top: 32px;
     }
 
     .tile__name, .tile__app {
@@ -410,46 +428,44 @@
         justify-content: center;
         width: 100%;
         gap: 8px;
-        margin-top: 10px;
     }
 
     .controls[hidden] {
         display: none
     }
 
+    /* Reine Icon-Knöpfe: kein Kreis, kein Hintergrund — nur die Glyphe selbst */
     .controls button {
         width: 34px;
         height: 34px;
         padding: 0;
-        border: 1px solid rgba(255, 255, 255, .12);
-        border-radius: 50%;
+        border: 0;
+        background: transparent;
         display: grid;
         place-items: center;
-        background: rgba(0, 0, 0, .24);
-        -webkit-backdrop-filter: blur(10px);
-        backdrop-filter: blur(10px);
         cursor: pointer;
-        transition: background-color .13s ease, transform .13s ease;
     }
 
     .controls img {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
+        opacity: .88;
+        transition: opacity .13s ease, transform .13s ease;
     }
 
-    .controls button:hover {
-        background: rgba(0, 0, 0, .46);
+    .controls button:hover img {
+        opacity: 1;
     }
 
-    .controls button:active {
-        transform: scale(.92);
+    .controls button:active img {
+        transform: scale(.88);
     }
 
     @media (prefers-reduced-motion: reduce) {
         .tile,
         .media-backdrop,
         .is-scrolling,
-        .controls button,
+        .controls img,
         .power-button {
             animation: none;
             transition: none;
@@ -598,21 +614,14 @@
     if (!link) return '';
     if (/^[a-z][a-z0-9+.-]*:/i.test(link)) return link;
     if (/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(link)) {
-      return `intent://#Intent;package=${link};end`;
+      /* Ist die App nicht installiert, landet man wenigstens im Play Store statt im Leeren */
+      const store = encodeURIComponent(`https://play.google.com/store/apps/details?id=${link}`);
+      return `intent://#Intent;package=${link};S.browser_fallback_url=${store};end`;
     }
     return link;
   }
 
   const entityId = String(config.entity || '');
-  /*
-   * Manche Media-Player (Android TV, Google Cast) haben keinen echten
-   * `turn_on`/`turn_off`: Aus bringt nur den Home-Screen, Ein startet einen
-   * HA-Cast-Mirroring statt die TV-Eingänge zu wechseln. `powerEntity` lässt
-   * den Knopf stattdessen eine andere Entity schalten — z. B. eine Steckdose
-   * oder die `remote`-Entity einer Fernbedienungsintegration, die die echte
-   * Gerätetaste sendet.
-   */
-  const powerEntityId = String(config.powerEntity || '');
   const card = document.getElementById('card');
   const tapAction = String(config.actions?.tap?.action || 'default');
   card.classList.toggle('tap-action', !['none', 'assist'].includes(tapAction));
@@ -769,15 +778,11 @@
     card.classList.toggle('active', playing);
     const app = entity?.attributes?.app_name || entity?.attributes?.source;
     appName.textContent = app ? String(app) : '';
-    appName.hidden = !app;
-    power.hidden = config.showPowerButton === false || (
-      powerEntityId
-        ? false
-        : !entity || (
-          ['off', 'standby'].includes(entity.state)
-            ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
-            : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
-        )
+    appName.hidden = !app || config.showAppName === false;
+    power.hidden = config.showPowerButton === false || !entity || (
+      ['off', 'standby'].includes(entity.state)
+        ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
+        : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
     );
     /* Der App-Knopf hängt nur am Link, nicht am Zustand des Players */
     appButton.hidden = !appLink || config.showAppButton !== true;
@@ -801,13 +806,7 @@
     const button = event.target.closest('button');
     if (button) await vuePanel.callService('media_player', button.dataset.service, {}, {entity_id: entityId});
   });
-  power.addEventListener('click', () => {
-    if (powerEntityId) {
-      vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: powerEntityId}).catch(() => {});
-      return;
-    }
-    toggleEntity(entityId);
-  });
+  power.addEventListener('click', () => toggleEntity(entityId));
   appButton.title = vuePanel.t('translation.openApp');
   appButton.setAttribute('aria-label', appButton.title);
   appButton.addEventListener('click', () => {

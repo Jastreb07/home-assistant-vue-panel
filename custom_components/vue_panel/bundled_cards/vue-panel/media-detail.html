@@ -47,7 +47,7 @@
         "label": "translation.variables.appLink.label",
         "type": "string",
         "required": false,
-        "default": ""
+        "default": "com.google.android.tv.remote"
       },
       {
         "key": "appIcon",
@@ -268,6 +268,14 @@
     font-weight: 600;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* Zustand statt Quelle: eine Spur dezenter als eine echte App-/Quellenbadge */
+  .app-badge.is-off {
+    border-color: rgba(255, 255, 255, .12);
+    background: rgba(0, 0, 0, .18);
+    color: rgba(255, 255, 255, .68);
+    font-weight: 500;
   }
 
   .hero-copy {
@@ -589,12 +597,27 @@
     if (!link) return '';
     if (/^[a-z][a-z0-9+.-]*:/i.test(link)) return link;
     if (/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(link)) {
-      return `intent://#Intent;package=${link};end`;
+      /* Ist die App nicht installiert, landet man wenigstens im Play Store statt im Leeren */
+      const store = encodeURIComponent(`https://play.google.com/store/apps/details?id=${link}`);
+      return `intent://#Intent;package=${link};S.browser_fallback_url=${store};end`;
     }
     return link;
   }
 
   const appLink = appTarget(contextValue('appLink'));
+  /*
+   * Wird die Detailansicht aus der Media-Card geöffnet, ist `vuePanel.config`
+   * technisch derselbe Kontext, den `showDetail()` durchreicht — er enthält
+   * darum auch die Media-Cards EIGENE `showAppButton` (Sichtbarkeit auf der
+   * Kachel, ein anderes Setting!). `contextValue('showAppButton')` würde also
+   * versehentlich das Kachel-Flag lesen. Stattdessen zählt die eigens dafür
+   * durchgereichte `showAppButtonDetail`; steht die Detail-Card allein in
+   * einem eigenen Popup (kein passender Kontext), gilt ihre eigene
+   * `showAppButton`-Instanzvariable aus `vuePanel.config`.
+   */
+  const showAppButtonInDetail = vuePanel.context.showAppButtonDetail !== undefined
+    ? vuePanel.context.showAppButtonDetail === true
+    : config.showAppButton === true;
   const card = document.getElementById('card');
   const dialogBody = card.closest('.vp-dialog-body');
   const detailBody = card.closest('.detail-body');
@@ -760,14 +783,16 @@
     const subtitle = attributes.media_artist || attributes.media_album_name;
     artist.textContent = subtitle ? String(subtitle) : '';
     artist.hidden = !subtitle;
-    const app = attributes.app_name || attributes.source;
-    appBadge.textContent = app ? String(app) : '';
-    appBadge.hidden = !app;
-
     const off = ['off', 'standby', 'unavailable'].includes(entity.state);
+    /* Aus: die Badge zeigt den Zustand statt der App, damit die Zeile nie leer wirkt */
+    const app = attributes.app_name || attributes.source;
+    appBadge.textContent = off ? vuePanel.t('translation.states.off') : String(app || '');
+    appBadge.classList.toggle('is-off', off);
+    appBadge.hidden = !off && !app;
+
     power.hidden = off ? !supports(entity, FEATURE.turnOn) : !supports(entity, FEATURE.turnOff);
     /* Der App-Knopf hängt nur am Link, nicht am Zustand des Players */
-    appButton.hidden = !appLink || contextValue('showAppButton') !== true;
+    appButton.hidden = !appLink || !showAppButtonInDetail;
     previous.hidden = !supports(entity, FEATURE.previous);
     next.hidden = !supports(entity, FEATURE.next);
     stop.hidden = !supports(entity, FEATURE.stop);

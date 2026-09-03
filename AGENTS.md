@@ -523,14 +523,30 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   Die Bars sind Engine-Komponenten und keine Cards mehr.
 - ab `2.2.43` hat die Media-Card einen frei belegbaren App-/Link-Knopf oben neben dem
   Ein/Aus-Knopf: `appLink` nimmt eine Adresse (`https://…`, `myapp://…`) oder einen blanken
-  Android-Paketnamen, der zu `intent://#Intent;package=…;end` wird; `appIcon` bestimmt das Icon,
-  geöffnet wird über `vuePanel.openUrl(…, {newTab: true})`. `showAppButton` ist standardmäßig aus
-  (der Knopf ist ein bewusstes Opt-in, nicht jede Media-Card soll ihn zeigen) — anders als
-  `showPowerButton` und `showControls`, die standardmäßig an sind und Ein/Aus sowie die
-  Wiedergabereihe ausblenden. `.power-button[hidden] { display: none }` überschreibt bewusst die
+  Android-Paketnamen, der zu `intent://#Intent;package=…;S.browser_fallback_url=<Play-Store-Link>;end`
+  wird (ohne installierte App landet man im Play Store statt im Leeren); Standardwert ist
+  `com.google.android.tv.remote` (Android TV Remote Control von Google) — ein Startpunkt, kein
+  Versprechen, dass jede Entity genau diese App will; `appIcon` bestimmt das Icon,
+  geöffnet wird über `vuePanel.openUrl(…, {newTab: true})`. `showAppButton` (Kachel) und
+  `showAppButtonDetail` (Detailansicht) sind beide standardmäßig aus (bewusstes Opt-in) und lassen
+  sich unabhängig voneinander umschalten — anders als `showPowerButton` und `showControls`, die
+  standardmäßig an sind und Ein/Aus sowie die Wiedergabereihe ausblenden. Die Detail-Card hat
+  zusätzlich eine eigene `showAppButton`-Variable für den Fall, dass sie ohne Kontext direkt in
+  einem Popup steht. Wird sie über `showDetail()` aus der Media-Card geöffnet, ist `vuePanel.config`
+  derselbe Kontext wie `vuePanel.context` und enthält darum auch die KACHEL-eigene `showAppButton` —
+  die Detail-Card liest deshalb bewusst `vuePanel.context.showAppButtonDetail` zuerst und fällt erst
+  ohne diesen Schlüssel auf ihre eigene `config.showAppButton` zurück, statt versehentlich das
+  gleichnamige Kachel-Flag zu übernehmen. `.power-button[hidden] { display: none }` überschreibt
+  bewusst die
   eigene `display: grid`-Regel — Autoren-CSS schlägt sonst die eingebaute `[hidden]`-Regel des
   Browsers unabhängig von der Spezifität, das `hidden`-Attribut hätte also sonst gar keine Wirkung
-  gehabt. Icon, App-Knopf und Ein/Aus liegen
+  gehabt.
+  Die unteren Wiedergabe-Knöpfe (Zurück/Play/Weiter) sind reine Icon-Knöpfe ohne Kreis, Rand oder
+  Weichzeichner-Hintergrund — Rückmeldung kommt über die Deckkraft und einen leichten Scale-Effekt
+  am Icon selbst (`.controls button { background: transparent; border: 0; }`). `.tile__info` und
+  `.controls` liegen gemeinsam in `.bottom` (`margin-top: auto`), das damit unten in der Card sitzt
+  und den freien Raum unter dem `.top-row` einnimmt, statt wie zuvor per festem `margin-top: 32px`
+  von der absolut positionierten Kopfzeile abzurücken. Icon, App-Knopf und Ein/Aus liegen
   als drei Geschwister in derselben Kopfzeile (`justify-content: space-between`, kein `gap` — der
   Abstand ergibt sich allein aus der Verteilung). `.power-button` setzt `box-sizing: border-box`,
   `margin: 0`, `font: inherit` und `line-height: 1`, damit die Button-Box exakt wie der
