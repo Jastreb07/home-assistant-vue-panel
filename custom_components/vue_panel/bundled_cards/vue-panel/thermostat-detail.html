@@ -149,10 +149,10 @@
   <div class="thermostat-ui" id="card">
     <div class="dial" id="dial" role="slider" tabindex="0">
       <svg class="dial-svg" viewBox="0 0 360 300" aria-hidden="true">
-        <path class="arc-track" id="arc-track" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
-        <path class="arc-value arc-heat" id="arc-heat" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
-        <path class="arc-value arc-cool" id="arc-cool" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
-        <path class="arc-hit" id="arc-hit" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-track" id="arc-track" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
+        <path class="arc-value arc-heat" id="arc-heat" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
+        <path class="arc-value arc-cool" id="arc-cool" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
+        <path class="arc-hit" id="arc-hit" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
       </svg>
       <span class="current-dot" id="current-dot" hidden></span>
       <span class="arc-handle heat-handle" id="heat-handle"></span>
@@ -240,8 +240,8 @@
     background: #fff;
     color: #222;
     font-family: Arial, Helvetica, sans-serif;
-    -webkit-text-size-adjust: 100%;
-    text-size-adjust: 100%;
+    -webkit-text-size-adjust: none;
+    text-size-adjust: none;
     user-select: none;
     --selects-width: 200px;
     --selects-overhang: 20px;
@@ -365,13 +365,13 @@
       position: absolute;
       z-index: 3;
       top: 50%;
-      right: 25%;
+      left: 50%;
       display: flex;
       flex-direction: column;
       align-items: flex-start;
       justify-content: center;
-      gap: 18px;
-      width: 90px;
+      gap: 8px;
+      width: 100px;
       height: 140px;
       transform: translateY(-50%);
   }
@@ -387,17 +387,18 @@
     font: inherit;
     white-space: nowrap;
     cursor: pointer;
-    transition: color .16s ease, transform .16s ease;
+    transition: color .16s ease;
   }
 
-  .target.selected { color: #111; transform: scale(1.5); }
+  .target.selected { color: #111; }
   .target:focus-visible { outline: 2px solid #4b9ed6; outline-offset: 4px; border-radius: 5px; }
 
   .target-main {
-    font-size: 56px;
+    font-size: 40px;
     font-weight: 400;
-    line-height: 46px;
-    letter-spacing: -1.4px;
+    line-height: 40px;
+    letter-spacing: -1px;
+    font-variant-numeric: tabular-nums;
   }
 
   .target-side {
@@ -406,11 +407,24 @@
     justify-content: space-between;
     margin-left: 2px;
     text-align: right;
-    height: 50px;
+    height: 40px;
   }
 
-  .target-unit { font-size: 12px; line-height: 18px; }
-  .target-fraction { font-size: 21px; line-height: 21px; letter-spacing: -.6px; }
+  .target-unit { font-size: 11px; line-height: 14px; }
+  .target-fraction {
+    font-size: 18px;
+    line-height: 18px;
+    letter-spacing: -.5px;
+    font-variant-numeric: tabular-nums;
+  }
+  .target.selected .target-main {
+    font-size: 60px;
+    line-height: 54px;
+    letter-spacing: -1.5px;
+  }
+  .target.selected .target-side { height: 54px; }
+  .target.selected .target-unit { font-size: 12px; line-height: 16px; }
+  .target.selected .target-fraction { font-size: 24px; line-height: 22px; }
 
   /* Isttemperatur und Luftfeuchte stehen gemeinsam in einer Zeile */
   .metrics {
@@ -665,9 +679,6 @@
   [hidden] { display: none !important; }
 
   @media (max-width: 390px) {
-    .target-main { font-size: 40px; line-height: 40px; }
-    .target-fraction { font-size: 24px; line-height: 18px; }
-    .targets { gap: 12px; }
     .thermostat-ui { --selects-width: 180px; }
   }
 </style>
@@ -685,7 +696,7 @@
   const VIEW_HEIGHT = 300;
   const CENTER_X = 180;
   const CENTER_Y = 160;
-  const ARC_RADIUS = 140;
+  const ARC_RADIUS = 148;
   const ARC_START = 135;
   const ARC_SPAN = 270;
   const DRAG_THRESHOLD = 4;

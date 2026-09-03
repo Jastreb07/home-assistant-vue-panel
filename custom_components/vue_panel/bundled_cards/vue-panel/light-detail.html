@@ -91,9 +91,9 @@
   <div class="light-ui" id="card">
     <div class="dial" id="dial" role="slider" tabindex="0">
       <svg class="dial-svg" viewBox="0 0 360 300" aria-hidden="true">
-        <path class="arc-track" id="arc-track" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
-        <path class="arc-value" id="arc-value" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
-        <path class="arc-hit" id="arc-hit" d="M81.01 258.99 A140 140 0 1 1 278.99 258.99"/>
+        <path class="arc-track" id="arc-track" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
+        <path class="arc-value" id="arc-value" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
+        <path class="arc-hit" id="arc-hit" d="M75.35 264.65 A148 148 0 1 1 284.65 264.65"/>
       </svg>
       <span class="gradient-ring" id="gradient-ring"></span>
       <span class="arc-handle" id="arc-handle"></span>
@@ -203,7 +203,7 @@
     --selects-width: 200px;
     --selects-overhang: 20px;
     /* Derselbe Bogen wie im SVG — als Maske für den Farbverlauf */
-    --vp-arc-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'><path d='M81.01 258.99 A140 140 0 1 1 278.99 258.99' fill='none' stroke='black' stroke-width='20' stroke-linecap='round'/></svg>");
+    --vp-arc-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 360 300' preserveAspectRatio='none'><path d='M75.35 264.65 A148 148 0 1 1 284.65 264.65' fill='none' stroke='black' stroke-width='20' stroke-linecap='round'/></svg>");
   }
 
   .dial {
@@ -774,7 +774,7 @@
   const VIEW_HEIGHT = 300;
   const CENTER_X = 180;
   const CENTER_Y = 160;
-  const ARC_RADIUS = 140;
+  const ARC_RADIUS = 148;
   const ARC_START = 135;
   const ARC_SPAN = 270;
   const DRAG_THRESHOLD = 4;

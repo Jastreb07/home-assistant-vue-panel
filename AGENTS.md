@@ -314,7 +314,7 @@ Aktueller Stand:
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
   Popup-Listen), nur ist der Bogen kein voller Kreis, sondern ein unten offener 270°-Bogen
-  (Mittelpunkt 180/160, Radius 140 im Viewbox 360×300, Start 135°). Er hat einen Heiz- und einen
+  (Mittelpunkt 180/160, Radius 148 im Viewbox 360×300, Start 135°). Er hat einen Heiz- und einen
   Kühl-Griff (Drag, Klick, Mausrad und Pfeiltasten), einen grauen Punkt für die Isttemperatur,
   umschaltbare Soll-Werte für `target_temp_low`/`target_temp_high` (ganze Zahl groß, Einheit und
   Nachkommastellen klein daneben), Istwert und Luftfeuchte als Metriken sowie
@@ -365,9 +365,12 @@ Aktueller Stand:
   Bedienelemente erscheinen nur, wenn `supported_features` beziehungsweise die Attribute
   (`current_humidity`, `hvac_action`, Bereichs-Sollwerte) sie hergeben. Die
   Thermostat-Card öffnet die Ansicht per `detail`-Zuordnung und hat als Tap-Default `more-info`.
-  Wichtig für schmale Geräte: Die absolut positionierte `.targets`-Spalte bleibt immer 90px
-  breit; nur Schriftgröße und Abstand werden unter 390px reduziert. Eine breitere Spalte
-  verschiebt wegen `right: 25%` die Sollwerte in die linke Hinweisicon-Spalte;
+  Wichtig für schmale Geräte: Die absolut positionierte `.targets`-Spalte bleibt immer 100px
+  breit. Aktive und inaktive Sollwerte haben explizite Schrift- und Zeilenhöhen statt einer
+  zusätzlichen `transform`-Skalierung; Browser-Text-Autosizing ist nur innerhalb dieser
+  geometrisch festen Instrumenten-Card deaktiviert. Eine breakpointabhängig breitere Spalte
+  verschiebt die Sollwerte in die linke Hinweisicon-Spalte; die Spalte ist deshalb direkt mit
+  `left: 50%` an der Dial-Mitte verankert;
 - Der Tipp-Aktionseditor bietet die frühere Aktion `default` („Standard (Card-Aktion)“) nicht mehr
   an. Alle mitgelieferten Cards verwenden für Tippen explizit `more-info` als Standard; nur
   `vue-panel/light` behält `toggle`. Parser, Typen und Card-Runtimes lesen alte `default`-Werte
