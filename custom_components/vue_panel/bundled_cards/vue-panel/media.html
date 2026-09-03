@@ -259,6 +259,30 @@
         color: #fff;
     }
 
+    .tile.is-off {
+        background: var(--card-bg);
+        color: var(--text-primary);
+    }
+
+    .tile.is-off .tile__name {
+        text-shadow: none;
+    }
+
+    .tile.is-off .tile__app {
+        color: var(--text-secondary);
+        text-shadow: none;
+    }
+
+    .tile.is-off .tile__icon,
+    .tile.is-off .power-button {
+        border-color: color-mix(in srgb, currentColor 12%, transparent);
+        background: color-mix(in srgb, currentColor 8%, transparent);
+    }
+
+    .tile.is-off .power-button:hover {
+        background: color-mix(in srgb, currentColor 14%, transparent);
+    }
+
     .media-backdrop {
         position: absolute;
         inset: 0;
@@ -776,6 +800,7 @@
     const picture = config.dynamicBackground !== false && !idle && (entity?.attributes?.entity_picture_local || entity?.attributes?.entity_picture);
     const source = picture ? new URL(String(picture), window.location.origin).href : '';
     card.classList.toggle('active', playing);
+    card.classList.toggle('is-off', idle);
     const app = entity?.attributes?.app_name || entity?.attributes?.source;
     appName.textContent = app ? String(app) : '';
     appName.hidden = !app || config.showAppName === false;
@@ -799,7 +824,7 @@
     applyTextScroll(name);
     controls.hidden = idle || config.showControls === false;
     await applyArtwork(source, version);
-    await renderIcons(playing, '#ffffff', version);
+    await renderIcons(playing, getComputedStyle(card).color, version);
   }
 
   controls.addEventListener('click', async event => {
