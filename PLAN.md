@@ -93,6 +93,13 @@ Ab `2.2.50`/Engine `2.2.86` kann eine Dialog-Card den sie enthaltenden Popup-Fra
 des Zielzustands durch die Alarm-Entity, sodass die Erfolgsmeldung kurz sichtbar bleibt und sich
 der Dialog danach selbst schließt.
 
+Ab `2.2.51`/Engine `2.2.87` sendet `alarm-full` Scharf- und Unscharf-Aktionen ohne benötigte PIN
+direkt und öffnet keinen reinen Bestätigungsdialog mehr. Wird das Scharfschalten durch offene
+Sensoren blockiert, wechselt `alarm-full-popup-detail` in eine nach HA-Bereichen gruppierte Liste;
+sie enthält ausschließlich Sensoren mit offenem Zustand und fasst nicht zugewiesene Entities unter
+„Ohne Bereich“ zusammen. Die eingeschränkte Card API v1 löst die Bereiche über
+`getEntityAreas()` auf (`entity:read`): Entity-Bereich vor Gerätebereich, maximal 100 explizite IDs.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

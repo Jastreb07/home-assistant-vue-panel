@@ -17,6 +17,7 @@ export {
 } from './connection'
 export { useEntity } from './useEntity'
 export { useService } from './useService'
+export { getEntityAreas, type EntityAreaSnapshot } from './entityAreas'
 export {
   createPortableCard,
   deletePortableCard,

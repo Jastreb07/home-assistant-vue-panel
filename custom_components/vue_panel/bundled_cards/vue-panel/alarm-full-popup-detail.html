@@ -76,6 +76,7 @@
         "translation.openSensors.unknown": "Unknown",
         "translation.openSensors.force": "Ignore open sensors and arm",
         "translation.openSensors.retry": "Try again",
+        "translation.openSensors.unassigned": "Without area",
         "translation.noAction": "No alarm action was selected."
       },
       "de": {
@@ -104,6 +105,7 @@
         "translation.openSensors.unknown": "Unbekannt",
         "translation.openSensors.force": "Offene Sensoren ignorieren und scharfschalten",
         "translation.openSensors.retry": "Erneut versuchen",
+        "translation.openSensors.unassigned": "Ohne Bereich",
         "translation.noAction": "Es wurde keine Alarmaktion ausgewählt."
       }
     }
@@ -140,7 +142,6 @@
         </div>
       </div>
 
-      <button class="primary-action" id="direct-confirm" type="button" hidden></button>
       <p class="dialog-status" id="status" role="status" hidden></p>
     </div>
 
@@ -396,57 +397,97 @@
   }
 
   .sensor-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .sensor-group {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .sensor-group-heading {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 12px 8px;
+    grid-template-columns: 30px auto minmax(28px, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px;
+  }
+
+  .sensor-group-heading img {
+    width: 24px;
+    height: 24px;
+  }
+
+  .sensor-group-heading strong {
+    font-size: 16px;
+    line-height: 20px;
+    white-space: nowrap;
+  }
+
+  .sensor-group-line {
+    height: 5px;
+    margin-left: 8px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-primary) 7%, transparent);
+  }
+
+  .sensor-group-items {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
 
   .sensor-item {
     min-width: 0;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 6px;
-    text-align: center;
+    gap: 12px;
+    min-height: 56px;
+    padding: 7px 12px 7px 8px;
+    border-radius: 999px;
+    background: #4aaef2;
+    color: #13212d;
   }
 
   .sensor-item-icon {
-    position: relative;
-    width: 52px;
-    height: 52px;
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
     display: grid;
     place-items: center;
     border-radius: 50%;
-    background: color-mix(in srgb, var(--text-primary) 10%, var(--card-bg));
+    background: rgba(255, 255, 255, .92);
   }
 
   .sensor-item-icon img {
-    width: 27px;
-    height: 27px;
+    width: 24px;
+    height: 24px;
   }
 
-  .sensor-item-state {
-    position: absolute;
-    right: -4px;
-    bottom: -3px;
-    max-width: 64px;
+  .sensor-item-copy {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .sensor-item-name {
     overflow: hidden;
-    padding: 3px 7px;
-    border-radius: 999px;
-    background: var(--alarm-danger);
-    color: #fff;
-    font-size: 9px;
+    font-size: 13px;
+    line-height: 16px;
     font-weight: 700;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
 
-  .sensor-item-name {
-    width: 100%;
+  .sensor-item-state {
     overflow: hidden;
-    color: var(--text-secondary);
+    color: rgba(19, 33, 45, .72);
     font-size: 12px;
-    line-height: 15px;
+    line-height: 14px;
     white-space: nowrap;
     text-overflow: ellipsis;
   }
@@ -460,10 +501,6 @@
   @media (max-width: 390px) {
     .keypad button {
       height: 52px;
-    }
-
-    .sensor-list {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .sensor-actions {
@@ -484,6 +521,7 @@
   const entityId = String(config.entity || context.entity || '');
   const action = context.action === 'disarm' ? 'disarm' : context.action === 'arm' ? 'arm' : '';
   const modeKey = String(context.mode || '');
+  const initialView = context.view === 'sensors' ? 'sensors' : 'action';
   const codeDisplay = context.codeDisplay === 'input' ? 'input' : 'dots';
   const configuredLength = Number(context.codeLength);
   const codeLength = Number.isFinite(configuredLength)
@@ -510,7 +548,6 @@
   const keypad = document.getElementById('keypad');
   const backspace = document.getElementById('backspace');
   const confirm = document.getElementById('confirm');
-  const directConfirm = document.getElementById('direct-confirm');
   const status = document.getElementById('status');
   const sensorView = document.getElementById('sensor-view');
   const sensorTitle = document.getElementById('sensor-title');
@@ -520,17 +557,20 @@
   const sensorStatus = document.getElementById('sensor-status');
 
   let entity = null;
-  let code = '';
+  let code = String(context.code || '');
   let commandInFlight = false;
   let commandTimer = null;
-  let lastCode = '';
+  let lastCode = code;
   let renderVersion = 0;
 
   function openSensorsOf(value) {
     const sensors = value?.attributes?.open_sensors;
     if (!sensors || typeof sensors !== 'object' || Array.isArray(sensors)) return [];
     return Object.entries(sensors)
-      .filter(([id]) => /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id))
+      .filter(([id, state]) => (
+        /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id)
+        && ['open', 'on', 'true'].includes(String(state).toLowerCase())
+      ))
       .map(([id, state]) => ({id, state: String(state || 'unknown')}));
   }
 
@@ -563,7 +603,6 @@
       dot.classList.toggle('is-filled', index < code.length);
     }
     confirm.disabled = commandInFlight || (needsCode(entity) && !code);
-    directConfirm.disabled = commandInFlight;
     backspace.disabled = commandInFlight || !code;
   }
 
@@ -587,33 +626,84 @@
     )}`;
     sensorTitle.append(count, ` ${vuePanel.t('translation.openSensors.afterCount')}`);
 
-    const rows = document.createDocumentFragment();
-    for (const sensor of sensors) {
-      const sensorEntity = await vuePanel.getEntity(sensor.id);
-      if (version !== renderVersion) return;
-      const item = document.createElement('div');
-      item.className = 'sensor-item';
-      const icon = document.createElement('span');
-      icon.className = 'sensor-item-icon';
-      const image = document.createElement('img');
-      image.alt = '';
-      image.src = await vuePanel.getIcon(String(sensorEntity?.attributes?.icon || 'mdi:window-open-variant'), {
-        size: 40,
-        color: getComputedStyle(card).color
-      });
-      if (version !== renderVersion) return;
-      const badge = document.createElement('span');
-      badge.className = 'sensor-item-state';
-      const stateKey = ['open', 'unavailable'].includes(sensor.state) ? sensor.state : 'unknown';
-      badge.textContent = vuePanel.t(`translation.openSensors.${stateKey}`);
-      const name = document.createElement('span');
-      name.className = 'sensor-item-name';
-      name.textContent = String(sensorEntity?.attributes?.friendly_name || sensor.id);
-      icon.append(image, badge);
-      item.append(icon, name);
-      rows.append(item);
+    let areaByEntity = {};
+    try {
+      areaByEntity = await vuePanel.getEntityAreas(sensors.map(sensor => sensor.id));
+    } catch (error) {
+      areaByEntity = {};
     }
-    if (version === renderVersion) sensorList.replaceChildren(rows);
+    const sensorEntries = await Promise.all(sensors.map(async sensor => {
+      const sensorEntity = await vuePanel.getEntity(sensor.id);
+      return {sensor, sensorEntity, area: areaByEntity[sensor.id] || null};
+    }));
+    if (version !== renderVersion) return;
+
+    const groupsById = new Map();
+    for (const entry of sensorEntries) {
+      const groupId = entry.area?.id || '';
+      if (!groupsById.has(groupId)) {
+        groupsById.set(groupId, {
+          id: groupId,
+          name: entry.area?.name || vuePanel.t('translation.openSensors.unassigned'),
+          icon: entry.area?.icon || (groupId ? 'mdi:home-outline' : 'mdi:help-circle-outline'),
+          entries: []
+        });
+      }
+      groupsById.get(groupId).entries.push(entry);
+    }
+    const groups = [...groupsById.values()].sort((left, right) => {
+      if (!left.id) return 1;
+      if (!right.id) return -1;
+      return left.name.localeCompare(right.name, vuePanel.language);
+    });
+
+    const content = document.createDocumentFragment();
+    for (const group of groups) {
+      const section = document.createElement('section');
+      section.className = 'sensor-group';
+      const heading = document.createElement('div');
+      heading.className = 'sensor-group-heading';
+      const areaIcon = document.createElement('img');
+      areaIcon.alt = '';
+      const areaIconName = /^mdi:[a-z0-9-]+$/.test(group.icon) ? group.icon : 'mdi:home-outline';
+      areaIcon.src = await vuePanel.getIcon(areaIconName, {size: 40, color: getComputedStyle(card).color});
+      const areaName = document.createElement('strong');
+      areaName.textContent = group.name;
+      const line = document.createElement('span');
+      line.className = 'sensor-group-line';
+      heading.append(areaIcon, areaName, line);
+
+      const items = document.createElement('div');
+      items.className = 'sensor-group-items';
+      for (const entry of group.entries) {
+        const item = document.createElement('div');
+        item.className = 'sensor-item';
+        const icon = document.createElement('span');
+        icon.className = 'sensor-item-icon';
+        const image = document.createElement('img');
+        image.alt = '';
+        const iconName = String(entry.sensorEntity?.attributes?.icon || 'mdi:window-open-variant');
+        image.src = await vuePanel.getIcon(
+          /^mdi:[a-z0-9-]+$/.test(iconName) ? iconName : 'mdi:window-open-variant',
+          {size: 40, color: '#4a5158'}
+        );
+        const copy = document.createElement('span');
+        copy.className = 'sensor-item-copy';
+        const name = document.createElement('span');
+        name.className = 'sensor-item-name';
+        name.textContent = String(entry.sensorEntity?.attributes?.friendly_name || entry.sensor.id);
+        const state = document.createElement('span');
+        state.className = 'sensor-item-state';
+        state.textContent = vuePanel.t('translation.openSensors.open');
+        copy.append(name, state);
+        icon.append(image);
+        item.append(icon, copy);
+        items.append(item);
+      }
+      section.append(heading, items);
+      content.append(section);
+    }
+    if (version === renderVersion) sensorList.replaceChildren(content);
   }
 
   async function showSensorView() {
@@ -710,7 +800,6 @@
     }
     const required = needsCode(value);
     pinEntry.hidden = !required;
-    directConfirm.hidden = required;
     actionHint.textContent = vuePanel.t(required ? 'translation.pin.required' : 'translation.pin.optional');
     renderCode();
   }
@@ -734,16 +823,16 @@
     renderCode();
   });
   confirm.addEventListener('click', submit);
-  directConfirm.addEventListener('click', submit);
-  retry.addEventListener('click', showActionView);
+  retry.addEventListener('click', () => {
+    showActionView();
+    if (!needsCode(entity)) submit();
+  });
   force.addEventListener('click', forceArm);
 
-  directConfirm.textContent = vuePanel.t('translation.pin.confirm');
   retry.textContent = vuePanel.t('translation.openSensors.retry');
   force.textContent = vuePanel.t('translation.openSensors.force');
   backspace.setAttribute('aria-label', vuePanel.t('translation.pin.backspace'));
   confirm.setAttribute('aria-label', vuePanel.t('translation.pin.confirm'));
-  directConfirm.hidden = true;
   pinDots.hidden = codeDisplay === 'input';
   pinInput.hidden = codeDisplay !== 'input';
   buildDots();
@@ -753,7 +842,6 @@
     actionTitle.textContent = vuePanel.t('translation.noAction');
     actionHint.textContent = '';
     pinEntry.hidden = true;
-    directConfirm.hidden = true;
   } else {
     const translationKey = action === 'disarm' ? 'disarm' : modeKey;
     actionTitle.textContent = vuePanel.t(`translation.actions.${translationKey}`);
@@ -776,6 +864,8 @@
     entity = await vuePanel.getEntity(entityId);
     await renderEntity(entity);
     vuePanel.subscribeEntity(entityId, renderEntity);
-    if (codeDisplay === 'input' && needsCode(entity)) setTimeout(() => pinInput.focus(), 0);
+    if (initialView === 'sensors') await showSensorView();
+    else if (!needsCode(entity)) submit();
+    else if (codeDisplay === 'input') setTimeout(() => pinInput.focus(), 0);
   }
 </script>

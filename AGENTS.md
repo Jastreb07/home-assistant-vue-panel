@@ -321,6 +321,12 @@ Aktueller Stand:
   Entity bestätigten erfolgreichen Alarmbefehl selbst. Card API v1 stellt Dialog-Cards dafür
   `closeDialog()` unter der vorhandenen Capability `dialog:open` bereit; außerhalb eines Dialogs
   wird der Aufruf abgewiesen;
+- ab `2.2.51`/Engine `2.2.87` führt `alarm-full` Scharf- und Unscharf-Aktionen ohne erforderliche
+  PIN unmittelbar und ohne Bestätigungsdialog aus. Erst ein wegen offener Sensoren blockierter
+  Scharfschaltversuch öffnet `alarm-full-popup-detail`; dort erscheinen ausschließlich tatsächlich
+  offene Sensoren als kompakte Zeilen, nach ihrem HA-Bereich gruppiert und ohne Zuordnung gesammelt
+  unter „Ohne Bereich“. Card API v1 stellt dafür unter `entity:read` zusätzlich
+  `getEntityAreas()` bereit; die explizite Entity-Bereichszuordnung hat Vorrang vor dem Gerätebereich;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

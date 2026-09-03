@@ -1313,7 +1313,10 @@
     const value = entity?.attributes?.open_sensors;
     if (!value || typeof value !== 'object' || Array.isArray(value)) return [];
     return Object.entries(value)
-      .filter(([id]) => /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id))
+      .filter(([id, state]) => (
+        /^[a-z0-9_]+\.[a-z0-9_]+$/.test(id)
+        && ['open', 'on', 'true'].includes(String(state).toLowerCase())
+      ))
       .map(([id, state]) => ({id, state: String(state || 'unknown')}));
   }
 
@@ -1567,7 +1570,8 @@
     try {
       await vuePanel.callService('alarm_control_panel', mode.service, codeValue ? {code: codeValue} : {}, {entity_id: entityId});
     } catch (error) {
-      showCommandError();
+      if (openSensorsOf(currentEntity).length) showOpenSensors(currentEntity);
+      else showCommandError();
     }
   }
 
@@ -1586,7 +1590,7 @@
     }
   }
 
-  function openActionDialog(action) {
+  function openActionDialog(action, options = {}) {
     return vuePanel.showDetail({
       card: 'vue-panel/alarm-full-popup-detail',
       entity: entityId,
@@ -1594,7 +1598,9 @@
         action: action.type,
         mode: action.mode?.key || '',
         codeDisplay,
-        codeLength
+        codeLength,
+        view: options.view || 'action',
+        code: options.code || ''
       },
       position: 'center',
       mobileHeight: 'fit-content'
@@ -1603,11 +1609,11 @@
 
   function requestArm(mode) {
     if (!entityId) return;
-    if (pinPanelDisplay === 'dialog') {
+    const info = codeInfo(currentEntity);
+    if (pinPanelDisplay === 'dialog' && info.format && info.armRequired) {
       openActionDialog({type: 'arm', mode});
       return;
     }
-    const info = codeInfo(currentEntity);
     if (info.format && info.armRequired) {
       requestedMode = mode.key;
       renderModes();
@@ -1619,11 +1625,11 @@
 
   function requestDisarm() {
     if (!entityId) return;
-    if (pinPanelDisplay === 'dialog') {
+    const info = codeInfo(currentEntity);
+    if (pinPanelDisplay === 'dialog' && info.format) {
       openActionDialog({type: 'disarm'});
       return;
     }
-    const info = codeInfo(currentEntity);
     if (info.format) {
       requestedMode = 'disarmed';
       renderModes();
@@ -1713,12 +1719,24 @@
 
   function showOpenSensors(entity) {
     if (!pendingCommand || pendingCommand.type !== 'arm') return;
+    const previous = pendingCommand;
     commandInFlight = false;
     if (commandTimer) clearTimeout(commandTimer);
     commandTimer = null;
     pendingAction = null;
     code = '';
     renderDots();
+    if (pinPanelDisplay === 'dialog') {
+      pendingCommand = null;
+      requestedMode = null;
+      openActionDialog({type: 'arm', mode: previous.mode}, {
+        view: 'sensors',
+        code: previous.code
+      });
+      updateCodePanelVisibility();
+      renderModes();
+      return;
+    }
     openSensorsVisible = true;
     renderOpenSensors(entity);
     updateCodePanelVisibility();

@@ -2,7 +2,12 @@
 import { computed, inject, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import type { CardTranslations, PortableCardCapability } from '@/core/registry/portableCardTypes'
 import { cardTranslation } from '@/core/registry/cardTranslations'
-import { callService, callServiceWithResponse, useEntities } from '@/core/ha'
+import {
+  callService,
+  callServiceWithResponse,
+  getEntityAreas as resolveEntityAreas,
+  useEntities,
+} from '@/core/ha'
 import { useHostBadges } from '@/core/ha/hostBadges'
 import { openHostMoreInfo, openHostTarget, openHostUrl, openHostView } from '@/core/router/hostSidebar'
 import { useDashboardStore, viewPath } from '@/core/config/dashboardStore'
@@ -79,6 +84,7 @@ overflow-clip-margin: 16px;
 
 const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   getEntity: 'entity:read',
+  getEntityAreas: 'entity:read',
   subscribeEntity: 'entity:subscribe',
   getIcon: 'icon:render',
   callService: 'service:call',
@@ -242,6 +248,18 @@ function buildApi(capabilities: PortableCardCapability[]) {
       guard('getEntity')
       if (!/^[a-z0-9_]+\.[a-z0-9_]+$/.test(String(entityId))) throw new Error('Invalid entity ID.')
       return entities.value[entityId] ?? null
+    },
+
+    async getEntityAreas(entityIds: unknown) {
+      guard('getEntityAreas')
+      if (!Array.isArray(entityIds) || entityIds.length > 100) {
+        throw new Error('Entity IDs must be an array with at most 100 entries.')
+      }
+      const ids = [...new Set(entityIds.map(String))]
+      if (ids.some((entityId) => !/^[a-z0-9_]+\.[a-z0-9_]+$/.test(entityId))) {
+        throw new Error('Invalid entity ID.')
+      }
+      return deepFreeze(snapshot(await resolveEntityAreas(ids)))
     },
 
     async getIcon(icon: string, options: Record<string, unknown> = {}) {

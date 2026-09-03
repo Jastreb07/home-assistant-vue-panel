@@ -27,6 +27,9 @@ interface VuePanelCardApiV1 {
   readonly language: string
   t(key: string): string
   getEntity(entityId: string): Promise<EntitySnapshot | null>
+  getEntityAreas(entityIds: readonly string[]): Promise<
+    Readonly<Record<string, Readonly<{ id: string; name: string; icon?: string }> | null>>
+  >
   subscribeEntity(
     entityId: string,
     callback: (entity: EntitySnapshot | null) => void,
@@ -60,6 +63,9 @@ interface VuePanelCardApiV1 {
 
 Entity, view, and dashboard context values are immutable JSON snapshots. Subscriptions are
 disposed when the returned function is called or when the card is removed.
+`getEntityAreas()` resolves at most 100 explicitly requested entity IDs through Home Assistant's
+entity, device, and area registries. An entity-level area overrides its device area; unassigned
+entities map to `null`.
 
 `context` holds the values the surrounding popup or detail view was opened with and is an empty
 object for a card on a dashboard. The same values also replace `${variableKey}` placeholders in the
@@ -86,7 +92,7 @@ Calls are denied unless the card declares the matching capability:
 
 | Capability | API methods |
 |---|---|
-| `entity:read` | `getEntity` |
+| `entity:read` | `getEntity`, `getEntityAreas` |
 | `entity:subscribe` | `subscribeEntity` |
 | `icon:render` | `getIcon` |
 | `service:call` | `callService` |
