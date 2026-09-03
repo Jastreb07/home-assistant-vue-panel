@@ -21,8 +21,6 @@ var e=`/* ───────────────────────�
   --input-bg: #23272f;\r
   --card-radius: 28px;\r
   --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);\r
-  --tile-icon-offset-x: -4px;\r
-  --tile-icon-offset-y: -4px;\r
   --text-primary: #eceff4;\r
   --text-secondary: #9aa3b2;\r
   --text-on-active: #1b1e24;\r
@@ -143,11 +141,6 @@ body,\r
 \r
 button {\r
   font-family: inherit;\r
-}\r
-\r
-/* Keep the leading tile icon aligned consistently across portable cards. */\r
-[data-vp-card-scope] .tile__icon {\r
-  translate: var(--tile-icon-offset-x) var(--tile-icon-offset-y);\r
 }\r
 \r
 /* ── Scrollbars (match the theme design) ── */\r

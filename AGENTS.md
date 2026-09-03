@@ -521,6 +521,29 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   Innenabstand bis an den Dialogrand. Das Motiv liegt als 280px hohe Hintergrundebene hinter dem
   oberen Dialoginhalt und blendet nach unten transparent aus; der Dialog-Header bleibt unverändert.
   Die Bars sind Engine-Komponenten und keine Cards mehr.
+- ab `2.2.43` hat die Media-Card einen frei belegbaren App-/Link-Knopf oben neben dem
+  Ein/Aus-Knopf: `appLink` nimmt eine Adresse (`https://…`, `myapp://…`) oder einen blanken
+  Android-Paketnamen, der zu `intent://#Intent;package=…;end` wird; `appIcon` bestimmt das Icon,
+  geöffnet wird über `vuePanel.openUrl(…, {newTab: true})`. `showAppButton` ist standardmäßig aus
+  (der Knopf ist ein bewusstes Opt-in, nicht jede Media-Card soll ihn zeigen) — anders als
+  `showPowerButton` und `showControls`, die standardmäßig an sind und Ein/Aus sowie die
+  Wiedergabereihe ausblenden. `.power-button[hidden] { display: none }` überschreibt bewusst die
+  eigene `display: grid`-Regel — Autoren-CSS schlägt sonst die eingebaute `[hidden]`-Regel des
+  Browsers unabhängig von der Spezifität, das `hidden`-Attribut hätte also sonst gar keine Wirkung
+  gehabt. Icon, App-Knopf und Ein/Aus liegen
+  als drei Geschwister in derselben Kopfzeile (`justify-content: space-between`, kein `gap` — der
+  Abstand ergibt sich allein aus der Verteilung). `.power-button` setzt `box-sizing: border-box`,
+  `margin: 0`, `font: inherit` und `line-height: 1`, damit die Button-Box exakt wie der
+  `.tile__icon`-Kreis 38 px hoch ist statt durch Formular-Vorgaben des Browsers höher zu wirken. Die Werte reicht
+  `showDetail()` als Kontext an `vue-panel/media-detail` weiter, die den Knopf im Kopfbereich
+  neben Ein/Aus zeigt, sobald ein Link gesetzt und der Knopf nicht abgeschaltet ist;
+
+- **Einheitliche Icon-Position der Tile-Cards**: light, thermostat, sensor, cover, entity,
+  room-tile, weather und media haben dieselbe Geometrie — Card-Padding `14px 16px`, Icon-Kreis
+  38 × 38px mit 24px-Glyphe. Die Media-Card setzt ihre Kopfzeile absolut und spiegelt die Werte
+  über `top: 14px` und `right/left: 16px`; ihre runden Knöpfe sind ebenfalls 38px. Neue Tile-Cards
+  übernehmen diese Werte, damit die Icons über alle Cards hinweg an derselben Stelle sitzen.
+
 - **Cards in Popups und Detailansichten**: `areas` enthält `dialog`. Solche Cards laufen nicht auf
   dem Dashboard, sondern in einem Popup oder einer Detailansicht und erhalten deren Werte über
   `vuePanel.context` sowie über `${variable}`-Platzhalter in ihren eigenen Instanzwerten. Das

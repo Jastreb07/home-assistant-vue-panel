@@ -73,6 +73,54 @@
         "default": true
       },
       {
+        "key": "appLink",
+        "label": "translation.variables.appLink.label",
+        "group": "translation.groups.appButton",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "appIcon",
+        "label": "translation.variables.appIcon.label",
+        "group": "translation.groups.appButton",
+        "type": "icon",
+        "required": false,
+        "default": "mdi:remote"
+      },
+      {
+        "key": "showAppButton",
+        "label": "translation.variables.showAppButton.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": false
+      },
+      {
+        "key": "showPowerButton",
+        "label": "translation.variables.showPowerButton.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
+        "key": "powerEntity",
+        "label": "translation.variables.powerEntity.label",
+        "group": "translation.groups.power",
+        "type": "entity",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "showControls",
+        "label": "translation.variables.showControls.label",
+        "group": "translation.groups.visibility",
+        "type": "boolean",
+        "required": false,
+        "default": true
+      },
+      {
         "key": "actions",
         "label": "translation.variables.actions.label",
         "type": "action",
@@ -98,6 +146,16 @@
         "translation.variables.name.label": "Display name",
         "translation.variables.dynamicBackground.label": "Dynamic background",
         "translation.variables.textScroll.label": "Text scrolling effect",
+        "translation.variables.appLink.label": "App or link to open",
+        "translation.variables.appIcon.label": "Button icon",
+        "translation.variables.showAppButton.label": "Show app button",
+        "translation.variables.showPowerButton.label": "Show power button",
+        "translation.variables.showControls.label": "Show playback buttons",
+        "translation.groups.appButton": "App button",
+        "translation.groups.power": "Power button",
+        "translation.variables.powerEntity.label": "Override power entity (optional)",
+        "translation.groups.visibility": "Visible elements",
+        "translation.openApp": "Open app",
         "translation.groups.appearance": "Appearance",
         "translation.groups.display": "Display",
         "translation.noEntity": "No entity selected",
@@ -114,6 +172,16 @@
         "translation.variables.name.label": "Anzeigename",
         "translation.variables.dynamicBackground.label": "Dynamischer Hintergrund",
         "translation.variables.textScroll.label": "Lauftext-Effekt",
+        "translation.variables.appLink.label": "Zu öffnende App oder Link",
+        "translation.variables.appIcon.label": "Icon des Knopfes",
+        "translation.variables.showAppButton.label": "App-Knopf anzeigen",
+        "translation.variables.showPowerButton.label": "Ein/Aus-Knopf anzeigen",
+        "translation.variables.showControls.label": "Wiedergabe-Knöpfe anzeigen",
+        "translation.groups.appButton": "App-Knopf",
+        "translation.groups.power": "Ein/Aus-Knopf",
+        "translation.variables.powerEntity.label": "Abweichende Ein/Aus-Entity (optional)",
+        "translation.groups.visibility": "Sichtbare Elemente",
+        "translation.openApp": "App öffnen",
         "translation.groups.appearance": "Darstellung",
         "translation.groups.display": "Anzeige",
         "translation.noEntity": "Keine Entity ausgewählt",
@@ -136,6 +204,7 @@
     </div>
     <div class="top-row">
       <span class="tile__icon"><img id="icon" alt=""></span>
+      <button class="power-button" id="app-button" type="button" hidden><img id="app-icon" alt=""></button>
       <button class="power-button" id="power" type="button"><img id="power-icon" alt=""></button>
     </div>
     <div class="tile__info">
@@ -157,7 +226,7 @@
         width: 100%;
         height: 100%;
         min-height: 120px;
-        padding: 12px 14px;
+        padding: 14px 16px;
         border-radius: var(--card-radius);
         display: flex;
         flex-direction: column;
@@ -227,21 +296,20 @@
     .top-row {
         position: absolute;
         z-index: 2;
-        top: 12px;
-        right: 12px;
-        left: 12px;
+        top: 14px;
+        right: 16px;
+        left: 16px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 10px;
     }
 
     .tile__icon {
         display: grid;
         place-items: center;
-        width: 34px;
-        height: 34px;
-        flex: 0 0 34px;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
         border: 1px solid rgba(255, 255, 255, .18);
         border-radius: 50%;
         background: rgba(0, 0, 0, .28);
@@ -250,19 +318,23 @@
     }
 
     .tile__icon img {
-        width: 21px;
-        height: 21px;
+        width: 24px;
+        height: 24px;
     }
 
     .power-button {
         display: grid;
         place-items: center;
-        width: 34px;
-        height: 34px;
-        flex: 0 0 34px;
+        box-sizing: border-box;
+        width: 38px;
+        height: 38px;
+        flex: 0 0 38px;
+        margin: 0;
         border: 1px solid rgba(255, 255, 255, .12);
         border-radius: 50%;
         padding: 0;
+        font: inherit;
+        line-height: 1;
         background: rgba(0, 0, 0, .28);
         -webkit-backdrop-filter: blur(12px);
         backdrop-filter: blur(12px);
@@ -279,8 +351,13 @@
     }
 
     .power-button img {
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
+    }
+
+    /* `display` oben würde die Browser-Regel für [hidden] schlagen */
+    .power-button[hidden] {
+        display: none;
     }
 
     .tile__info {
@@ -511,13 +588,39 @@
     });
   }
 
+  /*
+   * Der eingetragene Wert darf eine vollständige Adresse sein (`https://…`,
+   * `myapp://…`) oder ein blanker Android-Paketname wie `com.example.app` —
+   * daraus wird eine Intent-Adresse, mit der der Browser die App startet.
+   */
+  function appTarget(value) {
+    const link = String(value || '').trim();
+    if (!link) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(link)) return link;
+    if (/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(link)) {
+      return `intent://#Intent;package=${link};end`;
+    }
+    return link;
+  }
+
   const entityId = String(config.entity || '');
+  /*
+   * Manche Media-Player (Android TV, Google Cast) haben keinen echten
+   * `turn_on`/`turn_off`: Aus bringt nur den Home-Screen, Ein startet einen
+   * HA-Cast-Mirroring statt die TV-Eingänge zu wechseln. `powerEntity` lässt
+   * den Knopf stattdessen eine andere Entity schalten — z. B. eine Steckdose
+   * oder die `remote`-Entity einer Fernbedienungsintegration, die die echte
+   * Gerätetaste sendet.
+   */
+  const powerEntityId = String(config.powerEntity || '');
   const card = document.getElementById('card');
   const tapAction = String(config.actions?.tap?.action || 'default');
   card.classList.toggle('tap-action', !['none', 'assist'].includes(tapAction));
   const name = document.getElementById('name');
   const appName = document.getElementById('app-name');
   const power = document.getElementById('power');
+  const appButton = document.getElementById('app-button');
+  const appLink = appTarget(config.appLink);
   const artwork = document.getElementById('artwork');
   const controls = document.getElementById('controls');
   const colorCache = new Map();
@@ -615,10 +718,11 @@
       getIcon('mdi:power', 48, color),
       getIcon('mdi:skip-previous', 48, color),
       getIcon(playing ? 'mdi:pause' : 'mdi:play', 48, color),
-      getIcon('mdi:skip-next', 48, color)
+      getIcon('mdi:skip-next', 48, color),
+      getIcon(String(config.appIcon || 'mdi:remote'), 48, color)
     ]);
     if (version !== renderVersion) return;
-    for (const [id, source] of [['icon', sources[0]], ['power-icon', sources[1]], ['previous', sources[2]], ['play', sources[3]], ['next', sources[4]]]) {
+    for (const [id, source] of [['icon', sources[0]], ['power-icon', sources[1]], ['previous', sources[2]], ['play', sources[3]], ['next', sources[4]], ['app-icon', sources[5]]]) {
       document.getElementById(id).src = source;
     }
   }
@@ -666,11 +770,17 @@
     const app = entity?.attributes?.app_name || entity?.attributes?.source;
     appName.textContent = app ? String(app) : '';
     appName.hidden = !app;
-    power.hidden = !entity || (
-      ['off', 'standby'].includes(entity.state)
-        ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
-        : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
+    power.hidden = config.showPowerButton === false || (
+      powerEntityId
+        ? false
+        : !entity || (
+          ['off', 'standby'].includes(entity.state)
+            ? !supportsFeature(entity, MEDIA_FEATURE_TURN_ON)
+            : !supportsFeature(entity, MEDIA_FEATURE_TURN_OFF)
+        )
     );
+    /* Der App-Knopf hängt nur am Link, nicht am Zustand des Players */
+    appButton.hidden = !appLink || config.showAppButton !== true;
     name.textContent = !entityId
       ? vuePanel.t('translation.noEntity')
       : !entity
@@ -682,7 +792,7 @@
         );
     applyTextScroll(appName);
     applyTextScroll(name);
-    controls.hidden = idle;
+    controls.hidden = idle || config.showControls === false;
     await applyArtwork(source, version);
     await renderIcons(playing, '#ffffff', version);
   }
@@ -691,7 +801,18 @@
     const button = event.target.closest('button');
     if (button) await vuePanel.callService('media_player', button.dataset.service, {}, {entity_id: entityId});
   });
-  power.addEventListener('click', () => toggleEntity(entityId));
+  power.addEventListener('click', () => {
+    if (powerEntityId) {
+      vuePanel.callService('homeassistant', 'toggle', {}, {entity_id: powerEntityId}).catch(() => {});
+      return;
+    }
+    toggleEntity(entityId);
+  });
+  appButton.title = vuePanel.t('translation.openApp');
+  appButton.setAttribute('aria-label', appButton.title);
+  appButton.addEventListener('click', () => {
+    if (appLink) vuePanel.openUrl(appLink, {newTab: true}).catch(() => {});
+  });
   if (entityId) {
     await render(await vuePanel.getEntity(entityId));
     vuePanel.subscribeEntity(entityId, render);
@@ -700,7 +821,7 @@
   /* Tipp-Aktionen auf der Card; die eigenen Bedienelemente bleiben unberührt */
   bindGestures(card, config, {
     entityId,
-    ignore: '#controls, #power',
+    ignore: '#controls, #power, #app-button',
     default: gesture => gesture === 'tap' ? toggleEntity(entityId) : undefined,
     toggle: () => toggleEntity(entityId)
   });

@@ -16,7 +16,8 @@
       "entity:read",
       "entity:subscribe",
       "icon:render",
-      "service:call"
+      "service:call",
+      "navigation:write"
     ],
     "defaultSize": {
       "cols": 1,
@@ -40,6 +41,27 @@
         "required": true,
         "domain": "media_player",
         "default": ""
+      },
+      {
+        "key": "appLink",
+        "label": "translation.variables.appLink.label",
+        "type": "string",
+        "required": false,
+        "default": ""
+      },
+      {
+        "key": "appIcon",
+        "label": "translation.variables.appIcon.label",
+        "type": "icon",
+        "required": false,
+        "default": "mdi:remote"
+      },
+      {
+        "key": "showAppButton",
+        "label": "translation.variables.showAppButton.label",
+        "type": "boolean",
+        "required": false,
+        "default": false
       }
     ]
   };
@@ -66,6 +88,10 @@
         "translation.source": "Source",
         "translation.volume": "Volume",
         "translation.power": "Power",
+        "translation.openApp": "Open app",
+        "translation.variables.appLink.label": "App or link to open",
+        "translation.variables.appIcon.label": "Button icon",
+        "translation.variables.showAppButton.label": "Show app button",
         "translation.previous": "Previous",
         "translation.next": "Next",
         "translation.play": "Play",
@@ -91,6 +117,10 @@
         "translation.source": "Quelle",
         "translation.volume": "Lautstärke",
         "translation.power": "Ein/Aus",
+        "translation.openApp": "App öffnen",
+        "translation.variables.appLink.label": "Zu öffnende App oder Link",
+        "translation.variables.appIcon.label": "Icon des Knopfes",
+        "translation.variables.showAppButton.label": "App-Knopf anzeigen",
         "translation.previous": "Zurück",
         "translation.next": "Weiter",
         "translation.play": "Wiedergabe",
@@ -116,9 +146,14 @@
         <div class="hero-shade" aria-hidden="true"></div>
         <div class="hero-top">
           <span class="app-badge" id="app-badge" hidden></span>
-          <button class="icon-button power-button" id="power" type="button">
-            <img id="power-icon" alt="">
-          </button>
+          <div class="hero-actions">
+            <button class="icon-button power-button" id="app-button" type="button" hidden>
+              <img id="app-icon" alt="">
+            </button>
+            <button class="icon-button power-button" id="power" type="button">
+              <img id="power-icon" alt="">
+            </button>
+          </div>
         </div>
         <div class="hero-copy">
           <span class="eyebrow" id="state"></span>
@@ -327,6 +362,12 @@
     transition: background-color 130ms ease, transform 130ms ease;
   }
 
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
   .icon-button {
     width: 48px;
     height: 48px;
@@ -529,6 +570,31 @@
 <script data-vue-panel-javascript>
   const config = vuePanel.config;
   const entityId = String(config.entity || vuePanel.context.entity || '');
+  /*
+   * Der App-Knopf kommt aus der Media-Card mit: `showDetail()` reicht deren
+   * Instanzwerte als Kontext durch. Steht die Detail-Card allein, gelten ihre
+   * eigenen Werte.
+   */
+  function contextValue(key) {
+    return config[key] !== undefined && config[key] !== '' ? config[key] : vuePanel.context[key];
+  }
+
+  /*
+   * Der eingetragene Wert darf eine vollständige Adresse sein (`https://…`,
+   * `myapp://…`) oder ein blanker Android-Paketname wie `com.example.app` —
+   * daraus wird eine Intent-Adresse, mit der der Browser die App startet.
+   */
+  function appTarget(value) {
+    const link = String(value || '').trim();
+    if (!link) return '';
+    if (/^[a-z][a-z0-9+.-]*:/i.test(link)) return link;
+    if (/^[a-z][a-z0-9_]*(\.[a-z0-9_]+)+$/i.test(link)) {
+      return `intent://#Intent;package=${link};end`;
+    }
+    return link;
+  }
+
+  const appLink = appTarget(contextValue('appLink'));
   const card = document.getElementById('card');
   const dialogBody = card.closest('.vp-dialog-body');
   const detailBody = card.closest('.detail-body');
@@ -546,6 +612,7 @@
   const artist = document.getElementById('artist');
   const appBadge = document.getElementById('app-badge');
   const power = document.getElementById('power');
+  const appButton = document.getElementById('app-button');
   const previous = document.getElementById('previous');
   const stop = document.getElementById('stop');
   const play = document.getElementById('play');
@@ -634,6 +701,7 @@
     const foreground = getComputedStyle(card).color;
     const icons = [
       setIcon('power-icon', 'mdi:power', 48, '#ffffff'),
+      setIcon('app-icon', String(contextValue('appIcon') || 'mdi:remote'), 48, '#ffffff'),
       setIcon('previous-icon', 'mdi:skip-previous', 48, foreground),
       setIcon('stop-icon', 'mdi:stop', 48, foreground),
       setIcon('play-icon', playing ? 'mdi:pause' : 'mdi:play', 56, '#ffffff'),
@@ -698,6 +766,8 @@
 
     const off = ['off', 'standby', 'unavailable'].includes(entity.state);
     power.hidden = off ? !supports(entity, FEATURE.turnOn) : !supports(entity, FEATURE.turnOff);
+    /* Der App-Knopf hängt nur am Link, nicht am Zustand des Players */
+    appButton.hidden = !appLink || contextValue('showAppButton') !== true;
     previous.hidden = !supports(entity, FEATURE.previous);
     next.hidden = !supports(entity, FEATURE.next);
     stop.hidden = !supports(entity, FEATURE.stop);
@@ -717,6 +787,12 @@
     renderTimeline();
     await renderIcons(entity);
   }
+
+  appButton.title = vuePanel.t('translation.openApp');
+  appButton.setAttribute('aria-label', appButton.title);
+  appButton.addEventListener('click', () => {
+    if (appLink) vuePanel.openUrl(appLink, {newTab: true}).catch(() => {});
+  });
 
   power.addEventListener('click', () => {
     if (!currentEntity) return;
