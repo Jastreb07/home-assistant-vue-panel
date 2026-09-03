@@ -340,6 +340,8 @@ Aktueller Stand:
 - ab `2.2.55`/Engine `2.2.91` steht der Warnhinweis in `alarm-full-popup-detail` in einer
   theme-festen Box mit dezenter roter Fläche, rotem Rahmen, 16px Radius und vertikal zentriertem
   Icon und Text;
+- ab `2.2.56`/Engine `2.2.92` bleibt der Alarmdialog in seiner bisherigen Größe; ausschließlich
+  die PIN-Eingabe samt Tastenfeld ist auf 500px begrenzt und horizontal zentriert;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

@@ -118,6 +118,10 @@ Ab `2.2.55`/Engine `2.2.91` fasst `alarm-full-popup-detail` den Warnhinweis in e
 theme-festen Warnbox zusammen. Eine leicht rot gemischte Fläche, ein dezenter roter Rahmen,
 16px Radius und die mittige Ausrichtung von Icon und Text trennen die Ursache klar von der Liste.
 
+Ab `2.2.56`/Engine `2.2.92` bleibt die vorhandene Dialoggeometrie unverändert. Nur `.pin-entry`
+in `alarm-full-popup-detail` besitzt `width: 100%`, `max-width: 500px` und eine horizontale
+Auto-Margin, sodass PIN-Anzeige und Tastenfeld auf breiten Dialogen kompakt und zentriert bleiben.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.
