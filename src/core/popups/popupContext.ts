@@ -8,6 +8,7 @@ import type { InjectionKey, Ref } from 'vue'
 export type PopupContext = Record<string, unknown>
 
 export const popupContextKey: InjectionKey<Ref<PopupContext>> = Symbol('vue-panel-popup-context')
+export const popupCloseKey: InjectionKey<() => void> = Symbol('vue-panel-popup-close')
 
 const PLACEHOLDER = /\$\{\s*([A-Za-z0-9_]+)\s*\}/g
 

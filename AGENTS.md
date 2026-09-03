@@ -317,6 +317,10 @@ Aktueller Stand:
   Wiederholung an. Die `alarm-full`-Wurzel ist dauerhaft transparent und besitzt weder Schatten
   noch Hover-Hintergrund. Card API v1 akzeptiert dafür in `showDetail()` optionalen, JSON-kompatiblen
   Aufrufkontext; dieser überschreibt ausgewählte Instanzvariablen, nie aber die aufgelöste Entity;
+- ab `2.2.50`/Engine `2.2.86` schließt sich `alarm-full-popup-detail` 600ms nach einem von der
+  Entity bestätigten erfolgreichen Alarmbefehl selbst. Card API v1 stellt Dialog-Cards dafür
+  `closeDialog()` unter der vorhandenen Capability `dialog:open` bereit; außerhalb eines Dialogs
+  wird der Aufruf abgewiesen;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

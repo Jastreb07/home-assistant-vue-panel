@@ -88,6 +88,11 @@ ohne Schatten und ohne Hover-Hintergrund. `showDetail()` kann dafür neben
 ausgewählten Instanzvariablen einen JSON-kompatiblen, nur für diesen Aufruf gültigen `context`
 übergeben; die aufgelöste Entity-ID bleibt dabei maßgeblich.
 
+Ab `2.2.50`/Engine `2.2.86` kann eine Dialog-Card den sie enthaltenden Popup-Frame über
+`vuePanel.closeDialog()` schließen. `alarm-full-popup-detail` nutzt dies 600ms nach der Bestätigung
+des Zielzustands durch die Alarm-Entity, sodass die Erfolgsmeldung kurz sichtbar bleibt und sich
+der Dialog danach selbst schließt.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

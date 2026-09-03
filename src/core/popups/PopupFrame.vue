@@ -10,7 +10,7 @@ import FlexLayout from '@/layouts/FlexLayout.vue'
 import PortableCardHost from '@/core/custom-cards/PortableCardHost.vue'
 import { cardRegistry } from '@/core/registry/cardRegistry'
 import EntityDetailFallback from './EntityDetailFallback.vue'
-import { popupContextKey } from './popupContext'
+import { popupCloseKey, popupContextKey } from './popupContext'
 import type { PopupRequest } from './popupService'
 
 /**
@@ -26,6 +26,7 @@ const store = useDashboardStore()
 
 const context = computed(() => props.request.context)
 provide(popupContextKey, context)
+provide(popupCloseKey, () => emit('close'))
 
 const popup = computed(() =>
   props.request.popupId ? store.popupById(props.request.popupId) : undefined)

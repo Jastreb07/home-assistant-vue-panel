@@ -52,6 +52,7 @@ interface VuePanelCardApiV1 {
     position?: 'top' | 'center' | 'bottom'
     mobileHeight?: 'full' | 'fit-content'
   }): Promise<null>
+  closeDialog(): Promise<null>
   showNativeDetail(entityId: string): Promise<null>
   openPopup(popupId: string, context?: Record<string, unknown>): Promise<null>
 }
@@ -72,6 +73,8 @@ variables, while the resolved entity always remains authoritative.
 Detail content is centered by default; `position` overrides it for one opening.
 On mobile, detail dialogs use `fit-content` by default; `mobileHeight` can request a full-screen
 dialog instead.
+`closeDialog()` closes the popup or detail view containing the card and fails when called by a
+card that is not currently rendered inside a dialog.
 `showNativeDetail()` forwards the entity ID to the integration loader, which dispatches Home
 Assistant's `hass-more-info` event in the host document. It is unavailable in standalone preview.
 `openPopup()` opens a popup defined in the dashboard and hands over all instance values unless an
@@ -91,7 +94,7 @@ Calls are denied unless the card declares the matching capability:
 | `navigation:write` | `navigate` |
 | `dashboard:context` | `getDashboardContext` |
 | `shell:events` | `emitAction` |
-| `dialog:open` | `showDetail`, `showNativeDetail`, `openPopup` |
+| `dialog:open` | `showDetail`, `closeDialog`, `showNativeDetail`, `openPopup` |
 
 Configuration access does not require a capability because only the current instance values are
 provided. The same holds for `language` and `t()`: they only expose the card's own translation

@@ -16,7 +16,7 @@ import type {
   DialogMobileHeight,
 } from '@/core/config/types'
 import type { CardArea } from '@/core/registry/cardRegistry'
-import { popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
+import { popupCloseKey, popupContextKey, resolvePlaceholders } from '@/core/popups/popupContext'
 import { openDetail, openPopup } from '@/core/popups/popupService'
 
 /**
@@ -91,6 +91,7 @@ const CAPABILITY_BY_ACTION: Record<string, PortableCardCapability> = {
   subscribeDashboardContext: 'dashboard:context',
   emitAction: 'shell:events',
   showDetail: 'dialog:open',
+  closeDialog: 'dialog:open',
   showNativeDetail: 'dialog:open',
   openPopup: 'dialog:open',
   openHostTarget: 'host:navigate',
@@ -103,6 +104,7 @@ const PREVIEW_DENIED = [
   'navigate',
   'emitAction',
   'showDetail',
+  'closeDialog',
   'showNativeDetail',
   'openPopup',
   'openHostTarget',
@@ -124,6 +126,7 @@ const { locale } = useI18n()
  * `vuePanel.context` in its script.
  */
 const popupContext = inject(popupContextKey, null)
+const closeCurrentDialog = inject(popupCloseKey, null)
 const cardConfig = computed<Record<string, unknown>>(() => {
   const config = props.config ?? {}
   return popupContext ? resolvePlaceholders(config, popupContext.value) : config
@@ -446,6 +449,14 @@ function buildApi(capabilities: PortableCardCapability[]) {
         position,
         mobileHeight,
       })
+      return null
+    },
+
+    /** Close the popup or detail view containing this card. */
+    async closeDialog() {
+      guard('closeDialog')
+      if (!closeCurrentDialog) throw new Error('This card is not inside a dialog.')
+      closeCurrentDialog()
       return null
     },
 

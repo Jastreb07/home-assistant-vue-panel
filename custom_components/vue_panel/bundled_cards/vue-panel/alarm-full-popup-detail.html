@@ -16,7 +16,8 @@
       "entity:read",
       "entity:subscribe",
       "icon:render",
-      "service:call"
+      "service:call",
+      "dialog:open"
     ],
     "defaultSize": {
       "cols": 1,
@@ -705,6 +706,7 @@
       setStatus(targetStatus, 'translation.success', 'success');
       retry.disabled = true;
       force.disabled = true;
+      setTimeout(() => vuePanel.closeDialog(), 600);
     }
     const required = needsCode(value);
     pinEntry.hidden = !required;
