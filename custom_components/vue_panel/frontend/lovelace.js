@@ -77,6 +77,58 @@ function closestAcrossShadowRoots(element, selector) {
   return null;
 }
 
+/** Find elements through HA's nested open shadow roots. */
+function findAcrossShadowRoots(root, selector, matches = []) {
+  if (!root?.querySelectorAll) return matches;
+  for (const element of root.querySelectorAll('*')) {
+    if (element.matches(selector)) matches.push(element);
+    if (element.shadowRoot) findAcrossShadowRoots(element.shadowRoot, selector, matches);
+  }
+  return matches;
+}
+
+function isVuePanelLovelaceRoot(lovelaceRoot) {
+  const views = lovelaceRoot.lovelace?.config?.views;
+  if (!Array.isArray(views)) return null;
+  return views.some((view) => Array.isArray(view?.cards)
+    && view.cards.some((card) => card?.type === `custom:${CARD_TAG}`));
+}
+
+/**
+ * Repair the cold-cache race between HA rendering the dashboard and loading
+ * its globally registered modules. Companion WebViews can mount `hui-root`
+ * several frames after this module executes, so wait for its configuration.
+ * `config-refresh` is HA's supported path from hui-root to ha-panel-lovelace;
+ * it fetches the same read-only facade again and recreates the failed card now
+ * that vue-panel-host is defined.
+ */
+function repairColdStart(attempt = 0, refreshes = 0) {
+  const roots = findAcrossShadowRoots(document, 'hui-root');
+  let waitingForConfig = roots.length === 0;
+
+  for (const lovelaceRoot of roots) {
+    const isVuePanel = isVuePanelLovelaceRoot(lovelaceRoot);
+    if (isVuePanel === null) {
+      waitingForConfig = true;
+      continue;
+    }
+    if (!isVuePanel) continue;
+
+    if (findAcrossShadowRoots(lovelaceRoot.shadowRoot, CARD_TAG).length > 0) return;
+    lovelaceRoot.dispatchEvent(
+      new CustomEvent('config-refresh', { bubbles: true, composed: true }),
+    );
+    if (refreshes < 2) {
+      window.setTimeout(() => repairColdStart(attempt, refreshes + 1), 1000);
+    }
+    return;
+  }
+
+  if (waitingForConfig && attempt < 50) {
+    window.setTimeout(() => repairColdStart(attempt + 1, refreshes), 100);
+  }
+}
+
 function panelMountFor(lovelaceRoot, dashboardName) {
   let mount = mountedPanels.get(lovelaceRoot);
   if (mount) return mount;
@@ -274,6 +326,7 @@ class VuePanelHost extends HTMLElement {
 
 if (!customElements.get(CARD_TAG)) {
   customElements.define(CARD_TAG, VuePanelHost);
+  repairColdStart();
 }
 
 window.customCards = window.customCards || [];

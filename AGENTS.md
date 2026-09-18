@@ -379,6 +379,33 @@ Aktueller Stand:
 - ab `2.2.65` stellt der Sidebar-Umschalter beim persistenten Desktop-Drawer den ausgeblendeten
   Vue-Panel-Zustand direkt nach dem Schließbefehl wieder her. Anders als der mobile Modal-Drawer
   sendet Home Assistants Desktop-Drawer dabei nicht zuverlässig `hass-drawer-closed`;
+- ab `2.2.66` erzwingt der Sidebar-Systemeintrag auch auf Desktop-Geräten Home Assistants echten
+  mobilen Modal-Drawer. Der Loader setzt `home-assistant-main.narrow` ausschließlich für die Dauer
+  des geöffneten Menüs, merkt sich den ursprünglichen Wert und stellt ihn beim Schließen, bei einer
+  Einstellungsänderung sowie beim Verlassen von Vue Panel wieder her;
+- ab `2.2.67` behebt die Lovelace-Bridge den Kaltstart nach geleertem Browsercache: Wird die
+  integrationsweit geladene Bridge erst registriert, nachdem Lovelace bereits die temporäre
+  Fehler-Card für `custom:vue-panel-host` gerendert hat, löst sie einmalig `ll-rebuild` auf allen
+  schon montierten `hui-root`-View-Containern aus. Später erzeugte Views sehen das bereits
+  definierte Custom Element und benötigen keinen Retry;
+- ab `2.2.68` funktioniert diese Kaltstart-Reparatur auch in den verzögert initialisierten
+  WebViews der Home-Assistant-Companion-App: Die Bridge wartet bis zu fünf Sekunden auf `hui-root`
+  und dessen Lovelace-Konfiguration, prüft explizit auf `custom:vue-panel-host` und löst dann den
+  von `ha-panel-lovelace` unterstützten `config-refresh` aus. Bis zu zwei kontrollierte Retries
+  ersetzen den zuvor nur einmal im nächsten Frame versuchten `ll-rebuild`;
+- ab `2.2.69` registriert die Integration `lovelace.js` zusätzlich als echte Lovelace-
+  Modulressource. Das schließt den früheren Companion-Kaltstartfehler an der Quelle: Die App lädt
+  Lovelace-Ressourcen im Dashboard-Preload, während das globale `extra_module_url` dort nicht
+  zuverlässig vor dem ersten Card-Render fertig war. Im Storage-Modus wird der versionierte,
+  integrationsverwaltete Eintrag angelegt beziehungsweise aktualisiert und bei der Entfernung der
+  Integration gelöscht; im YAML-Modus wird er nur der laufenden In-Memory-Liste hinzugefügt. Die
+  globale Modulregistrierung bleibt als früh ladender Fallback erhalten;
+- ab `2.2.70` werden neue Dashboards nicht mehr aus einer minimalen einzelnen „Übersicht“-View
+  erzeugt, sondern aus der paketierten Vorlage `default_dashboard.json`. Sie enthält die Views
+  Overview, Livingroom, Bathroom und Media, vorkonfigurierte Header-, Bottom- und Sidebar-Menüs,
+  Breadcrumb, Uhr, Wetter sowie Beispiel-Raumkacheln. Die ausgelieferte Vorlage beginnt unabhängig
+  von der Revision der Quelldatei immer mit Revision 1; bereits vorhandene Dashboards bleiben
+  unverändert;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

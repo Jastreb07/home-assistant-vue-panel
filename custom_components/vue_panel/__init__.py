@@ -21,7 +21,7 @@ from .dashboard_files import (
     DashboardRepository,
     async_ensure_dashboards,
 )
-from .frontend import async_register_frontend
+from .frontend import async_register_frontend, async_unregister_lovelace_resource
 from .panel_manager import PanelManager, PanelRegistrationError
 from .websocket import async_register_websocket_commands
 
@@ -91,6 +91,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 async def async_remove_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Archive dashboard files when the integration is removed."""
+
+    await async_unregister_lovelace_resource(hass)
 
     repository: DashboardRepository | None = hass.data.get(DOMAIN, {}).get(
         DATA_REPOSITORY

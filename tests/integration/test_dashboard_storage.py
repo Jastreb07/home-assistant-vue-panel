@@ -34,12 +34,19 @@ class DashboardStorageTests(unittest.TestCase):
     def tearDown(self) -> None:
         self.temporary_directory.cleanup()
 
-    def test_new_dashboard_is_minimal_and_valid(self) -> None:
+    def test_new_dashboard_uses_packaged_template(self) -> None:
         document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
 
         self.assertEqual(document["revision"], 1)
-        self.assertEqual(document["views"][0]["title"], "Übersicht")
-        self.assertEqual(document["views"][0]["sections"], [])
+        self.assertEqual(len(document["views"]), 4)
+        self.assertEqual(document["views"][0]["title"], "Overview")
+        self.assertEqual(document["views"][0]["layout"], "flex")
+        self.assertEqual(document["views"][1]["path"], "overview/livingroom")
+        self.assertTrue(document["settings"]["hideHaSidebar"])
+        self.assertEqual(
+            document["bars"]["header"]["columns"][1]["cards"][0]["type"],
+            "vue-panel/menu",
+        )
 
     def test_save_increments_revision_and_rejects_stale_writes(self) -> None:
         document = dashboard_storage.read_dashboard(self.private_root, "wohnung")
@@ -106,7 +113,7 @@ class DashboardStorageTests(unittest.TestCase):
             "wandtablet",
         )
         self.assertEqual(wandtablet["revision"], 1)
-        self.assertEqual(wandtablet["views"][0]["title"], "Übersicht")
+        self.assertEqual(wandtablet["views"][0]["title"], "Overview")
 
     def test_cards_require_manufacturer_qualified_type(self) -> None:
         document = deepcopy(dashboard_storage.default_dashboard())
@@ -132,8 +139,12 @@ class DashboardStorageTests(unittest.TestCase):
         )
         sidebar = document["bars"]["sidebar-left"]
         self.assertEqual(
-            [card["type"] for card in sidebar["columns"][0]["cards"]],
-            ["vue-panel/clock", "vue-panel/menu"],
+            [
+                card["type"]
+                for column in sidebar["columns"]
+                for card in column["cards"]
+            ],
+            ["vue-panel/clock", "vue-panel/menu", "vue-panel/weather"],
         )
 
         sidebar["columns"].append(

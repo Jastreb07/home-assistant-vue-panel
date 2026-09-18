@@ -87,6 +87,35 @@ const SIDEBAR_DRAWER_CSS = `
   wa-drawer, .sidebar-shell, .mdc-drawer { display: none !important; }
 `;
 
+/** Original HA narrow state while Vue Panel temporarily uses the mobile drawer. */
+const forcedMobileSidebars = new WeakMap();
+
+function forceMobileSidebar(main) {
+  if (forcedMobileSidebars.has(main)) return;
+  forcedMobileSidebars.set(main, main.narrow === true);
+  main.narrow = true;
+}
+
+function restoreMobileSidebar(main) {
+  if (!main || !forcedMobileSidebars.has(main)) return;
+  const wasNarrow = forcedMobileSidebars.get(main);
+  forcedMobileSidebars.delete(main);
+  main.narrow = wasNarrow;
+}
+
+function resetMobileSidebar() {
+  const { main } = haShell();
+  if (!main || !forcedMobileSidebars.has(main)) return;
+  main.dispatchEvent(
+    new CustomEvent('hass-toggle-menu', {
+      detail: { open: false },
+      bubbles: true,
+      composed: true,
+    }),
+  );
+  restoreMobileSidebar(main);
+}
+
 /** Swallows the event HA fires when something asks to open the sidebar. */
 function blockToggleMenu(event) {
   event.stopPropagation();
@@ -109,21 +138,25 @@ function openHostTarget(target, onSidebarClosed) {
       return null;
     }
 
-    const sidebarIsCollapsed = Boolean(
-      drawer.querySelector(`#${SIDEBAR_STYLE_ID}`)
-        || drawer.shadowRoot?.querySelector(`#${SIDEBAR_STYLE_ID}`),
-    );
-    const shouldOpen = !(drawer.open && !sidebarIsCollapsed);
+    const shouldOpen = !forcedMobileSidebars.has(main);
 
-    if (shouldOpen && onSidebarClosed) setSidebarHidden(false);
+    if (shouldOpen) {
+      if (onSidebarClosed) setSidebarHidden(false);
+      // HA derives its modal drawer from home-assistant-main.narrow. Force that
+      // mode while this menu is visible so desktop and mobile behave alike.
+      forceMobileSidebar(main);
+    }
 
     let closedHandled = false;
+    let closeFallback = 0;
     const closed = () => {
       if (closedHandled) return;
       closedHandled = true;
+      window.clearTimeout(closeFallback);
+      restoreMobileSidebar(main);
       onSidebarClosed?.();
     };
-    if (onSidebarClosed) drawer.addEventListener('hass-drawer-closed', closed, { once: true });
+    drawer.addEventListener('hass-drawer-closed', closed, { once: true });
 
     const frame = requestAnimationFrame(() => {
       main.dispatchEvent(
@@ -133,13 +166,13 @@ function openHostTarget(target, onSidebarClosed) {
           composed: true,
         }),
       );
-      // HA's persistent desktop drawer does not emit hass-drawer-closed.
-      // Restore Vue Panel's hidden-sidebar state immediately after closing it.
-      if (!shouldOpen && onSidebarClosed && drawer.type !== 'modal') closed();
+      // Keep cleanup deterministic if a future HA drawer misses its close event.
+      if (!shouldOpen) closeFallback = window.setTimeout(closed, 500);
     });
 
     return () => {
       cancelAnimationFrame(frame);
+      window.clearTimeout(closeFallback);
       drawer.removeEventListener('hass-drawer-closed', closed);
     };
   }
@@ -319,6 +352,7 @@ class VuePanelElement extends HTMLElement {
     window.removeEventListener('message', this._onWindowMessage);
     this._sidebarDrawerCleanup?.();
     this._sidebarDrawerCleanup = null;
+    resetMobileSidebar();
     // Overlay cards belong to the engine's current DOM — it rebuilds them
     // (and asks for fresh ones) when the panel is entered again.
     this._clearHassCards();
@@ -894,6 +928,7 @@ class VuePanelElement extends HTMLElement {
     if (event.data?.type === 'vue-panel:sidebar') {
       this._sidebarDrawerCleanup?.();
       this._sidebarDrawerCleanup = null;
+      resetMobileSidebar();
       this._sidebarHidden = event.data.hidden === true;
       setSidebarHidden(this._sidebarHidden);
       return;

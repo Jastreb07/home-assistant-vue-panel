@@ -15,6 +15,10 @@ DASHBOARD_FORMAT = "vue-panel-dashboard"
 DASHBOARD_FORMAT_VERSION = 1
 BACKUP_LIMIT = 5
 
+_DEFAULT_DASHBOARD = json.loads(
+    (Path(__file__).with_name("default_dashboard.json")).read_text(encoding="utf-8")
+)
+
 _IDENTIFIER_PATTERN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 _CARD_TYPE_PATTERN = re.compile(
     r"^[a-z0-9]+(?:-[a-z0-9]+)*/[a-z0-9]+(?:-[a-z0-9]+)*$"
@@ -82,98 +86,9 @@ class DashboardRevisionConflict(DashboardFileError):
 
 
 def default_dashboard() -> dict[str, Any]:
-    """Return the minimal dashboard created for a new panel."""
+    """Return an independent copy of the packaged new-dashboard template."""
 
-    return {
-        "format": DASHBOARD_FORMAT,
-        "formatVersion": DASHBOARD_FORMAT_VERSION,
-        "revision": 1,
-        "settings": {
-            "theme": "dark",
-            "uiTheme": "default",
-            "screensaverMinutes": 0,
-            "autoReturnSeconds": 0,
-            "dialogAnimation": "slide-up",
-            "mobileDialogAnimation": "slide-up",
-        },
-        "bars": {
-            "sidebar-left": {
-                "id": "bar-sidebar-left",
-                "size": 280,
-                "columns": [
-                    {
-                        "id": "bar-sidebar-left-col",
-                        "align": "start",
-                        "crossAlign": "stretch",
-                        "cards": [
-                            {
-                                "id": "bar-sidebar-left-clock",
-                                "type": "vue-panel/clock",
-                                "config": {},
-                            },
-                            {
-                                "id": "bar-sidebar-left-menu",
-                                "type": "vue-panel/menu",
-                                "config": {},
-                            },
-                        ],
-                    }
-                ],
-            },
-            "sidebar-right": {
-                "id": "bar-sidebar-right",
-                "size": 280,
-                "columns": [
-                    {
-                        "id": "bar-sidebar-right-col",
-                        "align": "start",
-                        "crossAlign": "stretch",
-                        "cards": [],
-                    }
-                ],
-            },
-            "header": {
-                "id": "bar-header",
-                "size": 64,
-                "placement": "view",
-                "columns": [
-                    {
-                        "id": "bar-header-col",
-                        "align": "center",
-                        "crossAlign": "center",
-                        "cards": [],
-                    }
-                ],
-            },
-            "bottom": {
-                "id": "bar-bottom",
-                "size": 64,
-                "placement": "view",
-                "columns": [
-                    {
-                        "id": "bar-bottom-col",
-                        "align": "center",
-                        "crossAlign": "center",
-                        "cards": [],
-                    }
-                ],
-            },
-        },
-        "views": [
-            {
-                "id": "overview",
-                "title": "Übersicht",
-                "icon": "mdi:home",
-                "path": "overview",
-                "layout": "sections",
-                "showSidebarLeft": True,
-                "showSidebarRight": False,
-                "showHeader": True,
-                "showBottom": True,
-                "sections": [],
-            }
-        ],
-    }
+    return deepcopy(_DEFAULT_DASHBOARD)
 
 
 def _validate_card(card: Any, identifiers: set[str]) -> None:

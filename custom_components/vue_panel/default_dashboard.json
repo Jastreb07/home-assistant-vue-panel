@@ -1,0 +1,434 @@
+{
+  "bars": {
+    "bottom": {
+      "columns": [
+        {
+          "align": "center",
+          "cards": [
+            {
+              "config": {
+                "display": "icon",
+                "iconPosition": "after",
+                "itemSize": "medium",
+                "items": [
+                  {
+                    "depth": 0,
+                    "icon": "mdi:sofa",
+                    "id": "li-mu6uige5-0",
+                    "label": "Livingroom",
+                    "view": "view-mu6u73el-c"
+                  },
+                  {
+                    "depth": 0,
+                    "icon": "mdi:bathtub",
+                    "id": "li-mu6uijku-1",
+                    "label": "Bathroom",
+                    "view": "view-mu6u9gd6-f"
+                  }
+                ],
+                "orientation": "horizontal",
+                "submenuDisplay": "icon_text",
+                "submenuIconPosition": "before",
+                "submenuItemSize": "medium",
+                "submenuSide": "auto",
+                "submenuStyle": "dialog"
+              },
+              "id": "barcard-mu6uil6r-l",
+              "type": "vue-panel/menu"
+            }
+          ],
+          "crossAlign": "center",
+          "id": "bar-bottom-col"
+        }
+      ],
+      "id": "bar-bottom",
+      "placement": "view",
+      "size": 64,
+      "visibility": {
+        "desktop": true,
+        "mobile": true,
+        "mobileMax": 767,
+        "tablet": true,
+        "tabletMax": 1023
+      }
+    },
+    "header": {
+      "columns": [
+        {
+          "align": "center",
+          "cards": [
+            {
+              "config": {
+                "iconPosition": "before",
+                "showIcon": true
+              },
+              "id": "barcard-mu6ttop1-0",
+              "type": "vue-panel/breadcrumb"
+            }
+          ],
+          "crossAlign": "center",
+          "id": "bar-header-col"
+        },
+        {
+          "align": "end",
+          "cards": [
+            {
+              "config": {
+                "display": "icon",
+                "iconPosition": "after",
+                "itemSize": "medium",
+                "items": [
+                  {
+                    "action": "sidebar",
+                    "depth": 0,
+                    "id": "li-mu6s9m3k-0"
+                  },
+                  {
+                    "action": "settings",
+                    "depth": 0,
+                    "id": "li-mtfjz423-0"
+                  },
+                  {
+                    "action": "notifications",
+                    "depth": 0,
+                    "id": "li-mtfjzavg-1"
+                  }
+                ],
+                "orientation": "horizontal",
+                "submenuDisplay": "icon_text",
+                "submenuIconPosition": "before",
+                "submenuItemSize": "medium",
+                "submenuSide": "auto",
+                "submenuStyle": "flyout"
+              },
+              "id": "barcard-mu6tu1bc-2",
+              "type": "vue-panel/menu"
+            }
+          ],
+          "crossAlign": "stretch",
+          "id": "barcol-mu6ttzt5-1",
+          "sizeMode": "full"
+        }
+      ],
+      "id": "bar-header",
+      "placement": "view",
+      "size": 64,
+      "visibility": {
+        "desktop": true,
+        "mobile": true,
+        "mobileMax": 767,
+        "tablet": true,
+        "tabletMax": 1023
+      }
+    },
+    "sidebar-left": {
+      "columns": [
+        {
+          "align": "start",
+          "cards": [
+            {
+              "config": {},
+              "id": "bar-sidebar-left-clock",
+              "type": "vue-panel/clock"
+            }
+          ],
+          "crossAlign": "stretch",
+          "id": "bar-sidebar-left-col"
+        },
+        {
+          "align": "start",
+          "cards": [
+            {
+              "config": {
+                "display": "icon_text",
+                "iconPosition": "after",
+                "itemSize": "medium",
+                "items": [
+                  {
+                    "depth": 0,
+                    "icon": "mdi:home",
+                    "id": "li-mu6uk466-2",
+                    "label": "Overview",
+                    "view": "overview"
+                  },
+                  {
+                    "depth": 0,
+                    "icon": "mdi:playlist-music",
+                    "id": "li-mu6uk9dw-3",
+                    "label": "Media",
+                    "view": "view-mu6ugaaq-k"
+                  }
+                ],
+                "orientation": "vertical",
+                "submenuDisplay": "icon_text",
+                "submenuIconPosition": "before",
+                "submenuItemSize": "medium",
+                "submenuSide": "auto",
+                "submenuStyle": "flyout"
+              },
+              "id": "barcard-mu6tvlvh-4",
+              "type": "vue-panel/menu"
+            }
+          ],
+          "crossAlign": "stretch",
+          "id": "barcol-mu6tv5an-3",
+          "margin": {
+            "bottom": 20,
+            "top": 20
+          },
+          "sizeMode": "full"
+        },
+        {
+          "align": "start",
+          "cards": [
+            {
+              "config": {
+                "actions": {
+                  "double_tap": {
+                    "action": "ha-more-info",
+                    "target": ""
+                  },
+                  "hold": {
+                    "action": "ha-more-info",
+                    "target": ""
+                  },
+                  "tap": {
+                    "action": "more-info",
+                    "target": ""
+                  }
+                },
+                "animatedIcon": true,
+                "animation": false,
+                "entity": "weather.forecast_home",
+                "name": "Weather",
+                "roundTemperature": true,
+                "showDetails": true
+              },
+              "id": "barcard-mu6twfgx-6",
+              "size": {
+                "cols": 1,
+                "height": 120,
+                "rows": 1,
+                "width": 140
+              },
+              "type": "vue-panel/weather"
+            }
+          ],
+          "crossAlign": "stretch",
+          "id": "barcol-mu6tw5cn-5",
+          "sizeMode": "fit"
+        }
+      ],
+      "id": "bar-sidebar-left",
+      "size": 280,
+      "visibility": {
+        "desktop": true,
+        "mobile": false,
+        "mobileMax": 767,
+        "tablet": true,
+        "tabletMax": 1023
+      }
+    },
+    "sidebar-right": {
+      "columns": [
+        {
+          "align": "start",
+          "cards": [],
+          "crossAlign": "stretch",
+          "id": "bar-sidebar-right-col"
+        }
+      ],
+      "id": "bar-sidebar-right",
+      "size": 280,
+      "visibility": {
+        "desktop": false,
+        "mobile": false,
+        "mobileMax": 767,
+        "tablet": false,
+        "tabletMax": 1023
+      }
+    }
+  },
+  "format": "vue-panel-dashboard",
+  "formatVersion": 1,
+  "revision": 1,
+  "settings": {
+    "autoReturnSeconds": 0,
+    "dialogAnimation": "slide-up",
+    "hideHaSidebar": true,
+    "mobileDialogAnimation": "slide-up",
+    "screensaverMinutes": 0,
+    "theme": "auto",
+    "uiTheme": "default",
+    "viewTransition": true
+  },
+  "views": [
+    {
+      "icon": "mdi:home",
+      "id": "overview",
+      "layout": "flex",
+      "path": "overview",
+      "sections": [
+        {
+          "cards": [
+            {
+              "config": {
+                "align": "left",
+                "icon": "mdi:home-floor-0",
+                "rule": true,
+                "title": "EG"
+              },
+              "id": "card-mu6u2s1j-1",
+              "size": {
+                "height": 40,
+                "width": 280
+              },
+              "type": "vue-panel/section-title"
+            },
+            {
+              "config": {
+                "actions": {
+                  "tap": {
+                    "action": "navigate",
+                    "target": "view-mu6u73el-c"
+                  }
+                },
+                "attribute": "",
+                "icon": "mdi:sofa",
+                "lightGroup": "",
+                "name": "Livingroom",
+                "showAttribute": false,
+                "showIcon": true,
+                "showName": true,
+                "showState": true,
+                "targetView": "view-mt03s412-d",
+                "temperatureEntity": "",
+                "textScroll": true
+              },
+              "id": "card-mu6u2s1j-2",
+              "size": {
+                "height": 120,
+                "width": 140
+              },
+              "type": "vue-panel/room-tile"
+            },
+            {
+              "config": {
+                "actions": {
+                  "tap": {
+                    "action": "navigate",
+                    "target": "view-mu6u9gd6-f"
+                  }
+                },
+                "attribute": "",
+                "icon": "mdi:bathtub",
+                "lightGroup": "",
+                "name": "Bathroom",
+                "showAttribute": false,
+                "showIcon": true,
+                "showName": true,
+                "showState": true,
+                "targetView": "view-mt03s412-d",
+                "temperatureEntity": "",
+                "textScroll": true
+              },
+              "id": "card-mu6u8597-d",
+              "size": {
+                "height": 120,
+                "width": 140
+              },
+              "type": "vue-panel/room-tile"
+            }
+          ],
+          "id": "sec-mu6u2s1j-0"
+        }
+      ],
+      "showBottom": true,
+      "showHeader": true,
+      "showSidebarLeft": true,
+      "showSidebarRight": false,
+      "title": "Overview"
+    },
+    {
+      "icon": "mdi:sofa",
+      "id": "view-mu6u73el-c",
+      "layout": "flex",
+      "path": "overview/livingroom",
+      "sections": [
+        {
+          "cards": [
+            {
+              "config": {
+                "align": "left",
+                "icon": "mdi:lightbulb",
+                "rule": true,
+                "title": "Lights"
+              },
+              "id": "card-mu6ubgqo-g",
+              "size": {
+                "height": 40,
+                "width": 280
+              },
+              "type": "vue-panel/section-title"
+            }
+          ],
+          "id": "sec-mu6u73el-b"
+        }
+      ],
+      "showBottom": true,
+      "showHeader": true,
+      "showSidebarLeft": true,
+      "showSidebarRight": false,
+      "title": "Livingroom"
+    },
+    {
+      "icon": "mdi:bathtub",
+      "id": "view-mu6u9gd6-f",
+      "layout": "flex",
+      "path": "overview/bathroom",
+      "sections": [
+        {
+          "cards": [
+            {
+              "config": {
+                "align": "left",
+                "icon": "mdi:lightbulb",
+                "rule": true,
+                "title": "Lights"
+              },
+              "id": "card-mu6ubr4r-i",
+              "size": {
+                "height": 40,
+                "width": 280
+              },
+              "type": "vue-panel/section-title"
+            }
+          ],
+          "id": "sec-mu6ubr4r-h"
+        }
+      ],
+      "showBottom": true,
+      "showHeader": true,
+      "showSidebarLeft": true,
+      "showSidebarRight": false,
+      "title": "Bathroom"
+    },
+    {
+      "icon": "mdi:playlist-music",
+      "id": "view-mu6ugaaq-k",
+      "layout": "panel",
+      "path": "media",
+      "sections": [
+        {
+          "cards": [],
+          "id": "sec-mu6ugaaq-j"
+        }
+      ],
+      "showBottom": true,
+      "showHeader": true,
+      "showSidebarLeft": true,
+      "showSidebarRight": false,
+      "title": "Media"
+    }
+  ]
+}

@@ -53,7 +53,8 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("target === 'sidebar'", loader)
         self.assertIn("new CustomEvent('hass-toggle-menu'", loader)
         self.assertIn('detail: { open: shouldOpen }', loader)
-        self.assertIn("drawer.type !== 'modal'", loader)
+        self.assertIn('main.narrow = true', loader)
+        self.assertIn('restoreMobileSidebar(main)', loader)
         self.assertIn("Engine ${loadedVersion} loaded in isolated iframe", loader)
 
         lovelace_path = MODULE_PATH.parent / "frontend" / "lovelace.js"
@@ -72,6 +73,10 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("const sidebarBootstraps = new WeakMap()", lovelace)
         self.assertIn("this._config.hideHaSidebar === true", lovelace)
         self.assertIn("setSidebarHiddenEarly(true)", lovelace)
+        self.assertIn("findAcrossShadowRoots(document, 'hui-root')", lovelace)
+        self.assertIn("card?.type === `custom:${CARD_TAG}`", lovelace)
+        self.assertIn("new CustomEvent('config-refresh'", lovelace)
+        self.assertIn("window.setTimeout(() => repairColdStart", lovelace)
 
         engine_path = MODULE_PATH.parent / "frontend" / "engine"
         self.assertTrue((engine_path / "index.html").is_file())
@@ -84,6 +89,9 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn('Path(__file__).parent / "frontend"', frontend_source)
         self.assertIn("frontend.add_extra_js_url", frontend_source)
         self.assertIn("LOVELACE_MODULE_URL", frontend_source)
+        self.assertIn("await _async_register_lovelace_resource(hass)", frontend_source)
+        self.assertIn("resources.async_create_item", frontend_source)
+        self.assertIn("CONF_RESOURCE_TYPE_WS", frontend_source)
         self.assertNotIn('hass.config.path("www"', frontend_source)
 
     def test_dashboard_is_registered_through_lovelace(self) -> None:

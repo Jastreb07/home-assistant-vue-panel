@@ -163,6 +163,30 @@ Ab `2.2.65` stellt der Loader beim Schließen des persistenten Desktop-Drawers d
 ausgeblendeten Sidebar-Zustand unmittelbar wieder her, weil dieser Drawer anders als die mobile
 Modal-Variante kein verlässliches `hass-drawer-closed`-Ereignis liefert.
 
+Ab `2.2.66` verwendet der Sidebar-Systemeintrag innerhalb von Vue Panel auf allen Bildschirmgrößen
+den echten mobilen HA-Drawer. Dafür wird `home-assistant-main.narrow` nur während des geöffneten
+Menüs erzwungen und der vorherige responsive Zustand anschließend zuverlässig wiederhergestellt.
+
+Ab `2.2.67` stößt die Lovelace-Bridge nach der erstmaligen Definition von
+`custom:vue-panel-host` einen einmaligen Rebuild bereits montierter Lovelace-Views an. Damit wird
+die beim Kaltstart mögliche temporäre „Konfigurationsfehler“-Card ohne manuelles Neuladen durch
+den inzwischen registrierten Vue-Panel-Host ersetzt.
+
+Ab `2.2.68` wartet die Reparatur zusätzlich auf die verzögert aufgebaute Companion-WebView und
+erkennt das Vue-Panel-Dashboard anhand seiner Lovelace-Konfiguration. Statt eines am Container
+nicht zuverlässig verarbeiteten `ll-rebuild` nutzt sie `config-refresh`, wodurch
+`ha-panel-lovelace` die read-only Fassade neu lädt und den nun definierten Host erzeugt.
+
+Ab `2.2.69` wird `lovelace.js` zusätzlich als integrationsverwaltete Lovelace-Modulressource
+registriert. Dadurch nimmt auch die Companion-App die Host-Bridge in ihren Lovelace-Preload auf,
+statt vom zeitlich nicht garantierten globalen Modulimport abhängig zu sein. Die Registrierung
+wird versionssicher aktualisiert und bei der Entfernung der Integration wieder bereinigt.
+
+Ab `2.2.70` verwendet die Dashboard-Erstellung eine paketierte, validierte Standardvorlage mit
+vier Views (Overview, Livingroom, Bathroom und Media), vollständigen Bars und beispielhaften
+Navigations- und Raum-Cards. Nur neu angelegte Dashboard-Dateien erhalten diese Vorlage;
+bestehende Dateien werden weder migriert noch überschrieben.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.
