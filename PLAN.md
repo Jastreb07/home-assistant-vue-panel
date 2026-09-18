@@ -122,6 +122,9 @@ Ab `2.2.56`/Engine `2.2.92` bleibt die vorhandene Dialoggeometrie unverändert. 
 in `alarm-full-popup-detail` besitzt `width: 100%`, `max-width: 500px` und eine horizontale
 Auto-Margin, sodass PIN-Anzeige und Tastenfeld auf breiten Dialogen kompakt und zentriert bleiben.
 
+Ab `2.2.57`/Engine `2.2.93` ist auch `.action-heading` auf maximal 500px begrenzt und horizontal
+zentriert. Überschrift und PIN-Bereich bilden dadurch eine gemeinsame, bündige Inhaltsspalte.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

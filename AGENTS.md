@@ -342,6 +342,8 @@ Aktueller Stand:
   Icon und Text;
 - ab `2.2.56`/Engine `2.2.92` bleibt der Alarmdialog in seiner bisherigen Größe; ausschließlich
   die PIN-Eingabe samt Tastenfeld ist auf 500px begrenzt und horizontal zentriert;
+- ab `2.2.57`/Engine `2.2.93` verwendet auch `.action-heading` dieselbe maximale Breite von
+  500px und dieselbe horizontale Zentrierung wie die PIN-Eingabe;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
