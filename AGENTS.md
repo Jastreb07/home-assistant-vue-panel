@@ -420,6 +420,23 @@ Aktueller Stand:
   `hui-error-card` (hui-card hört darauf und baut nur diese Card neu); nur wenn keine Fehler-Card
   erreichbar ist, folgt ab dem dritten Schritt der schwere `config-refresh`, auf höchstens einen
   pro zwei Sekunden gedrosselt;
+- ab `2.2.72` reißt das Verlassen des Panels über einen Menu-Card-Link (z. B.
+  `/config/dashboard`) HA nicht mehr zurück ins Vue-Panel: Zuvor mappte die Host-Card einen
+  fremden Pfad auf `path: ''`, die Engine leitete auf die Standard-View um und meldete sie zurück,
+  und der noch verbundene Loader schrieb sie per `replaceState` + `location-changed` in die
+  Adresszeile — ein Race, das der erste Versuch (lazy geladenes Ziel-Panel, langsamer Abbau)
+  verlor und der zweite gewann. Jetzt bricht `_syncRoute` bei einem Pfad außerhalb des
+  Panel-Prefix ab, `_applyEnginePath` spiegelt Engine-Navigationen nur noch, solange die
+  HA-Adresse innerhalb des Panels liegt, und `_openUrl` öffnet same-origin-Links als weiche
+  HA-Navigation (`pushState` + `location-changed`, wie der Settings-Systemeintrag) statt die
+  ganze HA-Seite neu zu laden; Cross-Origin-Links verwenden weiterhin `location.assign`;
+- ab `2.2.73`/Engine `2.2.96` blitzt beim Öffnen des Panels kein Dark-Theme mehr auf, wenn Light
+  konfiguriert ist: `useTheme.apply()` persistiert das jeweils aufgelöste Farbschema als
+  `vue-panel:color-scheme` in `localStorage`, und das neue `initializeColorScheme()` setzt es in
+  `main.ts` synchron vor dem App-Mount auf `<html data-theme>` (Muster wie `panelScale.ts`).
+  Ohne gespeicherten Wert (Erstbesuch, Private Mode) gilt die OS-Präferenz
+  (`prefers-color-scheme`); sobald die Dashboard-Settings geladen sind, korrigiert `useTheme`
+  weiterhin reaktiv;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

@@ -446,8 +446,15 @@ class VuePanelElement extends HTMLElement {
     if (normalized === this._enginePath) return;
     this._enginePath = normalized;
 
-    const url = `${this._routePrefix()}${normalized ? `/${normalized}` : ''}`;
-    if (url === location.pathname) return;
+    const prefix = this._routePrefix();
+    // Never mirror engine paths while HA is outside this panel: a late echo
+    // (e.g. the default-view redirect racing a click on an external link)
+    // would cancel the user's navigation and yank HA back into the dashboard.
+    const pathname = location.pathname;
+    if (pathname !== prefix && !pathname.startsWith(`${prefix}/`)) return;
+
+    const url = `${prefix}${normalized ? `/${normalized}` : ''}`;
+    if (url === pathname) return;
 
     if (replace) window.history.replaceState(window.history.state, '', url);
     else window.history.pushState(null, '', url);
@@ -478,8 +485,24 @@ class VuePanelElement extends HTMLElement {
       console.warn('[Vue Panel] Ignoring unsupported link protocol:', parsed.protocol);
       return;
     }
-    if (newTab) window.open(parsed.href, '_blank', 'noopener');
-    else location.assign(parsed.href);
+    if (newTab) {
+      window.open(parsed.href, '_blank', 'noopener');
+      return;
+    }
+    // Links into this Home Assistant instance ride HA's own router instead of
+    // reloading the whole frontend — same hand-off as the settings target.
+    if (parsed.origin === location.origin) {
+      window.history.pushState(null, '', `${parsed.pathname}${parsed.search}${parsed.hash}`);
+      window.dispatchEvent(
+        new CustomEvent('location-changed', {
+          detail: { replace: false },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      return;
+    }
+    location.assign(parsed.href);
   }
 
   _sendMediaResult(requestId, value, error) {

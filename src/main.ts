@@ -12,12 +12,16 @@ import { applyHostRoutePath } from './core/router/panelNavigation'
 import { syncPortableCardCatalog } from './core/registry/cardRegistry'
 import { startDialogPointerTracking } from './core/ui/dialogPointer'
 import { initializePanelScale } from './core/ui/panelScale'
+import { initializeColorScheme } from './core/composables/useTheme'
 
 const target = document.querySelector('#app')
 if (!target) throw new Error('Vue Panel development mount element is missing.')
 
 startDialogPointerTracking()
 initializePanelScale()
+// Paint the connection overlay in the last known color scheme right away —
+// the configured theme replaces it once the dashboard settings arrive.
+initializeColorScheme()
 const mounted = mountVuePanel(target)
 
 async function start(): Promise<void> {

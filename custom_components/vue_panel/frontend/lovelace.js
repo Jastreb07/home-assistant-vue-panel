@@ -365,11 +365,11 @@ class VuePanelHost extends HTMLElement {
     if (!panel || !dashboardName) return;
     const prefix = `/${String(dashboardName).replace(/^\/+|\/+$/g, '')}`;
     const pathname = location.pathname;
-    const path = pathname === prefix
-      ? ''
-      : pathname.startsWith(`${prefix}/`)
-        ? pathname.slice(prefix.length)
-        : '';
+    // A foreign pathname means HA is navigating away from this dashboard.
+    // Forwarding it (as an empty panel path) would make the engine redirect
+    // to its default view and echo that back, yanking HA into the panel again.
+    if (pathname !== prefix && !pathname.startsWith(`${prefix}/`)) return;
+    const path = pathname === prefix ? '' : pathname.slice(prefix.length);
     panel.route = { prefix, path };
   }
 }
