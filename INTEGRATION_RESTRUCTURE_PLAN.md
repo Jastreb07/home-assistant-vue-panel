@@ -9,7 +9,7 @@ Datum: 18. August 2026
 - Phase 0 ist abgeschlossen: Card Format v2, Card API v1 (`docs/architecture/sandbox-api-v1.md`)
   und portable Beispiele sind dokumentiert.
 - Phase 1 ist technisch weit fortgeschritten: Config-/Dashboard-Subentry-Flow,
-  Panel-Registrierung, direkte statische Auslieferung aus dem Integrationspaket und der echte
+  Lovelace-Dashboard-Registrierung, direkte statische Auslieferung aus dem Integrationspaket und der echte
   query-versionierte Integrations-Build sind vorhanden.
 - Die Ersteinrichtung öffnet nach dem Anlegen des einzigen Config Entry unmittelbar den Dialog
   „Dashboard hinzufügen“. Das erste Dashboard erhält eine minimale leere Ansicht „Übersicht“.
@@ -41,13 +41,13 @@ Datum: 18. August 2026
 
 Vue Panel wird von einem manuell installierten Frontend-Build zu einer eigenständigen
 Home-Assistant-Custom-Integration. Die Integration installiert und verwaltet die Engine,
-registriert mehrere Dashboard-Panels und stellt eine dateibasierte Card-Plattform bereit.
+registriert mehrere HA-Lovelace-Dashboards und stellt eine dateibasierte Card-Plattform bereit.
 
 Das Ziel besteht aus vier getrennten Bereichen:
 
 1. **Engine** – Vue Panel enthält Layout, Editor, Themes, Card-Host und die HA-Brücke,
    aber keine fachlichen Core-Cards mehr im Engine-Bundle.
-2. **Integration** – ein Python-Backend registriert Panels, provisioniert Web-Dateien,
+2. **Integration** – ein Python-Backend registriert Lovelace-Dashboards, provisioniert Web-Dateien,
    verwaltet Dashboards und Cards und stellt eine abgesicherte WebSocket-API bereit.
 3. **Card-Pakete** – Core-, Custom- und Drittanbieter-Cards verwenden dasselbe portable
    HTML-Format mit Konfiguration/Variablen, HTML, CSS und JavaScript.
@@ -77,14 +77,14 @@ Imports bereinigt und Tests sowie Dokumentation auf die neue Architektur umgeste
 
 ## 2. Technische Fakten und Grenzen
 
-### 2.1 Mehrere Panels sind möglich
+### 2.1 Mehrere echte HA-Dashboards sind möglich
 
-Home Assistants `panel_custom.async_register_panel()` kann beliebig oft mit jeweils
-eindeutigem `frontend_url_path` aufgerufen werden. Alle Vue-Panel-Dashboards können dasselbe
-Web Component und dasselbe `module_url` verwenden. Jedes Dashboard erhält beim Anlegen einen
-dauerhaft festgelegten, eindeutigen Namen. Dieser Name ist zugleich sein HA-URL-Pfad und wird
-intern über die Panel-Konfiguration an den Loader übergeben; eine technische `dashboard_id`
-erscheint nicht in der URL.
+Home Assistant führt auswählbare Standard-Dashboards in der Lovelace-Dashboard-Registry. Deshalb
+registriert Vue Panel für jeden Subentry eine eigene read-only `LovelaceConfig` und ein Built-in-
+Panel vom Typ `lovelace`. Alle Einträge verwenden dieselbe kleine `custom:vue-panel-host`-Card und
+denselben iframe-Loader. Jedes Dashboard erhält beim Anlegen einen dauerhaft festgelegten,
+eindeutigen Namen. Dieser Name ist zugleich sein HA-URL-Pfad und wird intern über die Host-Card an
+den Loader übergeben; eine technische ID erscheint nicht in der URL.
 
 Ein URL-Pfad darf nicht mit einem bereits registrierten HA-Panel kollidieren. Beim Umbenennen
 oder Löschen muss das alte Panel mit `frontend.async_remove_panel()` entfernt und anschließend
@@ -226,23 +226,30 @@ Views, Sections, Bars und Card-Instanzen bleibt ausschließlich in der JSON-Date
 Config Entries intern verwaltet, ist Teil jeder UI-konfigurierten Integration und ersetzt nicht
 die neue dateibasierte Dashboard-Persistenz.
 
-### 4.2 Panel-Registrierung
+### 4.2 Lovelace-Dashboard-Registrierung
 
 Beim Start der Integration:
 
 1. die integrationseigene statische Frontend-Route bereitstellen;
 2. Dashboard-Subentries validieren;
 3. WebSocket-Kommandos registrieren;
-4. für jeden gültigen Datensatz `panel_custom.async_register_panel()` aufrufen;
-5. den eindeutigen Dashboard-Namen, Engine-Version und API-Version als Panel-Konfiguration
-   übergeben.
+4. für jeden gültigen Datensatz eine read-only `LovelaceConfig` unter dem eindeutigen
+   Dashboard-Namen in Home Assistants Lovelace-Daten registrieren;
+5. ein Built-in-Panel vom Typ `lovelace` für denselben Pfad anlegen. Die generierte
+   Lovelace-Konfiguration enthält pro Vue-View eine Panel-View mit genau einer
+   `custom:vue-panel-host`-Card.
 
-Beim Ändern einer Panel-Konfiguration wird das betroffene Panel entfernt und neu registriert.
-Beim Unload der Integration werden alle von ihr registrierten Panels entfernt.
+Beim Ändern einer Dashboard-Konfiguration wird das betroffene Lovelace-Dashboard entfernt und neu
+registriert. Ändert sich die Vue-View-Liste, löst die Fassade ein Lovelace-Config-Update aus. Beim
+Unload entfernt die Integration sowohl ihre Panels als auch ausschließlich die von ihr gehaltenen
+Lovelace-Konfigurationsobjekte. Die Lovelace-Fassade ist nur Registry und Route; alle fachlichen
+Daten bleiben in der privaten Vue-Panel-JSON-Datei.
 
-### 4.3 Iframe-Einbettung und Authentifizierung
+### 4.3 Lovelace-Host, Iframe-Einbettung und Authentifizierung
 
-Der Loader bleibt ein stabiles ES-Modul unter `/vue-panel-static/loader.js` und wird direkt aus
+Die kleine Bridge `/vue-panel-static/lovelace.js` wird global geladen und registriert
+`custom:vue-panel-host`, bevor sie bei Bedarf den eigentlichen Loader importiert. Der Loader bleibt
+ein stabiles ES-Modul unter `/vue-panel-static/loader.js` und wird direkt aus
 dem Integrationspaket ausgeliefert. Die registrierte `module_url` erhält immer die
 Integrationsversion als Query-Parameter, beispielsweise
 `/vue-panel-static/loader.js?v=2.0.0-alpha.19`. Dadurch kann kein
@@ -634,7 +641,7 @@ Die folgenden Punkte sind für die erste Umsetzung verbindlich und keine offenen
 
 ## 13. Referenzen
 
-- [Home Assistant `panel_custom.async_register_panel`](https://github.com/home-assistant/core/blob/dev/homeassistant/components/panel_custom/__init__.py)
+- [Home Assistant Lovelace-Dashboard-Registrierung](https://github.com/home-assistant/core/blob/dev/homeassistant/components/lovelace/__init__.py)
 - [Home Assistant Frontend: Panel- und `/local`-Registrierung](https://github.com/home-assistant/core/blob/dev/homeassistant/components/frontend/__init__.py)
 - [Home Assistant: WebSocket API erweitern](https://developers.home-assistant.io/docs/frontend/extending/websocket-api)
 - [Home Assistant: Berechtigungen für WebSocket- und REST-Befehle](https://developers.home-assistant.io/docs/auth_permissions/)

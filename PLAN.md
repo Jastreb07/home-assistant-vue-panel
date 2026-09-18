@@ -125,6 +125,21 @@ Auto-Margin, sodass PIN-Anzeige und Tastenfeld auf breiten Dialogen kompakt und 
 Ab `2.2.57`/Engine `2.2.93` ist auch `.action-heading` auf maximal 500px begrenzt und horizontal
 zentriert. Überschrift und PIN-Bereich bilden dadurch eine gemeinsame, bündige Inhaltsspalte.
 
+Ab `2.2.58`/Engine `2.2.93` sind Vue-Panel-Subentries echte, integrationsverwaltete
+Lovelace-Dashboards. Eine read-only Lovelace-Fassade erzeugt aus den Vue-Views je eine Panel-View
+mit `custom:vue-panel-host`; diese kleine Host-Card lädt weiterhin den bestehenden iframe-Loader.
+Damit führt Home Assistant die Dashboards in seiner Dashboard-Liste und bietet sie im Profil als
+Standard-Dashboard an, ohne dass die Vue-Panel-Konfiguration in Lovelace dupliziert wird.
+
+Ab `2.2.59`/Engine `2.2.93` liefert die Lovelace-Fassade ihre JSON-kompatible Konfiguration direkt
+als Dictionary. Damit hängt sie nicht von `cached_json_fragment` aus Home Assistants interner
+JSON-Hilfsbibliothek ab, das in HA 2026.9 nicht mehr exportiert wird.
+
+Ab `2.2.60`/Engine `2.2.93` unterdrückt die Lovelace-Host-Bridge während eines
+Vue-Panel-Dashboards den nativen HA-Header einschließlich des dafür reservierten oberen Abstands.
+Der eingebettete Host nutzt die volle Viewport-Höhe und entfernt die Shadow-DOM-Anpassung beim
+Verlassen wieder.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

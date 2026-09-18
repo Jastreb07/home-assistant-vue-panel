@@ -119,6 +119,33 @@ def _announce_dashboard_update(
     )
 
 
+def _lovelace_view_signature(document: dict[str, Any]) -> tuple[tuple[Any, ...], ...]:
+    """Return fields that affect the generated Lovelace view wrapper."""
+
+    return tuple(
+        (
+            view.get("id"),
+            view.get("path"),
+            view.get("title"),
+            view.get("icon"),
+            view.get("subview") is True,
+        )
+        for view in document.get("views", [])
+        if isinstance(view, dict)
+    )
+
+
+def _notify_lovelace_view_list_changed(
+    hass: HomeAssistant, dashboard_name: str
+) -> None:
+    """Refresh HA's dashboard route table after Vue Panel views change."""
+
+    for value in hass.data.get(DOMAIN, {}).values():
+        notify = getattr(value, "notify_view_list_changed", None)
+        if callable(notify):
+            notify(dashboard_name)
+
+
 def _can_read_dashboard(
     connection: websocket_api.ActiveConnection,
     subentry: ConfigSubentry,
@@ -220,6 +247,7 @@ async def websocket_dashboard_save(
         connection.send_error(msg["id"], "not_found", "Dashboard not found")
         return
     try:
+        previous = await _repository(hass).async_load(subentry)
         document = await _repository(hass).async_save(
             subentry,
             msg["document"],
@@ -243,6 +271,8 @@ async def websocket_dashboard_save(
         document,
         msg.get("client_id"),
     )
+    if _lovelace_view_signature(previous) != _lovelace_view_signature(document):
+        _notify_lovelace_view_list_changed(hass, msg["dashboard_name"])
     connection.send_result(msg["id"], document)
 
 
@@ -269,6 +299,7 @@ async def websocket_dashboard_import(
         connection.send_error(msg["id"], "not_found", "Dashboard not found")
         return
     try:
+        previous = await _repository(hass).async_load(subentry)
         document = await _repository(hass).async_import(
             subentry,
             msg["document"],
@@ -292,6 +323,8 @@ async def websocket_dashboard_import(
         document,
         msg.get("client_id"),
     )
+    if _lovelace_view_signature(previous) != _lovelace_view_signature(document):
+        _notify_lovelace_view_list_changed(hass, msg["dashboard_name"])
     connection.send_result(msg["id"], document)
 
 

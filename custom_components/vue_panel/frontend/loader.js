@@ -241,6 +241,7 @@ class VuePanelElement extends HTMLElement {
     this._panel = null;
     this._narrow = false;
     this._route = null;
+    this._embedded = false;
     this._readyVersion = '';
     /** Last path exchanged with the engine — guards against ping-pong updates. */
     this._enginePath = null;
@@ -249,14 +250,13 @@ class VuePanelElement extends HTMLElement {
     this._onFrameLoad = () => this._sendContext();
     this._onWindowMessage = (event) => this._handleMessage(event);
 
-    for (const property of ['hass', 'panel', 'narrow', 'route']) {
+    for (const property of ['hass', 'panel', 'narrow', 'route', 'embedded']) {
       this._upgradeProperty(property);
     }
   }
 
   connectedCallback() {
-    this.style.cssText =
-      'display:block;width:100%;height:100vh;height:100dvh;overflow:hidden;';
+    this._applyHostStyle();
     window.addEventListener('message', this._onWindowMessage);
     // Re-entering the panel: the engine only reports changes, so restore the
     // state we already know instead of waiting for a message that never comes.
@@ -321,6 +321,21 @@ class VuePanelElement extends HTMLElement {
 
   get route() {
     return this._route;
+  }
+
+  set embedded(value) {
+    this._embedded = Boolean(value);
+    this._applyHostStyle();
+  }
+
+  get embedded() {
+    return this._embedded;
+  }
+
+  _applyHostStyle() {
+    this.style.cssText = this._embedded
+      ? 'display:block;width:100%;height:100%;overflow:hidden;'
+      : 'display:block;width:100%;height:100vh;height:100dvh;overflow:hidden;';
   }
 
   /** Prefix of the panel inside the HA URL, e.g. '/vue-test'. */

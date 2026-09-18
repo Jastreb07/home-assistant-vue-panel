@@ -42,11 +42,15 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Vue Panel from a config entry."""
 
+    manager: PanelManager | None = None
     try:
         await async_ensure_dashboards(hass, entry)
-        manager = PanelManager(hass)
+        repository: DashboardRepository = hass.data[DOMAIN][DATA_REPOSITORY]
+        manager = PanelManager(hass, repository)
         await manager.async_register_entry(entry)
     except (DashboardFileError, PanelRegistrationError):
+        if manager is not None:
+            await manager.async_unload()
         _LOGGER.exception("Unable to set up Vue Panel")
         return False
 

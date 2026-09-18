@@ -41,4 +41,6 @@ ein manueller Upload nach `config/www` ist nicht vorgesehen.
 Den Ordner `custom_components/vue_panel` nach `<config>/custom_components/vue_panel` kopieren,
 Home Assistant neu starten und Vue Panel unter **Einstellungen → Geräte & Dienste** hinzufügen.
 Dashboards werden anschließend als Subentries der Integration angelegt; YAML-`panel_custom` ist
-nicht erforderlich.
+nicht erforderlich. Jeder Subentry wird als integrationsverwaltetes Lovelace-Dashboard
+registriert und kann deshalb unter **Benutzerprofil → Dashboard** als Standard ausgewählt werden;
+Darstellung und Bearbeitung erfolgen weiterhin vollständig durch die Vue-Panel-Engine.

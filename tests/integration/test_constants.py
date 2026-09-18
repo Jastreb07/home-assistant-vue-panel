@@ -23,10 +23,11 @@ SPEC.loader.exec_module(constants)
 class IntegrationConstantTests(unittest.TestCase):
     """Keep the loader cache key aligned with the integration release."""
 
-    def test_panel_module_url_contains_integration_version(self) -> None:
+    def test_lovelace_module_url_contains_integration_version(self) -> None:
         self.assertEqual(
-            constants.PANEL_MODULE_URL,
-            f"{constants.STATIC_URL_BASE}/loader.js?v={constants.INTEGRATION_VERSION}",
+            constants.LOVELACE_MODULE_URL,
+            f"{constants.STATIC_URL_BASE}/lovelace.js"
+            f"?v={constants.INTEGRATION_VERSION}",
         )
 
     def test_manifest_matches_integration_version(self) -> None:
@@ -51,6 +52,16 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("isAdmin: this._hass?.user?.is_admin === true", loader)
         self.assertIn("Engine ${loadedVersion} loaded in isolated iframe", loader)
 
+        lovelace_path = MODULE_PATH.parent / "frontend" / "lovelace.js"
+        lovelace = lovelace_path.read_text(encoding="utf-8")
+        self.assertIn("customElements.define(CARD_TAG, VuePanelHost)", lovelace)
+        self.assertIn("document.createElement('vue-panel-panel')", lovelace)
+        self.assertIn("panel.embedded = true", lovelace)
+        self.assertIn("closestAcrossShadowRoots(this, 'hui-root')", lovelace)
+        self.assertIn("style.dataset.vuePanelNativeChrome = 'hidden'", lovelace)
+        self.assertIn("padding-top: var(--view-container-padding-top, 0px)", lovelace)
+        self.assertIn("'height:100dvh'", lovelace)
+
         engine_path = MODULE_PATH.parent / "frontend" / "engine"
         self.assertTrue((engine_path / "index.html").is_file())
         self.assertFalse((engine_path / "panel.js").exists())
@@ -60,7 +71,24 @@ class IntegrationConstantTests(unittest.TestCase):
         frontend_source = frontend_path.read_text(encoding="utf-8")
         self.assertIn("hass.http.async_register_static_paths", frontend_source)
         self.assertIn('Path(__file__).parent / "frontend"', frontend_source)
+        self.assertIn("frontend.add_extra_js_url", frontend_source)
+        self.assertIn("LOVELACE_MODULE_URL", frontend_source)
         self.assertNotIn('hass.config.path("www"', frontend_source)
+
+    def test_dashboard_is_registered_through_lovelace(self) -> None:
+        manager_path = MODULE_PATH.parent / "panel_manager.py"
+        manager = manager_path.read_text(encoding="utf-8")
+        self.assertIn('frontend.async_register_built_in_panel(', manager)
+        self.assertIn('"lovelace",', manager)
+        self.assertIn('"type": "custom:vue-panel-host"', manager)
+        self.assertNotIn("panel_custom.async_register_panel", manager)
+        self.assertNotIn("homeassistant.helpers.json", manager)
+        self.assertNotIn("cached_json_fragment", manager)
+
+        manifest_path = MODULE_PATH.parent / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.assertIn("lovelace", manifest["dependencies"])
+        self.assertNotIn("panel_custom", manifest["dependencies"])
 
 
 if __name__ == "__main__":

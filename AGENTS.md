@@ -344,6 +344,21 @@ Aktueller Stand:
   die PIN-Eingabe samt Tastenfeld ist auf 500px begrenzt und horizontal zentriert;
 - ab `2.2.57`/Engine `2.2.93` verwendet auch `.action-heading` dieselbe maximale Breite von
   500px und dieselbe horizontale Zentrierung wie die PIN-Eingabe;
+- ab `2.2.58`/Engine `2.2.93` registriert die Integration ihre Subentries als echte, von der
+  Integration verwaltete Lovelace-Dashboards statt als `panel_custom`. Eine read-only
+  `LovelaceConfig` erzeugt pro Vue-View eine HA-Panel-View mit `custom:vue-panel-host`; die global
+  geladene, kleine `lovelace.js`-Bridge bettet darin weiterhin den vorhandenen Loader und dessen
+  isoliertes Engine-iframe ein. Dadurch erscheinen Vue-Panel-Dashboards in Home Assistants
+  Dashboard-Liste und können im Benutzerprofil als Standard-Dashboard gewählt werden. Die
+  eigentliche Konfiguration bleibt ausschließlich in den privaten Vue-Panel-JSON-Dateien;
+- ab `2.2.59`/Engine `2.2.93` gibt die integrationsverwaltete `LovelaceConfig.async_json()` ihre
+  bereits JSON-kompatible Konfiguration direkt als Dictionary zurück. Der kurzzeitig in `2.2.58`
+  verwendete interne Import `homeassistant.helpers.json.cached_json_fragment` ist entfernt, weil
+  er in Home Assistant 2026.9 nicht mehr exportiert wird und den Integrationsstart verhinderte;
+- ab `2.2.60`/Engine `2.2.93` blendet die Lovelace-Host-Bridge innerhalb eines Vue-Panel-Dashboards
+  den nativen HA-Header im Shadow-DOM von `hui-root` aus und entfernt zugleich dessen reservierten
+  oberen Abstand. Der iframe nutzt dadurch wieder die volle Viewport-Höhe; beim Verlassen des
+  Dashboards entfernt der Host seinen Style-Eingriff vollständig;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
@@ -453,7 +468,11 @@ Aktueller Stand:
   manuellen Upload nach `config/www` und keine YAML-Panel-Registrierung.
 - `frontend.py` registriert `custom_components/vue_panel/frontend` über
   `hass.http.async_register_static_paths()` unter `/vue-panel-static/`.
-- Der Config-/Subentry-Flow registriert die Dashboards programmgesteuert über `panel_custom`.
+- Der Config-/Subentry-Flow registriert integrationseigene `LovelaceConfig`-Instanzen und
+  HA-Built-in-Panels vom Typ `lovelace`; `panel_custom` ist keine Abhängigkeit mehr.
+- `lovelace.js?v=<integrationVersion>` wird als zusätzliche Frontend-Ressource geladen und
+  registriert synchron `custom:vue-panel-host`. Der Host lädt den bestehenden Loader nach und
+  reicht `hass`, Dashboard-Metadaten sowie den aktuellen Lovelace-Unterpfad an ihn weiter.
 - `loader.js?v=<integrationVersion>` lädt `version.json` mit demselben Cache-Key und erzeugt danach
   ein iframe auf `engine/index.html?ver=<engineVersion>`; Chunks, Styles und Fonts tragen Inhalts-Hashes.
 - Der Loader hält die HA-Adresszeile und die Engine-Route synchron: `route` → `routePath`/

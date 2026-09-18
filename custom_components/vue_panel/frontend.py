@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from homeassistant.components import frontend
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.core import HomeAssistant
 
 from .card_storage import CARD_ASSET_URL_BASE
-from .const import PRIVATE_DIRECTORY, STATIC_URL_BASE
+from .const import LOVELACE_MODULE_URL, PRIVATE_DIRECTORY, STATIC_URL_BASE
 
 
 async def async_register_frontend(hass: HomeAssistant) -> None:
@@ -44,3 +45,4 @@ async def async_register_frontend(hass: HomeAssistant) -> None:
             ),
         ]
     )
+    frontend.add_extra_js_url(hass, LOVELACE_MODULE_URL)
