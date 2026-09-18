@@ -14,7 +14,7 @@ export type PortableCardCapability =
   | 'dashboard:context'
   | 'shell:events'
   | 'dialog:open'
-  /** Open Home Assistant's own panels — its config page, its notifications */
+  /** Open Home Assistant chrome/panels — mobile sidebar, config, notifications */
   | 'host:navigate'
   /** Read the counters HA shows on its sidebar (updates/repairs, notifications) */
   | 'host:badges'

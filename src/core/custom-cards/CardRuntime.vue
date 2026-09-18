@@ -382,7 +382,7 @@ function buildApi(capabilities: PortableCardCapability[]) {
     async openHostTarget(target: unknown) {
       guard('openHostTarget')
       const value = String(target)
-      if (value !== 'settings' && value !== 'notifications') {
+      if (value !== 'sidebar' && value !== 'settings' && value !== 'notifications') {
         throw new Error('Unknown host target.')
       }
       openHostTarget(value)

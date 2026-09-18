@@ -227,6 +227,7 @@
             "options": [
               "navigate",
               "back",
+              "sidebar",
               "settings",
               "notifications",
               "popup"
@@ -234,6 +235,7 @@
             "optionLabels": {
               "navigate": "translation.variables.items.items.action.navigate",
               "back": "translation.variables.items.items.action.back",
+              "sidebar": "translation.variables.items.items.action.sidebar",
               "settings": "translation.variables.items.items.action.settings",
               "notifications": "translation.variables.items.items.action.notifications",
               "popup": "translation.variables.items.items.action.popup"
@@ -364,6 +366,7 @@
         "translation.variables.items.items.action": "Entry type",
         "translation.variables.items.items.action.navigate": "Open a view or link",
         "translation.variables.items.items.action.back": "Go back",
+        "translation.variables.items.items.action.sidebar": "Toggle mobile sidebar",
         "translation.variables.items.items.action.settings": "Home Assistant settings",
         "translation.variables.items.items.action.notifications": "Home Assistant notifications",
         "translation.variables.items.items.action.popup": "Open a popup",
@@ -374,6 +377,7 @@
         "translation.variables.items.items.openIn.same": "Same tab",
         "translation.variables.items.items.openIn.new": "New tab",
         "translation.back": "Back",
+        "translation.sidebar": "Sidebar",
         "translation.settings": "Settings",
         "translation.notifications": "Notifications"
       },
@@ -417,6 +421,7 @@
         "translation.variables.items.items.action": "Art des Eintrags",
         "translation.variables.items.items.action.navigate": "Ansicht oder Link öffnen",
         "translation.variables.items.items.action.back": "Zurück navigieren",
+        "translation.variables.items.items.action.sidebar": "Mobile Seitenleiste umschalten",
         "translation.variables.items.items.action.settings": "Home-Assistant-Einstellungen",
         "translation.variables.items.items.action.notifications": "Home-Assistant-Benachrichtigungen",
         "translation.variables.items.items.action.popup": "Popup öffnen",
@@ -427,6 +432,7 @@
         "translation.variables.items.items.openIn.same": "Gleichem Tab",
         "translation.variables.items.items.openIn.new": "Neuem Tab",
         "translation.back": "Zurück",
+        "translation.sidebar": "Seitenleiste",
         "translation.settings": "Einstellungen",
         "translation.notifications": "Benachrichtigungen"
       }
@@ -1073,9 +1079,10 @@
   const hostBadges = { settings: 0, notifications: 0 };
 
   /* Actions that reach out into Home Assistant rather than this dashboard */
-  const HOST_ACTIONS = ['settings', 'notifications'];
+  const HOST_ACTIONS = ['sidebar', 'settings', 'notifications'];
 
   const HOST_DEFAULTS = {
+    sidebar: { icon: 'mdi:menu', label: 'translation.sidebar' },
     settings: { icon: 'mdi:cog', label: 'translation.settings' },
     notifications: { icon: 'mdi:bell', label: 'translation.notifications' }
   };
@@ -1719,7 +1726,7 @@
             url:
               (item && typeof item.url === 'string' && item.url.trim()) || '',
             action:
-              item && ['back', 'settings', 'notifications', 'popup'].includes(item.action)
+              item && ['back', 'sidebar', 'settings', 'notifications', 'popup'].includes(item.action)
                 ? item.action
                 : 'navigate',
             popup: (item && typeof item.popup === 'string' && item.popup) || '',

@@ -368,6 +368,17 @@ Aktueller Stand:
   Sidebar-Styles synchron beim Betreten des Dashboards, noch bevor Loader, iframe und Vue-Store
   bereit sind. Der Engine-Status übernimmt anschließend weiterhin Laufzeitänderungen und hält die
   Sidebar im Edit-Modus sichtbar;
+- ab `2.2.63`/Engine `2.2.94` bietet die Menu-Card als System-Eintrag „Mobile Seitenleiste öffnen“.
+  Der Loader gibt eine ausgeblendete HA-Sidebar dafür vorübergehend frei, öffnet den nativen Drawer
+  über `hass-toggle-menu` und stellt den Kiosk-Zustand nach dessen Schließen wieder her. Im
+  Listen-Picker besitzen Popups eine eigene Gruppe; die System-Gruppe wird im Code ausdrücklich
+  zuletzt angefügt und bleibt dadurch immer die letzte Gruppe;
+- ab `2.2.64`/Engine `2.2.95` ist der Sidebar-Systemeintrag ein echter Umschalter. Der Loader
+  berücksichtigt sowohl den nativen `drawer.open`-Zustand als auch die von Vue Panel gesetzten
+  Kiosk-Styles und sendet `hass-toggle-menu` mit dem jeweils entgegengesetzten `open`-Wert;
+- ab `2.2.65` stellt der Sidebar-Umschalter beim persistenten Desktop-Drawer den ausgeblendeten
+  Vue-Panel-Zustand direkt nach dem Schließbefehl wieder her. Anders als der mobile Modal-Drawer
+  sendet Home Assistants Desktop-Drawer dabei nicht zuverlässig `hass-drawer-closed`;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

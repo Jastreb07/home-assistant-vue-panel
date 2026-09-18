@@ -150,6 +150,19 @@ Diese blendet die HA-Seitenleiste synchron beim Verbinden der Host-Card aus, sod
 nach dem Start von iframe und Vue-Store verschwindet. Danach bleibt die bestehende Laufzeitsteuerung
 der Engine maßgeblich, einschließlich der sichtbaren Sidebar im Edit-Modus.
 
+Ab `2.2.63`/Engine `2.2.94` kann die Menu-Card über einen eigenen System-Eintrag den nativen
+mobilen HA-Drawer öffnen. Eine kioskbedingt ausgeblendete Sidebar wird dafür nur vorübergehend
+freigegeben und nach dem Schließen wieder verborgen. Popup-Ziele stehen im Listen-Picker in einer
+eigenen Gruppe, während „System“ bewusst und per Code-Kommentar abgesichert zuletzt erscheint.
+
+Ab `2.2.64`/Engine `2.2.95` schaltet derselbe Menüeintrag den mobilen HA-Drawer sowohl auf als
+auch zu. Der Loader kombiniert dafür den nativen Öffnungszustand mit dem Vue-Panel-Kioskzustand
+und übergibt den berechneten Zielzustand explizit an `hass-toggle-menu`.
+
+Ab `2.2.65` stellt der Loader beim Schließen des persistenten Desktop-Drawers den zuvor
+ausgeblendeten Sidebar-Zustand unmittelbar wieder her, weil dieser Drawer anders als die mobile
+Modal-Variante kein verlässliches `hass-drawer-closed`-Ereignis liefert.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

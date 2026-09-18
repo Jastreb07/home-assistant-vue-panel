@@ -181,10 +181,12 @@ export default {
       addEntry: 'Add entry',
       addAllViews: 'Add all views',
       groupViews: 'Views',
+      groupPopups: 'Popups',
       groupSystem: 'System',
       systemEntries: {
         custom: 'Custom',
         back: 'Back',
+        sidebar: 'Toggle mobile sidebar',
         settings: 'Settings',
         notifications: 'Notifications',
       },

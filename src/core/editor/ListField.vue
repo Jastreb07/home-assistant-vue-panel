@@ -67,10 +67,11 @@ const actionField = computed(() => itemFields.value.find((f) => f.key === 'actio
 const actionKey = computed(() => actionField.value?.key)
 
 /** Action values the add menu offers as ready-made entries, in this order. */
-const SYSTEM_ACTIONS = ['custom', 'back', 'settings', 'notifications'] as const
+const SYSTEM_ACTIONS = ['custom', 'back', 'sidebar', 'settings', 'notifications'] as const
 const SYSTEM_ICONS: Record<string, string> = {
   custom: 'mdi:link-variant',
   back: 'mdi:arrow-left',
+  sidebar: 'mdi:menu',
   settings: 'mdi:cog',
   notifications: 'mdi:bell',
 }
@@ -80,15 +81,13 @@ const systemActions = computed(() => {
   return SYSTEM_ACTIONS.filter((action) => action === 'custom' || available.includes(action))
 })
 
-/** Popups can be opened as a system entry too — one per popup, not per action. */
+/** Popups are offered as their own picker group — one entry per popup. */
 const offersPopups = computed(
   () => Boolean(popupKey.value) && (actionField.value?.options ?? []).includes('popup'),
 )
 
 /**
- * Views first, then the system entries (including one per available popup) —
- * the split the dropdown shows as two headed sections. Values are prefixed
- * so a system entry can never collide with a view or popup id.
+ * Values are prefixed so entries from different groups can never collide.
  */
 const viewOptions = computed<SelectOption[]>(() => {
   const views: SelectOption[] = store.config.views.map((v) => ({
@@ -100,20 +99,21 @@ const viewOptions = computed<SelectOption[]>(() => {
   if (!actionField.value) return views
   return [
     ...views,
+    ...(offersPopups.value
+      ? store.popups.map((popup) => ({
+          value: `popup:${popup.id}`,
+          label: popup.title,
+          icon: popup.icon || 'mdi:card-text-outline',
+          group: t('editor.list.groupPopups'),
+        }))
+      : []),
+    // Keep this spread last: the "System" group must always be the final picker group.
     ...systemActions.value.map((action) => ({
       value: `system:${action}`,
       label: t(`editor.list.systemEntries.${action}`),
       icon: SYSTEM_ICONS[action] ?? 'mdi:cog',
       group: t('editor.list.groupSystem'),
     })),
-    ...(offersPopups.value
-      ? store.popups.map((popup) => ({
-          value: `popup:${popup.id}`,
-          label: popup.title,
-          icon: popup.icon || 'mdi:card-text-outline',
-          group: t('editor.list.groupSystem'),
-        }))
-      : []),
   ]
 })
 

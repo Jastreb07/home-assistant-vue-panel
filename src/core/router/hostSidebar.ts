@@ -20,7 +20,7 @@ export function reportSidebarHidden(hidden: boolean): void {
 }
 
 /** Home Assistant destinations a card may ask the host page to open. */
-export type HostTarget = 'settings' | 'notifications'
+export type HostTarget = 'sidebar' | 'settings' | 'notifications'
 
 /**
  * Open one of Home Assistant's own screens. Only the host page can do this:

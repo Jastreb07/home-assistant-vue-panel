@@ -50,6 +50,10 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("type: 'vue-panel:auth'", loader)
         self.assertIn("dashboardName: config.dashboardName", loader)
         self.assertIn("isAdmin: this._hass?.user?.is_admin === true", loader)
+        self.assertIn("target === 'sidebar'", loader)
+        self.assertIn("new CustomEvent('hass-toggle-menu'", loader)
+        self.assertIn('detail: { open: shouldOpen }', loader)
+        self.assertIn("drawer.type !== 'modal'", loader)
         self.assertIn("Engine ${loadedVersion} loaded in isolated iframe", loader)
 
         lovelace_path = MODULE_PATH.parent / "frontend" / "lovelace.js"

@@ -181,10 +181,12 @@ export default {
       addEntry: 'Eintrag hinzufügen',
       addAllViews: 'Alle Ansichten hinzufügen',
       groupViews: 'Ansichten',
+      groupPopups: 'Popups',
       groupSystem: 'System',
       systemEntries: {
         custom: 'Custom',
         back: 'Zurück',
+        sidebar: 'Mobile Seitenleiste umschalten',
         settings: 'Einstellungen',
         notifications: 'Benachrichtigungen',
       },

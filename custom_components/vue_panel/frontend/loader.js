@@ -100,21 +100,62 @@ function blockToggleMenu(event) {
  * notification drawer is not a route at all — HA's sidebar opens it by
  * firing 'hass-show-notifications', which `home-assistant-main` listens for.
  */
-function openHostTarget(target) {
-  const { main } = haShell();
+function openHostTarget(target, onSidebarClosed) {
+  const { main, drawer } = haShell();
+
+  if (target === 'sidebar') {
+    if (!main || !drawer) {
+      console.warn('[Vue Panel] Home Assistant sidebar not found — cannot open it.');
+      return null;
+    }
+
+    const sidebarIsCollapsed = Boolean(
+      drawer.querySelector(`#${SIDEBAR_STYLE_ID}`)
+        || drawer.shadowRoot?.querySelector(`#${SIDEBAR_STYLE_ID}`),
+    );
+    const shouldOpen = !(drawer.open && !sidebarIsCollapsed);
+
+    if (shouldOpen && onSidebarClosed) setSidebarHidden(false);
+
+    let closedHandled = false;
+    const closed = () => {
+      if (closedHandled) return;
+      closedHandled = true;
+      onSidebarClosed?.();
+    };
+    if (onSidebarClosed) drawer.addEventListener('hass-drawer-closed', closed, { once: true });
+
+    const frame = requestAnimationFrame(() => {
+      main.dispatchEvent(
+        new CustomEvent('hass-toggle-menu', {
+          detail: { open: shouldOpen },
+          bubbles: true,
+          composed: true,
+        }),
+      );
+      // HA's persistent desktop drawer does not emit hass-drawer-closed.
+      // Restore Vue Panel's hidden-sidebar state immediately after closing it.
+      if (!shouldOpen && onSidebarClosed && drawer.type !== 'modal') closed();
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      drawer.removeEventListener('hass-drawer-closed', closed);
+    };
+  }
 
   if (target === 'notifications') {
     if (!main) {
       console.warn('[Vue Panel] Home Assistant shell not found — cannot open notifications.');
-      return;
+      return null;
     }
     main.dispatchEvent(
       new CustomEvent('hass-show-notifications', { bubbles: true, composed: true }),
     );
-    return;
+    return null;
   }
 
-  if (target !== 'settings') return;
+  if (target !== 'settings') return null;
 
   if (location.pathname !== '/config/dashboard') {
     window.history.pushState(null, '', '/config/dashboard');
@@ -126,6 +167,7 @@ function openHostTarget(target) {
       }),
     );
   }
+  return null;
 }
 
 /**
@@ -247,6 +289,7 @@ class VuePanelElement extends HTMLElement {
     this._enginePath = null;
     /** Whether this panel currently asks for HA's sidebar to be collapsed. */
     this._sidebarHidden = false;
+    this._sidebarDrawerCleanup = null;
     this._onFrameLoad = () => this._sendContext();
     this._onWindowMessage = (event) => this._handleMessage(event);
 
@@ -274,6 +317,8 @@ class VuePanelElement extends HTMLElement {
 
   disconnectedCallback() {
     window.removeEventListener('message', this._onWindowMessage);
+    this._sidebarDrawerCleanup?.();
+    this._sidebarDrawerCleanup = null;
     // Overlay cards belong to the engine's current DOM — it rebuilds them
     // (and asks for fresh ones) when the panel is entered again.
     this._clearHassCards();
@@ -772,7 +817,16 @@ class VuePanelElement extends HTMLElement {
       return;
     }
     if (event.data?.type === 'vue-panel:host-open') {
-      openHostTarget(event.data.target);
+      this._sidebarDrawerCleanup?.();
+      this._sidebarDrawerCleanup = openHostTarget(
+        event.data.target,
+        this._sidebarHidden
+          ? () => {
+              this._sidebarDrawerCleanup = null;
+              if (this.isConnected && this._sidebarHidden) setSidebarHidden(true);
+            }
+          : null,
+      );
       return;
     }
     if (event.data?.type === 'vue-panel:ha-more-info') {
@@ -838,6 +892,8 @@ class VuePanelElement extends HTMLElement {
       return;
     }
     if (event.data?.type === 'vue-panel:sidebar') {
+      this._sidebarDrawerCleanup?.();
+      this._sidebarDrawerCleanup = null;
       this._sidebarHidden = event.data.hidden === true;
       setSidebarHidden(this._sidebarHidden);
       return;
