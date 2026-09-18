@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
 import { useHaStatus } from '@/core/ha'
+import { useDashboardStore } from '@/core/config/dashboardStore'
 import DialogHost from '@/core/ui/DialogHost.vue'
 import GlobalCss from '@/core/ui/GlobalCss.vue'
 
 const { t } = useI18n()
 const { status, errorMessage } = useHaStatus()
+const store = useDashboardStore()
 </script>
 
 <template>
@@ -18,6 +20,11 @@ const { status, errorMessage } = useHaStatus()
   </div>
   <div v-else-if="status === 'error'" class="status-overlay">
     <p>{{ t('app.connectionError', { message: errorMessage }) }}</p>
+  </div>
+  <!-- Keep the loading screen up until the dashboard JSON is fully loaded. -->
+  <div v-else-if="!store.loaded" class="status-overlay">
+    <div class="spinner" />
+    <p>{{ t('app.loadingDashboard') }}</p>
   </div>
   <RouterView v-else />
   <DialogHost />

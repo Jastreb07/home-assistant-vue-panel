@@ -207,6 +207,16 @@ export function announceEmbeddedPanelReady(engineVersion: string): void {
   window.parent.postMessage({ type: 'vue-panel:ready', engineVersion }, location.origin)
 }
 
+/**
+ * Surface a fatal engine startup failure (e.g. the dashboard JSON could not be
+ * loaded) instead of leaving the loading screen spinning forever.
+ */
+export function reportEngineStartupError(error: unknown): void {
+  if (status.value === 'error' || status.value === 'auth-required') return
+  status.value = 'error'
+  errorMessage.value = error instanceof Error ? error.message : String(error)
+}
+
 export function getConnection(): Connection | null {
   return connection
 }

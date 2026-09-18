@@ -6,6 +6,7 @@ import {
   connectForEmbeddedPanel,
   connectForDevelopment,
   getDashboardName,
+  reportEngineStartupError,
 } from './core/ha'
 import { applyHaLocale } from './i18n'
 import { applyHostRoutePath } from './core/router/panelNavigation'
@@ -43,4 +44,7 @@ async function start(): Promise<void> {
 }
 
 start()
-  .catch((error) => console.error('[vue-panel] Engine startup failed:', error))
+  .catch((error) => {
+    reportEngineStartupError(error)
+    console.error('[vue-panel] Engine startup failed:', error)
+  })

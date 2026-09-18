@@ -8,6 +8,7 @@ export {
   getConnection,
   getDashboardName,
   isDevelopmentConnection,
+  reportEngineStartupError,
   setPanelRegistration,
   useHaAdministrator,
   useEntities,

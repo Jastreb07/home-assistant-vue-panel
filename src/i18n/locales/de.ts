@@ -36,6 +36,7 @@ export default {
   },
   app: {
     connecting: 'Verbinde mit Home Assistant…',
+    loadingDashboard: 'Dashboard wird geladen…',
     authRequired:
       'Keine Anmeldung möglich. Im Dev-Modus .env.example nach .env.local kopieren und Token eintragen — in Produktion wird die Anmeldung direkt von Home Assistant bereitgestellt.',
     connectionError: 'Verbindungsfehler: {message}',

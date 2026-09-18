@@ -36,6 +36,7 @@ export default {
   },
   app: {
     connecting: 'Connecting to Home Assistant…',
+    loadingDashboard: 'Loading dashboard…',
     authRequired:
       'Sign-in is unavailable. In development, copy .env.example to .env.local and set a token — in production authentication is supplied directly by Home Assistant.',
     connectionError: 'Connection error: {message}',

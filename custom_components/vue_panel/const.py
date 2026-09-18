@@ -17,7 +17,7 @@ CONF_REVISION: Final = "revision"
 DEFAULT_DASHBOARD_ICON: Final = "mdi:view-dashboard"
 DEFAULT_REQUIRE_ADMIN: Final = False
 
-INTEGRATION_VERSION: Final = "2.2.73"
+INTEGRATION_VERSION: Final = "2.2.74"
 STATIC_URL_BASE: Final = "/vue-panel-static"
 LOVELACE_MODULE_URL: Final = (f"{STATIC_URL_BASE}/lovelace.js?v={INTEGRATION_VERSION}")
 # The Lovelace resource intentionally uses a distinct URL: browsers pin failed
@@ -26,7 +26,7 @@ LOVELACE_MODULE_URL: Final = (f"{STATIC_URL_BASE}/lovelace.js?v={INTEGRATION_VER
 LOVELACE_RESOURCE_URL: Final = (
     f"{STATIC_URL_BASE}/lovelace.js?v={INTEGRATION_VERSION}&channel=resource"
 )
-ENGINE_VERSION: Final = "2.2.96"
+ENGINE_VERSION: Final = "2.2.97"
 API_VERSION: Final = 1
 
 """Fired after a dashboard was written, so other open panels can catch up."""

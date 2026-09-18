@@ -437,6 +437,13 @@ Aktueller Stand:
   Ohne gespeicherten Wert (Erstbesuch, Private Mode) gilt die OS-Präferenz
   (`prefers-color-scheme`); sobald die Dashboard-Settings geladen sind, korrigiert `useTheme`
   weiterhin reaktiv;
+- ab `2.2.74`/Engine `2.2.97` bleibt der Ladebildschirm sichtbar, bis die Dashboard-JSON
+  vollständig geladen ist: `App.vue` rendert die `RouterView` erst bei `store.loaded` und zeigt
+  nach dem Verbindungsaufbau das Spinner-Overlay mit „Dashboard wird geladen…“
+  (`app.loadingDashboard`), statt kurz eine leere Platzhalter-Config darzustellen. Schlägt der
+  Engine-Start fehl (Card-Katalog oder Dashboard-Datei), meldet `main.ts` den Fehler über das neue
+  `reportEngineStartupError()` an den HA-Status und die Fehlermeldung erscheint statt eines
+  endlosen Spinners;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
