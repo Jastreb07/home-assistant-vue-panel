@@ -65,6 +65,9 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("panelMountFor(lovelaceRoot, this._config.dashboardName)", lovelace)
         self.assertIn("viewContainer.insertBefore(container, viewContainer.firstChild)", lovelace)
         self.assertNotIn("this.appendChild(panel)", lovelace)
+        self.assertIn("const sidebarBootstraps = new WeakMap()", lovelace)
+        self.assertIn("this._config.hideHaSidebar === true", lovelace)
+        self.assertIn("setSidebarHiddenEarly(true)", lovelace)
 
         engine_path = MODULE_PATH.parent / "frontend" / "engine"
         self.assertTrue((engine_path / "index.html").is_file())
@@ -85,6 +88,7 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn('frontend.async_register_built_in_panel(', manager)
         self.assertIn('"lovelace",', manager)
         self.assertIn('"type": "custom:vue-panel-host"', manager)
+        self.assertIn('"hideHaSidebar": hide_ha_sidebar', manager)
         self.assertNotIn("panel_custom.async_register_panel", manager)
         self.assertNotIn("homeassistant.helpers.json", manager)
         self.assertNotIn("cached_json_fragment", manager)

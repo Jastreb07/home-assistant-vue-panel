@@ -363,6 +363,11 @@ Aktueller Stand:
   `hui-view`, sondern einmalig als erster, absolut positionierter Knoten im stabilen
   `hui-view-container`. Lovelace kann dadurch weiterhin die echte URL und Browser-History führen,
   ohne bei jedem Vue-View-Wechsel das Engine-iframe und die Vue-Runtime neu zu erzeugen;
+- ab `2.2.62`/Engine `2.2.93` enthält die generierte Lovelace-Host-Card zusätzlich die gespeicherte
+  Einstellung `hideHaSidebar`. Die bereits beim HA-Start geladene Host-Bridge setzt damit die
+  Sidebar-Styles synchron beim Betreten des Dashboards, noch bevor Loader, iframe und Vue-Store
+  bereit sind. Der Engine-Status übernimmt anschließend weiterhin Laufzeitänderungen und hält die
+  Sidebar im Edit-Modus sichtbar;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

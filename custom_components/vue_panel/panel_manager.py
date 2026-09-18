@@ -87,6 +87,7 @@ class VuePanelLovelaceConfig(LovelaceConfig):
         """Generate a Lovelace wrapper from the current Vue Panel views."""
 
         document = await self.repository.async_load(self.subentry)
+        hide_ha_sidebar = document.get("settings", {}).get("hideHaSidebar") is True
         views = []
         for view in document["views"]:
             lovelace_view: dict[str, Any] = {
@@ -100,6 +101,7 @@ class VuePanelLovelaceConfig(LovelaceConfig):
                         "title": self.title,
                         "engineVersion": ENGINE_VERSION,
                         "apiVersion": API_VERSION,
+                        "hideHaSidebar": hide_ha_sidebar,
                     }
                 ],
             }

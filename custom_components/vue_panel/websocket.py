@@ -122,7 +122,11 @@ def _announce_dashboard_update(
 def _lovelace_view_signature(document: dict[str, Any]) -> tuple[tuple[Any, ...], ...]:
     """Return fields that affect the generated Lovelace view wrapper."""
 
-    return tuple(
+    settings_signature = (
+        "settings",
+        document.get("settings", {}).get("hideHaSidebar") is True,
+    )
+    return (settings_signature,) + tuple(
         (
             view.get("id"),
             view.get("path"),

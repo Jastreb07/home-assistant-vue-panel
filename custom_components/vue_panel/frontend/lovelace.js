@@ -12,6 +12,8 @@ if (integrationVersion) panelLoaderUrl.searchParams.set('v', integrationVersion)
 
 const CARD_TAG = 'vue-panel-host';
 const mountedPanels = new WeakMap();
+const sidebarBootstraps = new WeakMap();
+const SIDEBAR_STYLE_ID = 'vue-panel-hidden-sidebar';
 const NATIVE_CHROME_STYLE = `
   .header {
     display: none !important;
@@ -22,6 +24,45 @@ const NATIVE_CHROME_STYLE = `
     padding-top: var(--view-container-padding-top, 0px) !important;
   }
 `;
+
+const SIDEBAR_SHELL_CSS = `
+  :host { --ha-sidebar-width: 0px !important; --kiosk-sidebar-width: 0px; }
+  partial-panel-resolver { --mdc-top-app-bar-width: 100% !important; }
+  ha-drawer > ha-sidebar { display: none !important; }
+  .header { width: 100% !important; }
+`;
+
+const SIDEBAR_DRAWER_CSS = `
+  wa-drawer, .sidebar-shell, .mdc-drawer { display: none !important; }
+`;
+
+function setSidebarStyle(target, css) {
+  if (!target) return;
+  const existing = target.querySelector(`#${SIDEBAR_STYLE_ID}`);
+  if (!css) {
+    existing?.remove();
+    return;
+  }
+  if (existing) {
+    existing.textContent = css;
+    return;
+  }
+  const style = document.createElement('style');
+  style.id = SIDEBAR_STYLE_ID;
+  style.textContent = css;
+  target.appendChild(style);
+}
+
+function setSidebarHiddenEarly(hidden) {
+  const main = document
+    .querySelector('home-assistant')
+    ?.shadowRoot?.querySelector('home-assistant-main');
+  const drawer = main?.shadowRoot?.querySelector('ha-drawer');
+  if (!main || !drawer) return;
+  setSidebarStyle(drawer, hidden ? SIDEBAR_SHELL_CSS : '');
+  setSidebarStyle(drawer.shadowRoot, hidden ? SIDEBAR_DRAWER_CSS : '');
+  window.dispatchEvent(new Event('resize'));
+}
 
 function closestAcrossShadowRoots(element, selector) {
   let current = element;
@@ -77,6 +118,8 @@ class VuePanelHost extends HTMLElement {
     this._mountGeneration = 0;
     this._nativeChromeStyle = null;
     this._nativeChromeFrame = 0;
+    this._lovelaceRoot = null;
+    this._sidebarCleanupFrame = 0;
     this._onLocationChanged = () => this._syncRoute();
     this._onResize = () => this._syncHostContext();
   }
@@ -86,6 +129,7 @@ class VuePanelHost extends HTMLElement {
       throw new Error('Vue Panel host requires dashboardName.');
     }
     this._config = { ...config };
+    this._bootstrapSidebar();
     this._syncHostContext();
     this._mount();
   }
@@ -112,6 +156,7 @@ class VuePanelHost extends HTMLElement {
     window.addEventListener('popstate', this._onLocationChanged);
     window.addEventListener('resize', this._onResize);
     this._hideNativeChrome();
+    this._bootstrapSidebar();
     this._syncHostContext();
     this._mount();
   }
@@ -125,6 +170,14 @@ class VuePanelHost extends HTMLElement {
     this._nativeChromeFrame = 0;
     this._nativeChromeStyle?.remove();
     this._nativeChromeStyle = null;
+    const lovelaceRoot = this._lovelaceRoot;
+    cancelAnimationFrame(this._sidebarCleanupFrame);
+    this._sidebarCleanupFrame = requestAnimationFrame(() => {
+      this._sidebarCleanupFrame = 0;
+      if (lovelaceRoot?.isConnected || !sidebarBootstraps.get(lovelaceRoot)) return;
+      setSidebarHiddenEarly(false);
+      sidebarBootstraps.delete(lovelaceRoot);
+    });
   }
 
   getCardSize() {
@@ -151,6 +204,17 @@ class VuePanelHost extends HTMLElement {
     style.textContent = NATIVE_CHROME_STYLE;
     lovelaceRoot.shadowRoot.appendChild(style);
     this._nativeChromeStyle = style;
+  }
+
+  _bootstrapSidebar() {
+    if (!this.isConnected || !this._config) return;
+    const lovelaceRoot = closestAcrossShadowRoots(this, 'hui-root');
+    if (!lovelaceRoot) return;
+    this._lovelaceRoot = lovelaceRoot;
+    if (sidebarBootstraps.has(lovelaceRoot)) return;
+    const hidden = this._config.hideHaSidebar === true;
+    sidebarBootstraps.set(lovelaceRoot, hidden);
+    if (hidden) setSidebarHiddenEarly(true);
   }
 
   async _mount() {

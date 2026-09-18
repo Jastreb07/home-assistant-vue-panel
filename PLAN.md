@@ -145,6 +145,11 @@ verankert. Home Assistant darf seine routeabhängigen `hui-view`-Elemente weiter
 ohne dabei die Vue-Runtime neu zu laden; interne Navigation, History und Deep-Links bleiben so
 SPA-Navigation.
 
+Ab `2.2.62`/Engine `2.2.93` reicht die Lovelace-Fassade `hideHaSidebar` vorab an die Host-Bridge.
+Diese blendet die HA-Seitenleiste synchron beim Verbinden der Host-Card aus, sodass sie nicht erst
+nach dem Start von iframe und Vue-Store verschwindet. Danach bleibt die bestehende Laufzeitsteuerung
+der Engine maßgeblich, einschließlich der sichtbaren Sidebar im Edit-Modus.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.
