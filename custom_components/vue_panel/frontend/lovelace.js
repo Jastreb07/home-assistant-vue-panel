@@ -96,37 +96,87 @@ function isVuePanelLovelaceRoot(lovelaceRoot) {
 
 /**
  * Repair the cold-cache race between HA rendering the dashboard and loading
- * its globally registered modules. Companion WebViews can mount `hui-root`
- * several frames after this module executes, so wait for its configuration.
- * `config-refresh` is HA's supported path from hui-root to ha-panel-lovelace;
- * it fetches the same read-only facade again and recreates the failed card now
- * that vue-panel-host is defined.
+ * its globally registered modules. When Lovelace built the view before this
+ * module executed, the panel shows a `hui-error-card` ("Custom element
+ * doesn't exist"). HA's own `customElements.whenDefined` rebuild covers most
+ * cases, but it never retries when a module load failed once (the browser
+ * pins failed module URLs) and it misses roots mounted much later.
+ *
+ * The watchdog below therefore stays armed for the whole page lifetime: it
+ * re-checks on every navigation and visibility change, rebuilds broken cards
+ * through HA's supported `ll-rebuild` event and only falls back to a full
+ * throttled `config-refresh` when no error card is reachable.
  */
-function repairColdStart(attempt = 0, refreshes = 0) {
+function repairBrokenRoots(step) {
   const roots = findAcrossShadowRoots(document, 'hui-root');
-  let waitingForConfig = roots.length === 0;
+  // Signal "keep retrying" while no vue-panel root has rendered its config.
+  let pending = roots.length === 0;
 
   for (const lovelaceRoot of roots) {
     const isVuePanel = isVuePanelLovelaceRoot(lovelaceRoot);
     if (isVuePanel === null) {
-      waitingForConfig = true;
+      pending = true;
       continue;
     }
     if (!isVuePanel) continue;
+    if (findAcrossShadowRoots(lovelaceRoot.shadowRoot, CARD_TAG).length > 0) continue;
 
-    if (findAcrossShadowRoots(lovelaceRoot.shadowRoot, CARD_TAG).length > 0) return;
+    pending = true;
+    const errorCards = findAcrossShadowRoots(lovelaceRoot.shadowRoot, 'hui-error-card');
+    if (errorCards.length > 0) {
+      // hui-card listens for ll-rebuild directly on its created element and
+      // recreates just that card - now resolving to the defined host.
+      for (const errorCard of errorCards) {
+        errorCard.dispatchEvent(new Event('ll-rebuild'));
+      }
+      continue;
+    }
+
+    // A freshly rendered root may briefly have neither host nor error card.
+    // Only the later steps escalate to a full, throttled config refresh.
+    if (step < 2) continue;
+    const now = Date.now();
+    if (now - repairState.lastConfigRefresh < 2000) continue;
+    repairState.lastConfigRefresh = now;
     lovelaceRoot.dispatchEvent(
       new CustomEvent('config-refresh', { bubbles: true, composed: true }),
     );
-    if (refreshes < 2) {
-      window.setTimeout(() => repairColdStart(attempt, refreshes + 1), 1000);
-    }
-    return;
   }
 
-  if (waitingForConfig && attempt < 50) {
-    window.setTimeout(() => repairColdStart(attempt + 1, refreshes), 100);
-  }
+  return pending;
+}
+
+const REPAIR_DELAYS = [0, 300, 1000, 2500, 5000, 10000];
+
+function armRepairWatchdog() {
+  repairState.generation += 1;
+  const generation = repairState.generation;
+  const run = (step) => {
+    if (generation !== repairState.generation) return;
+    const pending = repairBrokenRoots(step);
+    if (pending && step < REPAIR_DELAYS.length - 1) {
+      window.setTimeout(() => run(step + 1), REPAIR_DELAYS[step + 1]);
+    }
+  };
+  requestAnimationFrame(() => run(0));
+}
+
+// Single shared state even when this module is evaluated through both load
+// channels (extra_module_url and the Lovelace resource use distinct URLs so
+// one failed fetch cannot poison the other in the browser's module map).
+const repairState = window.__vuePanelHostRepair || (window.__vuePanelHostRepair = {
+  generation: 0,
+  lastConfigRefresh: 0,
+  listenersInstalled: false,
+});
+
+if (!repairState.listenersInstalled) {
+  repairState.listenersInstalled = true;
+  window.addEventListener('location-changed', armRepairWatchdog);
+  window.addEventListener('popstate', armRepairWatchdog);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') armRepairWatchdog();
+  });
 }
 
 function panelMountFor(lovelaceRoot, dashboardName) {
@@ -326,8 +376,8 @@ class VuePanelHost extends HTMLElement {
 
 if (!customElements.get(CARD_TAG)) {
   customElements.define(CARD_TAG, VuePanelHost);
-  repairColdStart();
 }
+armRepairWatchdog();
 
 window.customCards = window.customCards || [];
 if (!window.customCards.some((card) => card?.type === CARD_TAG)) {

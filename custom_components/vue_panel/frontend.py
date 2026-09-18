@@ -16,7 +16,12 @@ from homeassistant.const import CONF_ID, CONF_TYPE, CONF_URL
 from homeassistant.core import HomeAssistant
 
 from .card_storage import CARD_ASSET_URL_BASE
-from .const import LOVELACE_MODULE_URL, PRIVATE_DIRECTORY, STATIC_URL_BASE
+from .const import (
+    LOVELACE_MODULE_URL,
+    LOVELACE_RESOURCE_URL,
+    PRIVATE_DIRECTORY,
+    STATIC_URL_BASE,
+)
 
 
 def _is_own_lovelace_resource(item: dict[str, Any]) -> bool:
@@ -45,14 +50,14 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         if owned:
             primary = owned[0]
             if (
-                primary.get(CONF_URL) != LOVELACE_MODULE_URL
+                primary.get(CONF_URL) != LOVELACE_RESOURCE_URL
                 or primary.get(CONF_TYPE) != "module"
             ):
                 await resources.async_update_item(
                     primary[CONF_ID],
                     {
                         CONF_RESOURCE_TYPE_WS: "module",
-                        CONF_URL: LOVELACE_MODULE_URL,
+                        CONF_URL: LOVELACE_RESOURCE_URL,
                     },
                 )
             for duplicate in owned[1:]:
@@ -62,7 +67,7 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
         await resources.async_create_item(
             {
                 CONF_RESOURCE_TYPE_WS: "module",
-                CONF_URL: LOVELACE_MODULE_URL,
+                CONF_URL: LOVELACE_RESOURCE_URL,
             }
         )
         return
@@ -72,7 +77,7 @@ async def _async_register_lovelace_resource(hass: HomeAssistant) -> None:
     # module here neither edits configuration.yaml nor survives uninstalling.
     yaml_items = resources.async_items()
     yaml_items[:] = [item for item in yaml_items if not _is_own_lovelace_resource(item)]
-    yaml_items.append({CONF_TYPE: "module", CONF_URL: LOVELACE_MODULE_URL})
+    yaml_items.append({CONF_TYPE: "module", CONF_URL: LOVELACE_RESOURCE_URL})
 
 
 async def async_unregister_lovelace_resource(hass: HomeAssistant) -> None:

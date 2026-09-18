@@ -17,9 +17,15 @@ CONF_REVISION: Final = "revision"
 DEFAULT_DASHBOARD_ICON: Final = "mdi:view-dashboard"
 DEFAULT_REQUIRE_ADMIN: Final = False
 
-INTEGRATION_VERSION: Final = "2.2.70"
+INTEGRATION_VERSION: Final = "2.2.71"
 STATIC_URL_BASE: Final = "/vue-panel-static"
 LOVELACE_MODULE_URL: Final = (f"{STATIC_URL_BASE}/lovelace.js?v={INTEGRATION_VERSION}")
+# The Lovelace resource intentionally uses a distinct URL: browsers pin failed
+# module fetches per exact URL, so one broken early import (e.g. during HA
+# boot) must not poison the second load channel.
+LOVELACE_RESOURCE_URL: Final = (
+    f"{STATIC_URL_BASE}/lovelace.js?v={INTEGRATION_VERSION}&channel=resource"
+)
 ENGINE_VERSION: Final = "2.2.95"
 API_VERSION: Final = 1
 

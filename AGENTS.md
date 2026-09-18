@@ -406,6 +406,20 @@ Aktueller Stand:
   Breadcrumb, Uhr, Wetter sowie Beispiel-Raumkacheln. Die ausgelieferte Vorlage beginnt unabhängig
   von der Revision der Quelldatei immer mit Revision 1; bereits vorhandene Dashboards bleiben
   unverändert;
+- ab `2.2.71` ist der sporadische „Konfigurationsfehler“ (hui-error-card wegen noch nicht
+  definiertem `custom:vue-panel-host`) an beiden verbliebenen Wurzeln behoben: Erstens lädt die
+  Lovelace-Ressource `lovelace.js` jetzt mit dem zusätzlichen Query-Parameter `channel=resource`
+  und damit unter einer anderen URL als `extra_module_url` — Browser merken sich fehlgeschlagene
+  Modul-Importe pro exakter URL dauerhaft, ein einzelner früher Fehlversuch (z. B. Seitenaufruf
+  während HA noch bootet) konnte deshalb zuvor beide Ladekanäle gleichzeitig vergiften. Zweitens
+  ersetzt ein dauerhaft aktiver Watchdog den früheren One-Shot-`repairColdStart`: Er wird bei
+  Modulauswertung, `location-changed`, `popstate` und beim Sichtbarwerden des Tabs neu bewaffnet
+  (geteilter Zustand in `window.__vuePanelHostRepair`, damit die doppelte Modulauswertung keine
+  doppelten Listener anlegt), prüft in gestaffelten Schritten (0 ms–10 s) alle `hui-root`s und
+  repariert kaputte Vue-Panel-Roots zuerst gezielt über HAs eigenes `ll-rebuild` direkt auf der
+  `hui-error-card` (hui-card hört darauf und baut nur diese Card neu); nur wenn keine Fehler-Card
+  erreichbar ist, folgt ab dem dritten Schritt der schwere `config-refresh`, auf höchstens einen
+  pro zwei Sekunden gedrosselt;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
