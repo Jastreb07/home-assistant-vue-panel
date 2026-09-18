@@ -359,6 +359,10 @@ Aktueller Stand:
   den nativen HA-Header im Shadow-DOM von `hui-root` aus und entfernt zugleich dessen reservierten
   oberen Abstand. Der iframe nutzt dadurch wieder die volle Viewport-Höhe; beim Verlassen des
   Dashboards entfernt der Host seinen Style-Eingriff vollständig;
+- ab `2.2.61`/Engine `2.2.93` liegt der Loader nicht mehr innerhalb jeder von HA ausgetauschten
+  `hui-view`, sondern einmalig als erster, absolut positionierter Knoten im stabilen
+  `hui-view-container`. Lovelace kann dadurch weiterhin die echte URL und Browser-History führen,
+  ohne bei jedem Vue-View-Wechsel das Engine-iframe und die Vue-Runtime neu zu erzeugen;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,

@@ -140,6 +140,11 @@ Vue-Panel-Dashboards den nativen HA-Header einschließlich des dafür reserviert
 Der eingebettete Host nutzt die volle Viewport-Höhe und entfernt die Shadow-DOM-Anpassung beim
 Verlassen wieder.
 
+Ab `2.2.61`/Engine `2.2.93` wird das Engine-iframe einmalig im stabilen Lovelace-View-Container
+verankert. Home Assistant darf seine routeabhängigen `hui-view`-Elemente weiterhin austauschen,
+ohne dabei die Vue-Runtime neu zu laden; interne Navigation, History und Deep-Links bleiben so
+SPA-Navigation.
+
 Ab `2.0.0-alpha.18` reicht der Loader den Administratorstatus des angemeldeten HA-Benutzers an
 die Engine weiter. Dadurch steht die Dev-Sidebar im Entwicklungsserver immer und im produktiven
 HA-Panel nur Administratoren zur Verfügung.

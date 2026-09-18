@@ -61,6 +61,10 @@ class IntegrationConstantTests(unittest.TestCase):
         self.assertIn("style.dataset.vuePanelNativeChrome = 'hidden'", lovelace)
         self.assertIn("padding-top: var(--view-container-padding-top, 0px)", lovelace)
         self.assertIn("'height:100dvh'", lovelace)
+        self.assertIn("const mountedPanels = new WeakMap()", lovelace)
+        self.assertIn("panelMountFor(lovelaceRoot, this._config.dashboardName)", lovelace)
+        self.assertIn("viewContainer.insertBefore(container, viewContainer.firstChild)", lovelace)
+        self.assertNotIn("this.appendChild(panel)", lovelace)
 
         engine_path = MODULE_PATH.parent / "frontend" / "engine"
         self.assertTrue((engine_path / "index.html").is_file())

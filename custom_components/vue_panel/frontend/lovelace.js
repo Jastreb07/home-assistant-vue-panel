@@ -11,6 +11,7 @@ const panelLoaderUrl = new URL('loader.js', moduleUrl);
 if (integrationVersion) panelLoaderUrl.searchParams.set('v', integrationVersion);
 
 const CARD_TAG = 'vue-panel-host';
+const mountedPanels = new WeakMap();
 const NATIVE_CHROME_STYLE = `
   .header {
     display: none !important;
@@ -33,6 +34,38 @@ function closestAcrossShadowRoots(element, selector) {
     current = current.getRootNode?.().host || null;
   }
   return null;
+}
+
+function panelMountFor(lovelaceRoot, dashboardName) {
+  let mount = mountedPanels.get(lovelaceRoot);
+  if (mount) return mount;
+
+  const viewContainer = lovelaceRoot.shadowRoot?.getElementById('view');
+  if (!viewContainer) return null;
+
+  const container = document.createElement('div');
+  container.dataset.vuePanelDashboard = dashboardName;
+  container.style.cssText = [
+    'position:absolute',
+    'inset:0',
+    'z-index:1',
+    'width:100%',
+    'height:100vh',
+    'height:100dvh',
+    'overflow:hidden',
+    'background:var(--primary-background-color)',
+  ].join(';');
+
+  const panel = document.createElement('vue-panel-panel');
+  panel.embedded = true;
+  container.appendChild(panel);
+
+  // HA replaces only the last child when selecting another Lovelace view.
+  // Keeping the engine mount first preserves its iframe and Vue runtime.
+  viewContainer.insertBefore(container, viewContainer.firstChild);
+  mount = { container, panel };
+  mountedPanels.set(lovelaceRoot, mount);
+  return mount;
 }
 
 class VuePanelHost extends HTMLElement {
@@ -79,6 +112,7 @@ class VuePanelHost extends HTMLElement {
     window.addEventListener('popstate', this._onLocationChanged);
     window.addEventListener('resize', this._onResize);
     this._hideNativeChrome();
+    this._syncHostContext();
     this._mount();
   }
 
@@ -125,10 +159,13 @@ class VuePanelHost extends HTMLElement {
     try {
       await import(panelLoaderUrl.href);
       if (!this.isConnected || generation !== this._mountGeneration) return;
-      const panel = document.createElement('vue-panel-panel');
-      panel.embedded = true;
+      const lovelaceRoot = closestAcrossShadowRoots(this, 'hui-root');
+      const mount = lovelaceRoot
+        ? panelMountFor(lovelaceRoot, this._config.dashboardName)
+        : null;
+      if (!mount) throw new Error('Home Assistant Lovelace view container was not found.');
+      const panel = mount.panel;
       this._panelElement = panel;
-      this.appendChild(panel);
       this._syncHostContext();
     } catch (error) {
       if (!this.isConnected || generation !== this._mountGeneration) return;
