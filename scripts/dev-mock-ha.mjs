@@ -18,6 +18,7 @@ const PORT = Number(process.argv[2] || 5202)
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const FRONTEND = path.join(ROOT, 'custom_components', 'vue_panel', 'frontend')
 const CARDS = path.join(ROOT, 'custom_components', 'vue_panel', 'bundled_cards')
+const THEMES = path.join(ROOT, 'custom_components', 'vue_panel', 'bundled_themes')
 const DASHBOARD_FILE = process.env.VUE_PANEL_MOCK_DASHBOARD || ''
 
 const MIME = {
@@ -32,7 +33,10 @@ const TRANSLATION_PATTERN = /^\s*const\s+vuePanelTranslations\s*=\s*(\{[\s\S]*\}
 function readCards() {
   const catalog = []
   for (const manufacturer of fs.readdirSync(CARDS)) {
-    for (const file of fs.readdirSync(path.join(CARDS, manufacturer))) {
+    for (const entry of fs.readdirSync(path.join(CARDS, manufacturer), { withFileTypes: true })) {
+      // A card is either a flat `<name>.html` file or a directory with an `index.html`
+      const file = entry.isDirectory() ? path.join(entry.name, 'index.html') : entry.name
+      if (!file.endsWith('.html') || !fs.existsSync(path.join(CARDS, manufacturer, file))) continue
       const document = fs.readFileSync(path.join(CARDS, manufacturer, file), 'utf8')
       const parts = CARD_PATTERN.exec(document)
       if (!parts) throw new Error(`Card ${manufacturer}/${file} has an invalid structure`)
@@ -56,6 +60,40 @@ function readCards() {
         javascript: parts[5].replace(/^\n/, '').replace(/\n$/, ''),
       })
     }
+  }
+  return catalog
+}
+
+function readThemes() {
+  const headerFields = {
+    'theme name': 'themeName', description: 'description', version: 'version',
+    author: 'author', 'requires vue panel': 'requiresVuePanel',
+  }
+  const catalog = []
+  for (const name of fs.readdirSync(THEMES)) {
+    const dir = path.join(THEMES, name)
+    if (!fs.statSync(dir).isDirectory()) continue
+    const files = {}
+    for (const file of fs.readdirSync(dir)) {
+      if (/\.(css|js)$/.test(file)) files[file] = fs.readFileSync(path.join(dir, file), 'utf8')
+    }
+    if (!files['main.css']) continue
+    const meta = { themeName: '', description: '', version: '', author: '', requiresVuePanel: '' }
+    const header = /^\s*\/\*([\s\S]*?)\*\//.exec(files['main.css'])
+    for (const line of header ? header[1].split('\n') : []) {
+      const [key, ...rest] = line.split(':')
+      const field = headerFields[key.trim().toLowerCase()]
+      if (field && rest.length) meta[field] = rest.join(':').trim()
+    }
+    catalog.push({
+      name,
+      ...meta,
+      themeName: meta.themeName || name,
+      components: Object.keys(files).filter((f) => f.endsWith('.js')).map((f) => f.slice(0, -3)).sort(),
+      source: 'bundled',
+      compatible: true,
+      files,
+    })
   }
   return catalog
 }
@@ -139,6 +177,7 @@ function defaultDashboard() {
 
 let dashboard = defaultDashboard()
 const cards = readCards()
+const themes = readThemes()
 
 // ── WebSocket framing (server side only, no extensions) ──────
 function accept(key) {
@@ -208,6 +247,13 @@ function handleCommand(message) {
       (entry) => entry.manufacturer === message.manufacturer && entry.cardName === message.card_name,
     )
     return card ? ok(card) : fail('not_found', 'Card not found')
+  }
+  if (type === 'vue_panel/themes/list') {
+    return ok(themes.map(({ files, ...entry }) => entry))
+  }
+  if (type === 'vue_panel/themes/get') {
+    const theme = themes.find((entry) => entry.name === message.theme)
+    return theme ? ok(theme) : fail('not_found', 'Theme not found')
   }
   if (type === 'call_service') return ok({ context: { id: 'mock' } })
   return fail('unknown_command', `Unsupported command ${type}`)

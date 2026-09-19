@@ -444,6 +444,34 @@ Aktueller Stand:
   Engine-Start fehl (Card-Katalog oder Dashboard-Datei), meldet `main.ts` den Fehler über das neue
   `reportEngineStartupError()` an den HA-Status und die Fehlermeldung erscheint statt eines
   endlosen Spinners;
+- ab `2.3.0`/Engine `2.3.0` ist das Theme-System vollständig externalisiert (Theme-Format v1,
+  `docs/architecture/theme-format-v1.md`): Themes sind reine Datei-Pakete ohne Build — eine
+  `main.css` mit Metadaten-Header (Theme Name, Version, Author, `Requires Vue Panel` als
+  Mindestversion) plus optional je eine `<Komponente>.js` als importfreies Factory-Modul
+  (`export default ({ vue, useI18n, components, helpers }) => options` mit Template-String).
+  `src/theme/` ist gelöscht; das Default-Theme liegt als
+  `custom_components/vue_panel/bundled_themes/default/` (main.css + alle 19 Komponenten) im
+  Integrationspaket, eigene Themes unter `<config>/vue-panel/themes/<name>/` (lokal überschreibt
+  bundled bei Namensgleichheit). `theme_files.py` liefert Katalog und Dokumente über die neuen
+  WS-Befehle `vue_panel/themes/list|get` samt serverseitigem `compatible`-Flag; ein
+  inkompatibles oder fehlendes Theme fällt in der Engine mit `console.warn` auf `default` zurück.
+  Die neue Laufzeit-Registry `src/core/theme/registry.ts` lädt Komponenten per Blob-URL-Import
+  und Runtime-Template-Compiler (Vite-Alias `vue → vue/dist/vue.esm-bundler.js` in beiden
+  Configs), injiziert Default- und aktives `main.css` als `#vp-theme-base`/`#vp-theme-active`
+  und cached das CSS in `localStorage` (`vue-panel:theme-css`) für flackerfreie Folgebesuche;
+  `index.html` enthält kritisches Fallback-CSS für den ungecachten Erstbesuch. Das App-Gate
+  wartet zusätzlich auf `useThemesLoaded()`; CodeMirror lädt der externe CodeEditor lazy über
+  `helpers.loadCodeMirror()`. Neue Factory-Module validiert
+  `node scripts/validate-theme-component.mjs`; der Mock-Server beantwortet die Theme-Befehle und
+  liest Karten auch in Ordnerform (`<name>/index.html`);
+- ab `2.3.1`/Engine `2.3.1` sind Theme-Stylesheets BOM-fest: Ein UTF-8-BOM am Dateianfang wurde
+  im `<style>`-Tag Teil des ersten Selektors (`\uFEFF:root, :host`) — die Regel war gültig,
+  matchte aber nichts, wodurch sämtliche Theme-Variablen (z. B. `--card-radius`) fehlten. Die
+  ausgelieferte `main.css` ist bereinigt (BOM und doppelt encodierte Gedankenstriche entfernt),
+  `theme_files.py` liest Theme-Dateien mit `utf-8-sig` und die Registry strippt `\uFEFF` vor
+  jeder CSS-Injektion (auch aus dem localStorage-Cache). Achtung Windows: PowerShell 5
+  `Set-Content -Encoding UTF8` schreibt immer ein BOM — Theme-Dateien mit .NET
+  `UTF8Encoding($false)` oder Python schreiben;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
@@ -573,14 +601,14 @@ Aktueller Stand:
 src/
 ├─ main.ts                    # Pinia, Catch-all-Hash-Router (hierarchische View-Pfade), i18n, connect()
 ├─ App.vue                    # Verbindungsstatus-Overlay + RouterView + DialogHost
-├─ theme/default/main.css    # Globale Styles des Default-Themes: Farb-Variablen (dark default, [data-theme='light']), Scrollbars, Form-Basics
 ├─ i18n/                      # vue-i18n v11 (legacy:false), locales/en.ts + de.ts
 ├─ core/
-│  ├─ ha/                     # connection.ts (WebSocket, Dual-Auth), useEntity, useService
+│  ├─ ha/                     # connection.ts (WebSocket, Dual-Auth), useEntity, useService, themeApi.ts
 │  ├─ registry/               # Ausschließlich WebSocket-basierter Runtime-Card-Katalog
 │  ├─ config/                 # types.ts, dashboardStore.ts, Integration-Persistenz
 │  ├─ editor/                 # EditFab, CardPicker, CardConfigDialog, SchemaForm, EntityPicker,
 │  │                          # ViewSettingsDialog, DashboardSettingsDialog
+│  ├─ theme/                  # Laufzeit-Theme-Registry (siehe §6): registry.ts, componentApi.ts, themeTypes.ts
 │  ├─ ui/                     # DÜNNE WRAPPER: BaseCard/BaseDialog/BaseButton → themed('…'),
 │  │                          # MdiIcon, OverflowMarquee, DialogHost.vue + dialogService.ts
 │  ├─ composables/            # useClock, useMediaQuery, useTheme
@@ -589,9 +617,8 @@ src/
 │  └─ dev/DevSidebar.vue      # Dev-only Tools (Sprache, Export/Import, Reset) — nicht i18n'd
 ├─ shell/                     # AppShell, ShellBarHost (globale Bar-Cards), ViewRenderer;
 │                             # Sidebar-Sichtbarkeit folgt ausschließlich den Card-Regeln
-├─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
-│                             # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
-└─ theme/                     # Theme-System (siehe §6)
+└─ layouts/                   # SectionsLayout, FlexLayout, GridLayout, SidebarLayout, PanelLayout
+                              # + useSectionEditing.ts (geteilte Edit-Logik) + LayoutSection.vue
 ```
 
 ### Datenmodell (`core/config/types.ts`)
@@ -734,21 +761,46 @@ ausschließlich die versionierte `vuePanel`-Card-API.
   dort das Card-Stylesheet.
 - **Responsive Sichtbarkeit jeder Card**: `CardConfigDialog` besitzt immer den Tab „Sichtbarkeit“ → Collapsible „Responsive Design“. Smartphone, Tablet und Desktop lassen sich einzeln aktivieren; `mobileMax` (Default 767px) und `tabletMax` (Default 1023px) sind frei einstellbar. `core/ui/responsiveCss.ts` schreibt die Auswahl unmittelbar als markierten Block `vue-panel:responsive:start/end` mit verschachtelten Media Queries in `CardConfig.css`. Der Block ist im CSS-Tab sichtbar; beim erneuten Öffnen wird die UI aus seinen JSON-Metadaten rekonstruiert. Manifeste können über `defaultResponsive` abweichende Card-Defaults vorgeben; die Sidebar-Bar ist dadurch auf Smartphones standardmäßig aus. Keine separaten Visibility-Felder im Datenmodell anlegen.
 
-## 6. Theme-System (`src/theme/`)
+## 6. Theme-System (extern, Format v1)
 
-- `src/theme/<themeName>/<Komponente>/` mit `index.vue` + `style.css`. Vorhanden: `default/{AddTile,BoxInput,Button,Card,Checkbox,CodeEditor,Collapsible,Dialog,Input,SelectMenu,Tabs,VariableCard,ViewSelectMenu}`. Der CodeEditor unterstützt CSS, HTML, JavaScript und JSON; nur CSS aktiviert den CSS-Linter. Der Theme-Dialog unterstützt zusätzlich `size="full"` für randlose Vollbild-Werkzeuge; Tab-Einträge können mit `align: 'end'` rechts ausgerichtet werden.
+- Themes sind **externe Datei-Pakete ohne Build** (normativ: `docs/architecture/theme-format-v1.md`).
+  Ein Theme = Ordner mit `main.css` (Pflicht, mit Metadaten-Header: Theme Name, Description,
+  Version, Author, `Requires Vue Panel` = Mindestversion) plus optional je Komponente eine
+  `<Name>.js`. Bundled: `custom_components/vue_panel/bundled_themes/default/` (alle 19
+  Komponenten); eigene Themes: `<config>/vue-panel/themes/<name>/` (lokal überschreibt bundled bei
+  Namensgleichheit; Ordnername `^[a-z0-9][a-z0-9-]*$`, nur `.css`/`.js`, max 512 KB/Datei).
+- **Komponentenformat**: importfreies ES-Modul, `export default function ({ vue, useI18n,
+  components, helpers }) { return options }` — Options-Objekt mit `template`-String (Laufzeit-
+  Compiler; Vite-Alias `vue → vue/dist/vue.esm-bundler.js` in beiden Configs). `vue` ist der volle
+  Namespace, `components` enthält MdiIcon + alle Base*-Wrapper, `helpers` u. a.
+  `dialogPointerPosition`, `useMediaQuery`, `useDashboardStore`, Farb-/Box-/Action-Helfer,
+  `lintCss` und `loadCodeMirror()` (lazy CodeMirror-Namespace für den CodeEditor). Optional
+  `export const styles = '<datei>.css'`. Validierung:
+  `node scripts/validate-theme-component.mjs <files…>`.
+- **Backend**: `theme_files.py` (Header-Parser, Versionsvergleich gegen `INTEGRATION_VERSION` →
+  `compatible`-Flag, ThemeRepository) + WS-Befehle `vue_panel/themes/list|get` in `websocket.py`.
+- **Laufzeit-Registry** (`src/core/theme/registry.ts`): `bootstrapThemeCss()` injiziert vor dem
+  App-Mount den `localStorage`-CSS-Cache (`vue-panel:theme-css`); `syncThemes()` lädt Katalog und
+  Dokumente, injiziert Default-`main.css` als `#vp-theme-base` und das aktive obendrauf als
+  `#vp-theme-active`, aktualisiert den Cache und setzt `useThemesLoaded()` (App-Gate in App.vue).
+  Inkompatibles/fehlendes Theme → Fallback auf `default` mit `console.warn`. `themed('Name')`
+  löst pro Komponente auf: aktives Theme `<Name>.js`, sonst default — geladen per Blob-URL +
+  dynamischem Import. `index.html` enthält kritisches Fallback-CSS für den ungecachten Erstbesuch.
+- **19 Komponentennamen**: AddTile, BoxInput, Button, Card, CardEditOverlay, Checkbox, CodeEditor,
+  Collapsible, CollapsibleAdvanced, ColorPicker, Dialog, EditableArea, EditableAreaButton, Input,
+  SelectMenu, Splitter, Tabs, TapAction, ViewSelectMenu. Der CodeEditor unterstützt CSS, HTML,
+  JavaScript und JSON; nur CSS aktiviert den CSS-Linter. Der Theme-Dialog unterstützt zusätzlich `size="full"` für randlose Vollbild-Werkzeuge; Tab-Einträge können mit `align: 'end'` rechts ausgerichtet werden.
 - **Collapsible** = aufklappbare Box zum Gruppieren von Einstellungen (`title`, `icon?`, `defaultOpen?` — **Default zu**, Default-Slot); Wrapper `@/core/ui/BaseCollapsible.vue`. Konvention: In jedem „Erweitert"-Tab liegen die Gruppen in Collapsibles, die **erste sichtbare** Box bekommt `default-open`.
 - **BoxInput** = wiederverwendbares Vierseiten-Feld (Oben/Rechts/Unten/Links + Einheit + Ketten-Button) für Padding/Margin; Wrapper `@/core/ui/BaseBoxInput.vue`, Wert-Typ + Helfer in `@/core/ui/boxInput.ts`.
-- **VariableCard** = wiederverwendbare, aufklappbare Hülle für einen Variablen-Schemaeintrag (`title`, `marker?`, `defaultOpen?`, `removeLabel`, `remove`-Event, Default-Slot); Wrapper `@/core/ui/BaseVariableCard.vue`. Die Löschaktion ist vom Toggle getrennt.
 - **ViewSelectMenu** = auf Views spezialisiertes Dropdown statt des generischen SelectMenu (`modelValue` = View-`id`, `views`, `size`, `searchable`, `reorderable`; Events `update:modelValue` und `move`); Wrapper `@/core/ui/BaseViewSelectMenu.vue`, Typen und Helfer in `@/core/ui/viewSelect.ts`. Es rückt Unteransichten nach Pfadtiefe ein, markiert die oberste View als Standard-View mit `mdi:star` und verschiebt Views über die beiden Pfeile rechts (auch per Alt+↑/↓) via `store.moveView()`. Während einer Suche sind die Pfeile ausgeblendet, weil das Umsortieren einer gefilterten Liste mehrdeutig wäre. Verwendet in der Edit-Toolbar der AppShell.
-- **Globales CSS pro Theme**: `src/theme/<themeName>/main.css` (Variablen, Scrollbars, Form-Basics). `loadGlobalStyles()` (registry) lädt IMMER zuerst `default/main.css` (Fallback), dann das `main.css` des aktiven Themes obendrauf. Aufruf in `main.ts`: einmal sofort, einmal nach `syncFromRemote()` (wenn `settings.uiTheme` bekannt ist). Es gibt keine `src/style.css` mehr.
+- **Globales CSS pro Theme**: die `main.css` des Themes. Die Registry injiziert IMMER zuerst die Default-`main.css` (Fallback), dann die des aktiven Themes obendrauf. Es gibt keine `src/style.css` mehr.
 - **Tabs** bleiben immer einzeilig. Wenn ihre Gesamtbreite nicht in den verfügbaren Raum passt,
   wird die mittlere Tab-Leiste horizontal scrollbar und erhält links und rechts feste,
   zustandsabhängig deaktivierte Pfeile; Auswahl und Tastaturnavigation holen den aktiven Tab
   automatisch in den sichtbaren Bereich.
-- **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; die Registry lädt es.
-- Auflösung (`theme/registry.ts`, `themed('Card')`): Default-CSS immer zuerst → Theme-CSS obendrauf (falls vorhanden) → Theme-`index.vue` ersetzt Default-`index.vue`, sonst Fallback auf default.
-- Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = Ordner in `theme/default/` + Wrapper in `core/ui/`. **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
+- **CSS ist NICHT scoped**, sondern namespaced (`vp-card`, `vp-dialog`, `vp-btn`) — absichtlich, damit CSS-only-Themes überschreiben können. Komponenten importieren ihr CSS NICHT selbst; es steht in der `main.css` (oder via `export const styles`).
+- Auflösung (`core/theme/registry.ts`, `themed('Card')`): Default-`main.css` immer zuerst → aktives `main.css` obendrauf → `<Name>.js` des aktiven Themes ersetzt die Default-Komponente, sonst Fallback auf default.
+- Verbraucher nutzen **immer die Wrapper** `@/core/ui/BaseCard|BaseDialog|BaseButton` (stabile Imports). Neue UI-Basiskomponente = `<Name>.js` im Default-Theme + Wrapper in `core/ui/` + Aufnahme in `componentApi.ts` (lazy). **Ausnahme: Cards** — sie stylen ihre Kachel selbst (siehe §5) und verwenden BaseCard nicht.
 - `BaseDialog` schließt bei einem Klick auf den Backdrop standardmäßig nicht. Nur bewusst flüchtige
   Dialoge setzen `close-on-backdrop`; aktuell gilt das ausschließlich für Laufzeit-Popups und
   Detailansichten in `PopupFrame.vue`. Ein gesperrter Backdrop-Klick löst eine kurze gedämpfte

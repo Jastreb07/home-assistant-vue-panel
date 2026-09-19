@@ -13,6 +13,7 @@ from .const import (
     CONF_DASHBOARD_NAME,
     DATA_CARD_REPOSITORY,
     DATA_REPOSITORY,
+    DATA_THEME_REPOSITORY,
     DOMAIN,
     SUBENTRY_TYPE_DASHBOARD,
 )
@@ -23,6 +24,7 @@ from .dashboard_files import (
 )
 from .frontend import async_register_frontend, async_unregister_lovelace_resource
 from .panel_manager import PanelManager, PanelRegistrationError
+from .theme_files import ThemeRepository
 from .websocket import async_register_websocket_commands
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,6 +36,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     domain_data = hass.data.setdefault(DOMAIN, {})
     domain_data[DATA_REPOSITORY] = DashboardRepository(hass)
     domain_data[DATA_CARD_REPOSITORY] = CardRepository(hass)
+    domain_data[DATA_THEME_REPOSITORY] = ThemeRepository(hass)
     await async_register_frontend(hass)
     async_register_websocket_commands(hass)
     return True

@@ -7,6 +7,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),
+      // Runtime theme components use template strings — include the compiler.
+      vue: 'vue/dist/vue.esm-bundler.js',
     },
   },
   base: '/vue-panel-static/engine/',

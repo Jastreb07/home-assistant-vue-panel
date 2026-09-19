@@ -4,12 +4,22 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>vue-panel</title>
-    <script type="module" crossorigin src="/vue-panel-static/engine/assets/index-zf9cBzly.js"></script>
-    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/runtime-core.esm-bundler-B4b-2GOK.js">
-    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/runtime-dom.esm-bundler-BbefLSIS.js">
-    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/dashboardStore-DS1buee9.js">
-    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/BaseSelectMenu-CCgJ7T9A.js">
-    <link rel="stylesheet" crossorigin href="/vue-panel-static/engine/assets/style-Bv3OjRvi.css">
+    <!-- Critical fallback until the theme stylesheet arrives (first visit). -->
+    <style>
+      html, body, #app { height: 100%; margin: 0; }
+      body {
+        background: var(--bg, #0f1115);
+        color: var(--text-primary, #e8eaed);
+        font-family: system-ui, sans-serif;
+      }
+      [data-theme='light'] body { background: var(--bg, #f2f4f8); color: var(--text-primary, #1c1e21); }
+    </style>
+    <script type="module" crossorigin src="/vue-panel-static/engine/assets/index-Cp_9kdzo.js"></script>
+    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/MdiIcon-BErE_-ZA.js">
+    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/registry-WmUP3bgQ.js">
+    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/BaseButton-DlhFfCnz.js">
+    <link rel="modulepreload" crossorigin href="/vue-panel-static/engine/assets/BaseInput-Cig_Yh-6.js">
+    <link rel="stylesheet" crossorigin href="/vue-panel-static/engine/assets/style-C1fCvVTo.css">
   </head>
   <body>
     <div id="app"></div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { themed } from '@/theme/registry'
+import { themed } from '@/core/theme/registry'
 
 /** Thin wrapper: renders the 'Splitter' component of the active theme. */
 const Splitter = themed('Splitter')

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { themed } from '@/theme/registry'
+import { themed } from '@/core/theme/registry'
 import type { TabItem } from './tabs'
 
 /** Thin wrapper: renders the 'Tabs' component of the active theme. */

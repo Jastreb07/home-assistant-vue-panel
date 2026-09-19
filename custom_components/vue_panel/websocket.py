@@ -23,6 +23,7 @@ from .const import (
     CONF_REQUIRE_ADMIN,
     DATA_CARD_REPOSITORY,
     DATA_REPOSITORY,
+    DATA_THEME_REPOSITORY,
     DEFAULT_REQUIRE_ADMIN,
     DOMAIN,
     EVENT_DASHBOARD_UPDATED,
@@ -33,6 +34,7 @@ from .dashboard_files import (
     DashboardRepository,
     DashboardRevisionConflict,
 )
+from .theme_files import ThemeFileError, ThemeNotFound, ThemeRepository
 
 WS_TYPE_DASHBOARD_GET = "vue_panel/dashboard/get"
 WS_TYPE_DASHBOARD_SAVE = "vue_panel/dashboard/save"
@@ -45,6 +47,8 @@ WS_TYPE_CARDS_UPDATE = "vue_panel/cards/update"
 WS_TYPE_CARDS_DELETE = "vue_panel/cards/delete"
 WS_TYPE_CARDS_IMPORT = "vue_panel/cards/import"
 WS_TYPE_CARDS_DUPLICATE = "vue_panel/cards/duplicate"
+WS_TYPE_THEMES_LIST = "vue_panel/themes/list"
+WS_TYPE_THEMES_GET = "vue_panel/themes/get"
 
 
 def _positive_integer(value: Any) -> int:
@@ -72,6 +76,23 @@ def _repository(hass: HomeAssistant) -> DashboardRepository:
 
 def _card_repository(hass: HomeAssistant) -> CardRepository:
     return hass.data[DOMAIN][DATA_CARD_REPOSITORY]
+
+
+def _theme_repository(hass: HomeAssistant) -> ThemeRepository:
+    return hass.data[DOMAIN][DATA_THEME_REPOSITORY]
+
+
+def _send_theme_error(
+    connection: websocket_api.ActiveConnection,
+    message_id: int,
+    error: ThemeFileError,
+) -> None:
+    """Return stable public error codes without leaking filesystem details."""
+
+    if isinstance(error, ThemeNotFound):
+        connection.send_error(message_id, "not_found", "Theme not found")
+    else:
+        connection.send_error(message_id, "theme_error", "Theme storage failed")
 
 
 def _send_card_error(
@@ -521,6 +542,49 @@ async def websocket_cards_duplicate(
     connection.send_result(msg["id"], card)
 
 
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): WS_TYPE_THEMES_LIST,
+    }
+)
+@websocket_api.async_response
+async def websocket_themes_list(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return the installed theme catalog."""
+
+    try:
+        themes = await _theme_repository(hass).async_list()
+    except ThemeFileError as error:
+        _send_theme_error(connection, msg["id"], error)
+        return
+    connection.send_result(msg["id"], themes)
+
+
+@websocket_api.websocket_command(
+    {
+        vol.Required("type"): WS_TYPE_THEMES_GET,
+        vol.Required("theme"): str,
+    }
+)
+@websocket_api.async_response
+async def websocket_themes_get(
+    hass: HomeAssistant,
+    connection: websocket_api.ActiveConnection,
+    msg: dict[str, Any],
+) -> None:
+    """Return one full theme package."""
+
+    try:
+        theme = await _theme_repository(hass).async_get(msg["theme"])
+    except ThemeFileError as error:
+        _send_theme_error(connection, msg["id"], error)
+        return
+    connection.send_result(msg["id"], theme)
+
+
 def async_register_websocket_commands(hass: HomeAssistant) -> None:
     """Register Vue Panel WebSocket commands once."""
 
@@ -535,3 +599,5 @@ def async_register_websocket_commands(hass: HomeAssistant) -> None:
     websocket_api.async_register_command(hass, websocket_cards_delete)
     websocket_api.async_register_command(hass, websocket_cards_import)
     websocket_api.async_register_command(hass, websocket_cards_duplicate)
+    websocket_api.async_register_command(hass, websocket_themes_list)
+    websocket_api.async_register_command(hass, websocket_themes_get)

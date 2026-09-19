@@ -5,7 +5,7 @@ import App from './App.vue'
 import AppShell from './shell/AppShell.vue'
 import { i18n } from './i18n'
 import { useDashboardStore } from './core/config/dashboardStore'
-import { loadGlobalStyles } from './theme/registry'
+import { bootstrapThemeCss, syncThemes } from './core/theme/registry'
 
 export interface MountedVuePanel {
   app: VueApp
@@ -26,7 +26,7 @@ export function mountVuePanel(target: Element): MountedVuePanel {
     .use(router)
     .use(i18n)
   app.mount(target)
-  void loadGlobalStyles()
+  bootstrapThemeCss()
 
   return {
     app,
@@ -34,7 +34,7 @@ export function mountVuePanel(target: Element): MountedVuePanel {
     router,
     async syncDashboard(dashboardName: string) {
       await useDashboardStore(pinia).syncFromRemote(dashboardName)
-      await loadGlobalStyles()
+      await syncThemes()
     },
     unmount() {
       useDashboardStore(pinia).disposePersistence()

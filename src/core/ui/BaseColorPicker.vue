@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { themed } from '@/theme/registry'
+import { themed } from '@/core/theme/registry'
 import type { ColorFormat } from '@/core/ui/color'
 
 /** Thin wrapper: renders the ColorPicker component of the active theme. */

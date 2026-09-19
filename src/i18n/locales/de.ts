@@ -584,7 +584,8 @@ export default {
     title: 'Dashboard-Einstellungen',
     theme: 'Theme',
     uiTheme: 'Komponenten-Theme',
-    uiThemeHint: 'Themes liegen unter src/theme/<name>/ — fehlende Komponenten fallen auf das Default-Theme zurück.',
+    uiThemeHint: 'Themes liegen unter <config>/vue-panel/themes/<name>/ — fehlende Komponenten fallen auf das Default-Theme zurück.',
+    uiThemeIncompatible: 'benötigt Vue Panel {version}',
     panelScale: 'Skalierung auf diesem Gerät',
     panelScaleHint:
       'Skaliert die gesamte Vue-Panel-Oberfläche wie der Browser-Zoom. Die Auswahl wird nur in diesem Browser gespeichert.',

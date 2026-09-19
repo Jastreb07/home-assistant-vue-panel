@@ -9,7 +9,7 @@ import type {
   DialogAnimation,
 } from '@/core/config/types'
 import { barPositions, barSizeLimits, isSidebar, useDashboardStore } from '@/core/config/dashboardStore'
-import { availableThemes, themeMainCss } from '@/theme/registry'
+import { themeCatalog, themeMainCss } from '@/core/theme/registry'
 import BaseDialog from '@/core/ui/BaseDialog.vue'
 import BaseButton from '@/core/ui/BaseButton.vue'
 import BaseSelectMenu from '@/core/ui/BaseSelectMenu.vue'
@@ -55,12 +55,23 @@ let panelScaleCommitted = false
 const barDrafts = ref<BarConfig>(JSON.parse(JSON.stringify(store.bars)) as BarConfig)
 
 const themes: DashboardSettings['theme'][] = ['dark', 'light', 'auto']
-const uiThemes = availableThemes()
 
 const themeOptions = computed(() =>
   themes.map((th) => ({ value: th, label: t('settings.themes.' + th) })),
 )
-const uiThemeOptions = uiThemes.map((th) => ({ value: th, label: th }))
+// Installed themes come from the integration catalog; incompatible themes
+// stay listed (so the current choice never disappears) but say why.
+const uiThemeOptions = ref<{ value: string; label: string }[]>(
+  [{ value: uiTheme.value, label: uiTheme.value }],
+)
+void themeCatalog().then((catalog) => {
+  uiThemeOptions.value = catalog.map((entry) => ({
+    value: entry.name,
+    label: entry.compatible
+      ? entry.themeName + (entry.version ? ` (${entry.version})` : '')
+      : `${entry.themeName} — ${t('settings.uiThemeIncompatible', { version: entry.requiresVuePanel })}`,
+  }))
+})
 const dialogAnimationOptions = computed(() =>
   (['none', 'simple', 'scale', 'slide-up'] as DialogAnimation[]).map((value) => ({
     value,

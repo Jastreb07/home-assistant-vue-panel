@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { themed } from '@/theme/registry'
+import { themed } from '@/core/theme/registry'
 import type { DialogContentPosition, DialogMobileHeight } from '@/core/config/types'
 
 /** Thin wrapper: renders the 'Dialog' component of the active theme. */

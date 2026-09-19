@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { themed } from '@/theme/registry'
+import { themed } from '@/core/theme/registry'
 import type { ControlSize } from './controlSize'
 
 /** Thin wrapper: renders the 'Button' component of the active theme. */

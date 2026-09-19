@@ -1,0 +1,1954 @@
+/*
+Theme Name:        Default
+Description:       The built-in Vue Panel look — dark by default with a light color scheme via [data-theme='light'].
+Version:           1.0.0
+Author:            Vue Panel
+Requires Vue Panel: 2.3.0
+*/
+/* --------------------------------------------------------------------------------------------------------
+   Global stylesheet of the "default" theme.
+   Every theme may ship its own main.css; the default theme's
+   main.css is ALWAYS loaded first as a fallback, the active
+   theme's main.css (if any) is loaded on top.
+   -------------------------------------------------------------------------------------------------------- */
+
+/* Theme variables — dark is the default theme */
+:root,
+:host {
+  --bg: #14161a;
+  --nav-bg: #1b1e24;
+  --card-bg: #23272f;
+  --card-bg-hover: #2a2f38;
+  /* Veil behind dialogs — brightens rather than dims, blur comes on top */
+  --dialog-backdrop: rgba(255, 255, 255, 0.12);
+  --card-bg-active: #f5b82e;
+  /* Circular icon backdrop on the tile cards */
+  --tile-icon-bg: rgb(215 215 215 / 8%);
+  /* Editor inputs keep their own token so restyling cards leaves them alone */
+  --input-bg: #23272f;
+  --card-radius: 28px;
+  --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  --text-primary: #eceff4;
+  --text-secondary: #9aa3b2;
+  --text-on-active: #1b1e24;
+  --divider: #323844;
+  --nav-item-hover: rgba(255, 255, 255, 0.06);
+  --nav-item-active: rgba(255, 255, 255, 0.12);
+  --accent: #f5b82e;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #3a4150;
+  --scrollbar-thumb-hover: #4a5365;
+  /* Code editor syntax colors */
+  --code-comment: #6b7280;
+  --code-selector: #7fd1c1;
+  --code-property: #9ecbff;
+  --code-string: #e5c07b;
+  --code-number: #d19a66;
+  --code-keyword: #c792ea;
+  --code-function: #82aaff;
+  --code-invalid: #e0706f;
+}
+
+[data-theme='light'],
+:host([data-theme='light']),
+:host-context([data-theme='light']) {
+  --bg: #f2f4f8;
+  --nav-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card-bg-hover: #fbfbfb;
+  --dialog-backdrop: rgba(255, 255, 255, 0.45);
+  --card-bg-active: #ffffff;
+  --tile-icon-bg: rgb(215 215 215 / 35%);
+  --input-bg: #ffffff;
+  --card-shadow: 0 2px 8px rgba(30, 40, 60, 0.1);
+  --text-primary: #1c2330;
+  --text-secondary: #5c6675;
+  --text-on-active: #1b1e24;
+  --divider: #d8dde6;
+  --nav-item-hover: rgba(0, 0, 0, 0.05);
+  --nav-item-active: rgba(0, 0, 0, 0.09);
+  --accent: #e0a416;
+  --scrollbar-thumb: #c3cad6;
+  --scrollbar-thumb-hover: #a9b2c2;
+  --code-comment: #8a94a6;
+  --code-selector: #1a7f6b;
+  --code-property: #1e5eb8;
+  --code-string: #a15c00;
+  --code-number: #b5480d;
+  --code-keyword: #8250df;
+  --code-function: #0550ae;
+  --code-invalid: #b3403f;
+}
+
+/* ── Shared control size scale (Nuxt UI-like) ──────────────────
+   One source of truth for Button, Input and SelectMenu so all
+   controls line up. Components set `vp-size-<size>` on their root
+   and read the tokens below — a CSS-only theme can rescale
+   everything by overriding just these classes. */
+.vp-size-xs {
+  --vp-control-height: 26px;
+  --vp-control-font: 12px;
+  --vp-control-pad-x: 8px;
+  --vp-control-radius: 8px;
+  --vp-control-icon: 14px;
+}
+.vp-size-sm {
+  --vp-control-height: 32px;
+  --vp-control-font: 13px;
+  --vp-control-pad-x: 10px;
+  --vp-control-radius: 8px;
+  --vp-control-icon: 16px;
+}
+.vp-size-md {
+  --vp-control-height: 40px;
+  --vp-control-font: 14px;
+  --vp-control-pad-x: 12px;
+  --vp-control-radius: 10px;
+  --vp-control-icon: 22px;
+}
+.vp-size-lg {
+  --vp-control-height: 48px;
+  --vp-control-font: 15px;
+  --vp-control-pad-x: 14px;
+  --vp-control-radius: 10px;
+  --vp-control-icon: 24px;
+}
+.vp-size-xl {
+  --vp-control-height: 56px;
+  --vp-control-font: 16px;
+  --vp-control-pad-x: 16px;
+  --vp-control-radius: 12px;
+  --vp-control-icon: 26px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body,
+:host {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    Roboto,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* ── Scrollbars (match the theme design) ── */
+* {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
+}
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/*
+ * Touch devices — phones and tablets — hide their scrollbars natively and
+ * scroll by dragging, so a permanently visible bar only eats space and looks
+ * out of place. Keyed on the input method rather than the viewport width: a
+ * narrow desktop window still has a mouse and still needs its scrollbar.
+ * Scrolling itself is untouched, only the indicator goes away.
+ */
+@media (hover: none) and (pointer: coarse) {
+  * {
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* legacy Edge */
+  }
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+}
+
+/* ── Base form styles (editor dialogs) ── */
+input[type='text'],
+input[type='number'],
+input:not([type]),
+select {
+  background: var(--input-bg, var(--card-bg));
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  color: var(--text-primary);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  outline: none;
+}
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+/* ==== AddTile ==== */
+.vp-add-tile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed var(--divider);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.vp-add-tile:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Orientation ── */
+.vp-add-tile--vertical {
+  flex-direction: column;
+  gap: 4px;
+}
+.vp-add-tile--horizontal {
+  flex-direction: row;
+  gap: 8px;
+}
+
+/* ── Variants ── */
+.vp-add-tile--tile {
+  width: 100%;
+  min-height: 80px;
+  padding: 12px;
+  border-radius: var(--card-radius);
+}
+.vp-add-tile--pill {
+  align-self: center;
+  padding: 0 calc(var(--vp-control-pad-x) * 2);
+  margin: 5px;
+  height: calc(var(--vp-control-height) + 8px);
+  border-radius: 999px;
+}
+
+/* Fill the free space instead of sticking to min-height */
+.vp-add-tile--fill {
+  flex: 1;
+  min-height: 50vh;
+}
+
+/* ==== BoxInput ==== */
+/* Four-sided value editor — sizes come from the shared .vp-size-* tokens */
+.vp-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vp-box-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.vp-box-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.vp-box-unit {
+  width: 84px;
+  flex-shrink: 0;
+}
+/* Each field and the chain button stand apart with a regular gap */
+.vp-box-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.vp-box-cell {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+/* The themed input covers sizing/colors — only the narrow-field tweaks stay */
+input.vp-box-input {
+  padding: 0 6px;
+  text-align: center;
+}
+/* Spinners would steal most of the already narrow field */
+input.vp-box-input::-webkit-outer-spin-button,
+input.vp-box-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input.vp-box-input {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.vp-box-side {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+/* Square icon button, aligned with the fields — otherwise a plain .vp-btn */
+.vp-box-link {
+  flex-shrink: 0;
+  align-self: flex-start;
+  width: var(--vp-control-height);
+  padding: 0;
+}
+
+/* ==== Button ==== */
+.vp-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: var(--vp-control-height);
+  /* Buttons read wider than fields at the same height */
+  padding: 0 calc(var(--vp-control-pad-x) * 1.5);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.vp-btn:hover {
+  border-color: var(--accent);
+}
+.vp-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.vp-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--text-on-active);
+  font-weight: 600;
+}
+.vp-btn.danger {
+  border-color: #b3403f;
+  color: #e0706f;
+  margin-right: auto;
+}
+
+/* ==== Card ==== */
+.vp-card {
+  background: var(--card-bg);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  min-height: 80px;
+  box-shadow: var(--card-shadow);
+  color: var(--text-primary);
+  transition: background 0.2s, transform 0.1s;
+}
+.vp-card.clickable {
+  cursor: pointer;
+  user-select: none;
+}
+.vp-card.clickable:hover:not(.active) {
+  background: var(--card-bg-hover, var(--card-bg));
+}
+.vp-card.clickable:active {
+  transform: scale(0.98);
+}
+.vp-card.active {
+  background: var(--card-bg-active);
+  color: var(--text-on-active);
+}
+
+/* ==== CardEditOverlay ==== */
+.vp-card-edit-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.vp-card-edit-surface {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  border: 0;
+  border-radius: var(--card-radius);
+  padding: 0;
+  z-index: 1;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--card-bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: var(--text-primary);
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: auto;
+  transition: background 140ms ease, opacity 140ms ease;
+}
+
+/* Full-size surface even on resizable cards — only the bottom-right corner
+   is cut out (clip-path also excludes it from hit-testing) so the native
+   resize handle of the card slot stays grabbable. */
+.vp-card-edit-overlay--resize .vp-card-edit-surface {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - 26px),
+    calc(100% - 26px) calc(100% - 26px),
+    calc(100% - 26px) 100%,
+    0 100%
+  );
+}
+
+/* Centred by the surface's `place-items: center` — the card is clamped to its
+   container while editing, so the surface always matches the visible area. */
+.vp-card-edit-pencil {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+  box-shadow: 0 2px 9px rgba(0, 0, 0, 0.16);
+}
+
+.vp-card-edit-overlay:hover .vp-card-edit-surface,
+.vp-card-edit-overlay:focus-within .vp-card-edit-surface,
+.vp-card-edit-overlay--open .vp-card-edit-surface,
+.vp-card-edit-surface:focus-visible {
+  opacity: 1;
+}
+
+.vp-card-edit-trigger {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--divider) 72%, transparent);
+  border-radius: 50%;
+  padding: 0;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.88);
+  pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease, visibility 120ms;
+}
+
+.vp-card-edit-overlay:hover .vp-card-edit-trigger,
+.vp-card-edit-overlay:focus-within .vp-card-edit-trigger,
+.vp-card-edit-overlay--open .vp-card-edit-trigger {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+.vp-card-edit-trigger:hover,
+.vp-card-edit-trigger:focus-visible {
+  background: var(--nav-item-hover);
+  outline: none;
+}
+
+.vp-card-edit-menu-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  isolation: isolate;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.vp-card-edit-menu {
+  position: absolute;
+  box-sizing: border-box;
+  padding: 8px 5px 6px;
+  border: 1px solid var(--divider);
+  border-radius: 9px;
+  background: var(--nav-bg);
+  color: var(--text-primary);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  pointer-events: auto;
+}
+
+.vp-card-edit-action {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 38px;
+  border: 0;
+  border-radius: 6px;
+  padding: 7px 11px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.vp-card-edit-action:hover,
+.vp-card-edit-action:focus-visible {
+  background: var(--nav-item-hover);
+  outline: none;
+}
+
+.vp-card-edit-divider {
+  height: 1px;
+  margin: 5px 5px;
+  background: var(--divider);
+}
+
+.vp-card-edit-action--delete {
+  color: var(--danger, #ef4444);
+}
+
+@media (hover: none) {
+  .vp-card-edit-surface {
+    opacity: 1;
+    background: transparent;
+  }
+  .vp-card-edit-trigger {
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  .vp-card-edit-surface,
+  .vp-card-edit-overlay:hover .vp-card-edit-surface,
+  .vp-card-edit-overlay:focus-within .vp-card-edit-surface,
+  .vp-card-edit-overlay--open .vp-card-edit-surface {
+    opacity: 1;
+    clip-path: none;
+    background: transparent;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    cursor: default;
+    touch-action: pan-y;
+    transition: none;
+  }
+
+  .vp-card-edit-pencil {
+    display: none;
+  }
+
+  .vp-card-edit-trigger {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+    visibility: visible;
+    transform: none;
+    pointer-events: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-card-edit-surface {
+    transition: none;
+  }
+  .vp-card-edit-trigger {
+    transition: none;
+  }
+}
+
+/* ==== Checkbox ==== */
+.vp-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.vp-checkbox.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Visually hidden, but still focusable and readable by assistive tech */
+input.vp-checkbox-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.vp-checkbox-box {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--divider);
+  border-radius: 6px;
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text-on-active);
+  transition: background 0.15s, border-color 0.15s;
+}
+.vp-checkbox:hover .vp-checkbox-box {
+  border-color: var(--accent);
+}
+.vp-checkbox-box.checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.vp-checkbox-input:focus-visible + .vp-checkbox-box {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.vp-checkbox-label {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* ==== CodeEditor ==== */
+.vp-code-editor {
+  width: 100%;
+}
+/* Lint markers — CodeMirror draws these underlines itself */
+.vp-code-editor .cm-lintRange-error {
+  background: none;
+  text-decoration: underline wavy #e0706f;
+  text-underline-offset: 3px;
+}
+.vp-code-editor .cm-lintRange-warning {
+  background: none;
+  text-decoration: underline wavy var(--accent);
+  text-underline-offset: 3px;
+}
+.vp-code-editor .cm-diagnostic {
+  border-left-width: 3px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.vp-code-editor .cm-diagnostic-error {
+  border-left-color: #e0706f;
+}
+.vp-code-editor .cm-diagnostic-warning {
+  border-left-color: var(--accent);
+}
+
+/* ==== Collapsible ==== */
+/* Collapsible settings box */
+.vp-collapsible {
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 45%, transparent);
+  overflow: hidden;
+}
+.vp-collapsible-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  text-align: left;
+  cursor: pointer;
+}
+.vp-collapsible-head:hover {
+  color: var(--text-primary);
+}
+.vp-collapsible.open .vp-collapsible-head {
+  border-bottom: 1px solid var(--divider);
+}
+.vp-collapsible-chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+.vp-collapsible.open .vp-collapsible-chevron {
+  transform: rotate(90deg);
+}
+.vp-collapsible-title {
+  flex: 1;
+  min-width: 0;
+}
+.vp-collapsible-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 14px;
+}
+
+/* ==== CollapsibleAdvanced ==== */
+.vp-variable-card {
+  overflow: hidden;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--card-bg) 88%, var(--nav-bg));
+}
+.vp-variable-card-head {
+  display: flex;
+  align-items: stretch;
+  min-height: 40px;
+  background: var(--nav-bg);
+}
+.vp-variable-card.open .vp-variable-card-head {
+  border-bottom: 1px solid var(--divider);
+}
+.vp-variable-card-toggle {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.vp-variable-card-toggle:hover {
+  color: var(--text-primary);
+}
+.vp-variable-card-toggle:focus-visible,
+.vp-variable-card-remove:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.vp-variable-card-chevron {
+  flex: 0 0 auto;
+  transition: transform 0.15s ease;
+}
+.vp-variable-card.open .vp-variable-card-chevron {
+  transform: rotate(90deg);
+}
+.vp-variable-card-marker {
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+  font-size: 10px;
+  font-weight: 700;
+}
+.vp-variable-card-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-variable-card-title {
+  min-width: 0;
+  overflow: hidden;
+  color: inherit;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-variable-card-remove {
+  width: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.vp-variable-card-remove:hover {
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+  color: var(--danger, #ef4444);
+}
+.vp-variable-card-body {
+  padding: 14px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .vp-variable-card-chevron {
+    transition: none;
+  }
+}
+
+/* ==== ColorPicker ==== */
+/* ── Trigger row: text field + swatch button ── */
+.vp-color-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vp-color-text {
+  flex: 1;
+  min-width: 0;
+  height: var(--vp-control-height, 40px);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius, 10px);
+  padding: 0 12px;
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--vp-control-font, 14px);
+  outline: none;
+}
+
+.vp-color-text:focus {
+  border-color: var(--accent);
+}
+
+.vp-color-trigger {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--vp-control-height, 40px);
+  height: var(--vp-control-height, 40px);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius, 10px);
+  padding: 0;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.vp-color-trigger:hover,
+.vp-color-trigger:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.vp-color-trigger-fill {
+  position: absolute;
+  inset: 0;
+}
+
+/* Sits on top of the swatch — its colour follows the swatch's brightness */
+.vp-color-trigger-icon {
+  position: relative;
+  filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.25));
+  pointer-events: none;
+}
+
+/* Shared checkerboard so transparency is readable */
+.vp-color-checkers {
+  background-image:
+    linear-gradient(45deg, rgba(128, 128, 128, 0.45) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(128, 128, 128, 0.45) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(128, 128, 128, 0.45) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(128, 128, 128, 0.45) 75%);
+  background-size: 10px 10px;
+  background-position: 0 0, 0 5px, 5px -5px, -5px 0;
+}
+
+/* ── Popup ── */
+.vp-color-popup-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.vp-color-popup {
+  position: absolute;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+  background: var(--nav-bg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  pointer-events: auto;
+}
+
+/* Saturation left to right, value top to bottom, over the pure hue */
+.vp-color-area {
+  position: relative;
+  height: 132px;
+  border-radius: 8px;
+  cursor: crosshair;
+  touch-action: none;
+  background:
+    linear-gradient(to top, #000, transparent),
+    linear-gradient(to right, #fff, transparent),
+    var(--vp-color-hue, #f00);
+}
+
+.vp-color-area-handle {
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+
+.vp-color-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vp-color-eyedropper {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 6px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.vp-color-eyedropper:hover {
+  background: var(--nav-item-hover);
+  color: var(--text-primary);
+}
+
+.vp-color-preview {
+  position: relative;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow: 0 0 0 1px var(--divider);
+}
+
+.vp-color-preview-fill {
+  position: absolute;
+  inset: 0;
+}
+
+.vp-color-sliders {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.vp-color-alpha {
+  display: block;
+  border-radius: 5px;
+}
+
+.vp-color-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 10px;
+  margin: 0;
+  border-radius: 5px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.vp-color-slider--hue {
+  background: linear-gradient(
+    to right,
+    #f00 0%,
+    #ff0 17%,
+    #0f0 33%,
+    #0ff 50%,
+    #00f 67%,
+    #f0f 83%,
+    #f00 100%
+  );
+}
+
+.vp-color-slider--alpha {
+  background: var(--vp-color-alpha-track, transparent);
+}
+
+.vp-color-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.vp-color-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
+
+.vp-color-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vp-color-input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  border: 1px solid var(--divider);
+  border-radius: 8px;
+  padding: 0 10px;
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  text-align: center;
+  outline: none;
+}
+
+.vp-color-input:focus {
+  border-color: var(--accent);
+}
+
+.vp-color-format {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+}
+
+.vp-color-format:hover {
+  background: var(--nav-item-hover);
+  color: var(--text-primary);
+}
+
+/* ==== Dialog ==== */
+.vp-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Frosted rather than dimmed: a bright veil plus blur lifts the dashboard
+     behind the dialog instead of pushing it into the dark. */
+  background: var(--dialog-backdrop, rgba(255, 255, 255, 0.18));
+  -webkit-backdrop-filter: blur(3px) saturate(1.05);
+  backdrop-filter: blur(3px) saturate(1.05);
+  display: grid;
+  place-items: center;
+  z-index: 100;
+  padding: 4px;
+}
+
+.vp-dialog {
+  background: var(--nav-bg);
+  color: var(--text-primary);
+  border-radius: 28px;
+  width: min(600px, 100%);
+  max-height: calc(100dvh - 8px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow:
+    0 24px 38px 3px rgba(0, 0, 0, 0.14),
+    0 9px 46px 8px rgba(0, 0, 0, 0.12),
+    0 11px 15px -7px rgba(0, 0, 0, 0.2);
+  position: relative;
+  visibility: hidden;
+}
+
+.vp-dialog--ready.vp-dialog--animation-none {
+  visibility: visible;
+}
+
+.vp-dialog--ready.vp-dialog--animation-simple {
+  visibility: visible;
+  animation: vp-dialog-simple-enter 180ms ease-out;
+}
+
+.vp-dialog--ready.vp-dialog--animation-scale {
+  visibility: visible;
+  transform-origin: var(--vp-dialog-origin-x) var(--vp-dialog-origin-y);
+  animation: vp-dialog-enter 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vp-dialog--ready.vp-dialog--animation-slide-up {
+  visibility: visible;
+  animation: vp-dialog-slide-up-enter 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.vp-dialog-backdrop--closing {
+  pointer-events: none;
+}
+
+.vp-dialog--animation-simple.vp-dialog--closing {
+  animation: vp-dialog-simple-leave 180ms ease-in both;
+}
+
+.vp-dialog--animation-scale.vp-dialog--closing {
+  animation: vp-dialog-leave 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+
+.vp-dialog--animation-slide-up.vp-dialog--closing {
+  animation: vp-dialog-slide-up-leave 320ms cubic-bezier(0.7, 0, 0.84, 0) both;
+}
+
+@keyframes vp-dialog-simple-enter {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes vp-dialog-simple-leave {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes vp-dialog-enter {
+  from {
+    scale: 0.1;
+  }
+  to {
+    scale: 1;
+  }
+}
+
+@keyframes vp-dialog-leave {
+  from {
+    scale: 1;
+  }
+  to {
+    scale: 0.1;
+  }
+}
+
+@keyframes vp-dialog-slide-up-enter {
+  from {
+    transform: translateY(calc(100% + 8px));
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes vp-dialog-slide-up-leave {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(calc(100% + 8px));
+  }
+}
+
+.vp-dialog--lg {
+  width: min(720px, 100%);
+}
+
+.vp-dialog--xl {
+  width: min(1040px, 100%);
+}
+
+.vp-dialog--full {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  max-height: none;
+  border-radius: 0;
+}
+
+.vp-dialog-header {
+  display: flex;
+  align-items: center;
+  flex: 0 0 64px;
+  min-height: 64px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.vp-dialog-heading {
+  min-width: 0;
+  flex: 1;
+  padding: 0 8px 0 2px;
+}
+
+.vp-dialog-header h3 {
+  margin: 0;
+  min-width: 0;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vp-dialog-header h3 span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vp-dialog-subtitle {
+  display: block;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vp-dialog-close {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-primary);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 120ms ease;
+}
+
+.vp-dialog-close:hover {
+  background: var(--nav-item-hover);
+}
+
+.vp-dialog-close:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.vp-dialog-actions {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  gap: 4px;
+}
+
+.vp-dialog-body {
+  /* Sticky content reads this to cover the padding it scrolls under */
+  --vp-dialog-padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: var(--vp-dialog-padding);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.vp-dialog-body--top {
+  justify-content: flex-start;
+}
+
+.vp-dialog-body--center {
+  justify-content: safe center;
+}
+
+.vp-dialog-body--bottom {
+  justify-content: safe flex-end;
+}
+
+.vp-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 12px 24px 20px;
+  border-top: 1px solid var(--divider);
+}
+
+/*
+ * Auf Smartphones füllt jeder Dialog den Bildschirm — eine schwebende Box mit
+ * Rand lohnt sich dort nicht. Eine per Prop gesetzte Breite oder Body-Höhe wird
+ * dabei bewusst überschrieben.
+ */
+@media (max-width: 767px) {
+  .vp-dialog-backdrop {
+    padding: 0;
+  }
+
+  .vp-dialog--mobile-full {
+    position: fixed;
+    inset: 0;
+    width: 100vw !important;
+    height: 100dvh;
+    max-height: none;
+    border-radius: 0;
+  }
+
+  .vp-dialog-backdrop--mobile-fit {
+    align-items: end;
+  }
+
+  .vp-dialog--mobile-fit-content {
+    width: 100vw !important;
+    height: fit-content;
+    max-height: calc(100dvh - 8px);
+    border-radius: 28px 28px 0 0;
+  }
+
+  /* A fixed popup body height must not split the mobile full-screen dialog. */
+  .vp-dialog-body {
+    height: auto !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-dialog-close,
+  .vp-dialog-backdrop,
+  .vp-dialog {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* ==== EditableArea ==== */
+.vp-editable-area {
+  position: relative;
+}
+.vp-editable-area.editing {
+  border: 2px dashed color-mix(in srgb, var(--text-secondary) 40%, transparent);
+  border-radius: var(--card-radius);
+}
+.vp-editable-area.dragging {
+  opacity: 0.4;
+}
+.vp-editable-area.drop-target {
+  border-color: var(--accent);
+  border-style: solid;
+}
+/* Floating pill anchored to the top-right corner of the box */
+.vp-editable-area-toolbar {
+  position: absolute;
+  top: -40px;
+  right: 12px;
+  z-index: 3;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--card-bg);
+  box-shadow: var(--card-shadow);
+}
+
+/* ==== EditableAreaButton ==== */
+/* Same dashed-border language as .vp-editable-area and .vp-add-tile */
+.vp-editable-area-btn {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1.5px dashed var(--divider);
+  border-radius: 8px;
+  padding: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.vp-editable-area-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.vp-editable-area-btn--drag {
+  cursor: grab;
+}
+.vp-editable-area-btn--drag:active {
+  cursor: grabbing;
+}
+
+/* ==== Input ==== */
+/* input.* beats the global `input[type='text']` base styles */
+input.vp-input {
+  width: 100%;
+  height: var(--vp-control-height);
+  padding: 0 var(--vp-control-pad-x);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  background: var(--input-bg, var(--card-bg));
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  outline: none;
+}
+input.vp-input:focus {
+  border-color: var(--accent);
+}
+input.vp-input[aria-invalid='true'] {
+  border-color: var(--danger, #ef4444);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--danger, #ef4444) 28%, transparent);
+}
+input.vp-input[aria-invalid='true']:focus {
+  border-color: var(--danger, #ef4444);
+}
+input.vp-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+input.vp-input::placeholder {
+  color: var(--text-secondary);
+}
+
+/* ==== SelectMenu ==== */
+/* Sizes come from the shared .vp-size-* tokens in the theme's main.css */
+.vp-select {
+  position: relative;
+}
+.vp-select-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--input-bg, var(--card-bg));
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  padding: 0 var(--vp-control-pad-x);
+  /* Fixed height so swapping the button for the search input never shifts layout */
+  height: var(--vp-control-height);
+  box-sizing: border-box;
+}
+.vp-select-field:focus-within {
+  border-color: var(--accent);
+}
+.vp-select-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+/* input.* beats the global `input[type='text']` base styles, which would
+   otherwise draw a second border and add padding inside the field.
+   Both controls fill the field height so they are pixel-identical. */
+input.vp-select-search,
+.vp-select-value {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  padding: 0;
+  outline: none;
+  box-sizing: border-box;
+}
+input.vp-select-search:focus {
+  border: none;
+}
+.vp-select-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.vp-select-value.empty {
+  color: var(--text-secondary);
+}
+.vp-select-clear {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+}
+.vp-select-clear:hover {
+  color: var(--text-primary);
+}
+/*
+ * Position, width and max-height are set by the script: the dropdown is
+ * pinned to the viewport so the scrolling dialogs and panes it opens inside
+ * cannot clip it. Without that, no z-index would help — `overflow` cuts
+ * regardless of stacking.
+ */
+.vp-select-dropdown {
+  position: fixed;
+  /* Always above dialogs, popups and any card content it opens over */
+  z-index: 9999999;
+  /* The script sets the field's own width — padding must fit inside it */
+  box-sizing: border-box;
+  overflow-y: auto;
+  background: var(--nav-bg);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  box-shadow: var(--card-shadow);
+  padding: 4px;
+}
+.vp-select-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px var(--vp-control-pad-x);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  text-align: left;
+  cursor: pointer;
+  margin: 2px 0;
+}
+.vp-select-option:hover,
+.vp-select-option.active {
+  background: var(--nav-item-hover);
+}
+.vp-select-option.selected {
+  color: var(--accent);
+}
+.vp-select-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-select-empty {
+  margin: 0;
+  padding: 12px 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.vp-select-group {
+  margin: 0;
+  padding: 10px 10px 4px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+/* No gap above the very first heading — the dropdown already has padding. */
+.vp-select-group:first-child {
+  padding-top: 4px;
+}
+
+/* ==== Splitter ==== */
+.vp-splitter {
+  position: relative;
+  align-self: stretch;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  cursor: col-resize;
+  touch-action: none;
+  outline: none;
+}
+.vp-splitter::before {
+  content: '';
+  position: absolute;
+  inset-block: 0;
+  left: 50%;
+  width: 1px;
+  background: var(--divider);
+  transform: translateX(-50%);
+  transition: width 140ms ease, background 140ms ease;
+}
+.vp-splitter:hover::before,
+.vp-splitter:focus-visible::before,
+.vp-splitter.is-dragging::before {
+  width: 3px;
+  background: var(--accent);
+}
+.vp-splitter > span {
+  position: relative;
+  z-index: 1;
+  width: 6px;
+  height: 42px;
+  border: 1px solid var(--divider);
+  border-radius: 999px;
+  background: var(--nav-bg);
+  box-shadow: var(--card-shadow);
+}
+.vp-splitter:focus-visible > span {
+  border-color: var(--accent);
+}
+
+/* ==== Tabs ==== */
+.vp-tabs-shell {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border-bottom: 1px solid var(--divider);
+}
+.vp-tabs {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: nowrap;
+  align-items: stretch;
+  gap: 4px;
+  min-width: 0;
+  min-height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+}
+.vp-tabs::-webkit-scrollbar {
+  display: none;
+}
+.vp-tabs-scroll {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  min-height: 44px;
+  border: 0;
+  padding: 0;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.vp-tabs-scroll--left {
+  border-right: 1px solid var(--divider);
+}
+.vp-tabs-scroll--right {
+  border-left: 1px solid var(--divider);
+}
+.vp-tabs-scroll:disabled {
+  color: var(--text-secondary);
+  cursor: default;
+  opacity: 0.35;
+}
+.vp-tabs-scroll:not(:disabled):hover,
+.vp-tabs-scroll:not(:disabled):focus-visible {
+  background: var(--nav-item-hover);
+  color: var(--accent);
+  outline: none;
+}
+.vp-tab {
+  flex: 0 0 auto;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 14px;
+  padding: 8px 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  white-space: nowrap;
+}
+.vp-tab--end {
+  margin-left: auto;
+}
+.vp-tab:hover {
+  color: var(--text-primary);
+}
+.vp-tab.active {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+.vp-tab:focus-visible {
+  outline: none;
+  color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vp-tabs {
+    scroll-behavior: auto;
+  }
+}
+
+/* ==== TapAction ==== */
+.vp-tap-action {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.vp-tap-action-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.vp-tap-action-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.vp-tap-action-field > span {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.vp-tap-action-hint {
+  margin: -4px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+/* ==== ViewSelectMenu ==== */
+/* Sizes come from the shared .vp-size-* tokens in the theme's main.css */
+.vp-view-select {
+  position: relative;
+}
+.vp-view-select-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--input-bg, var(--card-bg));
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  padding: 0 var(--vp-control-pad-x);
+  /* Fixed height so swapping the button for the search input never shifts layout */
+  height: var(--vp-control-height);
+  box-sizing: border-box;
+}
+.vp-view-select-field:focus-within {
+  border-color: var(--accent);
+}
+.vp-view-select-icon {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+}
+/* input.* beats the global `input[type='text']` base styles, which would
+   otherwise draw a second border and add padding inside the field. */
+input.vp-view-select-search,
+.vp-view-select-value {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  line-height: 1;
+  padding: 0;
+  outline: none;
+  box-sizing: border-box;
+}
+input.vp-view-select-search:focus {
+  border: none;
+}
+.vp-view-select-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.vp-view-select-value.empty {
+  color: var(--text-secondary);
+}
+.vp-view-select-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-view-default {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.vp-view-select-dropdown {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  max-height: 320px;
+  overflow-y: auto;
+  background: var(--nav-bg);
+  border: 1px solid var(--divider);
+  border-radius: var(--vp-control-radius);
+  box-shadow: var(--card-shadow);
+  padding: 4px;
+}
+.vp-view-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 8px;
+  /* Child views are indented by their path depth */
+  padding-left: calc(var(--vp-view-depth, 0) * 16px);
+  margin: 2px 0;
+}
+.vp-view-option:hover,
+.vp-view-option.active {
+  background: var(--nav-item-hover);
+}
+.vp-view-option.selected .vp-view-option-label {
+  color: var(--accent);
+}
+/* Drag & drop reordering */
+.vp-view-option.dragging {
+  opacity: 0.4;
+}
+.vp-view-option.drop-target {
+  outline: 2px dashed var(--accent);
+  outline-offset: -2px;
+}
+.vp-view-option-drag {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: grab;
+}
+.vp-view-option-drag:active {
+  cursor: grabbing;
+}
+.vp-view-option-drag:hover {
+  background: var(--nav-item-active);
+  color: var(--text-primary);
+}
+/* Parents keep the plain look — only the marker hints at nested views */
+.vp-view-option.is-parent .vp-view-option-label::after {
+  content: '';
+  display: inline-block;
+  width: 4px;
+  height: 4px;
+  margin-left: 6px;
+  border-radius: 50%;
+  vertical-align: middle;
+  background: var(--text-secondary);
+}
+.vp-view-option-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px var(--vp-control-pad-x);
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: var(--vp-control-font);
+  text-align: left;
+  cursor: pointer;
+}
+.vp-view-option-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.vp-view-option-move {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+}
+.vp-view-option-move button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.vp-view-option-move button:not(:disabled):hover {
+  background: var(--nav-item-active);
+  color: var(--text-primary);
+}
+.vp-view-option-move button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+.vp-view-select-empty,
+.vp-view-select-hint {
+  margin: 0;
+  padding: 8px 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.vp-view-select-hint {
+  border-top: 1px solid var(--divider);
+  margin-top: 4px;
+}
