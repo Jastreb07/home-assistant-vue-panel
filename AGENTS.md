@@ -472,6 +472,19 @@ Aktueller Stand:
   jeder CSS-Injektion (auch aus dem localStorage-Cache). Achtung Windows: PowerShell 5
   `Set-Content -Encoding UTF8` schreibt immer ein BOM — Theme-Dateien mit .NET
   `UTF8Encoding($false)` oder Python schreiben;
+- ab `2.3.2` liefert die Integration das zweite Bundled-Theme „Android“
+  (`bundled_themes/android/`, nur `main.css`): der Material-You-Look der Google-Pixel-Telefone
+  mit tonalen Flächen ohne Schatten, Google-Blau als dynamischer Akzentfarbe
+  (dunkel `#a8c7fa`, hell `#0b57d0`), pillenförmigen Buttons/Tabs/Menüoptionen
+  (`--vp-control-radius: 999px`), 28px-Dialogrundung und Pixel-Schriftstapel. Es ist zugleich
+  die Referenz für CSS-only-Themes: keine `.js`-Komponenten — alle Komponenten fallen auf das
+  Default-Theme zurück, nur Tokens und namespaced Klassen werden überstylt;
+- ab `2.3.3`/Engine `2.3.2` überlebt die Theme-Wahl den automatischen Reload: Der Dialog lud die
+  Seite bisher fix 300ms nach dem Speichern neu, während der Store Remote-Saves mit 800ms
+  debounct — die neue `uiTheme`-Einstellung war beim Reload noch nie persistiert und der alte
+  Wert kam zurück. Jetzt ruft der Dialog `store.flushRemote()` explizit auf, wartet zusätzlich
+  auf `remoteSaveInFlight`/`remoteSavePending` (flushRemote kehrt bei laufendem Save sofort
+  zurück) und lädt erst nach bestätigtem Schreiben neu;
 - ab `2.2.41`/Engine `2.2.36` liefert die Integration die Dialog-Card `vue-panel/thermostat-detail`
   mit. Sie verwendet bewusst dieselbe Bogen- und Knopfsprache wie `vue-panel/light-detail`
   (Spurfarbe `rgba(0,0,0,.075)`, runde Enden, 23px-Griff mit 4px weißem Rand, Pillen-Schalter,
@@ -893,6 +906,6 @@ Gerendert von `DialogHost.vue` (einmal in App.vue) über den Theme-Dialog. Warte
 - [ ] Git-Repo für vue-panel initialisieren (bisher keins!).
 - [ ] Weitere Detail-Cards je Domain (`vue-panel/<domain>-detail`, bisher `light` und `weather`).
 - [ ] Weitere Cards (z.B. Kamera, Verlaufs-Graph, Szenen/Buttons, Alarm).
-- [ ] Beispiel-Custom-Theme als Vorlage.
+- [x] Beispiel-Custom-Theme als Vorlage (Bundled-Theme „Android“, CSS-only).
 - [ ] `size.rows` wird noch nicht ausgewertet (nur `cols` als grid-column span).
 - [x] Wetter-Forecast über `weather.get_forecasts` mit Tages-/Stundenumschaltung.

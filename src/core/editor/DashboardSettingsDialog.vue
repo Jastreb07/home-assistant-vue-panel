@@ -255,8 +255,23 @@ function save() {
   viewScale.value = saveViewScale(viewScale.value)
   panelScaleCommitted = true
   emit('close')
-  // Themed components are cached — a reload applies the new component theme
-  if (uiThemeChanged) setTimeout(() => location.reload(), 300)
+  // Themed components are cached — a reload applies the new component theme.
+  // The store debounces remote saves, so flush explicitly and reload only
+  // after the integration has confirmed the write; otherwise the reload
+  // races the save and comes back with the old theme.
+  if (uiThemeChanged) {
+    const waitForSave = async () => {
+      await store.flushRemote()
+      // flushRemote returns early when a save is already in flight — wait
+      // until the queue has fully drained before reloading.
+      while (store.remoteSaveInFlight || store.remoteSavePending) {
+        await new Promise((resolve) => setTimeout(resolve, 100))
+      }
+    }
+    waitForSave()
+      .catch((err: unknown) => console.warn('[vue-panel] Saving the theme choice failed:', err))
+      .finally(() => location.reload())
+  }
 }
 </script>
 

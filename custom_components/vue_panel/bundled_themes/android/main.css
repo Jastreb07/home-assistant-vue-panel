@@ -1,0 +1,174 @@
+/*
+Theme Name:        Android
+Description:       Material You look of Google's Pixel phones — tonal surfaces, Google-blue dynamic color, pill-shaped controls and expressive rounding.
+Version:           1.0.0
+Author:            Vue Panel
+Requires Vue Panel: 2.3.0
+*/
+
+/* ────────────────────────────────────────────────────────────────
+   CSS-only theme: it restyles the default markup by overriding the
+   design tokens and a few namespaced component classes. The default
+   theme's main.css is always loaded first, this file layers on top.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ── Tonal palette — dark is the default scheme ── */
+:root,
+:host {
+  --bg: #111318;
+  --nav-bg: #1a1c22;
+  --card-bg: #1e2027;
+  --card-bg-hover: #262931;
+  --dialog-backdrop: rgba(0, 0, 0, 0.4);
+  /* Primary container: the active tile glows in dynamic blue */
+  --card-bg-active: #a8c7fa;
+  --tile-icon-bg: rgba(168, 199, 250, 0.14);
+  --input-bg: #1e2027;
+  --card-radius: 24px;
+  --card-shadow: none;
+  --text-primary: #e3e3e8;
+  --text-secondary: #9aa0ac;
+  --text-on-active: #062e6f;
+  --divider: #3b3f48;
+  --nav-item-hover: rgba(232, 234, 237, 0.08);
+  --nav-item-active: rgba(168, 199, 250, 0.22);
+  --accent: #a8c7fa;
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: #3b3f48;
+  --scrollbar-thumb-hover: #4c515c;
+}
+
+[data-theme='light'],
+:host([data-theme='light']),
+:host-context([data-theme='light']) {
+  --bg: #f0f4f9;
+  --nav-bg: #ffffff;
+  --card-bg: #ffffff;
+  --card-bg-hover: #f6f8fc;
+  --dialog-backdrop: rgba(31, 31, 31, 0.32);
+  --card-bg-active: #c2e7ff;
+  --tile-icon-bg: rgba(11, 87, 208, 0.08);
+  --input-bg: #ffffff;
+  --card-shadow: none;
+  --text-primary: #1f1f1f;
+  --text-secondary: #575b63;
+  --text-on-active: #001d35;
+  --divider: #dde3ea;
+  --nav-item-hover: rgba(31, 31, 31, 0.06);
+  --nav-item-active: rgba(11, 87, 208, 0.12);
+  --accent: #0b57d0;
+  --scrollbar-thumb: #c6ccd6;
+  --scrollbar-thumb-hover: #aab2bf;
+}
+
+/* ── Typography: the Pixel system stack ── */
+body,
+:host {
+  font-family:
+    'Google Sans Text',
+    'Google Sans',
+    Roboto,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  letter-spacing: 0.1px;
+}
+
+/* ── Controls: buttons become pills ── */
+.vp-size-xs { --vp-control-radius: 999px; }
+.vp-size-sm { --vp-control-radius: 999px; }
+.vp-size-md { --vp-control-radius: 999px; }
+.vp-size-lg { --vp-control-radius: 999px; }
+.vp-size-xl { --vp-control-radius: 999px; }
+
+.vp-btn {
+  border-color: transparent;
+  background: var(--nav-item-hover);
+  font-weight: 500;
+  transition: background 0.15s, box-shadow 0.15s;
+}
+.vp-btn:hover {
+  border-color: transparent;
+  background: var(--nav-item-active);
+}
+.vp-btn.primary {
+  box-shadow: none;
+}
+.vp-btn.danger {
+  background: rgba(242, 184, 181, 0.12);
+  border-color: transparent;
+  color: #f2b8b5;
+}
+[data-theme='light'] .vp-btn.danger,
+:host-context([data-theme='light']) .vp-btn.danger {
+  background: rgba(179, 38, 30, 0.08);
+  color: #b3261e;
+}
+
+/* Text fields stay gently rounded instead of fully round */
+.vp-input,
+.vp-select-field,
+.vp-box-cell input {
+  border-radius: 14px;
+}
+
+/* ── Cards: flat tonal surfaces ── */
+.vp-card {
+  border: 1px solid transparent;
+}
+.vp-card.clickable:active {
+  transform: scale(0.97);
+}
+
+/* ── Dialogs: expressive 28px rounding ── */
+.vp-dialog {
+  border-radius: 28px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+.vp-dialog-close {
+  border-radius: 999px;
+}
+.vp-dialog-footer .vp-btn,
+.vp-dialog-actions .vp-btn {
+  min-width: 88px;
+}
+
+/* ── Dropdowns and menus ── */
+.vp-select-dropdown,
+.vp-card-edit-menu {
+  border-radius: 20px;
+  overflow: hidden;
+}
+.vp-select-option {
+  border-radius: 999px;
+  margin: 2px 6px;
+}
+.vp-select-option.selected {
+  background: var(--nav-item-active);
+  color: var(--accent);
+}
+
+/* ── Tabs: a Material segmented pill strip ── */
+.vp-tabs {
+  gap: 6px;
+}
+.vp-tab {
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+.vp-tab.active {
+  background: var(--nav-item-active);
+  color: var(--accent);
+  box-shadow: none;
+}
+
+/* ── Collapsibles pick up the tonal grouping ── */
+.vp-collapsible {
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* ── Checkboxes: rounder box ── */
+.vp-checkbox-box {
+  border-radius: 8px;
+}
